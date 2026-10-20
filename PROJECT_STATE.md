@@ -9,6 +9,6 @@
 - **Deferred / blocked:** A paid live provider acceptance call requires a user-supplied credential and an approved spending ceiling. No credential or paid call is simulated.
 - **Key paths:** `src/domain/productionGraph.ts`, `src/data/projectStore.ts`, `src-tauri/src/lib.rs`, `MIGRATION_PLAN.md`.
 - **Open blocker:** Production installers are not code-signed; Windows may display an unknown-publisher warning.
-- **Next task:** Connect native asset import/labeling controls and credential status/removal to the desktop interface, then run one user-authorized credentialed acceptance call.
-- **Acceptance test:** Configure one provider, generate a labeled asset file, restart the app, and export a package referencing that verified file.
+- **Next task:** Run one user-authorized credentialed paid acceptance task and code-sign the resulting installers when signing credentials are available.
+- **Acceptance test:** Configure KIE, enter an explicit per-task spending ceiling, submit one Seedance task, poll it to completion, import/label the result, restart the app, and export a ZIP referencing that verified file.
 - **Last known build:** `0.4.0` Windows x64 development build.

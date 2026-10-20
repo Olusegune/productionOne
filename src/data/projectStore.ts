@@ -12,6 +12,7 @@ export interface StudioState {
   jobs: GenerationJob[]
   storyboardsEnabled: boolean
   model: VideoModel
+  assetOutputs?: Record<string,string>
 }
 
 export const projectStore = {

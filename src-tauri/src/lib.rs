@@ -78,8 +78,12 @@ async fn kie_create_task(model: String, prompt: String, aspect_ratio: String, du
     if prompt.trim().is_empty() { return Err("Prompt is required".to_string()); }
     if !matches!(duration, 4 | 5 | 6 | 8 | 10 | 12) { return Err("Unsupported duration".to_string()); }
     let api_key = credential("kie")?.get_password().map_err(|_| "KIE credential is not configured".to_string())?;
-    let response = reqwest::Client::new().post("https://api.kie.ai/api/v1/jobs/createTask")
-        .bearer_auth(api_key).json(&kie_task_body(&model, &prompt, &aspect_ratio, duration, generate_audio))
+    post_kie_task("https://api.kie.ai/api/v1/jobs/createTask", &api_key, &model, &prompt, &aspect_ratio, duration, generate_audio).await
+}
+
+async fn post_kie_task(endpoint: &str, api_key: &str, model: &str, prompt: &str, aspect_ratio: &str, duration: u8, generate_audio: bool) -> Result<Value, String> {
+    let response = reqwest::Client::new().post(endpoint)
+        .bearer_auth(api_key).json(&kie_task_body(model, prompt, aspect_ratio, duration, generate_audio))
         .send().await.map_err(|error| error.to_string())?;
     let status = response.status();
     let body: Value = response.json().await.map_err(|error| error.to_string())?;
@@ -103,6 +107,10 @@ async fn kie_query_task(task_id: String) -> Result<Value, String> {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ImageInspection { width: u32, height: u32, format: String, file_size: u64, valid: bool, warnings: Vec<String> }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ImportedAsset { path: String, inspection: ImageInspection }
 
 fn inspect_image_file(path: &std::path::Path) -> Result<ImageInspection, String> {
     let reader = image::ImageReader::open(path).map_err(|error| error.to_string())?.with_guessed_format().map_err(|error| error.to_string())?;
@@ -151,6 +159,26 @@ fn label_image(input_path: String, output_path: String, title: String, metadata:
     inspect_image_file(std::path::Path::new(&output_path))
 }
 
+#[tauri::command]
+fn import_labeled_asset(app: tauri::AppHandle, image_data: Vec<u8>, file_name: String, title: String, metadata: Vec<String>) -> Result<ImportedAsset, String> {
+    if image_data.is_empty() { return Err("Selected asset is empty".to_string()); }
+    if image_data.len() > 50 * 1024 * 1024 { return Err("Asset exceeds the 50 MB import limit".to_string()); }
+    let source = image::load_from_memory(&image_data).map_err(|error| format!("Unsupported image: {error}"))?.to_rgba8();
+    let asset_dir = app.path().app_data_dir().map_err(|error| error.to_string())?.join("assets");
+    fs::create_dir_all(&asset_dir).map_err(|error| error.to_string())?;
+    let stem = std::path::Path::new(&file_name).file_stem().and_then(|value| value.to_str()).unwrap_or("asset");
+    let safe_stem = safe_package_name(stem);
+    let output_path = asset_dir.join(format!("{}_labeled.png", if safe_stem.is_empty() { "asset" } else { &safe_stem }));
+    let panel_height = 132u32;
+    let mut output = ImageBuffer::from_pixel(source.width(), source.height() + panel_height, Rgba([17, 20, 24, 255]));
+    image::imageops::overlay(&mut output, &source, 0, 0);
+    draw_label_text(&mut output, &title.to_uppercase(), 24, source.height() + 18, 2);
+    for (index, line) in metadata.iter().take(4).enumerate() { draw_label_text(&mut output, line, 24, source.height() + 52 + index as u32 * 17, 1); }
+    output.save(&output_path).map_err(|error| error.to_string())?;
+    let inspection = inspect_image_file(&output_path)?;
+    Ok(ImportedAsset { path: output_path.to_string_lossy().to_string(), inspection })
+}
+
 fn safe_package_name(value: &str) -> String {
     let cleaned: String = value.chars().map(|character| if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') { character } else { '_' }).collect();
     cleaned.trim_matches('_').to_string()
@@ -187,13 +215,14 @@ fn export_production_package(app: tauri::AppHandle, package_name: String, manife
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, export_production_package])
+        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, import_labeled_asset, export_production_package])
         .run(tauri::generate_context!())
         .expect("failed to run Production Guy");
 }
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Read, Write};
     #[test]
     fn project_filename_is_portable() {
         assert!(!"current-project.pguy.json".contains(['/', '\\']));
@@ -206,6 +235,26 @@ mod tests {
         assert_eq!(body["model"], "bytedance/seedance-2");
         assert_eq!(body["input"]["duration"], 5);
         assert_eq!(body["input"]["generate_audio"], true);
+    }
+
+    #[test]
+    fn kie_adapter_posts_authenticated_task_to_the_verified_contract() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0u8; 8192];
+            let length = stream.read(&mut request).unwrap();
+            let request = String::from_utf8_lossy(&request[..length]);
+            assert!(request.starts_with("POST /createTask HTTP/1.1"));
+            assert!(request.to_ascii_lowercase().contains("authorization: bearer test-key"));
+            assert!(request.contains("bytedance/seedance-2"));
+            let body = r#"{"data":{"taskId":"mock-task-1"}}"#;
+            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
+        });
+        let result = tauri::async_runtime::block_on(super::post_kie_task(&format!("http://{address}/createTask"), "test-key", "bytedance/seedance-2", "Slow push in", "16:9", 5, true)).unwrap();
+        server.join().unwrap();
+        assert_eq!(result["data"]["taskId"], "mock-task-1");
     }
 
 
