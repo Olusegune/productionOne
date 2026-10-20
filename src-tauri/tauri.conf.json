@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Production Guy",
+  "version": "0.1.0",
+  "identifier": "com.productionguy.studio",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "title": "Production Guy — Your AI Production Department",
+      "width": 1440,
+      "height": 900,
+      "minWidth": 1100,
+      "minHeight": 720,
+      "resizable": true,
+      "center": true,
+      "decorations": true
+    }],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "category": "GraphicsAndDesign",
+    "shortDescription": "Your AI Production Department",
+    "longDescription": "Windows-first AI preproduction and visual development studio.",
+    "copyright": "Copyright © 2026 Production Guy",
+    "publisher": "Production Guy",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"]
+  }
+}
