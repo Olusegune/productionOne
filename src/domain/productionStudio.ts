@@ -115,6 +115,27 @@ export interface ShotRecord {
   storyboardStatus: 'planned' | 'generated' | 'approved' | 'waived'
 }
 
+export function animaticDuration(shots: ShotRecord[]): number {
+  return shots.reduce((total, shot) => total + Math.max(0, shot.duration), 0)
+}
+
+export function shotAtTime(shots: ShotRecord[], time: number): { shot: ShotRecord; index: number; localTime: number } | null {
+  if (!shots.length) return null
+  const duration = animaticDuration(shots)
+  const clamped = Math.max(0, Math.min(time, Math.max(0, duration - Number.EPSILON)))
+  let elapsed = 0
+  for (let index = 0; index < shots.length; index++) {
+    const end = elapsed + Math.max(0, shots[index].duration)
+    if (clamped < end || index === shots.length - 1) return { shot: shots[index], index, localTime: clamped - elapsed }
+    elapsed = end
+  }
+  return null
+}
+
+export function normalizeShotOrder(shots: ShotRecord[]): ShotRecord[] {
+  return shots.map((shot, index) => ({ ...shot, order: index + 1 }))
+}
+
 export type VideoModel = 'Seedance 2.0' | 'Kling 3.0' | 'Veo 3.1'
 export interface VideoPreset { model: VideoModel; apiModel: string; aspectRatios: string[]; maxReferences: number; supportsAudio: boolean; supportsFirstLastFrame: boolean; verified: boolean; verifiedAt: string; documentationUrl: string; note: string }
 
