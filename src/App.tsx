@@ -4,7 +4,7 @@ import { BrandMark } from './components/BrandMark'
 import { ArtDirectionBar } from './components/ArtDirectionBar'
 import { projectStore, studioStore } from './data/projectStore'
 import { demoGraph } from './domain/demoGraph'
-import type { ProductionGraph } from './domain/productionGraph'
+import { synchronizeProductionGraph, type ProductionGraph } from './domain/productionGraph'
 import { advanceQueue, analyzeScript, animaticDuration, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, pauseQueue, resumeQueue, retryJob, shotAtTime, type AnalysisResult, type GenerationJob, type PromptPackage, type ShotRecord, type VideoModel, videoPresets } from './domain/productionStudio'
 import { providerRegistry, type ProviderId } from './domain/providerRegistry'
 import { labelLines } from './domain/qualityEngine'
@@ -50,6 +50,7 @@ export default function App(){
  const activePromptPackage=useMemo(()=>analysis.assets[selectedAsset]?compileAssetPrompt(analysis.assets[selectedAsset],`${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`):null,[analysis.assets,selectedAsset,styleBible])
  useEffect(()=>{Promise.all([projectStore.load(),studioStore.load()]).then(([savedGraph,studio])=>{setGraph(savedGraph);if(studio){setScript(studio.script);setAnalysis(studio.analysis);setShots(studio.shots);setJobs(studio.jobs);setStoryboardsEnabled(studio.storyboardsEnabled);setModel(studio.model);setAssetOutputs(studio.assetOutputs??{});setStyleBible(studio.styleBible??defaultStyleBible)}setHydrated(true)})},[])
  useEffect(()=>{if(hydrated){void projectStore.save(graph);void studioStore.save({script,analysis,shots,jobs,storyboardsEnabled,model,assetOutputs,styleBible})}},[graph,script,analysis,shots,jobs,storyboardsEnabled,model,assetOutputs,styleBible,hydrated])
+ useEffect(()=>{if(!hydrated)return;setGraph(current=>{const next=synchronizeProductionGraph(current,analysis,shots,plannedSheets,assetOutputs);return JSON.stringify(current)===JSON.stringify(next)?current:next})},[analysis,shots,plannedSheets,assetOutputs,hydrated])
  useEffect(()=>{if(!providersOpen||!('__TAURI_INTERNALS__' in window)){setCredentialConfigured(false);return}import('@tauri-apps/api/core').then(({invoke})=>invoke<boolean>('credential_status',{provider:credentialProvider}).then(setCredentialConfigured).catch(()=>setCredentialConfigured(false)))},[providersOpen,credentialProvider])
  useEffect(()=>{if(!('__TAURI_INTERNALS__' in window)){setKieConfigured(false);return}import('@tauri-apps/api/core').then(({invoke})=>invoke<boolean>('credential_status',{provider:'kie'}).then(setKieConfigured).catch(()=>setKieConfigured(false)))},[providersOpen,workspace])
  useEffect(()=>{if(!('__TAURI_INTERNALS__' in window)){setOpenAiConfigured(false);return}import('@tauri-apps/api/core').then(({invoke})=>invoke<boolean>('credential_status',{provider:'openai'}).then(setOpenAiConfigured).catch(()=>setOpenAiConfigured(false)))},[providersOpen,workspace])
