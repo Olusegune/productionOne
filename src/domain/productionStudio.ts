@@ -79,7 +79,7 @@ export function compileAssetPrompt(asset: ExtractedAsset, style: string): Prompt
   }
 }
 
-export type QueueStatus = 'queued' | 'running' | 'paused' | 'complete' | 'failed'
+export type QueueStatus = 'queued' | 'running' | 'paused' | 'complete' | 'failed' | 'cancelled'
 export interface GenerationJob { id: string; assetId: string; provider: string; model: string; mode: 'external' | 'direct'; status: QueueStatus; attempts: number; outputPath?: string; error?: string }
 
 export function advanceQueue(jobs: GenerationJob[], availableProviders: string[]): GenerationJob[] {
@@ -91,6 +91,12 @@ export function advanceQueue(jobs: GenerationJob[], availableProviders: string[]
     ? { ...job, status: 'failed', attempts: job.attempts + 1, error: `Provider ${job.provider} is not configured` }
     : { ...job, status: 'running', attempts: job.attempts + 1 })
 }
+
+export const pauseQueue=(jobs:GenerationJob[])=>jobs.map(job=>job.status==='queued'||job.status==='running'?{...job,status:'paused' as const}:job)
+export const resumeQueue=(jobs:GenerationJob[])=>jobs.map(job=>job.status==='paused'?{...job,status:'queued' as const}:job)
+export const cancelJob=(jobs:GenerationJob[],jobId:string)=>jobs.map(job=>job.id===jobId&&job.status!=='complete'?{...job,status:'cancelled' as const,error:undefined}:job)
+export const retryJob=(jobs:GenerationJob[],jobId:string)=>jobs.map(job=>job.id===jobId&&(job.status==='failed'||job.status==='cancelled')?{...job,status:'queued' as const,error:undefined}:job)
+export const canSpend=(confirmed:number,estimated:number,alreadySpent:number)=>Number.isFinite(confirmed)&&confirmed>0&&estimated>=0&&alreadySpent>=0&&alreadySpent+estimated<=confirmed
 
 export interface ShotRecord {
   id: string

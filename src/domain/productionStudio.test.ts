@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeScript, animaticDuration, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, shotAtTime, type ShotRecord } from './productionStudio'
+import { analyzeScript, animaticDuration, canSpend, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, pauseQueue, resumeQueue, retryJob, shotAtTime, type GenerationJob, type ShotRecord } from './productionStudio'
 
 const shot: ShotRecord = { id:'SHOT-001', sceneId:'SCENE-001', order:1, duration:5, assetIds:['CHAR-AMINA-001','PROP-COMPASS-002'], action:'Amina raises the compass', dialogue:'We are close.', speaker:'AMINA', emotionalObjective:'quiet resolve', facialActing:'focused eyes', bodyLanguage:'steady posture', microAnimation:'one blink and slow breath', cameraFraming:'medium close-up', cameraMovement:'slow push in', lighting:'warm dusk edge light', soundEffects:'cloth movement', ambience:'savanna wind', music:'low strings', transition:'cut', storyboardStatus:'approved' }
 
@@ -25,4 +25,10 @@ describe('release production pipeline', () => {
     expect(shotAtTime(shots,6)?.localTime).toBe(1)
   })
   it('normalizes shot order after editorial changes',()=>expect(normalizeShotOrder([{...shot,order:9},{...shot,id:'SHOT-002',order:4}]).map(item=>item.order)).toEqual([1,2]))
+  it('supports pause, resume, cancel and retry without losing queue identity',()=>{
+    const jobs:GenerationJob[]=[{id:'JOB-001',assetId:'A',provider:'External workflow',model:'Universal',mode:'external',status:'queued',attempts:0}]
+    expect(resumeQueue(pauseQueue(jobs))[0]).toMatchObject({id:'JOB-001',status:'queued'})
+    expect(retryJob(cancelJob(jobs,'JOB-001'),'JOB-001')[0]).toMatchObject({id:'JOB-001',status:'queued'})
+  })
+  it('prevents a paid request from exceeding its ceiling',()=>{expect(canSpend(2,1.25,.5)).toBe(true);expect(canSpend(2,1.25,1)).toBe(false)})
 })

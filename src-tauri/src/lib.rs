@@ -46,6 +46,17 @@ fn load_studio(app: tauri::AppHandle) -> Result<Option<String>, String> { read_o
 #[tauri::command]
 fn save_studio(app: tauri::AppHandle, contents: String) -> Result<(), String> { write_atomic(studio_path(&app)?, contents) }
 
+#[tauri::command]
+fn save_prompt_package(app: tauri::AppHandle, asset_id: String, contents: String) -> Result<String, String> {
+    let safe_id = safe_package_name(&asset_id);
+    if safe_id.is_empty() { return Err("Asset ID is required".to_string()); }
+    serde_json::from_str::<Value>(&contents).map_err(|error| format!("Prompt package is not valid JSON: {error}"))?;
+    let path = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Prompts").join(format!("{safe_id}.json"));
+    write_atomic(path.clone(), contents)?;
+    if !path.is_file() || fs::metadata(&path).map_err(|error| error.to_string())?.len() == 0 { return Err("Prompt package was not written".to_string()); }
+    Ok(path.to_string_lossy().to_string())
+}
+
 fn credential(provider: &str) -> Result<keyring::Entry, String> {
     if !matches!(provider, "kie" | "fal" | "openai" | "google" | "openrouter") {
         return Err("Unsupported provider".to_string());
@@ -244,7 +255,7 @@ fn export_production_package(app: tauri::AppHandle, package_name: String, manife
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package])
+        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package])
         .run(tauri::generate_context!())
         .expect("failed to run Production Guy");
 }
