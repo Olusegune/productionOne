@@ -1,7 +1,18 @@
 import { demoGraph } from '../domain/demoGraph'
 import type { ProductionGraph } from '../domain/productionGraph'
+import type { AnalysisResult, GenerationJob, ShotRecord, VideoModel } from '../domain/productionStudio'
 
 const KEY = 'production-guy:project:v1'
+const STUDIO_KEY = 'production-guy:studio:v1'
+
+export interface StudioState {
+  script: string
+  analysis: AnalysisResult
+  shots: ShotRecord[]
+  jobs: GenerationJob[]
+  storyboardsEnabled: boolean
+  model: VideoModel
+}
 
 export const projectStore = {
   loadLocal(): ProductionGraph {
@@ -34,4 +45,24 @@ export const projectStore = {
     }
   },
   clear() { localStorage.removeItem(KEY) },
+}
+
+export const studioStore = {
+  async load(): Promise<StudioState | null> {
+    let saved: string | null = localStorage.getItem(STUDIO_KEY)
+    if ('__TAURI_INTERNALS__' in window) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      saved = await invoke<string | null>('load_studio') ?? saved
+    }
+    if (!saved) return null
+    try { return JSON.parse(saved) as StudioState } catch { return null }
+  },
+  async save(state: StudioState) {
+    const serialized = JSON.stringify(state)
+    localStorage.setItem(STUDIO_KEY, serialized)
+    if ('__TAURI_INTERNALS__' in window) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('save_studio', { contents: serialized })
+    }
+  },
 }
