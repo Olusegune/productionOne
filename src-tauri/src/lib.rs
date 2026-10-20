@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 use serde::Serialize;
 use image::{GenericImageView, ImageBuffer, Rgba};
 use font8x8::UnicodeFonts;
+use std::io::{Read, Write};
 
 const CREDENTIAL_SERVICE: &str = "Production Guy";
 
@@ -150,10 +151,43 @@ fn label_image(input_path: String, output_path: String, title: String, metadata:
     inspect_image_file(std::path::Path::new(&output_path))
 }
 
+fn safe_package_name(value: &str) -> String {
+    let cleaned: String = value.chars().map(|character| if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') { character } else { '_' }).collect();
+    cleaned.trim_matches('_').to_string()
+}
+
+#[tauri::command]
+fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, prompt: String, reference_paths: Vec<String>) -> Result<String, String> {
+    let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Exports");
+    fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
+    let safe_name = safe_package_name(&package_name);
+    if safe_name.is_empty() { return Err("Package name is required".to_string()); }
+    let output_path = export_dir.join(format!("{safe_name}.zip"));
+    let file = fs::File::create(&output_path).map_err(|error| error.to_string())?;
+    let mut archive = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    archive.start_file("manifest.json", options).map_err(|error| error.to_string())?;
+    archive.write_all(manifest.as_bytes()).map_err(|error| error.to_string())?;
+    archive.start_file("shot-prompt.txt", options).map_err(|error| error.to_string())?;
+    archive.write_all(prompt.as_bytes()).map_err(|error| error.to_string())?;
+    for (index, source_path) in reference_paths.iter().enumerate() {
+        let path = std::path::Path::new(source_path);
+        if !path.is_file() { continue; }
+        let original_name = path.file_name().and_then(|name| name.to_str()).unwrap_or("reference.bin");
+        let archive_name = format!("references/{:02}_{}", index + 1, safe_package_name(original_name));
+        archive.start_file(archive_name, options).map_err(|error| error.to_string())?;
+        let mut source = fs::File::open(path).map_err(|error| error.to_string())?;
+        let mut buffer = Vec::new(); source.read_to_end(&mut buffer).map_err(|error| error.to_string())?;
+        archive.write_all(&buffer).map_err(|error| error.to_string())?;
+    }
+    archive.finish().map_err(|error| error.to_string())?;
+    Ok(output_path.to_string_lossy().to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image])
+        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, export_production_package])
         .run(tauri::generate_context!())
         .expect("failed to run Production Guy");
 }
@@ -180,5 +214,11 @@ mod tests {
         let mut canvas = image::ImageBuffer::from_pixel(160, 40, image::Rgba([17, 20, 24, 255]));
         super::draw_label_text(&mut canvas, "CHAR-001", 2, 2, 2);
         assert!(canvas.pixels().any(|pixel| pixel.0 == [233, 237, 240, 255]));
+    }
+
+
+    #[test]
+    fn package_names_cannot_escape_export_directory() {
+        assert_eq!(super::safe_package_name("../Scene 08: Final"), "Scene_08__Final");
     }
 }
