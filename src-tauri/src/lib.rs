@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use image::{GenericImageView, ImageBuffer, Rgba};
 use font8x8::UnicodeFonts;
 use std::io::{Read, Write};
+use base64::Engine;
 
 const CREDENTIAL_SERVICE: &str = "Production Guy";
 
@@ -113,6 +114,29 @@ async fn kie_query_task(task_id: String) -> Result<Value, String> {
     let body: Value = response.json().await.map_err(|error| error.to_string())?;
     if !status.is_success() { return Err(format!("KIE status request failed ({status})")); }
     Ok(body)
+}
+
+async fn request_openai_image(endpoint: &str, api_key: &str, model: &str, prompt: &str, size: &str, quality: &str) -> Result<Vec<u8>, String> {
+    if prompt.trim().is_empty() { return Err("Prompt is required".to_string()); }
+    if !matches!(size, "1024x1024" | "1536x1024" | "1024x1536" | "auto") { return Err("Unsupported image size".to_string()); }
+    if !matches!(quality, "low" | "medium" | "high" | "auto") { return Err("Unsupported image quality".to_string()); }
+    let response = reqwest::Client::new().post(endpoint).bearer_auth(api_key).json(&json!({"model":model,"prompt":prompt,"size":size,"quality":quality,"output_format":"png"})).send().await.map_err(|error| error.to_string())?;
+    let status = response.status();
+    let body:Value=response.json().await.map_err(|error| error.to_string())?;
+    if !status.is_success(){return Err(format!("OpenAI image request failed ({status}): {}",body.get("error").and_then(|value|value.get("message")).and_then(Value::as_str).unwrap_or("unknown error")))}
+    let encoded=body.get("data").and_then(Value::as_array).and_then(|data|data.first()).and_then(|item|item.get("b64_json")).and_then(Value::as_str).ok_or_else(||"OpenAI response did not contain image bytes".to_string())?;
+    base64::engine::general_purpose::STANDARD.decode(encoded).map_err(|error|format!("OpenAI image payload was invalid: {error}"))
+}
+
+#[tauri::command]
+async fn openai_generate_image(app: tauri::AppHandle, model: String, prompt: String, size: String, quality: String, output_name: String) -> Result<ImportedAsset, String> {
+    if !matches!(model.as_str(), "gpt-image-1.5" | "gpt-image-1" | "gpt-image-1-mini") { return Err("Unsupported OpenAI image model".to_string()); }
+    let api_key=credential("openai")?.get_password().map_err(|_|"OpenAI credential is not configured".to_string())?;
+    let bytes=request_openai_image("https://api.openai.com/v1/images/generations",&api_key,&model,&prompt,&size,&quality).await?;
+    let output_dir=app.path().app_data_dir().map_err(|error|error.to_string())?.join("assets");fs::create_dir_all(&output_dir).map_err(|error|error.to_string())?;
+    let name=safe_package_name(&output_name);if name.is_empty(){return Err("Output name is required".to_string())}
+    let path=output_dir.join(format!("{name}.png"));fs::write(&path,bytes).map_err(|error|error.to_string())?;
+    let inspection=inspect_image_file(&path)?;Ok(ImportedAsset{path:path.to_string_lossy().to_string(),inspection})
 }
 
 #[derive(Serialize)]
@@ -277,7 +301,7 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package])
+        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package])
         .run(tauri::generate_context!())
         .expect("failed to run Production Guy");
 }
@@ -317,6 +341,26 @@ mod tests {
         let result = tauri::async_runtime::block_on(super::post_kie_task(&format!("http://{address}/createTask"), "test-key", "bytedance/seedance-2", "Slow push in", "16:9", 5, true)).unwrap();
         server.join().unwrap();
         assert_eq!(result["data"]["taskId"], "mock-task-1");
+    }
+
+    #[test]
+    fn openai_image_adapter_posts_authenticated_request_and_decodes_image() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0u8; 8192];
+            let length = stream.read(&mut request).unwrap();
+            let request = String::from_utf8_lossy(&request[..length]);
+            assert!(request.starts_with("POST /v1/images/generations HTTP/1.1"));
+            assert!(request.to_ascii_lowercase().contains("authorization: bearer openai-test-key"));
+            assert!(request.contains("gpt-image-1.5"));
+            let body = r#"{"data":[{"b64_json":"aW1hZ2UtYnl0ZXM="}]}"#;
+            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
+        });
+        let bytes = tauri::async_runtime::block_on(super::request_openai_image(&format!("http://{address}/v1/images/generations"), "openai-test-key", "gpt-image-1.5", "Character sheet", "1024x1024", "medium")).unwrap();
+        server.join().unwrap();
+        assert_eq!(bytes, b"image-bytes");
     }
 
 
