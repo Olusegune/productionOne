@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 use tauri::Manager;
 use serde_json::{json, Value};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use image::{GenericImageView, ImageBuffer, Rgba};
 use font8x8::UnicodeFonts;
 use std::io::{Read, Write};
@@ -184,6 +184,35 @@ fn safe_package_name(value: &str) -> String {
     cleaned.trim_matches('_').to_string()
 }
 
+#[derive(Deserialize)]
+struct PromptArchiveEntry { name: String, contents: String }
+
+#[tauri::command]
+fn export_prompt_archive(app: tauri::AppHandle, project_name: String, entries: Vec<PromptArchiveEntry>) -> Result<String, String> {
+    if entries.is_empty() { return Err("No prompts are available to export".to_string()); }
+    let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Exports");
+    fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
+    let project = safe_package_name(&project_name);
+    if project.is_empty() { return Err("Project name is required".to_string()); }
+    let output_path = export_dir.join(format!("{project}-prompts.zip"));
+    write_prompt_archive(&output_path, &entries)?;
+    Ok(output_path.to_string_lossy().to_string())
+}
+
+fn write_prompt_archive(output_path: &std::path::Path, entries: &[PromptArchiveEntry]) -> Result<(), String> {
+    let file = fs::File::create(&output_path).map_err(|error| error.to_string())?;
+    let mut archive = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    for entry in entries {
+        let name = safe_package_name(entry.name.trim_end_matches(".txt"));
+        if name.is_empty() { continue; }
+        archive.start_file(format!("prompts/{name}.txt"), options).map_err(|error| error.to_string())?;
+        archive.write_all(entry.contents.as_bytes()).map_err(|error| error.to_string())?;
+    }
+    archive.finish().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, prompt: String, reference_paths: Vec<String>) -> Result<String, String> {
     let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Exports");
@@ -215,7 +244,7 @@ fn export_production_package(app: tauri::AppHandle, package_name: String, manife
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, import_labeled_asset, export_production_package])
+        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package])
         .run(tauri::generate_context!())
         .expect("failed to run Production Guy");
 }
@@ -269,5 +298,19 @@ mod tests {
     #[test]
     fn package_names_cannot_escape_export_directory() {
         assert_eq!(super::safe_package_name("../Scene 08: Final"), "Scene_08__Final");
+    }
+
+    #[test]
+    fn prompt_zip_contains_individual_plain_text_records() {
+        let path = std::env::temp_dir().join(format!("production-guy-prompts-{}.zip", std::process::id()));
+        let entries = vec![super::PromptArchiveEntry { name: "CHAR-001-universal.txt".into(), contents: "A plain production prompt".into() }];
+        super::write_prompt_archive(&path, &entries).unwrap();
+        let file = std::fs::File::open(&path).unwrap();
+        let mut archive = zip::ZipArchive::new(file).unwrap();
+        let mut prompt = String::new();
+        archive.by_name("prompts/CHAR-001-universal.txt").unwrap().read_to_string(&mut prompt).unwrap();
+        assert_eq!(prompt, "A plain production prompt");
+        drop(archive);
+        std::fs::remove_file(path).unwrap();
     }
 }

@@ -1,6 +1,7 @@
 import { demoGraph } from '../domain/demoGraph'
 import type { ProductionGraph } from '../domain/productionGraph'
 import type { AnalysisResult, GenerationJob, ShotRecord, VideoModel } from '../domain/productionStudio'
+import type { StyleBible } from '../domain/visualDevelopment'
 
 const KEY = 'production-guy:project:v1'
 const STUDIO_KEY = 'production-guy:studio:v1'
@@ -13,6 +14,7 @@ export interface StudioState {
   storyboardsEnabled: boolean
   model: VideoModel
   assetOutputs?: Record<string,string>
+  styleBible?: StyleBible
 }
 
 export const projectStore = {
