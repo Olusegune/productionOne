@@ -224,32 +224,54 @@ fn write_prompt_archive(output_path: &std::path::Path, entries: &[PromptArchiveE
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct ProductionPackageInput { manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String> }
+
 #[tauri::command]
-fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, prompt: String, reference_paths: Vec<String>) -> Result<String, String> {
+fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>) -> Result<String, String> {
     let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Exports");
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
     let safe_name = safe_package_name(&package_name);
     if safe_name.is_empty() { return Err("Package name is required".to_string()); }
     let output_path = export_dir.join(format!("{safe_name}.zip"));
+    let input = ProductionPackageInput { manifest, asset_ledger_csv, style_bible, model_usage, prompt, reference_paths };
+    write_production_package(&output_path, &input)?;
+    Ok(output_path.to_string_lossy().to_string())
+}
+
+fn write_production_package(output_path: &std::path::Path, input: &ProductionPackageInput) -> Result<(), String> {
+    serde_json::from_str::<Value>(&input.manifest).map_err(|error| format!("Asset manifest is invalid: {error}"))?;
+    serde_json::from_str::<Value>(&input.style_bible).map_err(|error| format!("Style Bible is invalid: {error}"))?;
+    serde_json::from_str::<Value>(&input.model_usage).map_err(|error| format!("Model usage record is invalid: {error}"))?;
     let file = fs::File::create(&output_path).map_err(|error| error.to_string())?;
     let mut archive = zip::ZipWriter::new(file);
     let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
-    archive.start_file("manifest.json", options).map_err(|error| error.to_string())?;
-    archive.write_all(manifest.as_bytes()).map_err(|error| error.to_string())?;
-    archive.start_file("shot-prompt.txt", options).map_err(|error| error.to_string())?;
-    archive.write_all(prompt.as_bytes()).map_err(|error| error.to_string())?;
-    for (index, source_path) in reference_paths.iter().enumerate() {
+    for directory in ["Project Bible/","Characters/","Expressions/","Poses/","Wardrobe/","Props/","Environments/","Vehicles and Creatures/","Lighting and FX/","Choreography/","Style References/","Prompts/","Manifests/","Approved References/"] { archive.add_directory(directory, options).map_err(|error| error.to_string())?; }
+    let files = [
+        ("Manifests/asset_manifest.json", input.manifest.as_str()),
+        ("Manifests/asset_ledger.csv", input.asset_ledger_csv.as_str()),
+        ("Project Bible/style_bible.json", input.style_bible.as_str()),
+        ("Manifests/model_usage.json", input.model_usage.as_str()),
+        ("Prompts/shot-prompt.txt", input.prompt.as_str()),
+        ("production_readme.md", "# Production Guy Package\n\nOriginal-resolution approved references, production metadata, and model-aware prompts. IDs remain stable across revisions.\n"),
+    ];
+    for (name, contents) in files { archive.start_file(name, options).map_err(|error| error.to_string())?; archive.write_all(contents.as_bytes()).map_err(|error| error.to_string())?; }
+    for (index, source_path) in input.reference_paths.iter().enumerate() {
         let path = std::path::Path::new(source_path);
         if !path.is_file() { continue; }
-        let original_name = path.file_name().and_then(|name| name.to_str()).unwrap_or("reference.bin");
-        let archive_name = format!("references/{:02}_{}", index + 1, safe_package_name(original_name));
+        let extension = path.extension().and_then(|value| value.to_str()).unwrap_or("bin");
+        let stem = path.file_stem().and_then(|value| value.to_str()).unwrap_or("reference");
+        let archive_name = format!("Approved References/{:02}_{}.{}", index + 1, safe_package_name(stem), extension);
         archive.start_file(archive_name, options).map_err(|error| error.to_string())?;
         let mut source = fs::File::open(path).map_err(|error| error.to_string())?;
         let mut buffer = Vec::new(); source.read_to_end(&mut buffer).map_err(|error| error.to_string())?;
         archive.write_all(&buffer).map_err(|error| error.to_string())?;
     }
     archive.finish().map_err(|error| error.to_string())?;
-    Ok(output_path.to_string_lossy().to_string())
+    let file = fs::File::open(output_path).map_err(|error| error.to_string())?;
+    let mut validation = zip::ZipArchive::new(file).map_err(|error| format!("Package validation failed: {error}"))?;
+    for required in ["Manifests/asset_manifest.json","Manifests/asset_ledger.csv","Project Bible/style_bible.json","Manifests/model_usage.json","Prompts/shot-prompt.txt","production_readme.md"] { validation.by_name(required).map_err(|_| format!("Package validation failed: missing {required}"))?; }
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -321,6 +343,20 @@ mod tests {
         let mut prompt = String::new();
         archive.by_name("prompts/CHAR-001-universal.txt").unwrap().read_to_string(&mut prompt).unwrap();
         assert_eq!(prompt, "A plain production prompt");
+        drop(archive);
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn production_zip_is_validated_and_contains_interchange_records() {
+        let path = std::env::temp_dir().join(format!("production-guy-package-{}.zip", std::process::id()));
+        let input = super::ProductionPackageInput { manifest: "{\"format\":\"production-guy-package\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![] };
+        super::write_production_package(&path, &input).unwrap();
+        let file = std::fs::File::open(&path).unwrap();
+        let mut archive = zip::ZipArchive::new(file).unwrap();
+        assert!(archive.by_name("Manifests/asset_manifest.json").is_ok());
+        assert!(archive.by_name("Project Bible/style_bible.json").is_ok());
+        assert!(archive.by_name("production_readme.md").is_ok());
         drop(archive);
         std::fs::remove_file(path).unwrap();
     }
