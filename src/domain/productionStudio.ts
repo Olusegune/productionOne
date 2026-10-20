@@ -115,13 +115,13 @@ export interface ShotRecord {
   storyboardStatus: 'planned' | 'generated' | 'approved' | 'waived'
 }
 
-export type VideoModel = 'Seedance 2.0' | 'Kling 2.0' | 'Veo 3'
-export interface VideoPreset { model: VideoModel; aspectRatios: string[]; maxReferences: number; supportsAudio: boolean; supportsFirstLastFrame: boolean; verified: boolean }
+export type VideoModel = 'Seedance 2.0' | 'Kling 3.0' | 'Veo 3.1'
+export interface VideoPreset { model: VideoModel; apiModel: string; aspectRatios: string[]; maxReferences: number; supportsAudio: boolean; supportsFirstLastFrame: boolean; verified: boolean; verifiedAt: string; documentationUrl: string; note: string }
 
 export const videoPresets: Record<VideoModel, VideoPreset> = {
-  'Seedance 2.0': { model: 'Seedance 2.0', aspectRatios: ['16:9', '9:16', '1:1'], maxReferences: 10, supportsAudio: true, supportsFirstLastFrame: true, verified: false },
-  'Kling 2.0': { model: 'Kling 2.0', aspectRatios: ['16:9', '9:16', '1:1'], maxReferences: 4, supportsAudio: false, supportsFirstLastFrame: true, verified: false },
-  'Veo 3': { model: 'Veo 3', aspectRatios: ['16:9', '9:16'], maxReferences: 3, supportsAudio: true, supportsFirstLastFrame: true, verified: false },
+  'Seedance 2.0': { model:'Seedance 2.0',apiModel:'bytedance/seedance-2',aspectRatios:['16:9','9:16','1:1'],maxReferences:9,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/bytedance/seedance-2',note:'First/last-frame and multimodal-reference modes are mutually exclusive.' },
+  'Kling 3.0': { model:'Kling 3.0',apiModel:'kling-3.0',aspectRatios:['16:9','9:16','1:1'],maxReferences:4,supportsAudio:true,supportsFirstLastFrame:true,verified:false,verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/kling/kling-3-0',note:'Preset remains export-only until exact endpoint limits pass a credentialed acceptance test.' },
+  'Veo 3.1': { model:'Veo 3.1',apiModel:'veo-3.1-generate-preview',aspectRatios:['16:9','9:16'],maxReferences:3,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-10-20',documentationUrl:'https://ai.google.dev/gemini-api/docs/video',note:'Preview API is scheduled for shutdown on 2026-10-22; migrate direct generation to Gemini Omni Flash.' },
 }
 
 export interface CompiledShotPackage { shotId: string; model: VideoModel; prompt: string; references: string[]; warnings: string[]; manifest: Record<string, unknown> }

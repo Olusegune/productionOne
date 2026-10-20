@@ -12,10 +12,10 @@ describe('release production pipeline', () => {
   })
   it('compiles portable prompts without asking the model to draw labels', () => expect(compileAssetPrompt({id:'A',name:'Amina',type:'character',sceneIds:['S'],status:'planned'},'cinematic realism').universal).toContain('no embedded text'))
   it('compiles model-aware shot packages and reports unverified limits', () => {
-    const result = compileShotPackage(shot, 'Kling 2.0', ['CHAR-AMINA-001'])
+    const result = compileShotPackage(shot, 'Kling 3.0', ['CHAR-AMINA-001'])
     expect(result.references).toEqual(['CHAR-AMINA-001'])
     expect(result.warnings.join(' ')).toContain('Missing references')
-    expect(result.warnings.join(' ')).toContain('postproduction')
+    expect(result.warnings.join(' ')).toContain('verification')
   })
   it('does not report production ready with unapproved assets', () => expect(coverageAudit([{id:'A',name:'A',type:'prop',sceneIds:['S'],status:'planned'}], [shot]).ready).toBe(false))
 })
