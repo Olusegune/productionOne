@@ -39,6 +39,7 @@ import { detectStoryVariants, type SheetType, type StyleBible } from "../domain/
 import { characterArcs, expressionPlan } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 import { ModelPicker } from "./ModelPicker";
+import { readModelChoice, writeModelChoice } from "../data/modelChoice";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 
 const providers = providerOrder;
@@ -97,8 +98,8 @@ export function SheetStudio(props: {
   const [sheetType, setSheetType] = useState<SheetType>("Turnaround");
   const [intensity, setIntensity] = useState<Intensity>("moderate");
   const [notes, setNotes] = useState("");
-  const [provider, setProvider] = useState<ProviderKey>("google");
-  const [modelId, setModelId] = useState("gemini-nano-banana-2.1");
+  const [provider, setProvider] = useState<ProviderKey>(() => readModelChoice().provider);
+  const [modelId, setModelId] = useState(() => readModelChoice().modelId);
   const startModel: Record<ProviderKey, string> = { kie: "google/nanobanana-2-1", google: "gemini-nano-banana-2.1", openai: "gpt-image-1.5", openrouter: "bytedance-seed/seedream-4.5", fal: "fal-ai/flux/dev" };
   const switched = useRef(false);
   const [configured, setConfigured] = useState<Record<string, boolean>>({});
@@ -272,7 +273,7 @@ export function SheetStudio(props: {
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>{intensities.map((i) => <option key={i}>{i}</option>)}</select></label>
         )}
         <label className="ss-model"><span>Model</span>
-          <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={(p, id) => { setProvider(p); setModelId(id); }} onRefresh={() => void refreshModels()} refreshing={refreshing} />
+          <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={(p, id) => { setProvider(p); setModelId(id); writeModelChoice(p, id); }} onRefresh={() => void refreshModels()} refreshing={refreshing} />
         </label>
       </div>
       {desktop && (

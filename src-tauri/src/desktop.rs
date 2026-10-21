@@ -133,6 +133,18 @@ pub fn save_project_path(app: tauri::AppHandle, path: String, contents: String) 
     Ok(path)
 }
 
+/// Saves a text export (shot list, prompts) where the person chooses. Returns the saved path, or None if cancelled.
+#[tauri::command]
+pub async fn save_text_dialog(app: tauri::AppHandle, suggested: String, contents: String, extension: String) -> Result<Option<String>, String> {
+    if !["csv", "md", "json", "txt"].contains(&extension.as_str()) { return Err("Unsupported export type".into()); }
+    let picked = app.dialog().file().set_title("Save").set_file_name(&suggested).add_filter("Export", &[extension.as_str()]).blocking_save_file();
+    let Some(file) = picked else { return Ok(None) };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    let path = if path.extension().map(|e| e.eq_ignore_ascii_case(&extension)).unwrap_or(false) { path } else { let mut n = path.into_os_string(); n.push(format!(".{extension}")); PathBuf::from(n) };
+    fs::write(&path, contents).map_err(|e| format!("Could not save: {e}"))?;
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
 #[tauri::command]
 pub fn recent_projects(app: tauri::AppHandle) -> Vec<String> {
     read_recents(&app).into_iter().filter(|path| Path::new(path).exists()).collect()

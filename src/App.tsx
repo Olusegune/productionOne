@@ -67,10 +67,12 @@ import "./inventory.css";
 import "./production-one.css";
 import "./studio-shell.css";
 import "./theme.css";
+import "./director.css";
 import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";
 import { MotionDemo } from "./components/MotionDemo";
+import { DirectRoom } from "./components/DirectRoom";
 import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { ReadingPanel } from "./components/ReadingPanel";
@@ -1079,6 +1081,7 @@ export default function App() {
   const onSheetApproved = (job: ImageJob, primary: boolean) => {
     if (!job.outputPath) return;
     const path = job.outputPath;
+    if (job.sheetType === "Storyboard") return;
     setAssetOutputs((current) => (primary || !current[job.assetId] ? { ...current, [job.assetId]: path } : current));
     if (primary) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (a.id === job.assetId ? { ...a, status: "approved" } : a)) }));
   };
@@ -1597,6 +1600,26 @@ export default function App() {
           </div>
         )}
         {workspace === "Direct" && (
+          <div className="dr-wrap">
+            <DirectRoom
+              analysis={analysis}
+              shots={shots}
+              setShots={(u) => setShots(u)}
+              queue={queue}
+              setQueue={setQueue}
+              style={styleBible}
+              assetRefs={assetRefs}
+              desktop={isTauri}
+              providersVersion={Number(providersOpen)}
+              enabled={storyboardsEnabled}
+              setEnabled={setStoryboardsEnabled}
+              title={title}
+              notify={setNotice}
+              openProviders={() => setProvidersOpen(true)}
+            />
+            {storyboardsEnabled && (
+              <details className="po-classic">
+                <summary>Classic shot editor and video prompt compiler</summary>
           <section className="studio-page legacy-ui">
             <div className="optional-banner">
               <div>
@@ -1748,6 +1771,9 @@ export default function App() {
               </div>
             )}
           </section>
+              </details>
+            )}
+          </div>
         )}
         {workspace === "Deliver" && (
           <section className="three-column studio-page legacy-ui">

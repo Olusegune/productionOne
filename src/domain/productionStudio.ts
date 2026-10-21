@@ -1,4 +1,5 @@
 import { parseStory, type ParsedStory } from '../engine/story'
+import type { CameraAngle, Coverage, Movement, ScreenDir, ShotSize } from './direct'
 
 export type AssetType = 'character' | 'costume' | 'prop' | 'set' | 'environment'
 
@@ -103,6 +104,22 @@ export interface ShotRecord {
   music: string
   transition: string
   storyboardStatus: 'planned' | 'generated' | 'approved' | 'waived'
+  /** Director's-room fields. Optional so projects from earlier versions and the classic editor keep working. */
+  title?: string
+  coverage?: Coverage
+  size?: ShotSize
+  angle?: CameraAngle
+  lens?: number
+  movement?: Movement
+  composition?: string[]
+  screenDir?: ScreenDir
+  focusAssetId?: string
+  setAssetId?: string
+  /** The look (costume or age variant) each character wears in this shot, by asset id. */
+  looks?: Record<string, string>
+  emotion?: string
+  emotionIntensity?: number
+  evidenceLine?: number
 }
 
 export function animaticDuration(shots: ShotRecord[]): number {

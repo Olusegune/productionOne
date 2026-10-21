@@ -76,14 +76,14 @@ const live: ImageJobStatus[] = ['pending', 'queued', 'generating', 'validating']
  * Adds jobs. A view that already has a live job or an approved/unrejected result is skipped (idempotent). A view whose last result was rejected or failed gets
  * a NEW revision, so earlier files and approvals are never replaced.
  */
-export function enqueue(state: QueueState, requests: JobRequest[], now = Date.now()): { state: QueueState; added: number; skipped: number } {
+export function enqueue(state: QueueState, requests: JobRequest[], now = Date.now(), force = false): { state: QueueState; added: number; skipped: number } {
   let jobs = state.jobs
   let added = 0
   let skipped = 0
   for (const request of requests) {
     const same = jobs.filter((j) => j.assetId === request.assetId && j.variant === request.variant && j.sheetType === request.sheetType && j.viewKey === request.viewKey)
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
-    if (latest && (live.includes(latest.status) || latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))) { skipped++; continue }
+    if (latest && (live.includes(latest.status) || (!force && (latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))))) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
     jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, createdAt: now, updatedAt: now }]
     added++
