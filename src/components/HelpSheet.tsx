@@ -80,7 +80,7 @@ const copy: Record<HelpTopic, { title: string; body: React.ReactElement }> = {
     body: (
       <>
         <div className="about-mark"><BrandMark size={72} /></div>
-        <p><b>Production One</b> {`0.9.1`}</p>
+        <p><b>Production One</b> {`0.10.0`}</p>
         <p>Your AI Production Department. A Windows studio for scripts, references, shots and production packages.</p>
         <p>Continues the Production Guy codebase; legacy Production Guy projects remain supported.</p>
       </>

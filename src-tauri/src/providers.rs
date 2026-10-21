@@ -79,6 +79,23 @@ pub fn extract_openai(body: &Value) -> Result<Vec<u8>, String> {
     ENGINE.decode(encoded).map_err(|error| format!("OpenAI image payload was invalid: {error}"))
 }
 
+/// Gemini image models (Nano Banana 2.1 and the Gemini 3 family) are called through the interactions endpoint, the shape FilmCrafter runs against Google.
+pub fn uses_interactions(model: &str) -> bool { model.starts_with("gemini-nano-banana") || model.starts_with("gemini-3") }
+
+pub fn interactions_body(model: &str, prompt: &str, aspect: &str, references: &[(String, String)]) -> Value {
+    let mut input = vec![json!({ "type": "text", "text": prompt })];
+    for (mime, data) in references { input.push(json!({ "type": "image", "mime_type": mime, "data": data })); }
+    json!({ "model": model, "input": input, "response_format": { "type": "image", "mime_type": "image/png", "aspect_ratio": aspect } })
+}
+
+pub fn extract_interactions(body: &Value) -> Result<Vec<u8>, String> {
+    let it = if body["interaction"].is_null() { body } else { &body["interaction"] };
+    let direct = it["output_image"]["data"].as_str();
+    let stepped = it["steps"].as_array().and_then(|steps| steps.iter().flat_map(|s| s["content"].as_array().cloned().unwrap_or_default()).find(|c| c["type"] == "image" && c["data"].is_string()).and_then(|c| c["data"].as_str().map(str::to_string)));
+    let data = direct.map(str::to_string).or(stepped).ok_or("Google returned no image (it may have been blocked by safety filters)")?;
+    ENGINE.decode(data).map_err(|error| format!("Gemini image payload was invalid: {error}"))
+}
+
 pub fn extract_gemini(body: &Value) -> Result<Vec<u8>, String> {
     let parts = body["candidates"][0]["content"]["parts"].as_array().ok_or_else(|| {
         let reason = body["promptFeedback"]["blockReason"].as_str().or_else(|| body["candidates"][0]["finishReason"].as_str()).unwrap_or("no candidates");
@@ -159,10 +176,20 @@ pub async fn generate_image(app: tauri::AppHandle, provider: String, model: Stri
             let body = send_json(http.post("https://api.openai.com/v1/images/generations").bearer_auth(&api_key).json(&openai_body(&model, &prompt, &aspect, &quality)?), "OpenAI").await?;
             extract_openai(&body)?
         }
+        "google" if uses_interactions(&model) => {
+            let body = send_json(http.post("https://generativelanguage.googleapis.com/v1beta/interactions").header("x-goog-api-key", &api_key).json(&interactions_body(&model, &prompt, &aspect, &refs)), "Google Gemini").await?;
+            extract_interactions(&body)?
+        }
         "google" => {
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent");
             let body = send_json(http.post(url).header("x-goog-api-key", &api_key).json(&gemini_body(&prompt, &aspect, &refs)), "Google Gemini").await?;
             extract_gemini(&body)?
+        }
+        "kie" => {
+            let named: Vec<(String, String, String)> = refs.iter().zip(references.iter()).map(|((mime, data), path)| (mime.clone(), data.clone(), Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "reference.png".into()))).collect();
+            let file = super::kie::run(&api_key, &model, &prompt, &aspect, &named, None, 300).await?;
+            if file.extension == "mp4" || file.extension == "webm" { return Err("This Kie model returned a video, not an image. Choose an image model.".into()); }
+            file.bytes
         }
         "openrouter" => {
             let body = send_json(http.post("https://openrouter.ai/api/v1/chat/completions").bearer_auth(&api_key).json(&openrouter_body(&model, &prompt, &aspect, &refs)), "OpenRouter").await?;
@@ -195,7 +222,7 @@ pub async fn generate_image(app: tauri::AppHandle, provider: String, model: Stri
 }
 
 #[derive(Serialize, serde::Deserialize, Clone)]
-pub struct DiscoveredModel { id: String, name: String }
+pub struct DiscoveredModel { pub id: String, pub name: String }
 
 fn catalog_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path().app_data_dir().map(|dir| dir.join("model-catalog.json")).map_err(|error| error.to_string())
@@ -221,6 +248,50 @@ pub fn parse_models(provider: &str, body: &Value) -> Vec<DiscoveredModel> {
     found
 }
 
+async fn kie_index(kind: &str) -> Result<Vec<DiscoveredModel>, String> {
+    let text = client()?.get("https://docs.kie.ai/llms.txt").send().await.map_err(|e| format!("Could not reach Kie's model index: {}", e.without_url()))?.text().await.map_err(|e| e.to_string())?;
+    let models = super::kie::parse_index(&text, kind);
+    if models.is_empty() { return Err("Kie's published index listed no models, so the saved catalog was left unchanged.".into()); }
+    Ok(models)
+}
+
+fn save_catalog(app: &tauri::AppHandle, key: &str, models: &[DiscoveredModel]) -> Result<Value, String> {
+    let path = catalog_path(app)?;
+    let mut catalog: Value = fs::read_to_string(&path).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_else(|| json!({}));
+    let fetched_at = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    catalog[key] = json!({ "fetchedAt": fetched_at, "models": models });
+    if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+    fs::write(&path, serde_json::to_string(&catalog).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    Ok(catalog)
+}
+
+/// Kie publishes its whole model index without a key: every image model (and the video models usable for a demo) is listed from it.
+#[tauri::command]
+pub async fn kie_models(app: tauri::AppHandle) -> Result<Value, String> {
+    let images = kie_index("image").await?;
+    let mut catalog = save_catalog(&app, "kie", &images)?;
+    if let Ok(videos) = kie_index("video").await { catalog = save_catalog(&app, "kie-video", &videos)?; }
+    Ok(catalog)
+}
+
+/// Makes a short motion clip (turnaround, walk, pose) from an approved reference image with a Kie.ai video model. The file is saved in the assets folder as received.
+#[tauri::command]
+pub async fn generate_video(app: tauri::AppHandle, model: String, prompt: String, aspect: String, reference: String, output_name: String, duration: u32) -> Result<String, String> {
+    if prompt.trim().is_empty() { return Err("Prompt is required".into()); }
+    let stem = safe_package_name(&output_name);
+    if stem.is_empty() { return Err("Output name is required".into()); }
+    let api_key = key_for("kie")?;
+    let (mime, data) = image_data_url(&reference)?;
+    let name = Path::new(&reference).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "reference.png".into());
+    let file = super::kie::run(&api_key, &model, &prompt, &aspect, &[(mime, data, name)], Some(duration), 900).await?;
+    if file.extension != "mp4" && file.extension != "webm" { return Err("Kie.ai returned an image, not a video. Choose a video model.".into()); }
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = unique_path(&dir, &stem, file.extension);
+    fs::write(&path, &file.bytes).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 /// Reads the provider's own model list (where it has one) and keeps it beside the app's built-in catalog. A failure changes nothing.
 #[tauri::command]
 pub async fn discover_models(app: tauri::AppHandle, provider: String) -> Result<Value, String> {
@@ -229,6 +300,7 @@ pub async fn discover_models(app: tauri::AppHandle, provider: String) -> Result<
         "openrouter" => send_json(http.get("https://openrouter.ai/api/v1/models?output_modalities=image").bearer_auth(key_for("openrouter")?), "OpenRouter").await?,
         "openai" => send_json(http.get("https://api.openai.com/v1/models").bearer_auth(key_for("openai")?), "OpenAI").await?,
         "google" => send_json(http.get("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200").header("x-goog-api-key", key_for("google")?), "Google").await?,
+        "kie" => { let models = kie_index("image").await?; return save_catalog(&app, "kie", &models); }
         _ => return Err("This provider does not publish a model list this app can read. The built-in catalog is used.".into()),
     };
     let models = parse_models(&provider, &body);
@@ -338,6 +410,18 @@ mod tests {
         let url = format!("data:image/png;base64,{png}");
         assert!(extract_openrouter(&json!({"choices":[{"message":{"images":[{"image_url":{"url": url}}]}}]})).is_ok());
         assert!(extract_openrouter(&json!({"choices":[{"message":{}}]})).is_err());
+    }
+
+    #[test]
+    fn calls_gemini_three_models_through_interactions_and_reads_either_response_shape() {
+        assert!(uses_interactions("gemini-nano-banana-2.1") && uses_interactions("gemini-3-pro-image") && !uses_interactions("gemini-2.5-flash-image"));
+        let body = interactions_body("gemini-nano-banana-2.1", "p", "3:4", &[("image/png".to_string(), "QUJD".to_string())]);
+        assert_eq!(body["input"][1]["type"], "image");
+        assert_eq!(body["response_format"]["aspect_ratio"], "3:4");
+        let png = ENGINE.encode([137u8, 80, 78, 71]);
+        assert!(extract_interactions(&json!({"interaction":{"output_image":{"data": png}}})).is_ok());
+        assert!(extract_interactions(&json!({"steps":[{"content":[{"type":"image","data": png}]}]})).is_ok());
+        assert!(extract_interactions(&json!({})).is_err());
     }
 
     #[test]

@@ -69,6 +69,8 @@ import "./studio-shell.css";
 import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";
+import { MotionDemo } from "./components/MotionDemo";
+import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { ReadingPanel } from "./components/ReadingPanel";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
@@ -176,7 +178,9 @@ export default function App() {
     [sidebarHidden, setSidebarHidden] = useState(false),
     [settingsOpen, setSettingsOpen] = useState(false),
     [queue, setQueueState] = useState<QueueState>(emptyQueue),
-    [paletteOpen, setPaletteOpen] = useState(false);
+    [paletteOpen, setPaletteOpen] = useState(false),
+    [clips, setClipsState] = useState<DemoClip[]>([]);
+  const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const scriptArea = useRef<HTMLTextAreaElement>(null),
     studioControl = useRef<{ generateFirst: () => void } | null>(null);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
@@ -197,8 +201,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -265,6 +269,7 @@ export default function App() {
         if (studio) {
           setTitle(studio.title ?? "The Last Horizon");
           setQueueState(recover(studio.queue ?? emptyQueue()));
+          setClipsState(studio.clips ?? []);
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -914,6 +919,7 @@ export default function App() {
     setStyleBible(s.styleBible ?? defaultStyleBible);
     setGraph(file.graph);
     setQueueState(recover(s.queue ?? emptyQueue()));
+    setClipsState(s.clips ?? []);
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1333,6 +1339,16 @@ export default function App() {
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
               controlRef={studioControl}
+            />
+            <MotionDemo
+              asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
+              queue={queue}
+              clips={clips}
+              setClips={setClips}
+              style={styleBible}
+              desktop={isTauri}
+              notify={setNotice}
+              openProviders={() => setProvidersOpen(true)}
             />
             <details className="po-classic">
             <summary>Prompt Studio, model hub, imports and quality tools</summary>

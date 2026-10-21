@@ -1,4 +1,5 @@
 import type { QueueState } from '../domain/generationQueue'
+import type { DemoClip } from '../domain/demoClips'
 import { demoGraph } from '../domain/demoGraph'
 import type { ProductionGraph } from '../domain/productionGraph'
 import type { AnalysisResult, GenerationJob, ShotRecord, VideoModel } from '../domain/productionStudio'
@@ -18,6 +19,7 @@ export interface StudioState {
   styleBible?: StyleBible
   title?: string
   queue?: QueueState
+  clips?: DemoClip[]
 }
 
 export const projectStore = {

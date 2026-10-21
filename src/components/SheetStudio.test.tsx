@@ -14,6 +14,7 @@ vi.mock('@tauri-apps/api/core', () => ({
     calls.push({ name, args })
     if (name === 'credential_status') return true
     if (name === 'model_catalog') return {}
+    if (name === 'kie_models') return { kie: { fetchedAt: Date.now() / 1000, models: [] } }
     if (name === 'generate_image') return { path: 'C:/a.png', inspection: { width: 1024, height: 1536, warnings: [] } }
     if (name === 'qa_image') return { notes: [] }
     if (name === 'image_preview') return 'data:image/jpeg;base64,AAAA'

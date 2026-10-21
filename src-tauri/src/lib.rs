@@ -1,5 +1,6 @@
 mod desktop;
 mod providers;
+mod kie;
 use std::{fs, path::PathBuf};
 use tauri::Manager;
 use serde_json::{json, Value};
@@ -324,7 +325,7 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, providers::generate_image, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, providers::generate_image, providers::generate_video, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }
