@@ -81,3 +81,23 @@
 .an-strip button.on { background: rgba(217, 189, 134, .7); }
 .an-strip button span.has { background: rgba(135, 191, 166, .55); border-radius: 4px; }
 @media (max-width: 1360px) { .dr-grid { grid-template-columns: 200px minmax(0, 1fr); } .dr-inspector { grid-column: 1 / -1; position: static; max-height: none; grid-template-columns: repeat(2, 1fr); } }
+
+.po-cap-note { font-size: 13px; color: #ebcba4; margin-right: 12px; white-space: nowrap; }
+.po-cap-note button { all: unset; cursor: pointer; color: var(--gold-2); text-decoration: underline; text-underline-offset: 3px; margin-left: 6px; }
+
+/* Visual style card */
+.ad { padding: 18px 22px; border-radius: var(--radius); background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .02)); border: 1px solid var(--stroke); box-shadow: var(--shadow); display: grid; gap: 14px; margin-bottom: 4px; }
+.ad-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--gold); }
+.ad-name { display: grid; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.ad-name span { font-size: 13px; color: var(--text-3); }
+.ad-name input { height: 36px !important; border: 0 !important; background: transparent !important; padding: 0 !important; font: 500 24px var(--display) !important; color: var(--text) !important; box-shadow: none !important; }
+.ad-palette { display: flex; gap: 8px; }
+.ad-palette input { width: 30px !important; height: 30px !important; padding: 0 !important; border-radius: 99px !important; border: 2px solid var(--stroke-strong) !important; background: none !important; overflow: hidden; cursor: pointer; }
+.ad-palette input::-webkit-color-swatch-wrapper { padding: 0; }
+.ad-palette input::-webkit-color-swatch { border: 0; border-radius: 99px; }
+.ad-lock.on { background: rgba(217, 189, 134, .16); border-color: rgba(217, 189, 134, .45); color: var(--gold-2); }
+.ad-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ad-fields label { display: grid; gap: 5px; min-width: 0; }
+.ad-fields span { font-size: 13px; color: var(--text-3); }
+.ad input:disabled { opacity: .7; }
+.lb-actions .primary kbd { color: #1a1408; border-color: rgba(26, 20, 8, .45); background: transparent; }

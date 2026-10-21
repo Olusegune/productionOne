@@ -68,10 +68,12 @@ h3 { font-size: 22px; }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
 
 /* Fields */
-select, input[type="text"], input:not([type]), input[inputmode], textarea {
+select, input[type="text"], input[type="number"], input:not([type]), input[inputmode], textarea {
   background: rgba(0, 0, 0, .28); border: 1px solid var(--stroke); border-radius: var(--radius-sm); color: var(--text); font-size: 15px; transition: border-color .2s, box-shadow .2s;
 }
-select, input:not([type="checkbox"]):not([type="file"]) { height: 42px; padding: 0 13px; }
+select, input:not([type="checkbox"]):not([type="file"]):not([type="range"]):not([type="color"]) { height: 42px; padding: 0 13px; }
+select { padding-right: 34px; text-overflow: ellipsis; }
+input[type="number"] { color-scheme: dark; }
 select:hover, input:hover { border-color: var(--stroke-strong); }
 select:focus, input:focus, textarea:focus { outline: none; border-color: rgba(217, 189, 134, .55); box-shadow: 0 0 0 4px rgba(217, 189, 134, .1); }
 input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
@@ -209,7 +211,8 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 .lb-zoom { min-width: 52px; text-align: center; font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .lb-stage { position: relative; overflow: hidden; display: grid; place-items: center; cursor: zoom-in; user-select: none; }
 .lb-stage.zoomed { cursor: grab; }
-.lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center; will-change: transform; box-shadow: 0 30px 90px rgba(0, 0, 0, .6); border-radius: 6px; }
+.lb-stage { min-height: 0; }
+.lb-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: center; will-change: transform; }
 .lb-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 64px; border-radius: 14px; background: rgba(10, 12, 15, .55); border: 1px solid var(--stroke); color: var(--text); display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(8px); }
 .lb-nav.prev { left: 18px; }
 .lb-nav.next { right: 18px; }

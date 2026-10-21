@@ -161,3 +161,11 @@ describe('images the person supplies', () => {
     expect(s.jobs.filter((j) => j.viewKey === 'front' && j.approved).map((j) => j.outputPath)).toEqual(['gen.png', 'C:/mine.png'])
   })
 })
+
+describe('legacy saved caps', () => {
+  it('never turns the guard on from an old saved ceiling', () => {
+    const old = { ...emptyQueue(), perImageUsd: 0.5, totalCeilingUsd: 2 } as Partial<QueueState> as QueueState
+    delete (old as Partial<QueueState>).guard
+    expect(recover(old).guard).toBe(false)
+  })
+})

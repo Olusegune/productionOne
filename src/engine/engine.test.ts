@@ -61,9 +61,11 @@ describe('story reader: other formats and edge cases', () => {
     expect(s.scenes[1].action.some((a) => a.text === 'CUT TO:')).toBe(false)
   })
   it('reads multi-line dialogue and ignores a title page before the first scene', () => {
-    const s = parseStory('Title: Test\nCredit: Someone\n\nINT. KITCHEN - DAY\n\nANNA\nFirst line,\nsecond line.\n\nShe leaves.')
+    const s = parseStory('Title: Test\nCredit: Someone\n\nA first draft, still rough.\n\nINT. KITCHEN - DAY\n\nANNA\nFirst line,\nsecond line.\n\nShe leaves.')
     expect(s.scenes[0].dialogue[0].text).toBe('First line, second line.')
     expect(s.warnings.join(' ')).toContain('before the first scene')
+    // A plain title page is normal and gets no warning.
+    expect(parseStory('Title: Test\nCredit: Someone\n\nINT. KITCHEN - DAY\n\nANNA\nHi.').warnings).toEqual([])
   })
   it('detects shot-list, lyrics and prose formats', () => {
     expect(detectFormat(['## SCENE 1: THE BAND', 'SHOT 01 - close on his hands'])).toBe('shotlist')

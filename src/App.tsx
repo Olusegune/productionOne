@@ -1085,6 +1085,12 @@ export default function App() {
     setAssetOutputs((current) => (primary || !current[job.assetId] ? { ...current, [job.assetId]: path } : current));
     if (primary) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (a.id === job.assetId ? { ...a, status: "approved" } : a)) }));
   };
+  // Messages fade on their own so a stale one never sits on screen.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 12000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   const golden = goldenPath(goldenInput);
   useEffect(() => {
     const index = golden.steps.findIndex((step) => step.state === "active");
@@ -1893,8 +1899,6 @@ export default function App() {
                   ? "Build production package"
                   : "Build clearly marked draft package"}
               </button>
-              <div className="generation-gate">
-              </div>
               <button
                 className="secondary full"
                 disabled={
@@ -1910,8 +1914,7 @@ export default function App() {
                   : "Generate directly with KIE"}
               </button>
               <p className="helper">
-                Requires the Windows build, configured KIE credential, Seedance
-                2.0, and a per-task ceiling.
+                Requires the Windows build, a saved KIE key and Seedance 2.0.
               </p>
             </div>
           </section>

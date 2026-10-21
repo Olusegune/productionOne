@@ -85,7 +85,7 @@ pub fn uses_interactions(model: &str) -> bool { model.starts_with("gemini-nano-b
 pub fn interactions_body(model: &str, prompt: &str, aspect: &str, references: &[(String, String)]) -> Value {
     let mut input = vec![json!({ "type": "text", "text": prompt })];
     for (mime, data) in references { input.push(json!({ "type": "image", "mime_type": mime, "data": data })); }
-    json!({ "model": model, "input": input, "response_format": { "type": "image", "mime_type": "image/png", "aspect_ratio": aspect } })
+    json!({ "model": model, "input": input, "response_format": { "type": "image", "mime_type": "image/jpeg", "aspect_ratio": aspect } })
 }
 
 pub fn extract_interactions(body: &Value) -> Result<Vec<u8>, String> {

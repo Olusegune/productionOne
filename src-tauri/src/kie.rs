@@ -73,7 +73,7 @@ pub fn parse_kie_doc(md: &str) -> Result<KieSchema, String> {
     for key in &required {
         if handled.contains(&key.as_str()) || Some(key) == aspect_key.as_ref() || image.as_ref().map(|i| &i.key) == Some(key) { continue; }
         let f = get(key).ok_or_else(|| format!("Kie requires {key} but does not describe it"))?;
-        let value = if !f["default"].is_null() { yaml_to_json(&f["default"]) } else if let Some(first) = f["enum"][0].as_str().map(|s| json!(s)).or_else(|| f["enum"][0].as_i64().map(|n| json!(n))) { first } else { return Err(format!("Kie requires a setting called {key} that this app does not know how to fill")) };
+        let value = if !f["default"].is_null() { yaml_to_json(&f["default"]) } else if let Some(first) = f["enum"][0].as_str().map(|s| json!(s)).or_else(|| f["enum"][0].as_i64().map(|n| json!(n))) { first } else if f["type"].as_str() == Some("boolean") { json!(false) } else if let Some(min) = f["minimum"].as_i64() { json!(min) } else { return Err(format!("Kie requires a setting called {key} that this app does not know how to fill")) };
         fixed.push((key.clone(), value));
     }
     Ok(KieSchema { model, prompt_max, aspect_key, aspect_values, image, duration_key, duration_values, duration_is_number, fixed })
@@ -229,6 +229,32 @@ mod tests {
         let image = s.image.clone().unwrap();
         assert_eq!((image.key.as_str(), image.array, image.max), ("image_input", true, 10));
         assert_eq!(s.fixed, vec![("resolution".to_string(), json!("1K"))]);
+    }
+
+    #[test]
+    fn fills_a_required_switch_with_off_and_reads_string_durations() {
+        let doc = DOC.replace("                    - resolution
+", "                    - sound
+                    - duration
+").replace("                    resolution:
+                      type: string
+                      default: 1K
+                      enum:
+                        - 1K
+                        - 2K
+", "                    sound:
+                      type: boolean
+                    duration:
+                      type: string
+                      enum:
+                        - '5'
+                        - '10'
+");
+        let s = parse_kie_doc(&doc).unwrap();
+        assert!(s.fixed.contains(&("sound".to_string(), json!(false))));
+        let input = build_input(&s, "p", "1:1", &[], Some(8)).unwrap();
+        assert_eq!(input["sound"], false);
+        assert_eq!(input["duration"], "10");
     }
 
     #[test]

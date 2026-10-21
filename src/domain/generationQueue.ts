@@ -231,7 +231,8 @@ export const reassignModel = (state: QueueState, ids: string[], provider: string
 export function recover(state: QueueState, now = Date.now()): QueueState {
   return {
     ...state,
-    guard: state.guard ?? (state.totalCeilingUsd != null && state.perImageUsd != null),
+    // A cap is never switched on for the person: an old saved ceiling does not become a silent block.
+    guard: state.guard ?? false,
     paused: state.jobs.some((j) => j.status === 'generating' || j.status === 'validating') ? true : state.paused,
     jobs: state.jobs.map((j) => {
       if (j.status === 'validating') return touch(j, { status: j.outputPath ? 'needs-review' : 'queued', qaNotes: [...j.qaNotes, 'Recovered after the app closed: re-check this image.'] }, now)

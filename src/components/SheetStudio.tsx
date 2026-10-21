@@ -110,6 +110,7 @@ export function SheetStudio(props: {
   const activeType: SheetType = sheetTypes.includes(sheetType) ? sheetType : (sheetTypes[0] ?? "Turnaround");
   const activeVariant = variants.includes(variant) ? variant : "Canonical";
   const catalog = useMemo(() => mergeCatalog(discovered), [discovered]);
+  useEffect(() => { setLightbox(null); }, [asset?.id, activeType, activeVariant]);
   const model: CatalogModel | undefined = catalog.find((m) => m.provider === provider && m.id === modelId);
   const [fromStory, setFromStory] = useState(true);
   const plan = useMemo(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, X } from "lucide-react";
 import type { ImageJob } from "../domain/generationQueue";
@@ -54,7 +55,8 @@ export function Lightbox(props: {
     return clamp(1 / fit, 1, 8);
   };
 
-  return (
+  // Rendered on the page itself: inside a panel with a blur effect, a "fixed" overlay is confined to that panel.
+  return createPortal(
     <div className="lb" role="dialog" aria-modal="true" aria-label={`${item.label} full size`}>
       <div className="lb-top">
         <div className="lb-title"><b>{item.label}</b><span>{job.assetId} · {job.sheetType} · v{job.revision}{job.width ? ` · ${job.width}×${job.height}px` : ""}</span></div>
@@ -102,6 +104,7 @@ export function Lightbox(props: {
         )}
         {job.status === "completed" && <span className="lb-state">{job.approved ? "Approved" : job.rejected ? "Rejected" : "Completed"}</span>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

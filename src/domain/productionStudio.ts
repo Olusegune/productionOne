@@ -163,7 +163,8 @@ export function compileShotPackage(shot: ShotRecord, model: VideoModel, knownAss
   if (shot.assetIds.length > preset.maxReferences) warnings.push(`${model} package limited to ${preset.maxReferences} references`)
   if (!preset.supportsAudio && (shot.dialogue || shot.soundEffects || shot.ambience || shot.music)) warnings.push(`${model} audio metadata is packaged for postproduction`)
   if (!preset.verified) warnings.push(`${model} capability limits require provider-documentation verification before direct generation`)
-  const audio = preset.supportsAudio ? `Audio: dialogue ${shot.speaker ? `by ${shot.speaker}` : ''} “${shot.dialogue}”; SFX ${shot.soundEffects}; ambience ${shot.ambience}; music ${shot.music}.` : ''
+  const audioParts = [shot.dialogue ? `dialogue${shot.speaker ? ` by ${shot.speaker}` : ''} “${shot.dialogue}”` : '', shot.soundEffects ? `SFX ${shot.soundEffects}` : '', shot.ambience ? `ambience ${shot.ambience}` : '', shot.music ? `music ${shot.music}` : ''].filter(Boolean)
+  const audio = preset.supportsAudio && audioParts.length ? `Audio: ${audioParts.join('; ')}.` : ''
   const prompt = `${shot.cameraFraming}, ${shot.cameraMovement}. ${shot.action}. Performance: ${shot.emotionalObjective}; face ${shot.facialActing}; body ${shot.bodyLanguage}; micro-animation ${shot.microAnimation}. Lighting: ${shot.lighting}. ${audio}`.replace(/\s+/g, ' ').trim()
   return { shotId: shot.id, model, prompt, references, warnings, manifest: { ...shot, targetModel: model, references, audioMode: preset.supportsAudio ? 'model' : 'postproduction' } }
 }

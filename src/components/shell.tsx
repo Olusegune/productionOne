@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, Command as CommandIcon, Check, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
 import { BrandMark } from "./BrandMark";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
-import { summarize, type QueueState } from "../domain/generationQueue";
+import { spendGate, summarize, type QueueState } from "../domain/generationQueue";
 
 export const workspaceNames = ["Projects", "Story", "Design", "Direct", "Deliver"] as const;
 
@@ -124,6 +124,8 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
   const [open, setOpen] = useState(false);
   const s = summarize(queue);
   const busy = s.generating + s.validating;
+  const waiting = s.queued + s.pending;
+  const capBlocked = queue.guard && waiting > 0 && !spendGate(queue).ok;
   const line = s.total === 0 ? "Queue is empty" : `${s.queued} queued · ${busy} running · ${s.needsReview} to review · ${s.completed} done${s.failed ? ` · ${s.failed} failed` : ""}${queue.paused ? " · paused" : ""}`;
   return (
     <div className={`po-dock${open ? " open" : ""}`}>
@@ -133,6 +135,7 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
           <span>{line}</span>
           {open ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
+        {capBlocked && <span className="po-cap-note" role="alert">Waiting: your spending cap is reached. <button onClick={() => setQueue((q) => ({ ...q, guard: false }))}>Turn the cap off</button></span>}
         <CostChip queue={queue} setQueue={setQueue} />
       </div>
       {open && (

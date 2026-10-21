@@ -380,7 +380,7 @@ export function parseStory(input: string): ParsedStory {
   else if (format === 'prose') readProse(lines, b)
 
   if (format === 'prose') b.warnings.push('No scene headings were found, so this was read as prose. Add INT./EXT. headings for the most accurate result.')
-  if (format === 'screenplay' && lines.some((l, i) => i < lines.findIndex((x) => SLUG.test(clean(x).trim())) && clean(l).trim())) b.warnings.push('Text before the first scene heading (title page or notes) was not treated as story.')
+  if (format === 'screenplay' && lines.some((l, i) => i < lines.findIndex((x) => SLUG.test(clean(x).trim())) && clean(l).trim() && !/^\s*(?:title|credit|author|authors|source|draft date|date|contact|copyright|notes?)\s*:/i.test(clean(l)))) b.warnings.push('Text before the first scene heading (title page or notes) was not treated as story.')
 
   // Characters: dialogue speakers (age-modifier cues folded into the base character), then mentions in action.
   const base = new Map<string, StoryCharacter>()
