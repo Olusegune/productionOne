@@ -65,6 +65,9 @@ import "./animatic.css";
 import "./art-direction.css";
 import "./inventory.css";
 import "./production-one.css";
+import { SheetStudio } from "./components/SheetStudio";
+import { useImageQueue } from "./data/useImageQueue";
+import { emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { GoldenPath } from "./components/GoldenPath";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
@@ -200,7 +203,9 @@ export default function App() {
     [pending, setPending] = useState<{ run: () => void } | null>(null),
     [zoom, setZoom] = useState(1),
     [sidebarHidden, setSidebarHidden] = useState(false),
-    [settingsOpen, setSettingsOpen] = useState(false);
+    [settingsOpen, setSettingsOpen] = useState(false),
+    [queue, setQueueState] = useState<QueueState>(emptyQueue);
+  const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
   const snapshot = useRef<string | null>(null),
     scriptInput = useRef<HTMLInputElement>(null),
     projectInput = useRef<HTMLInputElement>(null),
@@ -218,8 +223,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -227,7 +232,9 @@ export default function App() {
     styleLocked: styleBible.locked,
     outputsCount: analysis.assets.filter((a) => assetOutputs[a.id]).length,
     approvedCount: analysis.assets.filter((a) => a.status === "approved").length,
-    jobsActive: jobs.filter((j) => j.status === "queued" || j.status === "running").length,
+    jobsActive:
+      jobs.filter((j) => j.status === "queued" || j.status === "running").length +
+      queue.jobs.filter((j) => j.status === "queued" || j.status === "generating" || j.status === "validating").length,
     storyboards: storyboardsEnabled,
     shotCount: shots.length,
     ready: audit.ready,
@@ -283,6 +290,7 @@ export default function App() {
         setGraph(savedGraph);
         if (studio) {
           setTitle(studio.title ?? "The Last Horizon");
+          setQueueState(recover(studio.queue ?? emptyQueue()));
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -931,6 +939,7 @@ export default function App() {
     setAssetOutputs(s.assetOutputs ?? {});
     setStyleBible(s.styleBible ?? defaultStyleBible);
     setGraph(file.graph);
+    setQueueState(recover(s.queue ?? emptyQueue()));
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1047,6 +1056,13 @@ export default function App() {
     });
     return () => { dead = true; offs.forEach((off) => off()); };
   }, []);
+  useImageQueue(queue, setQueue, isTauri && hydrated);
+  const onSheetApproved = (job: ImageJob, primary: boolean) => {
+    if (!job.outputPath) return;
+    const path = job.outputPath;
+    setAssetOutputs((current) => (primary || !current[job.assetId] ? { ...current, [job.assetId]: path } : current));
+    if (primary) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (a.id === job.assetId ? { ...a, status: "approved" } : a)) }));
+  };
   const golden = goldenPath(goldenInput);
   useEffect(() => {
     const index = golden.steps.findIndex((step) => step.state === "active");
@@ -1257,7 +1273,7 @@ export default function App() {
             </div>
             <article className="project-hero">
               <div className="project-hero-copy">
-                <span className="pill">PRODUCTION ONE 0.7</span>
+                <span className="pill">PRODUCTION ONE 0.8</span>
                 <h2>
                   From story to
                   <br />
@@ -1448,6 +1464,18 @@ export default function App() {
               style={styleBible}
               onChange={setStyleBible}
               sheetCount={plannedSheets.length}
+            />
+            <SheetStudio
+              assets={analysis.assets}
+              scenes={analysis.scenes}
+              style={styleBible}
+              queue={queue}
+              setQueue={setQueue}
+              desktop={isTauri}
+              providersVersion={Number(providersOpen)}
+              onApproved={onSheetApproved}
+              notify={setNotice}
+              openProviders={() => setProvidersOpen(true)}
             />
             <section className="three-column">
               <div className="panel asset-browser">

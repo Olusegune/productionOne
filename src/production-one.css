@@ -79,3 +79,31 @@ kbd { background: #1b2127; border: 1px solid #36404a; border-radius: 6px; paddin
 
 .project-hero-copy .hero-actions { flex-wrap: wrap; }
 .project-hero-copy .hero-actions button { white-space: nowrap; }
+
+/* Reference sheets */
+.sheet-studio { margin: 18px 0; }
+.sheet-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.sheet-controls label { display: grid; gap: 6px; }
+.sheet-controls label span { font-size: 12px; color: #98a2aa; text-transform: uppercase; letter-spacing: .08em; }
+.sheet-controls select, .sheet-controls input { background: #0f1317; border: 1px solid #36404a; color: var(--ivory); border-radius: 8px; padding: 10px 11px; font-size: 14px; min-width: 0; }
+.sheet-actions-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.queue-summary { font-size: 13px; color: #cdd3d8; margin: 4px 0 12px; }
+.helper.warn { color: var(--gold); }
+.view-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.view-card { background: #151a1f; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; }
+.view-card.needs-review { border-color: var(--gold); }
+.view-card.failed { border-color: #a35c4c; }
+.view-thumb { aspect-ratio: 4 / 3; background: #0f1317; display: grid; place-items: center; }
+.view-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.thumb-empty { color: #5f6a73; font-size: 13px; }
+.view-meta { padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
+.view-meta b { font-size: 15px; }
+.view-meta small { font-size: 12px; color: #77828c; }
+.view-meta .qa-note { color: #d9a178; }
+.job-status { font-size: 12px; color: #98a2aa; }
+.job-status.needs-review { color: var(--gold); }
+.job-status.completed { color: #87bfa6; }
+.job-status.failed { color: #d9806b; }
+.view-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 12px; }
+.view-actions button { font-size: 12px; padding: 7px 10px; display: inline-flex; gap: 5px; align-items: center; }
+.agree { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 8px 0; }
