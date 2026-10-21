@@ -15,6 +15,7 @@ export interface StudioState {
   model: VideoModel
   assetOutputs?: Record<string,string>
   styleBible?: StyleBible
+  title?: string
 }
 
 export const projectStore = {

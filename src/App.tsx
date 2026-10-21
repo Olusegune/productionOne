@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,7 +21,7 @@ import {
 import { BrandMark } from "./components/BrandMark";
 import { ArtDirectionBar } from "./components/ArtDirectionBar";
 import { EditableInventory } from "./components/EditableInventory";
-import { projectStore, studioStore } from "./data/projectStore";
+import { projectStore, studioStore, type StudioState } from "./data/projectStore";
 import { demoGraph } from "./domain/demoGraph";
 import {
   dependentsOf,
@@ -64,6 +64,12 @@ import "./providers.css";
 import "./animatic.css";
 import "./art-direction.css";
 import "./inventory.css";
+import "./production-one.css";
+import { GoldenPath } from "./components/GoldenPath";
+import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
+import { UnsavedSheet } from "./components/UnsavedSheet";
+import { goldenPath, type GoldenPathInput } from "./domain/goldenPath";
+import { buildProjectFile, parseProjectFile, suggestedFileName, type ProjectFile } from "./data/projectFile";
 
 const workspaces = [
   { name: "Projects", icon: FolderKanban },
@@ -131,6 +137,7 @@ const initialShot: ShotRecord = {
   storyboardStatus: "planned",
 };
 
+const isTauri = "__TAURI_INTERNALS__" in window;
 function downloadJson(name: string, value: unknown) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
@@ -185,6 +192,22 @@ export default function App() {
     [imageBudget, setImageBudget] = useState(""),
     [imageConfirmed, setImageConfirmed] = useState(false),
     [generatingImage, setGeneratingImage] = useState(false);
+  const [title, setTitle] = useState("The Last Horizon"),
+    [filePath, setFilePath] = useState<string | null>(null),
+    [dirty, setDirty] = useState(false),
+    [recents, setRecents] = useState<string[]>([]),
+    [helpTopic, setHelpTopic] = useState<HelpTopic | null>(null),
+    [pending, setPending] = useState<{ run: () => void } | null>(null),
+    [zoom, setZoom] = useState(1),
+    [sidebarHidden, setSidebarHidden] = useState(false),
+    [settingsOpen, setSettingsOpen] = useState(false);
+  const snapshot = useRef<string | null>(null),
+    scriptInput = useRef<HTMLInputElement>(null),
+    projectInput = useRef<HTMLInputElement>(null),
+    actionsRef = useRef<Record<string, () => void>>({}),
+    guardRef = useRef<(run: () => void) => void>(() => {}),
+    openPathRef = useRef<(path: string) => void>(() => {}),
+    prevStep = useRef<{ id: string; index: number } | null>(null);
   const audit = useMemo(
     () =>
       coverageAudit(
@@ -194,6 +217,21 @@ export default function App() {
       ),
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
+  const studioNow: StudioState = useMemo(
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title],
+  );
+  const goldenInput: GoldenPathInput = {
+    hasScript: script.trim().length > 0,
+    assetCount: analysis.assets.length,
+    styleLocked: styleBible.locked,
+    outputsCount: analysis.assets.filter((a) => assetOutputs[a.id]).length,
+    approvedCount: analysis.assets.filter((a) => a.status === "approved").length,
+    jobsActive: jobs.filter((j) => j.status === "queued" || j.status === "running").length,
+    storyboards: storyboardsEnabled,
+    shotCount: shots.length,
+    ready: audit.ready,
+  };
   const sceneCoverage = useMemo(
     () =>
       sceneCoverageAudit(
@@ -237,10 +275,14 @@ export default function App() {
     [analysis.assets, selectedAsset, styleBible],
   );
   useEffect(() => {
+    if ("__TAURI_INTERNALS__" in window) import("@tauri-apps/api/core").then(({ invoke }) => invoke("app_ready")).catch(() => {});
+  }, []);
+  useEffect(() => {
     Promise.all([projectStore.load(), studioStore.load()]).then(
       ([savedGraph, studio]) => {
         setGraph(savedGraph);
         if (studio) {
+          setTitle(studio.title ?? "The Last Horizon");
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -257,29 +299,22 @@ export default function App() {
   useEffect(() => {
     if (hydrated) {
       void projectStore.save(graph);
-      void studioStore.save({
-        script,
-        analysis,
-        shots,
-        jobs,
-        storyboardsEnabled,
-        model,
-        assetOutputs,
-        styleBible,
-      });
+      void studioStore.save(studioNow);
     }
-  }, [
-    graph,
-    script,
-    analysis,
-    shots,
-    jobs,
-    storyboardsEnabled,
-    model,
-    assetOutputs,
-    styleBible,
-    hydrated,
-  ]);
+  }, [graph, studioNow, hydrated]);
+  const studioKey = useMemo(() => JSON.stringify(studioNow), [studioNow]);
+  useEffect(() => {
+    if (!hydrated) return;
+    if (snapshot.current === null) snapshot.current = studioKey;
+    const changed = snapshot.current !== studioKey;
+    setDirty(changed);
+    if (isTauri) void import("@tauri-apps/api/core").then(({ invoke }) => invoke("set_dirty", { dirty: changed })).catch(() => {});
+  }, [studioKey, hydrated]);
+  useEffect(() => {
+    const name = `${dirty ? "\u2022 " : ""}${title} \u2014 Production One`;
+    document.title = name;
+    if (isTauri) void import("@tauri-apps/api/core").then(({ invoke }) => invoke("set_window_title", { title: name })).catch(() => {});
+  }, [title, dirty]);
   useEffect(() => {
     if (!hydrated) return;
     setGraph((current) => {
@@ -289,10 +324,12 @@ export default function App() {
         shots,
         plannedSheets,
         assetOutputs,
+        undefined,
+        title,
       );
       return JSON.stringify(current) === JSON.stringify(next) ? current : next;
     });
-  }, [analysis, shots, plannedSheets, assetOutputs, hydrated]);
+  }, [analysis, shots, plannedSheets, assetOutputs, hydrated, title]);
   useEffect(() => {
     if (!providersOpen || !("__TAURI_INTERNALS__" in window)) {
       setCredentialConfigured(false);
@@ -543,7 +580,7 @@ export default function App() {
     }
     const { invoke } = await import("@tauri-apps/api/core");
     const path = await invoke<string>("export_prompt_archive", {
-      projectName: "The Last Horizon",
+      projectName: title,
       entries,
     });
     setNotice(`Prompt archive saved to ${path}`);
@@ -808,10 +845,10 @@ export default function App() {
   };
   const buildProductionZip = async () => {
     const packageManifest = {
-      format: "production-guy-package",
+      format: "production-one-package",
       version: 1,
       status: audit.ready ? "production-ready" : "draft-incomplete",
-      project: "The Last Horizon",
+      project: title,
       analysis,
       plannedSheets,
       shots,
@@ -870,13 +907,167 @@ export default function App() {
       `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
     );
   };
+  const markSaved = () => {
+    snapshot.current = studioKey;
+    setDirty(false);
+  };
+  const refreshRecents = async () => {
+    if (!isTauri) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      setRecents(await invoke<string[]>("recent_projects"));
+    } catch { /* The list is a convenience; the app works without it. */ }
+  };
+  const applyProject = (file: ProjectFile, path: string | null) => {
+    const s = file.studio;
+    snapshot.current = null;
+    setTitle(file.title);
+    setScript(s.script);
+    setAnalysis(s.analysis);
+    setShots(s.shots);
+    setJobs(s.jobs);
+    setStoryboardsEnabled(s.storyboardsEnabled);
+    setModel(s.model);
+    setAssetOutputs(s.assetOutputs ?? {});
+    setStyleBible(s.styleBible ?? defaultStyleBible);
+    setGraph(file.graph);
+    setFilePath(path);
+    setSelectedAsset(0);
+    setSelectedShot(0);
+    setDirty(false);
+  };
+  const newProject = () => {
+    applyProject(
+      buildProjectFile("Untitled production", { schemaVersion: 1, nodes: [], edges: [] }, {
+        script: "", analysis: { scenes: [], assets: [] }, shots: [], jobs: [], storyboardsEnabled: false,
+        model: "Seedance 2.0", assetOutputs: {}, styleBible: defaultStyleBible,
+      }),
+      null,
+    );
+    setWorkspace("Story");
+    setNotice("New production created. Paste or import your script to begin.");
+  };
+  const openText = (text: string, path: string | null) => {
+    const parsed = parseProjectFile(text);
+    if (!parsed.ok) { setNotice(parsed.error); return; }
+    applyProject(parsed.file, parsed.legacy ? null : path);
+    setWorkspace("Projects");
+    setNotice(
+      parsed.legacy
+        ? `Opened legacy Production Guy project "${parsed.file.title}". The original file is untouched; Save writes a new .pone.`
+        : `Opened ${path ?? parsed.file.title}`,
+    );
+  };
+  const openProject = async () => {
+    if (!isTauri) { projectInput.current?.click(); return; }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const opened = await invoke<{ path: string; contents: string } | null>("open_project_dialog");
+      if (opened) { openText(opened.contents, opened.path); void refreshRecents(); }
+    } catch (error) { setNotice(`Could not open the project: ${String(error)}`); }
+  };
+  const openPath = async (path: string) => {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const opened = await invoke<{ path: string; contents: string }>("open_project_path", { path });
+      openText(opened.contents, opened.path);
+      void refreshRecents();
+    } catch (error) { setNotice(`Could not open the project: ${String(error)}`); }
+  };
+  const saveProject = async (forceDialog = false): Promise<boolean> => {
+    const text = JSON.stringify(buildProjectFile(title, graph, studioNow), null, 2);
+    if (!isTauri) {
+      downloadText(suggestedFileName(title), text, "application/json");
+      markSaved();
+      setNotice(`Downloaded ${suggestedFileName(title)}.`);
+      return true;
+    }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const saved = filePath && !forceDialog
+        ? await invoke<string>("save_project_path", { path: filePath, contents: text })
+        : await invoke<string | null>("save_project_dialog", { suggested: suggestedFileName(title), contents: text });
+      if (!saved) return false;
+      setFilePath(saved);
+      markSaved();
+      void refreshRecents();
+      setNotice(`Saved ${saved}`);
+      return true;
+    } catch (error) {
+      setNotice(`Could not save the project: ${String(error)}`);
+      return false;
+    }
+  };
+  const guard = (run: () => void) => (dirty ? setPending({ run }) : run());
+  const quit = async () => {
+    if (!isTauri) { setNotice("Close this browser tab to exit."); return; }
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("quit_app");
+  };
+  guardRef.current = guard;
+  openPathRef.current = (path) => void openPath(path);
+  actionsRef.current = {
+    "file-new": () => guard(newProject),
+    "file-open": () => guard(() => void openProject()),
+    "file-save": () => void saveProject(),
+    "file-save-as": () => void saveProject(true),
+    "file-import": () => { setWorkspace("Story"); scriptInput.current?.click(); },
+    "file-export": () => { setWorkspace("Deliver"); void buildProductionZip(); },
+    "file-close": () => guard(newProject),
+    "file-exit": () => guard(() => void quit()),
+    "view-zoom-in": () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2))),
+    "view-zoom-out": () => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2))),
+    "view-zoom-reset": () => setZoom(1),
+    "view-sidebar": () => setSidebarHidden((hidden) => !hidden),
+    "view-reset-layout": () => { setZoom(1); setSidebarHidden(false); },
+    "project-settings": () => setSettingsOpen(true),
+    "project-inventory": () => setWorkspace("Story"),
+    "project-audit": () => setWorkspace("Deliver"),
+    "tools-models": () => setProvidersOpen(true),
+    "tools-providers": () => setProvidersOpen(true),
+    "tools-prompt": () => setWorkspace("Design"),
+    "tools-queue": () => setWorkspace("Deliver"),
+    "help-start": () => setHelpTopic("start"),
+    "help-docs": () => setHelpTopic("docs"),
+    "help-shortcuts": () => setHelpTopic("shortcuts"),
+    "help-trouble": () => setHelpTopic("trouble"),
+    "help-updates": () => setHelpTopic("updates"),
+    "help-about": () => setHelpTopic("about"),
+  };
+  useEffect(() => {
+    void refreshRecents();
+    if (!isTauri) return;
+    let dead = false;
+    let offs: Array<() => void> = [];
+    void import("@tauri-apps/api/event").then(async ({ listen }) => {
+      const a = await listen<string>("menu-action", (e) => actionsRef.current[e.payload]?.());
+      const b = await listen<string>("menu-open-recent", (e) => guardRef.current(() => openPathRef.current(e.payload)));
+      const c = await listen("close-requested", () => actionsRef.current["file-exit"]?.());
+      if (dead) { a(); b(); c(); } else offs = [a, b, c];
+    });
+    return () => { dead = true; offs.forEach((off) => off()); };
+  }, []);
+  const golden = goldenPath(goldenInput);
+  useEffect(() => {
+    const index = golden.steps.findIndex((step) => step.state === "active");
+    const current = { id: golden.next?.id ?? "done", index: index === -1 ? golden.steps.length : index };
+    const before = prevStep.current;
+    prevStep.current = current;
+    if (hydrated && before && current.index > before.index && current.id !== before.id) {
+      const done = golden.steps[current.index - 1];
+      const finished = done ? `${done.label} complete (${done.detail.toLowerCase()})` : "Step complete";
+      setNotice(golden.next ? `${finished}. Next: ${golden.next.action}.` : `${finished}. Your production is ready to deliver.`);
+    }
+  }, [golden.next?.id]);
   return (
-    <div className="app-shell">
+    <div className={`app-shell${sidebarHidden ? " sidebar-hidden" : ""}`} style={{ zoom } as CSSProperties}>
+      <input ref={scriptInput} type="file" hidden accept=".txt,.md,.fountain,.screenplay,text/plain,text/markdown" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importScript(file); e.target.value = ""; }} />
+      <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) openText(await file.text(), null); e.target.value = ""; }} />
       <aside className="sidebar">
         <div className="brand">
           <BrandMark size={38} />
           <div>
-            <strong>Production Guy</strong>
+            <strong>Production One</strong>
             <span>Your AI Production Department</span>
           </div>
         </div>
@@ -895,7 +1086,7 @@ export default function App() {
         </nav>
         <div className="project-card">
           <span>Current production</span>
-          <strong>The Last Horizon</strong>
+          <strong>{title}</strong>
           <small>
             {analysis.scenes.length} scenes · {analysis.assets.length} assets
           </small>
@@ -917,11 +1108,14 @@ export default function App() {
         <header>
           <div>
             <span className="eyebrow">
-              THE LAST HORIZON / {workspace.toUpperCase()}
+              {title.toUpperCase()} / {workspace.toUpperCase()}
             </span>
             <h1>{workspace}</h1>
           </div>
           <div className="header-actions">
+            <span className={`save-state${dirty ? " unsaved" : ""}`} role="status">
+              {dirty ? "Unsaved changes" : filePath ? "Saved" : "Autosaved"}
+            </span>
             <label>
               <Search size={15} />
               <input
@@ -938,6 +1132,31 @@ export default function App() {
             </button>
           </div>
         </header>
+        {helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
+        {pending && (
+          <UnsavedSheet
+            title={title}
+            onSave={async () => { const run = pending.run; setPending(null); if (await saveProject()) run(); }}
+            onDiscard={() => { const run = pending.run; setPending(null); run(); }}
+            onCancel={() => setPending(null)}
+          />
+        )}
+        {settingsOpen && (
+          <div className="modal-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}>
+            <section className="sheet" role="dialog" aria-modal="true" aria-label="Project settings" onClick={(e) => e.stopPropagation()}>
+              <div className="panel-heading">
+                <h3>Project settings</h3>
+                <button className="secondary" onClick={() => setSettingsOpen(false)}>Done</button>
+              </div>
+              <label className="settings-field">
+                <span>Title</span>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Project title" autoFocus />
+              </label>
+              <p className="helper">File: {filePath ?? "Not saved to a file yet"}</p>
+              <p className="helper">Format: Production One project (.pone). Legacy .pguy files open and are converted by Save As.</p>
+            </section>
+          </div>
+        )}
         {notice && (
           <div className="notice" role="status">
             <Check size={16} />
@@ -1031,14 +1250,14 @@ export default function App() {
           <section className="projects-home">
             <div className="projects-intro">
               <span className="eyebrow">
-                THE LAST HORIZON · ACTIVE PRODUCTION
+                {title.toUpperCase()} · ACTIVE PRODUCTION
               </span>
               <h2>Welcome back</h2>
               <p>Turn your imagination into production-ready visuals.</p>
             </div>
             <article className="project-hero">
               <div className="project-hero-copy">
-                <span className="pill">PRODUCTION GUY 0.6</span>
+                <span className="pill">PRODUCTION ONE 0.7</span>
                 <h2>
                   From story to
                   <br />
@@ -1057,16 +1276,15 @@ export default function App() {
                   </button>
                   <button
                     className="secondary"
-                    onClick={() =>
-                      downloadJson("the-last-horizon.pguy.json", {
-                        analysis,
-                        shots,
-                        jobs,
-                        graph,
-                      })
-                    }
+                    onClick={() => void saveProject()}
                   >
-                    <Download size={15} /> Export project
+                    <Download size={15} /> Save project
+                  </button>
+                  <button className="secondary" onClick={() => guard(() => void openProject())}>
+                    Open…
+                  </button>
+                  <button className="secondary" onClick={() => guard(newProject)}>
+                    New
                   </button>
                 </div>
               </div>
@@ -1110,11 +1328,26 @@ export default function App() {
                   alt="Amina approved visual reference"
                 />
                 <div>
-                  <b>The Last Horizon</b>
+                  <b>{title}</b>
                   <span>APPROVED REFERENCE · CHAR-001</span>
                 </div>
               </div>
             </article>
+            <GoldenPath input={goldenInput} onGo={setWorkspace} />
+            {recents.length > 0 && (
+              <div className="recent-list">
+                <span className="eyebrow">RECENT PROJECTS</span>
+                <ul>
+                  {recents.slice(0, 5).map((path) => (
+                    <li key={path}>
+                      <button onClick={() => guard(() => void openPath(path))} title={path}>
+                        {path.split(/[\\/]/).pop()}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="department-grid">
               {departmentCards.map(
                 ({ name, icon: Icon, image, description }) => (

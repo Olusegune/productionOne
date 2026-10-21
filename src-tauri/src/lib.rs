@@ -1,3 +1,4 @@
+mod desktop;
 use std::{fs, path::PathBuf};
 use tauri::Manager;
 use serde_json::{json, Value};
@@ -7,6 +8,7 @@ use font8x8::UnicodeFonts;
 use std::io::{Read, Write};
 use base64::Engine;
 
+// Legacy identifier kept on purpose: renaming it would strand API keys already saved by Production Guy.
 const CREDENTIAL_SERVICE: &str = "Production Guy";
 
 fn project_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -52,7 +54,7 @@ fn save_prompt_package(app: tauri::AppHandle, asset_id: String, contents: String
     let safe_id = safe_package_name(&asset_id);
     if safe_id.is_empty() { return Err("Asset ID is required".to_string()); }
     serde_json::from_str::<Value>(&contents).map_err(|error| format!("Prompt package is not valid JSON: {error}"))?;
-    let path = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Prompts").join(format!("{safe_id}.json"));
+    let path = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Prompts").join(format!("{safe_id}.json"));
     write_atomic(path.clone(), contents)?;
     if !path.is_file() || fs::metadata(&path).map_err(|error| error.to_string())?.len() == 0 { return Err("Prompt package was not written".to_string()); }
     Ok(path.to_string_lossy().to_string())
@@ -225,7 +227,7 @@ struct PromptArchiveEntry { name: String, contents: String }
 #[tauri::command]
 fn export_prompt_archive(app: tauri::AppHandle, project_name: String, entries: Vec<PromptArchiveEntry>) -> Result<String, String> {
     if entries.is_empty() { return Err("No prompts are available to export".to_string()); }
-    let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Exports");
+    let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Exports");
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
     let project = safe_package_name(&project_name);
     if project.is_empty() { return Err("Project name is required".to_string()); }
@@ -253,7 +255,7 @@ struct ProductionPackageInput { manifest: String, asset_ledger_csv: String, styl
 
 #[tauri::command]
 fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>) -> Result<String, String> {
-    let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production Guy").join("Exports");
+    let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Exports");
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
     let safe_name = safe_package_name(&package_name);
     if safe_name.is_empty() { return Err("Package name is required".to_string()); }
@@ -277,7 +279,7 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
         ("Project Bible/style_bible.json", input.style_bible.as_str()),
         ("Manifests/model_usage.json", input.model_usage.as_str()),
         ("Prompts/shot-prompt.txt", input.prompt.as_str()),
-        ("production_readme.md", "# Production Guy Package\n\nOriginal-resolution approved references, production metadata, and model-aware prompts. IDs remain stable across revisions.\n"),
+        ("production_readme.md", "# Production One Package\n\nOriginal-resolution approved references, production metadata, and model-aware prompts. IDs remain stable across revisions.\n"),
     ];
     for (name, contents) in files { archive.start_file(name, options).map_err(|error| error.to_string())?; archive.write_all(contents.as_bytes()).map_err(|error| error.to_string())?; }
     for (index, source_path) in input.reference_paths.iter().enumerate() {
@@ -298,12 +300,32 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
     Ok(())
 }
 
+/// Called by the UI once it has mounted: closes the splash window and shows the main window.
+#[tauri::command]
+fn app_ready(app: tauri::AppHandle) {
+    if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
+    if let Some(main) = app.get_webview_window("main") { let _ = main.show(); let _ = main.set_focus(); }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package])
+        .plugin(tauri_plugin_dialog::init())
+        .manage(desktop::Dirty::default())
+        .setup(|app| {
+            let menu = desktop::build_menu(app.handle())?;
+            app.set_menu(menu)?;
+            Ok(())
+        })
+        .on_menu_event(|app, event| desktop::handle_menu_event(app, event.id().as_ref()))
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                desktop::handle_close_request(window, api);
+            }
+        })
+        .invoke_handler(tauri::generate_handler![desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::set_window_title, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
-        .expect("failed to run Production Guy");
+        .expect("failed to run Production One");
 }
 
 #[cfg(test)]
@@ -379,7 +401,7 @@ mod tests {
 
     #[test]
     fn prompt_zip_contains_individual_plain_text_records() {
-        let path = std::env::temp_dir().join(format!("production-guy-prompts-{}.zip", std::process::id()));
+        let path = std::env::temp_dir().join(format!("production-one-prompts-{}.zip", std::process::id()));
         let entries = vec![super::PromptArchiveEntry { name: "CHAR-001-universal.txt".into(), contents: "A plain production prompt".into() }];
         super::write_prompt_archive(&path, &entries).unwrap();
         let file = std::fs::File::open(&path).unwrap();
@@ -393,8 +415,8 @@ mod tests {
 
     #[test]
     fn production_zip_is_validated_and_contains_interchange_records() {
-        let path = std::env::temp_dir().join(format!("production-guy-package-{}.zip", std::process::id()));
-        let input = super::ProductionPackageInput { manifest: "{\"format\":\"production-guy-package\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![] };
+        let path = std::env::temp_dir().join(format!("production-one-package-{}.zip", std::process::id()));
+        let input = super::ProductionPackageInput { manifest: "{\"format\":\"production-one-package\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![] };
         super::write_production_package(&path, &input).unwrap();
         let file = std::fs::File::open(&path).unwrap();
         let mut archive = zip::ZipArchive::new(file).unwrap();

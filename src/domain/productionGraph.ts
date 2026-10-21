@@ -53,15 +53,15 @@ export function reviseNode(graph: ProductionGraph, nodeId: string, at = new Date
 import type { AnalysisResult, ShotRecord } from './productionStudio'
 import type { SheetPlan } from './visualDevelopment'
 
-export function synchronizeProductionGraph(previous:ProductionGraph,analysis:AnalysisResult,shots:ShotRecord[],sheets:SheetPlan[],outputs:Record<string,string>,at=new Date().toISOString()):ProductionGraph{
+export function synchronizeProductionGraph(previous:ProductionGraph,analysis:AnalysisResult,shots:ShotRecord[],sheets:SheetPlan[],outputs:Record<string,string>,at=new Date().toISOString(),title='The Last Horizon'):ProductionGraph{
   const existing=new Map(previous.nodes.map(node=>[node.id,node]))
   const node=(id:string,kind:NodeKind,name:string,status:NodeStatus,metadata:ProductionNode['metadata']={}):ProductionNode=>{
     const prior=existing.get(id)
     if(prior)return{...prior,name,status,metadata:{...prior.metadata,...metadata},updatedAt:prior.name===name&&prior.status===status&&JSON.stringify({...prior.metadata,...metadata})===JSON.stringify(prior.metadata)?prior.updatedAt:at}
     return{id,kind,name,status,revision:1,metadata,createdAt:at,updatedAt:at}
   }
-  const projectId='PROJ-THE-LAST-HORIZON-001'
-  const nodes:ProductionNode[]=[node(projectId,'project','The Last Horizon','ready',{sceneCount:analysis.scenes.length,assetCount:analysis.assets.length})]
+  const projectId=stableId('project',title,1)
+  const nodes:ProductionNode[]=[node(projectId,'project',title,'ready',{sceneCount:analysis.scenes.length,assetCount:analysis.assets.length})]
   const edges:ProductionEdge[]=[]
   const edge=(from:string,to:string,relation:ProductionEdge['relation'])=>edges.push({id:`EDGE-${from}-${relation}-${to}`,from,to,relation})
   for(const scene of analysis.scenes){nodes.push(node(scene.id,'scene',scene.heading,'ready',{number:scene.number,setting:scene.setting,timeOfDay:scene.timeOfDay}));edge(projectId,scene.id,'contains')}
