@@ -1,23 +1,104 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Clapperboard, Copy, Download, FolderKanban, PackageCheck, Pause, PenTool, Play, Plus, Search, Sparkles, Trash2, WandSparkles } from 'lucide-react'
-import { BrandMark } from './components/BrandMark'
-import { ArtDirectionBar } from './components/ArtDirectionBar'
-import { EditableInventory } from './components/EditableInventory'
-import { projectStore, studioStore } from './data/projectStore'
-import { demoGraph } from './domain/demoGraph'
-import { dependentsOf, reviseNode, synchronizeProductionGraph, type ProductionGraph } from './domain/productionGraph'
-import { advanceQueue, analyzeScript, animaticDuration, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, pauseQueue, resumeQueue, retryJob, sceneCoverageAudit, shotAtTime, type AnalysisResult, type GenerationJob, type PromptPackage, type ShotRecord, type VideoModel, videoPresets } from './domain/productionStudio'
-import { providerRegistry, type ProviderId } from './domain/providerRegistry'
-import { labelLines } from './domain/qualityEngine'
-import { defaultStyleBible, planAssetSheets, recommendModels, type StyleBible } from './domain/visualDevelopment'
-import './styles.css'
-import './studio.css'
-import './providers.css'
-import './animatic.css'
-import './art-direction.css'
-import './inventory.css'
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  Clapperboard,
+  Copy,
+  Download,
+  FolderKanban,
+  PackageCheck,
+  Pause,
+  PenTool,
+  Play,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  WandSparkles,
+} from "lucide-react";
+import { BrandMark } from "./components/BrandMark";
+import { ArtDirectionBar } from "./components/ArtDirectionBar";
+import { EditableInventory } from "./components/EditableInventory";
+import { projectStore, studioStore } from "./data/projectStore";
+import { demoGraph } from "./domain/demoGraph";
+import {
+  dependentsOf,
+  reviseNode,
+  synchronizeProductionGraph,
+  type ProductionGraph,
+} from "./domain/productionGraph";
+import {
+  advanceQueue,
+  analyzeScript,
+  animaticDuration,
+  cancelJob,
+  compileAssetPrompt,
+  compileShotPackage,
+  coverageAudit,
+  normalizeShotOrder,
+  pauseQueue,
+  resumeQueue,
+  retryJob,
+  sceneCoverageAudit,
+  shotAtTime,
+  type AnalysisResult,
+  type GenerationJob,
+  type PromptPackage,
+  type ShotRecord,
+  type VideoModel,
+  videoPresets,
+} from "./domain/productionStudio";
+import { providerRegistry, type ProviderId } from "./domain/providerRegistry";
+import { labelLines } from "./domain/qualityEngine";
+import {
+  defaultStyleBible,
+  planAssetSheets,
+  recommendModels,
+  type StyleBible,
+} from "./domain/visualDevelopment";
+import "./styles.css";
+import "./studio.css";
+import "./providers.css";
+import "./animatic.css";
+import "./art-direction.css";
+import "./inventory.css";
 
-const workspaces = [{name:'Projects',icon:FolderKanban},{name:'Story',icon:PenTool},{name:'Design',icon:Sparkles},{name:'Direct',icon:Clapperboard,optional:true},{name:'Deliver',icon:PackageCheck}]
+const workspaces = [
+  { name: "Projects", icon: FolderKanban },
+  { name: "Story", icon: PenTool },
+  { name: "Design", icon: Sparkles },
+  { name: "Direct", icon: Clapperboard, optional: true },
+  { name: "Deliver", icon: PackageCheck },
+];
+const departmentCards = [
+  {
+    name: "Story",
+    icon: PenTool,
+    image: "/assets/department-story.png",
+    description:
+      "Import scripts, analyze scenes and build your production world.",
+  },
+  {
+    name: "Design",
+    icon: Sparkles,
+    image: "/assets/department-design.png",
+    description: "Create characters, costumes, sets, props and environments.",
+  },
+  {
+    name: "Direct",
+    icon: Clapperboard,
+    image: "/assets/department-direct.png",
+    description: "Optional storyboards, shot lists, acting, camera and sound.",
+  },
+  {
+    name: "Deliver",
+    icon: PackageCheck,
+    image: "/assets/department-deliver.png",
+    description: "Audit, compile and export video-ready packages.",
+  },
+];
 const sampleScript = `EXT. SAVANNA - DUSK
 AMINA
 We are close.
@@ -26,80 +107,1694 @@ She holds the solar compass and studies the horizon.
 INT. CLIFF BEDROOM - NIGHT
 MARCUS
 Then we leave before dawn.
-Marcus places the weathered photograph on the table.`
-const initialShot: ShotRecord = {id:'SHOT-001',sceneId:'SCENE-001',order:1,duration:5,assetIds:[],action:'Amina raises the solar compass and studies its glow.',dialogue:'We are close.',speaker:'AMINA',emotionalObjective:'Quiet resolve beneath exhaustion',facialActing:'Focused eyes, relaxed jaw',bodyLanguage:'Balanced stance, shoulders settling',microAnimation:'One blink, slow breath, slight grip adjustment',cameraFraming:'Medium close-up',cameraMovement:'Slow push in',lighting:'Warm dusk edge light with neutral skin tones',soundEffects:'Cloth movement, compass hum',ambience:'Soft savanna wind',music:'Low restrained strings',transition:'Cut',storyboardStatus:'planned'}
+Marcus places the weathered photograph on the table.`;
+const initialShot: ShotRecord = {
+  id: "SHOT-001",
+  sceneId: "SCENE-001",
+  order: 1,
+  duration: 5,
+  assetIds: [],
+  action: "Amina raises the solar compass and studies its glow.",
+  dialogue: "We are close.",
+  speaker: "AMINA",
+  emotionalObjective: "Quiet resolve beneath exhaustion",
+  facialActing: "Focused eyes, relaxed jaw",
+  bodyLanguage: "Balanced stance, shoulders settling",
+  microAnimation: "One blink, slow breath, slight grip adjustment",
+  cameraFraming: "Medium close-up",
+  cameraMovement: "Slow push in",
+  lighting: "Warm dusk edge light with neutral skin tones",
+  soundEffects: "Cloth movement, compass hum",
+  ambience: "Soft savanna wind",
+  music: "Low restrained strings",
+  transition: "Cut",
+  storyboardStatus: "planned",
+};
 
-function downloadJson(name:string,value:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.click();URL.revokeObjectURL(url)}
-function downloadText(name:string,value:string,type='text/plain'){const url=URL.createObjectURL(new Blob([value],{type}));const anchor=document.createElement('a');anchor.href=url;anchor.download=name;anchor.click();URL.revokeObjectURL(url)}
+function downloadJson(name: string, value: unknown) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
+  );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = name;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+function downloadText(name: string, value: string, type = "text/plain") {
+  const url = URL.createObjectURL(new Blob([value], { type }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = name;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
-export default function App(){
- const [workspace,setWorkspace]=useState('Projects'),[graph,setGraph]=useState<ProductionGraph>(()=>structuredClone(demoGraph)),[hydrated,setHydrated]=useState(false)
- const [script,setScript]=useState(sampleScript),[analysis,setAnalysis]=useState<AnalysisResult>(()=>analyzeScript(sampleScript)),[shots,setShots]=useState<ShotRecord[]>([{...initialShot}])
- const [selectedAsset,setSelectedAsset]=useState(0),[jobs,setJobs]=useState<GenerationJob[]>([]),[model,setModel]=useState<VideoModel>('Seedance 2.0'),[storyboardsEnabled,setStoryboardsEnabled]=useState(false),[notice,setNotice]=useState('')
- const [providersOpen,setProvidersOpen]=useState(false),[credentialProvider,setCredentialProvider]=useState<ProviderId>('kie'),[apiKey,setApiKey]=useState('')
- const [credentialConfigured,setCredentialConfigured]=useState(false),[assetOutputs,setAssetOutputs]=useState<Record<string,string>>({})
- const [kieConfigured,setKieConfigured]=useState(false),[generationBudget,setGenerationBudget]=useState(''),[generationConfirmed,setGenerationConfirmed]=useState(false),[submittingGeneration,setSubmittingGeneration]=useState(false)
- const [selectedShot,setSelectedShot]=useState(0),[animaticPlaying,setAnimaticPlaying]=useState(false),[animaticTime,setAnimaticTime]=useState(0)
- const [styleBible,setStyleBible]=useState<StyleBible>(defaultStyleBible)
- const [promptMode,setPromptMode]=useState<keyof PromptPackage>('universal')
- const [openAiConfigured,setOpenAiConfigured]=useState(false),[imageBudget,setImageBudget]=useState(''),[imageConfirmed,setImageConfirmed]=useState(false),[generatingImage,setGeneratingImage]=useState(false)
- const audit=useMemo(()=>coverageAudit(analysis.assets,storyboardsEnabled?shots:[],Object.keys(assetOutputs)),[analysis,shots,storyboardsEnabled,assetOutputs])
- const sceneCoverage=useMemo(()=>sceneCoverageAudit(analysis,storyboardsEnabled?shots:[],Object.keys(assetOutputs)),[analysis,shots,storyboardsEnabled,assetOutputs])
- const activeShot=shots[Math.min(selectedShot,Math.max(0,shots.length-1))]??initialShot
- const compiled=useMemo(()=>compileShotPackage(activeShot,model,analysis.assets.map(a=>a.id)),[activeShot,model,analysis])
- const totalAnimaticDuration=useMemo(()=>animaticDuration(shots),[shots])
- const plannedSheets=useMemo(()=>planAssetSheets(analysis.assets,analysis.scenes),[analysis])
- const modelRecommendations=useMemo(()=>analysis.assets[selectedAsset]?recommendModels(analysis.assets[selectedAsset],'Turnaround'):[],[analysis.assets,selectedAsset])
- const activePromptPackage=useMemo(()=>analysis.assets[selectedAsset]?compileAssetPrompt(analysis.assets[selectedAsset],`${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`):null,[analysis.assets,selectedAsset,styleBible])
- useEffect(()=>{Promise.all([projectStore.load(),studioStore.load()]).then(([savedGraph,studio])=>{setGraph(savedGraph);if(studio){setScript(studio.script);setAnalysis(studio.analysis);setShots(studio.shots);setJobs(studio.jobs);setStoryboardsEnabled(studio.storyboardsEnabled);setModel(studio.model);setAssetOutputs(studio.assetOutputs??{});setStyleBible(studio.styleBible??defaultStyleBible)}setHydrated(true)})},[])
- useEffect(()=>{if(hydrated){void projectStore.save(graph);void studioStore.save({script,analysis,shots,jobs,storyboardsEnabled,model,assetOutputs,styleBible})}},[graph,script,analysis,shots,jobs,storyboardsEnabled,model,assetOutputs,styleBible,hydrated])
- useEffect(()=>{if(!hydrated)return;setGraph(current=>{const next=synchronizeProductionGraph(current,analysis,shots,plannedSheets,assetOutputs);return JSON.stringify(current)===JSON.stringify(next)?current:next})},[analysis,shots,plannedSheets,assetOutputs,hydrated])
- useEffect(()=>{if(!providersOpen||!('__TAURI_INTERNALS__' in window)){setCredentialConfigured(false);return}import('@tauri-apps/api/core').then(({invoke})=>invoke<boolean>('credential_status',{provider:credentialProvider}).then(setCredentialConfigured).catch(()=>setCredentialConfigured(false)))},[providersOpen,credentialProvider])
- useEffect(()=>{if(!('__TAURI_INTERNALS__' in window)){setKieConfigured(false);return}import('@tauri-apps/api/core').then(({invoke})=>invoke<boolean>('credential_status',{provider:'kie'}).then(setKieConfigured).catch(()=>setKieConfigured(false)))},[providersOpen,workspace])
- useEffect(()=>{if(!('__TAURI_INTERNALS__' in window)){setOpenAiConfigured(false);return}import('@tauri-apps/api/core').then(({invoke})=>invoke<boolean>('credential_status',{provider:'openai'}).then(setOpenAiConfigured).catch(()=>setOpenAiConfigured(false)))},[providersOpen,workspace])
- useEffect(()=>{if(!animaticPlaying)return;const timer=window.setInterval(()=>setAnimaticTime(current=>{const next=current+.1;if(next>=totalAnimaticDuration){setAnimaticPlaying(false);return 0}const frame=shotAtTime(shots,next);if(frame)setSelectedShot(frame.index);return next}),100);return()=>window.clearInterval(timer)},[animaticPlaying,totalAnimaticDuration,shots])
- const analyze=()=>{const next=analyzeScript(script);setAnalysis(next);setShots(current=>current.map((shot,index)=>({...shot,sceneId:next.scenes[index]?.id??next.scenes[0]?.id??shot.sceneId,assetIds:next.assets.filter(a=>a.sceneIds.includes(next.scenes[index]?.id??'')).map(a=>a.id)})));setNotice(`Found ${next.scenes.length} scenes and ${next.assets.length} production assets.`)}
- const importScript=async(file:File)=>{if(!/\.(txt|md|fountain|screenplay)$/i.test(file.name)){setNotice('This build imports plain-text, Markdown, Fountain, and screenplay text files. Paste PDF or DOCX text into the editor.');return}const text=await file.text();setScript(text);const next=analyzeScript(text);setAnalysis(next);setNotice(`${file.name} imported: ${next.scenes.length} scenes and ${next.assets.length} assets.`)}
- const addManualAsset=()=>{const sceneId=analysis.scenes[0]?.id??'SCENE-001';const sequence=analysis.assets.length+1;setAnalysis(current=>({...current,assets:[...current.assets,{id:`MANU-ASSET-${String(sequence).padStart(3,'0')}-${crypto.randomUUID().slice(0,4).toUpperCase()}`,name:'New production asset',type:'prop',sceneIds:[sceneId],status:'planned'}]}))}
- const approveAsset=(index:number)=>setAnalysis(current=>({...current,assets:current.assets.map((asset,i)=>i===index?{...asset,status:'approved'}:asset)}))
- const queueAsset=()=>{const asset=analysis.assets[selectedAsset];if(!asset)return;setJobs(current=>[...current,{id:`JOB-${String(current.length+1).padStart(3,'0')}`,assetId:asset.id,provider:'External workflow',model:'Universal prompt',mode:'external',status:'queued',attempts:0}]);setNotice(`${asset.name} added to the durable prompt queue.`)}
- const reviseSelectedAsset=()=>{const asset=analysis.assets[selectedAsset];if(!asset)return;const affected=dependentsOf(graph,asset.id);setGraph(current=>reviseNode(current,asset.id));setJobs(current=>[...current,{id:`JOB-${crypto.randomUUID().slice(0,8).toUpperCase()}`,assetId:asset.id,provider:'External workflow',model:'Universal prompt',mode:'external',status:'queued',attempts:0}]);setNotice(`${asset.name} revision opened. ${affected.length} dependent graph record${affected.length===1?'':'s'} marked stale; only this asset was queued.`)}
- const runQueue=async()=>{const next=advanceQueue(jobs,['External workflow']);const job=next.find(item=>item.status==='running');setJobs(next);if(!job)return;const asset=analysis.assets.find(item=>item.id===job.assetId);if(!asset){setJobs(current=>current.map(item=>item.id===job.id?{...item,status:'failed',error:'Asset record no longer exists'}:item));return}const prompt=compileAssetPrompt(asset,`${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`);try{let outputPath=`download:${asset.id}-prompt.json`;if('__TAURI_INTERNALS__' in window){const {invoke}=await import('@tauri-apps/api/core');outputPath=await invoke<string>('save_prompt_package',{assetId:asset.id,contents:JSON.stringify({asset,styleBible,prompt},null,2)})}else downloadJson(`${asset.id}-prompt.json`,{asset,styleBible,prompt});setJobs(current=>current.map(item=>item.id===job.id?{...item,status:'complete',outputPath,error:undefined}:item));setNotice(`${job.id} completed after its prompt package was written.`)}catch(error){setJobs(current=>current.map(item=>item.id===job.id?{...item,status:'failed',error:String(error)}:item));setNotice(`${job.id} failed: ${String(error)}`)}}
- const copyPrompt=async()=>{if(!activePromptPackage)return;await navigator.clipboard.writeText(activePromptPackage[promptMode]);setNotice(`${promptMode} prompt copied as plain text.`)}
- const exportPrompt=(format:'txt'|'md'|'json'|'csv')=>{const asset=analysis.assets[selectedAsset];if(!asset||!activePromptPackage)return;if(format==='json'){downloadJson(`${asset.id}-prompt.json`,{assetId:asset.id,assetName:asset.name,styleRevision:styleBible.revision,...activePromptPackage});return}if(format==='csv'){const quote=(value:string)=>`"${value.replace(/"/g,'""')}"`;downloadText(`${asset.id}-prompt.csv`,`asset_id,asset_name,mode,prompt\n${[asset.id,asset.name,promptMode,activePromptPackage[promptMode]].map(quote).join(',')}`,'text/csv');return}downloadText(`${asset.id}-prompt.${format}`,format==='md'?`# ${asset.name} — ${promptMode}\n\n${activePromptPackage[promptMode]}\n`:activePromptPackage[promptMode])}
- const exportAllPrompts=async()=>{const entries=analysis.assets.flatMap(asset=>{const value=compileAssetPrompt(asset,`${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`);return Object.entries(value).map(([mode,prompt])=>({name:`${asset.id}-${mode}.txt`,contents:prompt}))});if(!('__TAURI_INTERNALS__' in window)){downloadJson('all-prompts.json',{styleBible,entries});setNotice('Browser preview exported all prompts as JSON. Windows builds create a ZIP.');return}const {invoke}=await import('@tauri-apps/api/core');const path=await invoke<string>('export_prompt_archive',{projectName:'The Last Horizon',entries});setNotice(`Prompt archive saved to ${path}`)}
- const patchShot=(field:keyof ShotRecord,value:string|number|string[])=>setShots(current=>current.map((shot,index)=>index===selectedShot?{...shot,[field]:value}:shot))
- const addShot=()=>{setShots(current=>[...current,{...initialShot,id:`SHOT-${String(current.length+1).padStart(3,'0')}`,order:current.length+1,sceneId:analysis.scenes[Math.min(current.length,analysis.scenes.length-1)]?.id??initialShot.sceneId}]);setSelectedShot(shots.length)}
- const duplicateShot=()=>{setShots(current=>normalizeShotOrder([...current.slice(0,selectedShot+1),{...activeShot,id:`SHOT-${crypto.randomUUID().slice(0,8).toUpperCase()}`},...current.slice(selectedShot+1)]));setSelectedShot(current=>current+1)}
- const deleteShot=()=>{if(shots.length===1){setNotice('A production must retain at least one shot.');return}setShots(current=>normalizeShotOrder(current.filter((_,index)=>index!==selectedShot)));setSelectedShot(current=>Math.max(0,Math.min(current,shots.length-2)))}
- const moveShot=(direction:-1|1)=>{const target=selectedShot+direction;if(target<0||target>=shots.length)return;setShots(current=>{const next=[...current];[next[selectedShot],next[target]]=[next[target],next[selectedShot]];return normalizeShotOrder(next)});setSelectedShot(target)}
- const saveCredential=async()=>{if(!('__TAURI_INTERNALS__' in window)){setNotice('Credential storage is available in the Windows desktop build.');return}const {invoke}=await import('@tauri-apps/api/core');await invoke('save_credential',{provider:credentialProvider,apiKey});setApiKey('');setCredentialConfigured(true);setNotice(`${providerRegistry.find(p=>p.id===credentialProvider)?.name} credential saved to Windows Credential Manager.`)}
- const removeCredential=async()=>{if(!('__TAURI_INTERNALS__' in window))return;const {invoke}=await import('@tauri-apps/api/core');await invoke('delete_credential',{provider:credentialProvider});setCredentialConfigured(false);setNotice(`${providerRegistry.find(p=>p.id===credentialProvider)?.name} credential removed.`)}
- const importAsset=async(file:File)=>{const asset=analysis.assets[selectedAsset];if(!asset)return;if(!('__TAURI_INTERNALS__' in window)){setNotice('Native asset QA and labeling are available in the Windows build.');return}const {invoke}=await import('@tauri-apps/api/core');const imageData=Array.from(new Uint8Array(await file.arrayBuffer()));const record={assetName:asset.name,assetId:asset.id,storyVariant:'Canonical',state:'Approved reference',sheetType:'Reference',view:'Hero',sceneReferences:asset.sceneIds,revision:1,projectStyle:'Cinematic realism'};const result=await invoke<{path:string,inspection:{width:number,height:number,valid:boolean,warnings:string[]}}>('import_labeled_asset',{imageData,fileName:file.name,title:`${asset.id} ${asset.name}`,metadata:labelLines(record)});setAssetOutputs(current=>({...current,[asset.id]:result.path}));if(result.inspection.valid)approveAsset(selectedAsset);setNotice(`${asset.name} imported, labeled, and checked at ${result.inspection.width}×${result.inspection.height}.`)}
- const generateImageDirect=async()=>{const asset=analysis.assets[selectedAsset];if(!asset||!activePromptPackage||!openAiConfigured||!imageConfirmed||Number(imageBudget)<=0)return;setGeneratingImage(true);const jobId=`JOB-${String(jobs.length+1).padStart(3,'0')}`;setJobs(current=>[...current,{id:jobId,assetId:asset.id,provider:'OpenAI',model:'gpt-image-1.5',mode:'direct',status:'running',attempts:1}]);try{const {invoke}=await import('@tauri-apps/api/core');const generated=await invoke<{path:string,inspection:{valid:boolean}}>('openai_generate_image',{model:'gpt-image-1.5',prompt:activePromptPackage.universal,size:'1024x1024',quality:'medium',outputName:`${asset.id}-generated`});const labeledPath=generated.path.replace(/\.png$/i,'-labeled.png');const record={assetName:asset.name,assetId:asset.id,storyVariant:'Canonical',state:'Generated reference',sheetType:'Identity',view:'Hero',sceneReferences:asset.sceneIds,revision:1,projectStyle:styleBible.name};const inspection=await invoke<{valid:boolean,width:number,height:number}>('label_image',{inputPath:generated.path,outputPath:labeledPath,title:`${asset.id} ${asset.name}`,metadata:labelLines(record)});if(!inspection.valid)throw new Error('Generated image did not pass native QA');setAssetOutputs(current=>({...current,[asset.id]:labeledPath}));approveAsset(selectedAsset);setJobs(current=>current.map(item=>item.id===jobId?{...item,status:'complete',outputPath:labeledPath}:item));setImageConfirmed(false);setNotice(`${asset.name} generated, labeled, verified, and saved.`)}catch(error){setJobs(current=>current.map(item=>item.id===jobId?{...item,status:'failed',error:String(error)}:item));setNotice(`Image generation failed: ${String(error)}`)}finally{setGeneratingImage(false)}}
- const generateDirect=async()=>{if(!kieConfigured||!generationConfirmed||Number(generationBudget)<=0||model!=='Seedance 2.0')return;setSubmittingGeneration(true);try{const {invoke}=await import('@tauri-apps/api/core');const response=await invoke<Record<string,unknown>>('kie_create_task',{model:videoPresets[model].apiModel,prompt:compiled.prompt,aspectRatio:'16:9',duration:[4,5,6,8,10,12].reduce((best,value)=>Math.abs(value-shots[0].duration)<Math.abs(best-shots[0].duration)?value:best,5),generateAudio:videoPresets[model].supportsAudio});const data=(response.data??{}) as Record<string,unknown>;const taskId=String(data.taskId??response.taskId??'remote task');setJobs(current=>[...current,{id:taskId,assetId:shots[0].id,provider:'KIE.ai',model:videoPresets[model].apiModel,mode:'direct',status:'running',attempts:1}]);setNotice(`Direct Seedance task submitted: ${taskId}`);setGenerationConfirmed(false)}catch(error){setNotice(`Direct generation was not submitted: ${String(error)}`)}finally{setSubmittingGeneration(false)}}
- const buildProductionZip=async()=>{const packageManifest={format:'production-guy-package',version:1,status:audit.ready?'production-ready':'draft-incomplete',project:'The Last Horizon',analysis,plannedSheets,shots,jobs,audit,sceneCoverage,compiledAt:new Date().toISOString()};if(!('__TAURI_INTERNALS__' in window)){downloadJson('production-manifest.json',packageManifest);setNotice('Browser preview exported the manifest. Windows builds create and validate the complete ZIP.');return}const quote=(value:unknown)=>`"${String(value).replace(/"/g,'""')}"`;const ledger=['asset_id,asset_name,type,status,scenes,reference_file',...analysis.assets.map(asset=>[asset.id,asset.name,asset.type,asset.status,asset.sceneIds.join('|'),assetOutputs[asset.id]??''].map(quote).join(','))].join('\n');const {invoke}=await import('@tauri-apps/api/core');const path=await invoke<string>('export_production_package',{packageName:`The-Last-Horizon-${activeShot.id}`,manifest:JSON.stringify(packageManifest,null,2),assetLedgerCsv:ledger,styleBible:JSON.stringify(styleBible,null,2),modelUsage:JSON.stringify({targetVideoModel:model,preset:videoPresets[model],imageRecommendations:modelRecommendations.map(item=>({provider:item.provider,id:item.id,score:item.score,verifiedAt:item.verifiedAt}))},null,2),prompt:compiled.prompt,referencePaths:Object.values(assetOutputs)});setNotice(`Validated ${audit.ready?'production-ready':'draft'} package saved to ${path}`)}
- return <div className="app-shell"><aside className="sidebar"><div className="brand"><BrandMark size={38}/><div><strong>Production Guy</strong><span>Your AI Production Department</span></div></div><nav aria-label="Primary workspaces">{workspaces.map(({name,icon:Icon,optional})=><button key={name} className={workspace===name?'active':''} onClick={()=>setWorkspace(name)}><Icon size={18}/><span>{name}</span>{optional&&<em>Optional</em>}</button>)}</nav><div className="release-stack"><span>RELEASE COVERAGE</span>{['Core','Visual Studio','Director’s Room','Video Pipeline'].map((name,index)=><div key={name}><Check size={12}/><b>0{index+1}</b><small>{name}</small></div>)}</div><div className="project-card"><span>Current production</span><strong>The Last Horizon</strong><small>{analysis.scenes.length} scenes · {analysis.assets.length} assets</small><div className="progress"><i style={{width:`${audit.ready?100:Math.round(analysis.assets.filter(a=>a.status==='approved').length/Math.max(1,analysis.assets.length)*100)}%`}}/></div><small>{audit.ready?'Production ready':`${audit.missingAssets.length} approvals remaining`}</small></div></aside>
- <main><header><div><span className="eyebrow">THE LAST HORIZON / {workspace.toUpperCase()}</span><h1>{workspace}</h1></div><div className="header-actions"><label><Search size={15}/><input aria-label="Search production" placeholder="Search production…"/></label><button className="icon-button" title="Global production tools" onClick={()=>setProvidersOpen(true)}><WandSparkles size={18}/></button></div></header>{notice&&<div className="notice" role="status"><Check size={16}/>{notice}<button onClick={()=>setNotice('')}>Dismiss</button></div>}
- {providersOpen&&<div className="modal-backdrop" role="presentation"><section className="provider-modal" role="dialog" aria-label="AI provider registry"><div className="panel-heading"><div><span className="eyebrow">GLOBAL SERVICE</span><h3>AI Provider Registry</h3></div><button className="secondary" onClick={()=>setProvidersOpen(false)}>Close</button></div><div className="provider-grid">{providerRegistry.map(provider=><article key={provider.id}><div><b>{provider.name}</b><span className={provider.status}>{provider.status}</span></div><p>{provider.notes}</p><small>Verified {provider.verifiedAt}</small><a href={provider.documentationUrl} target="_blank" rel="noreferrer">Official documentation</a></article>)}</div><div className="credential-form"><label><span>Provider</span><select value={credentialProvider} onChange={e=>setCredentialProvider(e.target.value as ProviderId)}>{providerRegistry.map(provider=><option key={provider.id} value={provider.id}>{provider.name}</option>)}</select></label><label><span>API key · {credentialConfigured?'configured':'not configured'}</span><input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="Stored only in Windows Credential Manager"/></label><button className="primary" disabled={apiKey.length<8} onClick={saveCredential}>Save securely</button>{credentialConfigured&&<button className="secondary" onClick={removeCredential}>Remove key</button>}</div></section></div>}
- {workspace==='Projects'&&<section className="dashboard"><div className="welcome"><span className="pill">PRODUCTION GUY 0.5.1</span><h2>From story to<br/>screen-ready.</h2><p>One connected production system for story intelligence, visual development, optional direction, and model-aware delivery.</p><div className="hero-actions"><button className="primary" onClick={()=>setWorkspace('Story')}>Continue production</button><button className="secondary" onClick={()=>downloadJson('the-last-horizon.pguy.json',{analysis,shots,jobs,graph})}><Download size={15}/> Export project</button></div></div><div className="hero-visual compact"><div className="frame"><img src="/assets/amina-reference.png" alt="Amina approved visual reference"/><span>APPROVED REFERENCE · CHAR-001</span></div></div><div className="release-cards">{workspaces.slice(1).map((item,index)=><button key={item.name} onClick={()=>setWorkspace(item.name)}><span>0{index+1}</span><item.icon/><b>{item.name}</b><small>{['Script intelligence and inventory','Assets, prompts and queues','Shots, acting, audio and animatic','Audit, compile and export'][index]}</small></button>)}</div></section>}
- {workspace==='Story'&&<section className="two-column studio-page">
-  <div className="panel"><div className="panel-heading"><div><span className="eyebrow">SCRIPT INTELLIGENCE</span><h3>Source material</h3></div><div className="button-row"><label className="secondary file-button">Import script<input type="file" accept=".txt,.md,.fountain,.screenplay,text/plain,text/markdown" onChange={event=>{const file=event.target.files?.[0];if(file)void importScript(file);event.target.value=''}}/></label><button className="primary" onClick={analyze}>Analyze script</button></div></div><textarea className="script-editor" value={script} onChange={e=>setScript(e.target.value)} aria-label="Script source"/><p className="helper">Scene headings, source dialogue, characters, sets, and used props are extracted locally. Suggested dialogue is never mixed with source dialogue.</p></div>
-  <div className="panel"><div className="panel-heading"><div><span className="eyebrow">EDITABLE INVENTORY</span><h3>{analysis.scenes.length} scenes · {analysis.assets.length} assets</h3></div></div><div className="scene-list compact-scenes">{analysis.scenes.map(scene=><div key={scene.id}><span>{scene.id}</span><b>{scene.heading}</b><small>{scene.dialogue.length} dialogue cue{scene.dialogue.length===1?'':'s'} · {scene.timeOfDay}</small></div>)}</div><EditableInventory analysis={analysis} onChange={setAnalysis} onAdd={addManualAsset}/></div>
- </section>}
- {workspace==='Design'&&<div className="design-workspace">
-  <ArtDirectionBar style={styleBible} onChange={setStyleBible} sheetCount={plannedSheets.length}/>
-  <section className="three-column">
-   <div className="panel asset-browser"><div className="panel-heading"><div><span className="eyebrow">SHARED ASSET REGISTRY</span><h3>Production assets</h3></div></div>{analysis.assets.map((asset,index)=><button className={selectedAsset===index?'selected':''} key={asset.id} onClick={()=>setSelectedAsset(index)}><span className={`kind ${asset.type}`}>{asset.type.slice(0,2)}</span><span><b>{asset.name}</b><small>{asset.id} · {plannedSheets.filter(sheet=>sheet.assetId===asset.id).length} sheets</small></span><i className={asset.status}>{asset.status}</i></button>)}</div>
-   <div className="panel design-preview">{analysis.assets[selectedAsset]&&activePromptPackage&&<><div className="panel-heading"><div><span className="eyebrow">{analysis.assets[selectedAsset].type.toUpperCase()} · {analysis.assets[selectedAsset].id}</span><h3>{analysis.assets[selectedAsset].name}</h3></div><span className={`status ${analysis.assets[selectedAsset].status}`}>{analysis.assets[selectedAsset].status}</span></div><img src="/assets/amina-reference.png" alt="Visual reference preview"/><div className="prompt-tabs">{(['universal','compact','technical','negative'] as Array<keyof PromptPackage>).map(mode=><button className={promptMode===mode?'active':''} onClick={()=>setPromptMode(mode)} key={mode}>{mode}</button>)}</div><div className="prompt-box"><span>{promptMode.toUpperCase()} PROMPT</span><p>{activePromptPackage[promptMode]}</p></div><div className="prompt-actions"><button className="secondary" onClick={copyPrompt}><Copy size={13}/> Copy</button>{(['txt','md','json','csv'] as const).map(format=><button className="secondary" key={format} onClick={()=>exportPrompt(format)}>{format.toUpperCase()}</button>)}</div><div className="model-match"><span>RECOMMENDED MODEL</span><b>{modelRecommendations[0]?.name}</b><small>{modelRecommendations[0]?.score}/100 · {modelRecommendations[0]?.reason}</small></div><div className="image-generation-gate"><label><span>Per-image spending ceiling (USD)</span><input type="number" min="0" step="0.01" value={imageBudget} onChange={event=>setImageBudget(event.target.value)} placeholder="Required"/></label><label><input type="checkbox" checked={imageConfirmed} onChange={event=>setImageConfirmed(event.target.checked)}/> Authorize one OpenAI image request within this ceiling.</label><button className="primary" disabled={!openAiConfigured||!imageConfirmed||Number(imageBudget)<=0||generatingImage} onClick={generateImageDirect}>{generatingImage?'Generating…':'Generate verified image'}</button><small>{openAiConfigured?'OpenAI credential configured.':'Configure OpenAI in Global production tools.'} Provider pricing is not assumed; confirm the ceiling against your account.</small></div><div className="button-row"><button className="primary" onClick={()=>approveAsset(selectedAsset)}>Approve identity</button><label className="secondary file-button">Import & QA<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.target.files?.[0];if(file)void importAsset(file);e.target.value='' }}/></label><button className="secondary" onClick={queueAsset}><Plus size={14}/> Queue prompt package</button><button className="secondary" onClick={reviseSelectedAsset}>Revise & selectively regenerate</button></div>{assetOutputs[analysis.assets[selectedAsset].id]&&<p className="helper">Verified labeled reference: {assetOutputs[analysis.assets[selectedAsset].id]}</p>}</>}</div>
-   <div className="panel"><div className="panel-heading"><div><span className="eyebrow">DURABLE QUEUE</span><h3>Production jobs</h3></div><div className="queue-controls"><button title="Pause queue" onClick={()=>setJobs(pauseQueue)}><Pause size={12}/></button><button title="Resume queue" onClick={()=>setJobs(resumeQueue)}><Play size={12}/></button></div></div><div className="queue-list">{jobs.length===0?<p className="empty">No jobs queued.</p>:jobs.map(job=><div key={job.id}><span><b>{job.id}</b><small>{job.assetId}{job.outputPath?` · ${job.outputPath}`:''}{job.error?` · ${job.error}`:''}</small></span><i className={job.status}>{job.status}</i>{job.status!=='complete'&&job.status!=='cancelled'&&<button title={`Cancel ${job.id}`} onClick={()=>setJobs(current=>cancelJob(current,job.id))}>×</button>}{(job.status==='failed'||job.status==='cancelled')&&<button title={`Retry ${job.id}`} onClick={()=>setJobs(current=>retryJob(current,job.id))}>Retry</button>}</div>)}</div><button className="primary full" onClick={runQueue} disabled={!jobs.some(j=>j.status==='queued')}><Play size={14}/> Process next job</button><button className="secondary full" onClick={exportAllPrompts}><Download size={14}/> Export all prompts</button><p className="helper">A job completes only after its output package is written. Queue state survives restart.</p></div>
-  </section>
- </div>}
- {workspace==='Direct'&&<section className="studio-page"><div className="optional-banner"><div><span className="eyebrow">OPTIONAL WORKFLOW</span><h2>Director’s Room</h2><p>Enable shot planning without rebuilding the project.</p></div><button className={storyboardsEnabled?'primary':'secondary'} onClick={()=>setStoryboardsEnabled(!storyboardsEnabled)}>{storyboardsEnabled?'Storyboarding enabled':'Enable storyboarding'}</button></div>{storyboardsEnabled?<div className="two-column"><div className="panel shot-preview"><img src="/assets/amina-reference.png" alt={`Animatic frame for ${activeShot.id}`}/><div className="timeline"><span style={{width:`${totalAnimaticDuration?animaticTime/totalAnimaticDuration*100:0}%`}}/><button className="timeline-play" onClick={()=>setAnimaticPlaying(value=>!value)}>{animaticPlaying?<Pause size={14}/>:<Play size={14}/>}</button><b>{animaticTime.toFixed(1)} / {totalAnimaticDuration.toFixed(1)}s</b><small>{activeShot.id} · {activeShot.action}</small></div><div className="editor-actions"><button className="secondary" onClick={()=>moveShot(-1)} disabled={selectedShot===0}><ArrowLeft size={13}/> Earlier</button><button className="secondary" onClick={()=>moveShot(1)} disabled={selectedShot===shots.length-1}>Later <ArrowRight size={13}/></button><button className="secondary" onClick={duplicateShot}><Copy size={13}/> Duplicate</button><button className="secondary danger" onClick={deleteShot}><Trash2 size={13}/> Delete</button></div><div className="shot-strip">{shots.map((shot,index)=><button className={index===selectedShot?'selected':''} key={shot.id} onClick={()=>{setSelectedShot(index);setAnimaticPlaying(false);setAnimaticTime(shots.slice(0,index).reduce((total,item)=>total+item.duration,0))}}><span>{shot.id}</span><b>{shot.cameraFraming}</b><small>{shot.duration.toFixed(1)}s · {shot.storyboardStatus}</small></button>)}<button onClick={addShot}><Plus/> Add shot</button></div></div><div className="panel shot-form"><span className="eyebrow">SHOT EDITOR · {activeShot.id}</span><h3>Performance & camera direction</h3>{([['action','Action'],['dialogue','Dialogue (source)'],['emotionalObjective','Emotional objective'],['facialActing','Facial acting'],['bodyLanguage','Body language'],['microAnimation','Micro-animation'],['cameraFraming','Camera framing'],['cameraMovement','Camera movement'],['soundEffects','Sound effects'],['ambience','Ambience']] as Array<[keyof ShotRecord,string]>).map(([field,label])=><label key={field}><span>{label}</span><input value={String(activeShot[field])} onChange={e=>patchShot(field,e.target.value)}/></label>)}<label><span>Duration</span><input type="number" min="1" max="30" value={activeShot.duration} onChange={e=>patchShot('duration',Number(e.target.value))}/></label><button className="primary full" onClick={()=>patchShot('storyboardStatus','approved')}>Approve shot plan</button></div></div>:<div className="empty-state"><Clapperboard size={34}/><h3>Storyboarding is off</h3><p>Asset production and delivery remain fully available.</p></div>}</section>}
- {workspace==='Deliver'&&<section className="three-column studio-page">
-  <div className="panel"><span className="eyebrow">PRODUCTION COVERAGE</span><h3>{audit.ready?'Ready to package':'Action required'}</h3><div className="big-stat"><b>{audit.ready?'100%':`${Math.round((analysis.assets.length-audit.missingAssets.length)/Math.max(1,analysis.assets.length)*100)}%`}</b><span>verified asset coverage</span></div><div className="stat-row"><span>Missing verified files</span><b>{audit.missingAssets.length}</b></div><div className="stat-row"><span>Incomplete shots</span><b>{audit.incompleteShots.length}</b></div><div className="audit-list">{[...audit.missingAssets,...audit.incompleteShots].map(id=><span key={id}>{id}</span>)}</div><div className="scene-coverage">{sceneCoverage.map(scene=><article key={scene.sceneId} className={scene.videoReady?'ready':''}><div><b>{scene.sceneId}</b><span>{scene.videoReady?'VIDEO READY':'INCOMPLETE'}</span></div><small>{scene.verifiedAssets.length}/{scene.requiredAssets.length} references · {scene.plannedShots.length} shots</small>{scene.warnings.map(warning=><p key={warning}>⚠ {warning}</p>)}</article>)}</div></div>
-  <div className="panel compiler"><div className="panel-heading"><div><span className="eyebrow">MODEL-AWARE SHOT COMPILER</span><h3>{activeShot.id}</h3></div></div><label><span>Target video model</span><select value={model} onChange={e=>setModel(e.target.value as VideoModel)}>{Object.keys(videoPresets).map(name=><option key={name}>{name}</option>)}</select></label><div className="capabilities"><span>{videoPresets[model].maxReferences} references</span><span>{videoPresets[model].supportsAudio?'Model audio':'Post audio'}</span><span>{videoPresets[model].supportsFirstLastFrame?'First/last frames':'Single frame'}</span></div><div className="prompt-box"><span>COMPILED PROMPT</span><p>{compiled.prompt}</p></div><div className="warnings">{compiled.warnings.map(warning=><p key={warning}>⚠ {warning}</p>)}</div></div>
-  <div className="panel"><span className="eyebrow">PRODUCTION PACKAGE</span><h3>Portable delivery</h3><p className="helper">Exports preserve stable IDs, source dialogue, acting/audio direction, original references, Style Bible, ledger, model record, and warnings.</p><button className="primary full" onClick={()=>downloadJson(`${activeShot.id}-${model.replace(/\s/g,'-')}.json`,compiled)}><Download size={14}/> Export shot package</button><button className="secondary full" onClick={buildProductionZip}><PackageCheck size={14}/> {audit.ready?'Build production package':'Build clearly marked draft package'}</button><div className="generation-gate"><label><span>Maximum approved spend (USD)</span><input type="number" min="0" step="0.01" value={generationBudget} onChange={e=>setGenerationBudget(e.target.value)} placeholder="Required before submission"/></label><label className="confirm-spend"><input type="checkbox" checked={generationConfirmed} onChange={e=>setGenerationConfirmed(e.target.checked)}/> I authorize one provider task within this ceiling.</label></div><button className="secondary full" disabled={!kieConfigured||!generationConfirmed||Number(generationBudget)<=0||model!=='Seedance 2.0'||submittingGeneration} onClick={generateDirect}><Pause size={14}/> {submittingGeneration?'Submitting…':'Generate directly with KIE'}</button><p className="helper">Requires the Windows build, configured KIE credential, Seedance 2.0, and a per-task ceiling.</p></div>
- </section>}
- </main></div>
+export default function App() {
+  const [workspace, setWorkspace] = useState("Projects"),
+    [graph, setGraph] = useState<ProductionGraph>(() =>
+      structuredClone(demoGraph),
+    ),
+    [hydrated, setHydrated] = useState(false);
+  const [script, setScript] = useState(sampleScript),
+    [analysis, setAnalysis] = useState<AnalysisResult>(() =>
+      analyzeScript(sampleScript),
+    ),
+    [shots, setShots] = useState<ShotRecord[]>([{ ...initialShot }]);
+  const [selectedAsset, setSelectedAsset] = useState(0),
+    [jobs, setJobs] = useState<GenerationJob[]>([]),
+    [model, setModel] = useState<VideoModel>("Seedance 2.0"),
+    [storyboardsEnabled, setStoryboardsEnabled] = useState(false),
+    [notice, setNotice] = useState("");
+  const [providersOpen, setProvidersOpen] = useState(false),
+    [credentialProvider, setCredentialProvider] = useState<ProviderId>("kie"),
+    [apiKey, setApiKey] = useState("");
+  const [credentialConfigured, setCredentialConfigured] = useState(false),
+    [assetOutputs, setAssetOutputs] = useState<Record<string, string>>({});
+  const [kieConfigured, setKieConfigured] = useState(false),
+    [generationBudget, setGenerationBudget] = useState(""),
+    [generationConfirmed, setGenerationConfirmed] = useState(false),
+    [submittingGeneration, setSubmittingGeneration] = useState(false);
+  const [selectedShot, setSelectedShot] = useState(0),
+    [animaticPlaying, setAnimaticPlaying] = useState(false),
+    [animaticTime, setAnimaticTime] = useState(0);
+  const [styleBible, setStyleBible] = useState<StyleBible>(defaultStyleBible);
+  const [promptMode, setPromptMode] =
+    useState<keyof PromptPackage>("universal");
+  const [openAiConfigured, setOpenAiConfigured] = useState(false),
+    [imageBudget, setImageBudget] = useState(""),
+    [imageConfirmed, setImageConfirmed] = useState(false),
+    [generatingImage, setGeneratingImage] = useState(false);
+  const audit = useMemo(
+    () =>
+      coverageAudit(
+        analysis.assets,
+        storyboardsEnabled ? shots : [],
+        Object.keys(assetOutputs),
+      ),
+    [analysis, shots, storyboardsEnabled, assetOutputs],
+  );
+  const sceneCoverage = useMemo(
+    () =>
+      sceneCoverageAudit(
+        analysis,
+        storyboardsEnabled ? shots : [],
+        Object.keys(assetOutputs),
+      ),
+    [analysis, shots, storyboardsEnabled, assetOutputs],
+  );
+  const activeShot =
+    shots[Math.min(selectedShot, Math.max(0, shots.length - 1))] ?? initialShot;
+  const compiled = useMemo(
+    () =>
+      compileShotPackage(
+        activeShot,
+        model,
+        analysis.assets.map((a) => a.id),
+      ),
+    [activeShot, model, analysis],
+  );
+  const totalAnimaticDuration = useMemo(() => animaticDuration(shots), [shots]);
+  const plannedSheets = useMemo(
+    () => planAssetSheets(analysis.assets, analysis.scenes),
+    [analysis],
+  );
+  const modelRecommendations = useMemo(
+    () =>
+      analysis.assets[selectedAsset]
+        ? recommendModels(analysis.assets[selectedAsset], "Turnaround")
+        : [],
+    [analysis.assets, selectedAsset],
+  );
+  const activePromptPackage = useMemo(
+    () =>
+      analysis.assets[selectedAsset]
+        ? compileAssetPrompt(
+            analysis.assets[selectedAsset],
+            `${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`,
+          )
+        : null,
+    [analysis.assets, selectedAsset, styleBible],
+  );
+  useEffect(() => {
+    Promise.all([projectStore.load(), studioStore.load()]).then(
+      ([savedGraph, studio]) => {
+        setGraph(savedGraph);
+        if (studio) {
+          setScript(studio.script);
+          setAnalysis(studio.analysis);
+          setShots(studio.shots);
+          setJobs(studio.jobs);
+          setStoryboardsEnabled(studio.storyboardsEnabled);
+          setModel(studio.model);
+          setAssetOutputs(studio.assetOutputs ?? {});
+          setStyleBible(studio.styleBible ?? defaultStyleBible);
+        }
+        setHydrated(true);
+      },
+    );
+  }, []);
+  useEffect(() => {
+    if (hydrated) {
+      void projectStore.save(graph);
+      void studioStore.save({
+        script,
+        analysis,
+        shots,
+        jobs,
+        storyboardsEnabled,
+        model,
+        assetOutputs,
+        styleBible,
+      });
+    }
+  }, [
+    graph,
+    script,
+    analysis,
+    shots,
+    jobs,
+    storyboardsEnabled,
+    model,
+    assetOutputs,
+    styleBible,
+    hydrated,
+  ]);
+  useEffect(() => {
+    if (!hydrated) return;
+    setGraph((current) => {
+      const next = synchronizeProductionGraph(
+        current,
+        analysis,
+        shots,
+        plannedSheets,
+        assetOutputs,
+      );
+      return JSON.stringify(current) === JSON.stringify(next) ? current : next;
+    });
+  }, [analysis, shots, plannedSheets, assetOutputs, hydrated]);
+  useEffect(() => {
+    if (!providersOpen || !("__TAURI_INTERNALS__" in window)) {
+      setCredentialConfigured(false);
+      return;
+    }
+    import("@tauri-apps/api/core").then(({ invoke }) =>
+      invoke<boolean>("credential_status", { provider: credentialProvider })
+        .then(setCredentialConfigured)
+        .catch(() => setCredentialConfigured(false)),
+    );
+  }, [providersOpen, credentialProvider]);
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) {
+      setKieConfigured(false);
+      return;
+    }
+    import("@tauri-apps/api/core").then(({ invoke }) =>
+      invoke<boolean>("credential_status", { provider: "kie" })
+        .then(setKieConfigured)
+        .catch(() => setKieConfigured(false)),
+    );
+  }, [providersOpen, workspace]);
+  useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) {
+      setOpenAiConfigured(false);
+      return;
+    }
+    import("@tauri-apps/api/core").then(({ invoke }) =>
+      invoke<boolean>("credential_status", { provider: "openai" })
+        .then(setOpenAiConfigured)
+        .catch(() => setOpenAiConfigured(false)),
+    );
+  }, [providersOpen, workspace]);
+  useEffect(() => {
+    if (!animaticPlaying) return;
+    const timer = window.setInterval(
+      () =>
+        setAnimaticTime((current) => {
+          const next = current + 0.1;
+          if (next >= totalAnimaticDuration) {
+            setAnimaticPlaying(false);
+            return 0;
+          }
+          const frame = shotAtTime(shots, next);
+          if (frame) setSelectedShot(frame.index);
+          return next;
+        }),
+      100,
+    );
+    return () => window.clearInterval(timer);
+  }, [animaticPlaying, totalAnimaticDuration, shots]);
+  const analyze = () => {
+    const next = analyzeScript(script);
+    setAnalysis(next);
+    setShots((current) =>
+      current.map((shot, index) => ({
+        ...shot,
+        sceneId: next.scenes[index]?.id ?? next.scenes[0]?.id ?? shot.sceneId,
+        assetIds: next.assets
+          .filter((a) => a.sceneIds.includes(next.scenes[index]?.id ?? ""))
+          .map((a) => a.id),
+      })),
+    );
+    setNotice(
+      `Found ${next.scenes.length} scenes and ${next.assets.length} production assets.`,
+    );
+  };
+  const importScript = async (file: File) => {
+    if (!/\.(txt|md|fountain|screenplay)$/i.test(file.name)) {
+      setNotice(
+        "This build imports plain-text, Markdown, Fountain, and screenplay text files. Paste PDF or DOCX text into the editor.",
+      );
+      return;
+    }
+    const text = await file.text();
+    setScript(text);
+    const next = analyzeScript(text);
+    setAnalysis(next);
+    setNotice(
+      `${file.name} imported: ${next.scenes.length} scenes and ${next.assets.length} assets.`,
+    );
+  };
+  const addManualAsset = () => {
+    const sceneId = analysis.scenes[0]?.id ?? "SCENE-001";
+    const sequence = analysis.assets.length + 1;
+    setAnalysis((current) => ({
+      ...current,
+      assets: [
+        ...current.assets,
+        {
+          id: `MANU-ASSET-${String(sequence).padStart(3, "0")}-${crypto.randomUUID().slice(0, 4).toUpperCase()}`,
+          name: "New production asset",
+          type: "prop",
+          sceneIds: [sceneId],
+          status: "planned",
+        },
+      ],
+    }));
+  };
+  const approveAsset = (index: number) =>
+    setAnalysis((current) => ({
+      ...current,
+      assets: current.assets.map((asset, i) =>
+        i === index ? { ...asset, status: "approved" } : asset,
+      ),
+    }));
+  const queueAsset = () => {
+    const asset = analysis.assets[selectedAsset];
+    if (!asset) return;
+    setJobs((current) => [
+      ...current,
+      {
+        id: `JOB-${String(current.length + 1).padStart(3, "0")}`,
+        assetId: asset.id,
+        provider: "External workflow",
+        model: "Universal prompt",
+        mode: "external",
+        status: "queued",
+        attempts: 0,
+      },
+    ]);
+    setNotice(`${asset.name} added to the durable prompt queue.`);
+  };
+  const reviseSelectedAsset = () => {
+    const asset = analysis.assets[selectedAsset];
+    if (!asset) return;
+    const affected = dependentsOf(graph, asset.id);
+    setGraph((current) => reviseNode(current, asset.id));
+    setJobs((current) => [
+      ...current,
+      {
+        id: `JOB-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+        assetId: asset.id,
+        provider: "External workflow",
+        model: "Universal prompt",
+        mode: "external",
+        status: "queued",
+        attempts: 0,
+      },
+    ]);
+    setNotice(
+      `${asset.name} revision opened. ${affected.length} dependent graph record${affected.length === 1 ? "" : "s"} marked stale; only this asset was queued.`,
+    );
+  };
+  const runQueue = async () => {
+    const next = advanceQueue(jobs, ["External workflow"]);
+    const job = next.find((item) => item.status === "running");
+    setJobs(next);
+    if (!job) return;
+    const asset = analysis.assets.find((item) => item.id === job.assetId);
+    if (!asset) {
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === job.id
+            ? {
+                ...item,
+                status: "failed",
+                error: "Asset record no longer exists",
+              }
+            : item,
+        ),
+      );
+      return;
+    }
+    const prompt = compileAssetPrompt(
+      asset,
+      `${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`,
+    );
+    try {
+      let outputPath = `download:${asset.id}-prompt.json`;
+      if ("__TAURI_INTERNALS__" in window) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        outputPath = await invoke<string>("save_prompt_package", {
+          assetId: asset.id,
+          contents: JSON.stringify({ asset, styleBible, prompt }, null, 2),
+        });
+      } else
+        downloadJson(`${asset.id}-prompt.json`, { asset, styleBible, prompt });
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === job.id
+            ? { ...item, status: "complete", outputPath, error: undefined }
+            : item,
+        ),
+      );
+      setNotice(`${job.id} completed after its prompt package was written.`);
+    } catch (error) {
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === job.id
+            ? { ...item, status: "failed", error: String(error) }
+            : item,
+        ),
+      );
+      setNotice(`${job.id} failed: ${String(error)}`);
+    }
+  };
+  const copyPrompt = async () => {
+    if (!activePromptPackage) return;
+    await navigator.clipboard.writeText(activePromptPackage[promptMode]);
+    setNotice(`${promptMode} prompt copied as plain text.`);
+  };
+  const exportPrompt = (format: "txt" | "md" | "json" | "csv") => {
+    const asset = analysis.assets[selectedAsset];
+    if (!asset || !activePromptPackage) return;
+    if (format === "json") {
+      downloadJson(`${asset.id}-prompt.json`, {
+        assetId: asset.id,
+        assetName: asset.name,
+        styleRevision: styleBible.revision,
+        ...activePromptPackage,
+      });
+      return;
+    }
+    if (format === "csv") {
+      const quote = (value: string) => `"${value.replace(/"/g, '""')}"`;
+      downloadText(
+        `${asset.id}-prompt.csv`,
+        `asset_id,asset_name,mode,prompt\n${[asset.id, asset.name, promptMode, activePromptPackage[promptMode]].map(quote).join(",")}`,
+        "text/csv",
+      );
+      return;
+    }
+    downloadText(
+      `${asset.id}-prompt.${format}`,
+      format === "md"
+        ? `# ${asset.name} — ${promptMode}\n\n${activePromptPackage[promptMode]}\n`
+        : activePromptPackage[promptMode],
+    );
+  };
+  const exportAllPrompts = async () => {
+    const entries = analysis.assets.flatMap((asset) => {
+      const value = compileAssetPrompt(
+        asset,
+        `${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`,
+      );
+      return Object.entries(value).map(([mode, prompt]) => ({
+        name: `${asset.id}-${mode}.txt`,
+        contents: prompt,
+      }));
+    });
+    if (!("__TAURI_INTERNALS__" in window)) {
+      downloadJson("all-prompts.json", { styleBible, entries });
+      setNotice(
+        "Browser preview exported all prompts as JSON. Windows builds create a ZIP.",
+      );
+      return;
+    }
+    const { invoke } = await import("@tauri-apps/api/core");
+    const path = await invoke<string>("export_prompt_archive", {
+      projectName: "The Last Horizon",
+      entries,
+    });
+    setNotice(`Prompt archive saved to ${path}`);
+  };
+  const patchShot = (
+    field: keyof ShotRecord,
+    value: string | number | string[],
+  ) =>
+    setShots((current) =>
+      current.map((shot, index) =>
+        index === selectedShot ? { ...shot, [field]: value } : shot,
+      ),
+    );
+  const addShot = () => {
+    setShots((current) => [
+      ...current,
+      {
+        ...initialShot,
+        id: `SHOT-${String(current.length + 1).padStart(3, "0")}`,
+        order: current.length + 1,
+        sceneId:
+          analysis.scenes[Math.min(current.length, analysis.scenes.length - 1)]
+            ?.id ?? initialShot.sceneId,
+      },
+    ]);
+    setSelectedShot(shots.length);
+  };
+  const duplicateShot = () => {
+    setShots((current) =>
+      normalizeShotOrder([
+        ...current.slice(0, selectedShot + 1),
+        {
+          ...activeShot,
+          id: `SHOT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+        },
+        ...current.slice(selectedShot + 1),
+      ]),
+    );
+    setSelectedShot((current) => current + 1);
+  };
+  const deleteShot = () => {
+    if (shots.length === 1) {
+      setNotice("A production must retain at least one shot.");
+      return;
+    }
+    setShots((current) =>
+      normalizeShotOrder(current.filter((_, index) => index !== selectedShot)),
+    );
+    setSelectedShot((current) =>
+      Math.max(0, Math.min(current, shots.length - 2)),
+    );
+  };
+  const moveShot = (direction: -1 | 1) => {
+    const target = selectedShot + direction;
+    if (target < 0 || target >= shots.length) return;
+    setShots((current) => {
+      const next = [...current];
+      [next[selectedShot], next[target]] = [next[target], next[selectedShot]];
+      return normalizeShotOrder(next);
+    });
+    setSelectedShot(target);
+  };
+  const saveCredential = async () => {
+    if (!("__TAURI_INTERNALS__" in window)) {
+      setNotice(
+        "Credential storage is available in the Windows desktop build.",
+      );
+      return;
+    }
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("save_credential", { provider: credentialProvider, apiKey });
+    setApiKey("");
+    setCredentialConfigured(true);
+    setNotice(
+      `${providerRegistry.find((p) => p.id === credentialProvider)?.name} credential saved to Windows Credential Manager.`,
+    );
+  };
+  const removeCredential = async () => {
+    if (!("__TAURI_INTERNALS__" in window)) return;
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("delete_credential", { provider: credentialProvider });
+    setCredentialConfigured(false);
+    setNotice(
+      `${providerRegistry.find((p) => p.id === credentialProvider)?.name} credential removed.`,
+    );
+  };
+  const importAsset = async (file: File) => {
+    const asset = analysis.assets[selectedAsset];
+    if (!asset) return;
+    if (!("__TAURI_INTERNALS__" in window)) {
+      setNotice(
+        "Native asset QA and labeling are available in the Windows build.",
+      );
+      return;
+    }
+    const { invoke } = await import("@tauri-apps/api/core");
+    const imageData = Array.from(new Uint8Array(await file.arrayBuffer()));
+    const record = {
+      assetName: asset.name,
+      assetId: asset.id,
+      storyVariant: "Canonical",
+      state: "Approved reference",
+      sheetType: "Reference",
+      view: "Hero",
+      sceneReferences: asset.sceneIds,
+      revision: 1,
+      projectStyle: "Cinematic realism",
+    };
+    const result = await invoke<{
+      path: string;
+      inspection: {
+        width: number;
+        height: number;
+        valid: boolean;
+        warnings: string[];
+      };
+    }>("import_labeled_asset", {
+      imageData,
+      fileName: file.name,
+      title: `${asset.id} ${asset.name}`,
+      metadata: labelLines(record),
+    });
+    setAssetOutputs((current) => ({ ...current, [asset.id]: result.path }));
+    if (result.inspection.valid) approveAsset(selectedAsset);
+    setNotice(
+      `${asset.name} imported, labeled, and checked at ${result.inspection.width}×${result.inspection.height}.`,
+    );
+  };
+  const generateImageDirect = async () => {
+    const asset = analysis.assets[selectedAsset];
+    if (
+      !asset ||
+      !activePromptPackage ||
+      !openAiConfigured ||
+      !imageConfirmed ||
+      Number(imageBudget) <= 0
+    )
+      return;
+    setGeneratingImage(true);
+    const jobId = `JOB-${String(jobs.length + 1).padStart(3, "0")}`;
+    setJobs((current) => [
+      ...current,
+      {
+        id: jobId,
+        assetId: asset.id,
+        provider: "OpenAI",
+        model: "gpt-image-1.5",
+        mode: "direct",
+        status: "running",
+        attempts: 1,
+      },
+    ]);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const generated = await invoke<{
+        path: string;
+        inspection: { valid: boolean };
+      }>("openai_generate_image", {
+        model: "gpt-image-1.5",
+        prompt: activePromptPackage.universal,
+        size: "1024x1024",
+        quality: "medium",
+        outputName: `${asset.id}-generated`,
+      });
+      const labeledPath = generated.path.replace(/\.png$/i, "-labeled.png");
+      const record = {
+        assetName: asset.name,
+        assetId: asset.id,
+        storyVariant: "Canonical",
+        state: "Generated reference",
+        sheetType: "Identity",
+        view: "Hero",
+        sceneReferences: asset.sceneIds,
+        revision: 1,
+        projectStyle: styleBible.name,
+      };
+      const inspection = await invoke<{
+        valid: boolean;
+        width: number;
+        height: number;
+      }>("label_image", {
+        inputPath: generated.path,
+        outputPath: labeledPath,
+        title: `${asset.id} ${asset.name}`,
+        metadata: labelLines(record),
+      });
+      if (!inspection.valid)
+        throw new Error("Generated image did not pass native QA");
+      setAssetOutputs((current) => ({ ...current, [asset.id]: labeledPath }));
+      approveAsset(selectedAsset);
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === jobId
+            ? { ...item, status: "complete", outputPath: labeledPath }
+            : item,
+        ),
+      );
+      setImageConfirmed(false);
+      setNotice(`${asset.name} generated, labeled, verified, and saved.`);
+    } catch (error) {
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === jobId
+            ? { ...item, status: "failed", error: String(error) }
+            : item,
+        ),
+      );
+      setNotice(`Image generation failed: ${String(error)}`);
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+  const generateDirect = async () => {
+    if (
+      !kieConfigured ||
+      !generationConfirmed ||
+      Number(generationBudget) <= 0 ||
+      model !== "Seedance 2.0"
+    )
+      return;
+    setSubmittingGeneration(true);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const response = await invoke<Record<string, unknown>>(
+        "kie_create_task",
+        {
+          model: videoPresets[model].apiModel,
+          prompt: compiled.prompt,
+          aspectRatio: "16:9",
+          duration: [4, 5, 6, 8, 10, 12].reduce(
+            (best, value) =>
+              Math.abs(value - shots[0].duration) <
+              Math.abs(best - shots[0].duration)
+                ? value
+                : best,
+            5,
+          ),
+          generateAudio: videoPresets[model].supportsAudio,
+        },
+      );
+      const data = (response.data ?? {}) as Record<string, unknown>;
+      const taskId = String(data.taskId ?? response.taskId ?? "remote task");
+      setJobs((current) => [
+        ...current,
+        {
+          id: taskId,
+          assetId: shots[0].id,
+          provider: "KIE.ai",
+          model: videoPresets[model].apiModel,
+          mode: "direct",
+          status: "running",
+          attempts: 1,
+        },
+      ]);
+      setNotice(`Direct Seedance task submitted: ${taskId}`);
+      setGenerationConfirmed(false);
+    } catch (error) {
+      setNotice(`Direct generation was not submitted: ${String(error)}`);
+    } finally {
+      setSubmittingGeneration(false);
+    }
+  };
+  const buildProductionZip = async () => {
+    const packageManifest = {
+      format: "production-guy-package",
+      version: 1,
+      status: audit.ready ? "production-ready" : "draft-incomplete",
+      project: "The Last Horizon",
+      analysis,
+      plannedSheets,
+      shots,
+      jobs,
+      audit,
+      sceneCoverage,
+      compiledAt: new Date().toISOString(),
+    };
+    if (!("__TAURI_INTERNALS__" in window)) {
+      downloadJson("production-manifest.json", packageManifest);
+      setNotice(
+        "Browser preview exported the manifest. Windows builds create and validate the complete ZIP.",
+      );
+      return;
+    }
+    const quote = (value: unknown) => `"${String(value).replace(/"/g, '""')}"`;
+    const ledger = [
+      "asset_id,asset_name,type,status,scenes,reference_file",
+      ...analysis.assets.map((asset) =>
+        [
+          asset.id,
+          asset.name,
+          asset.type,
+          asset.status,
+          asset.sceneIds.join("|"),
+          assetOutputs[asset.id] ?? "",
+        ]
+          .map(quote)
+          .join(","),
+      ),
+    ].join("\n");
+    const { invoke } = await import("@tauri-apps/api/core");
+    const path = await invoke<string>("export_production_package", {
+      packageName: `The-Last-Horizon-${activeShot.id}`,
+      manifest: JSON.stringify(packageManifest, null, 2),
+      assetLedgerCsv: ledger,
+      styleBible: JSON.stringify(styleBible, null, 2),
+      modelUsage: JSON.stringify(
+        {
+          targetVideoModel: model,
+          preset: videoPresets[model],
+          imageRecommendations: modelRecommendations.map((item) => ({
+            provider: item.provider,
+            id: item.id,
+            score: item.score,
+            verifiedAt: item.verifiedAt,
+          })),
+        },
+        null,
+        2,
+      ),
+      prompt: compiled.prompt,
+      referencePaths: Object.values(assetOutputs),
+    });
+    setNotice(
+      `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
+    );
+  };
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <BrandMark size={38} />
+          <div>
+            <strong>Production Guy</strong>
+            <span>Your AI Production Department</span>
+          </div>
+        </div>
+        <nav aria-label="Primary workspaces">
+          {workspaces.map(({ name, icon: Icon, optional }) => (
+            <button
+              key={name}
+              className={workspace === name ? "active" : ""}
+              onClick={() => setWorkspace(name)}
+            >
+              <Icon size={18} />
+              <span>{name}</span>
+              {optional && <em>Optional</em>}
+            </button>
+          ))}
+        </nav>
+        <div className="project-card">
+          <span>Current production</span>
+          <strong>The Last Horizon</strong>
+          <small>
+            {analysis.scenes.length} scenes · {analysis.assets.length} assets
+          </small>
+          <div className="progress">
+            <i
+              style={{
+                width: `${audit.ready ? 100 : Math.round((analysis.assets.filter((a) => a.status === "approved").length / Math.max(1, analysis.assets.length)) * 100)}%`,
+              }}
+            />
+          </div>
+          <small>
+            {audit.ready
+              ? "Production ready"
+              : `${audit.missingAssets.length} approvals remaining`}
+          </small>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <div>
+            <span className="eyebrow">
+              THE LAST HORIZON / {workspace.toUpperCase()}
+            </span>
+            <h1>{workspace}</h1>
+          </div>
+          <div className="header-actions">
+            <label>
+              <Search size={15} />
+              <input
+                aria-label="Search production"
+                placeholder="Search production…"
+              />
+            </label>
+            <button
+              className="icon-button"
+              title="Global production tools"
+              onClick={() => setProvidersOpen(true)}
+            >
+              <WandSparkles size={18} />
+            </button>
+          </div>
+        </header>
+        {notice && (
+          <div className="notice" role="status">
+            <Check size={16} />
+            {notice}
+            <button onClick={() => setNotice("")}>Dismiss</button>
+          </div>
+        )}
+        {providersOpen && (
+          <div className="modal-backdrop" role="presentation">
+            <section
+              className="provider-modal"
+              role="dialog"
+              aria-label="AI provider registry"
+            >
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">GLOBAL SERVICE</span>
+                  <h3>AI Provider Registry</h3>
+                </div>
+                <button
+                  className="secondary"
+                  onClick={() => setProvidersOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+              <div className="provider-grid">
+                {providerRegistry.map((provider) => (
+                  <article key={provider.id}>
+                    <div>
+                      <b>{provider.name}</b>
+                      <span className={provider.status}>{provider.status}</span>
+                    </div>
+                    <p>{provider.notes}</p>
+                    <small>Verified {provider.verifiedAt}</small>
+                    <a
+                      href={provider.documentationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Official documentation
+                    </a>
+                  </article>
+                ))}
+              </div>
+              <div className="credential-form">
+                <label>
+                  <span>Provider</span>
+                  <select
+                    value={credentialProvider}
+                    onChange={(e) =>
+                      setCredentialProvider(e.target.value as ProviderId)
+                    }
+                  >
+                    {providerRegistry.map((provider) => (
+                      <option key={provider.id} value={provider.id}>
+                        {provider.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>
+                    API key ·{" "}
+                    {credentialConfigured ? "configured" : "not configured"}
+                  </span>
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder="Stored only in Windows Credential Manager"
+                  />
+                </label>
+                <button
+                  className="primary"
+                  disabled={apiKey.length < 8}
+                  onClick={saveCredential}
+                >
+                  Save securely
+                </button>
+                {credentialConfigured && (
+                  <button className="secondary" onClick={removeCredential}>
+                    Remove key
+                  </button>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+        {workspace === "Projects" && (
+          <section className="projects-home">
+            <div className="projects-intro">
+              <span className="eyebrow">
+                THE LAST HORIZON · ACTIVE PRODUCTION
+              </span>
+              <h2>Welcome back</h2>
+              <p>Turn your imagination into production-ready visuals.</p>
+            </div>
+            <article className="project-hero">
+              <div className="project-hero-copy">
+                <span className="pill">PRODUCTION GUY 0.6</span>
+                <h2>
+                  From story to
+                  <br />
+                  <em>screen-ready.</em>
+                </h2>
+                <p>
+                  One connected production system for story intelligence, visual
+                  development, optional direction, and model-aware delivery.
+                </p>
+                <div className="hero-actions">
+                  <button
+                    className="primary"
+                    onClick={() => setWorkspace("Story")}
+                  >
+                    Continue production <ArrowRight size={15} />
+                  </button>
+                  <button
+                    className="secondary"
+                    onClick={() =>
+                      downloadJson("the-last-horizon.pguy.json", {
+                        analysis,
+                        shots,
+                        jobs,
+                        graph,
+                      })
+                    }
+                  >
+                    <Download size={15} /> Export project
+                  </button>
+                </div>
+              </div>
+              <div className="project-hero-stats">
+                <div>
+                  <b>
+                    {
+                      analysis.assets.filter(
+                        (asset) => asset.type === "character",
+                      ).length
+                    }
+                  </b>
+                  <span>Characters</span>
+                </div>
+                <div>
+                  <b>
+                    {
+                      analysis.assets.filter((asset) => asset.type === "set")
+                        .length
+                    }
+                  </b>
+                  <span>Environments</span>
+                </div>
+                <div>
+                  <b>
+                    {
+                      analysis.assets.filter((asset) => asset.type === "prop")
+                        .length
+                    }
+                  </b>
+                  <span>Props</span>
+                </div>
+                <div>
+                  <b>{analysis.assets.length}</b>
+                  <span>Total assets</span>
+                </div>
+              </div>
+              <div className="project-hero-visual">
+                <img
+                  src="/assets/amina-reference.png"
+                  alt="Amina approved visual reference"
+                />
+                <div>
+                  <b>The Last Horizon</b>
+                  <span>APPROVED REFERENCE · CHAR-001</span>
+                </div>
+              </div>
+            </article>
+            <div className="department-grid">
+              {departmentCards.map(
+                ({ name, icon: Icon, image, description }) => (
+                  <button
+                    key={name}
+                    className="department-card"
+                    style={{ "--card-image": `url(${image})` } as CSSProperties}
+                    onClick={() => setWorkspace(name)}
+                    aria-label={`Open ${name} workspace`}
+                  >
+                    <span className="department-shade" />
+                    <span className="department-copy">
+                      <Icon size={29} />
+                      <b>{name}</b>
+                      <small>{description}</small>
+                    </span>
+                    <span className="department-action">
+                      <ArrowUpRight size={19} />
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>
+          </section>
+        )}
+        {workspace === "Story" && (
+          <section className="two-column studio-page">
+            <div className="panel">
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">SCRIPT INTELLIGENCE</span>
+                  <h3>Source material</h3>
+                </div>
+                <div className="button-row">
+                  <label className="secondary file-button">
+                    Import script
+                    <input
+                      type="file"
+                      accept=".txt,.md,.fountain,.screenplay,text/plain,text/markdown"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void importScript(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <button className="primary" onClick={analyze}>
+                    Analyze script
+                  </button>
+                </div>
+              </div>
+              <textarea
+                className="script-editor"
+                value={script}
+                onChange={(e) => setScript(e.target.value)}
+                aria-label="Script source"
+              />
+              <p className="helper">
+                Scene headings, source dialogue, characters, sets, and used
+                props are extracted locally. Suggested dialogue is never mixed
+                with source dialogue.
+              </p>
+            </div>
+            <div className="panel">
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">EDITABLE INVENTORY</span>
+                  <h3>
+                    {analysis.scenes.length} scenes · {analysis.assets.length}{" "}
+                    assets
+                  </h3>
+                </div>
+              </div>
+              <div className="scene-list compact-scenes">
+                {analysis.scenes.map((scene) => (
+                  <div key={scene.id}>
+                    <span>{scene.id}</span>
+                    <b>{scene.heading}</b>
+                    <small>
+                      {scene.dialogue.length} dialogue cue
+                      {scene.dialogue.length === 1 ? "" : "s"} ·{" "}
+                      {scene.timeOfDay}
+                    </small>
+                  </div>
+                ))}
+              </div>
+              <EditableInventory
+                analysis={analysis}
+                onChange={setAnalysis}
+                onAdd={addManualAsset}
+              />
+            </div>
+          </section>
+        )}
+        {workspace === "Design" && (
+          <div className="design-workspace">
+            <ArtDirectionBar
+              style={styleBible}
+              onChange={setStyleBible}
+              sheetCount={plannedSheets.length}
+            />
+            <section className="three-column">
+              <div className="panel asset-browser">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">SHARED ASSET REGISTRY</span>
+                    <h3>Production assets</h3>
+                  </div>
+                </div>
+                {analysis.assets.map((asset, index) => (
+                  <button
+                    className={selectedAsset === index ? "selected" : ""}
+                    key={asset.id}
+                    onClick={() => setSelectedAsset(index)}
+                  >
+                    <span className={`kind ${asset.type}`}>
+                      {asset.type.slice(0, 2)}
+                    </span>
+                    <span>
+                      <b>{asset.name}</b>
+                      <small>
+                        {asset.id} ·{" "}
+                        {
+                          plannedSheets.filter(
+                            (sheet) => sheet.assetId === asset.id,
+                          ).length
+                        }{" "}
+                        sheets
+                      </small>
+                    </span>
+                    <i className={asset.status}>{asset.status}</i>
+                  </button>
+                ))}
+              </div>
+              <div className="panel design-preview">
+                {analysis.assets[selectedAsset] && activePromptPackage && (
+                  <>
+                    <div className="panel-heading">
+                      <div>
+                        <span className="eyebrow">
+                          {analysis.assets[selectedAsset].type.toUpperCase()} ·{" "}
+                          {analysis.assets[selectedAsset].id}
+                        </span>
+                        <h3>{analysis.assets[selectedAsset].name}</h3>
+                      </div>
+                      <span
+                        className={`status ${analysis.assets[selectedAsset].status}`}
+                      >
+                        {analysis.assets[selectedAsset].status}
+                      </span>
+                    </div>
+                    <img
+                      src="/assets/amina-reference.png"
+                      alt="Visual reference preview"
+                    />
+                    <div className="prompt-tabs">
+                      {(
+                        [
+                          "universal",
+                          "compact",
+                          "technical",
+                          "negative",
+                        ] as Array<keyof PromptPackage>
+                      ).map((mode) => (
+                        <button
+                          className={promptMode === mode ? "active" : ""}
+                          onClick={() => setPromptMode(mode)}
+                          key={mode}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="prompt-box">
+                      <span>{promptMode.toUpperCase()} PROMPT</span>
+                      <p>{activePromptPackage[promptMode]}</p>
+                    </div>
+                    <div className="prompt-actions">
+                      <button className="secondary" onClick={copyPrompt}>
+                        <Copy size={13} /> Copy
+                      </button>
+                      {(["txt", "md", "json", "csv"] as const).map((format) => (
+                        <button
+                          className="secondary"
+                          key={format}
+                          onClick={() => exportPrompt(format)}
+                        >
+                          {format.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="model-match">
+                      <span>RECOMMENDED MODEL</span>
+                      <b>{modelRecommendations[0]?.name}</b>
+                      <small>
+                        {modelRecommendations[0]?.score}/100 ·{" "}
+                        {modelRecommendations[0]?.reason}
+                      </small>
+                    </div>
+                    <div className="image-generation-gate">
+                      <label>
+                        <span>Per-image spending ceiling (USD)</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={imageBudget}
+                          onChange={(event) =>
+                            setImageBudget(event.target.value)
+                          }
+                          placeholder="Required"
+                        />
+                      </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={imageConfirmed}
+                          onChange={(event) =>
+                            setImageConfirmed(event.target.checked)
+                          }
+                        />{" "}
+                        Authorize one OpenAI image request within this ceiling.
+                      </label>
+                      <button
+                        className="primary"
+                        disabled={
+                          !openAiConfigured ||
+                          !imageConfirmed ||
+                          Number(imageBudget) <= 0 ||
+                          generatingImage
+                        }
+                        onClick={generateImageDirect}
+                      >
+                        {generatingImage
+                          ? "Generating…"
+                          : "Generate verified image"}
+                      </button>
+                      <small>
+                        {openAiConfigured
+                          ? "OpenAI credential configured."
+                          : "Configure OpenAI in Global production tools."}{" "}
+                        Provider pricing is not assumed; confirm the ceiling
+                        against your account.
+                      </small>
+                    </div>
+                    <div className="button-row">
+                      <button
+                        className="primary"
+                        onClick={() => approveAsset(selectedAsset)}
+                      >
+                        Approve identity
+                      </button>
+                      <label className="secondary file-button">
+                        Import & QA
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void importAsset(file);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <button className="secondary" onClick={queueAsset}>
+                        <Plus size={14} /> Queue prompt package
+                      </button>
+                      <button
+                        className="secondary"
+                        onClick={reviseSelectedAsset}
+                      >
+                        Revise & selectively regenerate
+                      </button>
+                    </div>
+                    {assetOutputs[analysis.assets[selectedAsset].id] && (
+                      <p className="helper">
+                        Verified labeled reference:{" "}
+                        {assetOutputs[analysis.assets[selectedAsset].id]}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="eyebrow">DURABLE QUEUE</span>
+                    <h3>Production jobs</h3>
+                  </div>
+                  <div className="queue-controls">
+                    <button
+                      title="Pause queue"
+                      onClick={() => setJobs(pauseQueue)}
+                    >
+                      <Pause size={12} />
+                    </button>
+                    <button
+                      title="Resume queue"
+                      onClick={() => setJobs(resumeQueue)}
+                    >
+                      <Play size={12} />
+                    </button>
+                  </div>
+                </div>
+                <div className="queue-list">
+                  {jobs.length === 0 ? (
+                    <p className="empty">No jobs queued.</p>
+                  ) : (
+                    jobs.map((job) => (
+                      <div key={job.id}>
+                        <span>
+                          <b>{job.id}</b>
+                          <small>
+                            {job.assetId}
+                            {job.outputPath ? ` · ${job.outputPath}` : ""}
+                            {job.error ? ` · ${job.error}` : ""}
+                          </small>
+                        </span>
+                        <i className={job.status}>{job.status}</i>
+                        {job.status !== "complete" &&
+                          job.status !== "cancelled" && (
+                            <button
+                              title={`Cancel ${job.id}`}
+                              onClick={() =>
+                                setJobs((current) => cancelJob(current, job.id))
+                              }
+                            >
+                              ×
+                            </button>
+                          )}
+                        {(job.status === "failed" ||
+                          job.status === "cancelled") && (
+                          <button
+                            title={`Retry ${job.id}`}
+                            onClick={() =>
+                              setJobs((current) => retryJob(current, job.id))
+                            }
+                          >
+                            Retry
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button
+                  className="primary full"
+                  onClick={runQueue}
+                  disabled={!jobs.some((j) => j.status === "queued")}
+                >
+                  <Play size={14} /> Process next job
+                </button>
+                <button className="secondary full" onClick={exportAllPrompts}>
+                  <Download size={14} /> Export all prompts
+                </button>
+                <p className="helper">
+                  A job completes only after its output package is written.
+                  Queue state survives restart.
+                </p>
+              </div>
+            </section>
+          </div>
+        )}
+        {workspace === "Direct" && (
+          <section className="studio-page">
+            <div className="optional-banner">
+              <div>
+                <span className="eyebrow">OPTIONAL WORKFLOW</span>
+                <h2>Director’s Room</h2>
+                <p>Enable shot planning without rebuilding the project.</p>
+              </div>
+              <button
+                className={storyboardsEnabled ? "primary" : "secondary"}
+                onClick={() => setStoryboardsEnabled(!storyboardsEnabled)}
+              >
+                {storyboardsEnabled
+                  ? "Storyboarding enabled"
+                  : "Enable storyboarding"}
+              </button>
+            </div>
+            {storyboardsEnabled ? (
+              <div className="two-column">
+                <div className="panel shot-preview">
+                  <img
+                    src="/assets/amina-reference.png"
+                    alt={`Animatic frame for ${activeShot.id}`}
+                  />
+                  <div className="timeline">
+                    <span
+                      style={{
+                        width: `${totalAnimaticDuration ? (animaticTime / totalAnimaticDuration) * 100 : 0}%`,
+                      }}
+                    />
+                    <button
+                      className="timeline-play"
+                      onClick={() => setAnimaticPlaying((value) => !value)}
+                    >
+                      {animaticPlaying ? (
+                        <Pause size={14} />
+                      ) : (
+                        <Play size={14} />
+                      )}
+                    </button>
+                    <b>
+                      {animaticTime.toFixed(1)} /{" "}
+                      {totalAnimaticDuration.toFixed(1)}s
+                    </b>
+                    <small>
+                      {activeShot.id} · {activeShot.action}
+                    </small>
+                  </div>
+                  <div className="editor-actions">
+                    <button
+                      className="secondary"
+                      onClick={() => moveShot(-1)}
+                      disabled={selectedShot === 0}
+                    >
+                      <ArrowLeft size={13} /> Earlier
+                    </button>
+                    <button
+                      className="secondary"
+                      onClick={() => moveShot(1)}
+                      disabled={selectedShot === shots.length - 1}
+                    >
+                      Later <ArrowRight size={13} />
+                    </button>
+                    <button className="secondary" onClick={duplicateShot}>
+                      <Copy size={13} /> Duplicate
+                    </button>
+                    <button className="secondary danger" onClick={deleteShot}>
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  </div>
+                  <div className="shot-strip">
+                    {shots.map((shot, index) => (
+                      <button
+                        className={index === selectedShot ? "selected" : ""}
+                        key={shot.id}
+                        onClick={() => {
+                          setSelectedShot(index);
+                          setAnimaticPlaying(false);
+                          setAnimaticTime(
+                            shots
+                              .slice(0, index)
+                              .reduce(
+                                (total, item) => total + item.duration,
+                                0,
+                              ),
+                          );
+                        }}
+                      >
+                        <span>{shot.id}</span>
+                        <b>{shot.cameraFraming}</b>
+                        <small>
+                          {shot.duration.toFixed(1)}s · {shot.storyboardStatus}
+                        </small>
+                      </button>
+                    ))}
+                    <button onClick={addShot}>
+                      <Plus /> Add shot
+                    </button>
+                  </div>
+                </div>
+                <div className="panel shot-form">
+                  <span className="eyebrow">SHOT EDITOR · {activeShot.id}</span>
+                  <h3>Performance & camera direction</h3>
+                  {(
+                    [
+                      ["action", "Action"],
+                      ["dialogue", "Dialogue (source)"],
+                      ["emotionalObjective", "Emotional objective"],
+                      ["facialActing", "Facial acting"],
+                      ["bodyLanguage", "Body language"],
+                      ["microAnimation", "Micro-animation"],
+                      ["cameraFraming", "Camera framing"],
+                      ["cameraMovement", "Camera movement"],
+                      ["soundEffects", "Sound effects"],
+                      ["ambience", "Ambience"],
+                    ] as Array<[keyof ShotRecord, string]>
+                  ).map(([field, label]) => (
+                    <label key={field}>
+                      <span>{label}</span>
+                      <input
+                        value={String(activeShot[field])}
+                        onChange={(e) => patchShot(field, e.target.value)}
+                      />
+                    </label>
+                  ))}
+                  <label>
+                    <span>Duration</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={activeShot.duration}
+                      onChange={(e) =>
+                        patchShot("duration", Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <button
+                    className="primary full"
+                    onClick={() => patchShot("storyboardStatus", "approved")}
+                  >
+                    Approve shot plan
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <Clapperboard size={34} />
+                <h3>Storyboarding is off</h3>
+                <p>Asset production and delivery remain fully available.</p>
+              </div>
+            )}
+          </section>
+        )}
+        {workspace === "Deliver" && (
+          <section className="three-column studio-page">
+            <div className="panel">
+              <span className="eyebrow">PRODUCTION COVERAGE</span>
+              <h3>{audit.ready ? "Ready to package" : "Action required"}</h3>
+              <div className="big-stat">
+                <b>
+                  {audit.ready
+                    ? "100%"
+                    : `${Math.round(((analysis.assets.length - audit.missingAssets.length) / Math.max(1, analysis.assets.length)) * 100)}%`}
+                </b>
+                <span>verified asset coverage</span>
+              </div>
+              <div className="stat-row">
+                <span>Missing verified files</span>
+                <b>{audit.missingAssets.length}</b>
+              </div>
+              <div className="stat-row">
+                <span>Incomplete shots</span>
+                <b>{audit.incompleteShots.length}</b>
+              </div>
+              <div className="audit-list">
+                {[...audit.missingAssets, ...audit.incompleteShots].map(
+                  (id) => (
+                    <span key={id}>{id}</span>
+                  ),
+                )}
+              </div>
+              <div className="scene-coverage">
+                {sceneCoverage.map((scene) => (
+                  <article
+                    key={scene.sceneId}
+                    className={scene.videoReady ? "ready" : ""}
+                  >
+                    <div>
+                      <b>{scene.sceneId}</b>
+                      <span>
+                        {scene.videoReady ? "VIDEO READY" : "INCOMPLETE"}
+                      </span>
+                    </div>
+                    <small>
+                      {scene.verifiedAssets.length}/
+                      {scene.requiredAssets.length} references ·{" "}
+                      {scene.plannedShots.length} shots
+                    </small>
+                    {scene.warnings.map((warning) => (
+                      <p key={warning}>⚠ {warning}</p>
+                    ))}
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className="panel compiler">
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">MODEL-AWARE SHOT COMPILER</span>
+                  <h3>{activeShot.id}</h3>
+                </div>
+              </div>
+              <label>
+                <span>Target video model</span>
+                <select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value as VideoModel)}
+                >
+                  {Object.keys(videoPresets).map((name) => (
+                    <option key={name}>{name}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="capabilities">
+                <span>{videoPresets[model].maxReferences} references</span>
+                <span>
+                  {videoPresets[model].supportsAudio
+                    ? "Model audio"
+                    : "Post audio"}
+                </span>
+                <span>
+                  {videoPresets[model].supportsFirstLastFrame
+                    ? "First/last frames"
+                    : "Single frame"}
+                </span>
+              </div>
+              <div className="prompt-box">
+                <span>COMPILED PROMPT</span>
+                <p>{compiled.prompt}</p>
+              </div>
+              <div className="warnings">
+                {compiled.warnings.map((warning) => (
+                  <p key={warning}>⚠ {warning}</p>
+                ))}
+              </div>
+            </div>
+            <div className="panel">
+              <span className="eyebrow">PRODUCTION PACKAGE</span>
+              <h3>Portable delivery</h3>
+              <p className="helper">
+                Exports preserve stable IDs, source dialogue, acting/audio
+                direction, original references, Style Bible, ledger, model
+                record, and warnings.
+              </p>
+              <button
+                className="primary full"
+                onClick={() =>
+                  downloadJson(
+                    `${activeShot.id}-${model.replace(/\s/g, "-")}.json`,
+                    compiled,
+                  )
+                }
+              >
+                <Download size={14} /> Export shot package
+              </button>
+              <button className="secondary full" onClick={buildProductionZip}>
+                <PackageCheck size={14} />{" "}
+                {audit.ready
+                  ? "Build production package"
+                  : "Build clearly marked draft package"}
+              </button>
+              <div className="generation-gate">
+                <label>
+                  <span>Maximum approved spend (USD)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={generationBudget}
+                    onChange={(e) => setGenerationBudget(e.target.value)}
+                    placeholder="Required before submission"
+                  />
+                </label>
+                <label className="confirm-spend">
+                  <input
+                    type="checkbox"
+                    checked={generationConfirmed}
+                    onChange={(e) => setGenerationConfirmed(e.target.checked)}
+                  />{" "}
+                  I authorize one provider task within this ceiling.
+                </label>
+              </div>
+              <button
+                className="secondary full"
+                disabled={
+                  !kieConfigured ||
+                  !generationConfirmed ||
+                  Number(generationBudget) <= 0 ||
+                  model !== "Seedance 2.0" ||
+                  submittingGeneration
+                }
+                onClick={generateDirect}
+              >
+                <Pause size={14} />{" "}
+                {submittingGeneration
+                  ? "Submitting…"
+                  : "Generate directly with KIE"}
+              </button>
+              <p className="helper">
+                Requires the Windows build, configured KIE credential, Seedance
+                2.0, and a per-task ceiling.
+              </p>
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
+  );
 }
