@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { convertScript, type ScriptKind } from "./engine/importers";
 import {
   ArrowLeft,
   ArrowRight,
@@ -396,20 +397,28 @@ export default function App() {
       `Found ${next.scenes.length} scenes and ${next.assets.length} production assets.`,
     );
   };
-  const importScript = async (file: File) => {
-    if (!/\.(txt|md|fountain|screenplay)$/i.test(file.name)) {
-      setNotice(
-        "This build imports plain-text, Markdown, Fountain, and screenplay text files. Paste PDF or DOCX text into the editor.",
-      );
-      return;
-    }
-    const text = await file.text();
-    setScript(text);
-    const next = analyzeScript(text);
+  const takeScript = (name: string, kind: ScriptKind, raw: string) => {
+    let converted;
+    try { converted = convertScript(kind, raw); } catch (e) { setNotice(e instanceof Error ? e.message : "That script could not be read."); return; }
+    if (!converted.text.trim()) { setNotice(`${name} has no readable text.`); return; }
+    setScript(converted.text);
+    const next = analyzeScript(converted.text);
     setAnalysis(next);
-    setNotice(
-      `${file.name} imported: ${next.scenes.length} scenes and ${next.assets.length} assets.`,
-    );
+    setNotice(`${name} imported: ${next.scenes.length} scenes and ${next.assets.length} assets.${converted.notes.length ? " " + converted.notes.join(" ") : ""}`);
+  };
+  const importScript = async (file: File) => {
+    const ext = /\.([a-z]+)$/i.exec(file.name)?.[1]?.toLowerCase() ?? "";
+    if (ext === "fdx") return takeScript(file.name, "fdx", await file.text());
+    if (["txt", "md", "markdown", "fountain", "spmd", "screenplay"].includes(ext)) return takeScript(file.name, "text", await file.text());
+    setNotice("Word and PDF scripts open from the desktop app. Here, use .txt, .md, .fountain or .fdx, or paste the text.");
+  };
+  const importScriptNative = async () => {
+    if (!isTauri) { scriptInput.current?.click(); return; }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const picked = await invoke<{ name: string; kind: ScriptKind; text: string } | null>("pick_script_file");
+      if (picked) takeScript(picked.name, picked.kind, picked.text);
+    } catch (e) { setNotice(String(e)); }
   };
   const addManualAsset = () => {
     const sceneId = analysis.scenes[0]?.id ?? "SCENE-001";
@@ -1015,7 +1024,7 @@ export default function App() {
     "file-open": () => guard(() => void openProject()),
     "file-save": () => void saveProject(),
     "file-save-as": () => void saveProject(true),
-    "file-import": () => { setWorkspace("Story"); scriptInput.current?.click(); },
+    "file-import": () => { setWorkspace("Story"); void importScriptNative(); },
     "file-export": () => { setWorkspace("Deliver"); void buildProductionZip(); },
     "file-close": () => guard(newProject),
     "file-exit": () => guard(() => void quit()),
@@ -1119,7 +1128,7 @@ export default function App() {
   }, [golden.next?.id]);
   return (
     <div className={`po-shell${sidebarHidden ? " rails-hidden" : ""}`} style={{ zoom } as CSSProperties}>
-      <input ref={scriptInput} type="file" hidden accept=".txt,.md,.fountain,.screenplay,text/plain,text/markdown" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importScript(file); e.target.value = ""; }} />
+      <input ref={scriptInput} type="file" hidden accept=".txt,.md,.fountain,.screenplay,.fdx,text/plain,text/markdown" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importScript(file); e.target.value = ""; }} />
       <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) openText(await file.text(), null); e.target.value = ""; }} />
       <TopBar
         title={title}
@@ -1295,18 +1304,7 @@ export default function App() {
                   <h3>Source material</h3>
                 </div>
                 <div className="button-row">
-                  <label className="secondary file-button">
-                    Import script
-                    <input
-                      type="file"
-                      accept=".txt,.md,.fountain,.screenplay,text/plain,text/markdown"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void importScript(file);
-                        event.target.value = "";
-                      }}
-                    />
-                  </label>
+                  <button className="secondary" onClick={() => void importScriptNative()}>Import script</button>
                   <button className="primary" onClick={analyze}>
                     Analyze script
                   </button>
