@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeScript, animaticDuration, canSpend, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, pauseQueue, resumeQueue, retryJob, shotAtTime, type GenerationJob, type ShotRecord } from './productionStudio'
+import { analyzeScript, animaticDuration, canSpend, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, pauseQueue, resumeQueue, retryJob, sceneCoverageAudit, shotAtTime, type GenerationJob, type ShotRecord } from './productionStudio'
 
 const shot: ShotRecord = { id:'SHOT-001', sceneId:'SCENE-001', order:1, duration:5, assetIds:['CHAR-AMINA-001','PROP-COMPASS-002'], action:'Amina raises the compass', dialogue:'We are close.', speaker:'AMINA', emotionalObjective:'quiet resolve', facialActing:'focused eyes', bodyLanguage:'steady posture', microAnimation:'one blink and slow breath', cameraFraming:'medium close-up', cameraMovement:'slow push in', lighting:'warm dusk edge light', soundEffects:'cloth movement', ambience:'savanna wind', music:'low strings', transition:'cut', storyboardStatus:'approved' }
 
@@ -18,6 +18,7 @@ describe('release production pipeline', () => {
     expect(result.warnings.join(' ')).toContain('verification')
   })
   it('does not report production ready with unapproved assets', () => expect(coverageAudit([{id:'A',name:'A',type:'prop',sceneIds:['S'],status:'planned'}], [shot]).ready).toBe(false))
+  it('does not treat an approval without a verified file as complete',()=>expect(coverageAudit([{id:'A',name:'A',type:'prop',sceneIds:['S'],status:'approved'}],[],[]).ready).toBe(false))
   it('plays a multi-shot animatic on a deterministic timeline', () => {
     const shots=[shot,{...shot,id:'SHOT-002',order:2,duration:3,action:'Marcus enters'}]
     expect(animaticDuration(shots)).toBe(8)
@@ -31,4 +32,5 @@ describe('release production pipeline', () => {
     expect(retryJob(cancelJob(jobs,'JOB-001'),'JOB-001')[0]).toMatchObject({id:'JOB-001',status:'queued'})
   })
   it('prevents a paid request from exceeding its ceiling',()=>{expect(canSpend(2,1.25,.5)).toBe(true);expect(canSpend(2,1.25,1)).toBe(false)})
+  it('reports scene-level files, shots and continuity warnings',()=>{const analysis=analyzeScript('EXT. SAVANNA - DUSK\nAMINA\nWe are close.\nShe holds the compass.');const result=sceneCoverageAudit(analysis,[{...shot,sceneId:'SCENE-001',assetIds:['UNKNOWN']}],[])[0];expect(result.videoReady).toBe(false);expect(result.missingAssets.length).toBeGreaterThan(0);expect(result.warnings.join(' ')).toContain('UNKNOWN')})
 })

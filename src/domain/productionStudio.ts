@@ -167,8 +167,25 @@ export function compileShotPackage(shot: ShotRecord, model: VideoModel, knownAss
   return { shotId: shot.id, model, prompt, references, warnings, manifest: { ...shot, targetModel: model, references, audioMode: preset.supportsAudio ? 'model' : 'postproduction' } }
 }
 
-export function coverageAudit(assets: ExtractedAsset[], shots: ShotRecord[]) {
-  const missingAssets = assets.filter((asset) => asset.status !== 'approved').map((asset) => asset.id)
+export function coverageAudit(assets: ExtractedAsset[], shots: ShotRecord[], verifiedAssetIds?: string[]) {
+  const verified=verifiedAssetIds?new Set(verifiedAssetIds):null
+  const missingAssets = assets.filter((asset) => asset.status !== 'approved'||(verified&&!verified.has(asset.id))).map((asset) => asset.id)
   const incompleteShots = shots.filter((shot) => !['approved', 'waived'].includes(shot.storyboardStatus)).map((shot) => shot.id)
   return { ready: missingAssets.length === 0 && incompleteShots.length === 0, missingAssets, incompleteShots }
+}
+
+export interface SceneCoverage { sceneId:string; requiredAssets:string[]; verifiedAssets:string[]; missingAssets:string[]; plannedShots:string[]; incompleteShots:string[]; warnings:string[]; videoReady:boolean }
+
+export function sceneCoverageAudit(analysis:AnalysisResult,shots:ShotRecord[],verifiedAssetIds:string[]):SceneCoverage[]{
+  const verified=new Set(verifiedAssetIds)
+  return analysis.scenes.map(scene=>{
+    const requiredAssets=analysis.assets.filter(asset=>asset.sceneIds.includes(scene.id)).map(asset=>asset.id)
+    const verifiedAssets=requiredAssets.filter(id=>verified.has(id))
+    const missingAssets=requiredAssets.filter(id=>!verified.has(id))
+    const sceneShots=shots.filter(shot=>shot.sceneId===scene.id)
+    const incompleteShots=sceneShots.filter(shot=>!['approved','waived'].includes(shot.storyboardStatus)).map(shot=>shot.id)
+    const warnings=sceneShots.flatMap(shot=>shot.assetIds.filter(id=>!requiredAssets.includes(id)).map(id=>`${shot.id} references ${id}, which is not associated with ${scene.id}`))
+    if(!sceneShots.length)warnings.push('No shots planned; asset-only delivery remains available')
+    return{sceneId:scene.id,requiredAssets,verifiedAssets,missingAssets,plannedShots:sceneShots.map(shot=>shot.id),incompleteShots,warnings,videoReady:missingAssets.length===0&&sceneShots.length>0&&incompleteShots.length===0}
+  })
 }
