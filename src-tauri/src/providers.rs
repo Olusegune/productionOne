@@ -167,7 +167,7 @@ pub async fn generate_image(app: tauri::AppHandle, provider: String, model: Stri
     if references.len() > 8 { return Err("At most 8 reference images are sent with one request".into()); }
     let stem = safe_package_name(&output_name);
     if stem.is_empty() { return Err("Output name is required".into()); }
-    let api_key = key_for(&provider)?;
+    let api_key = if provider == "comfyui" { String::new() } else { key_for(&provider)? };
     let refs = references.iter().map(|path| image_data_url(path)).collect::<Result<Vec<_>, _>>()?;
     let http = client()?;
     let bytes = match provider.as_str() {
@@ -184,6 +184,11 @@ pub async fn generate_image(app: tauri::AppHandle, provider: String, model: Stri
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent");
             let body = send_json(http.post(url).header("x-goog-api-key", &api_key).json(&gemini_body(&prompt, &aspect, &refs)), "Google Gemini").await?;
             extract_gemini(&body)?
+        }
+        "comfyui" => {
+            let (bytes, ext) = super::local::comfy_run(&app, super::local::ComfyRequest { base: super::local::comfy_base(&app), model: model.clone(), prompt: prompt.clone(), negative: "blurry, low quality, text, watermark, extra limbs, deformed hands, cropped".into(), aspect: aspect.clone(), seed: None, image: references.first().cloned(), duration: 5.0, max_side: 1024.0, wait_secs: 900 }).await?;
+            if ext == "mp4" || ext == "webm" { return Err("That ComfyUI workflow made a video, not an image. Choose an image workflow.".into()); }
+            bytes
         }
         "kie" => {
             let named: Vec<(String, String, String)> = refs.iter().zip(references.iter()).map(|((mime, data), path)| (mime.clone(), data.clone(), Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "reference.png".into()))).collect();

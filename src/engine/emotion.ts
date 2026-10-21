@@ -143,11 +143,21 @@ export interface ArcPoint { sceneId: string; sceneNumber: number; reading: Emoti
 export interface CharacterArc { character: string; points: ArcPoint[] }
 
 /** How each character's feeling travels through the story, scene by scene. */
+/** The AI's beat for this character in this scene, when an AI pass has been run and its quote checked out. */
+function aiReading(story: ParsedStory, sceneId: string, name: string): { reading: EmotionReading; evidence: Evidence[] } | undefined {
+  const beat = (story as { ai?: Record<string, { beats: Array<{ character: string; emotion: Emotion; intensity: number; nuance?: string; quote: string; subtext?: string }> }> }).ai?.[sceneId]?.beats.find((b) => b.character.toUpperCase() === name.toUpperCase())
+  if (!beat) return undefined
+  const f = feeling[beat.emotion]
+  return { reading: { emotion: beat.emotion, intensity: beat.intensity, confidence: 0.8, nuance: beat.nuance, valence: f.valence, arousal: f.arousal, cues: [beat.quote], source: 'ai' }, evidence: [{ line: 0, text: beat.quote }] }
+}
+
 export function characterArcs(story: ParsedStory): CharacterArc[] {
   return story.characters.map((c) => ({
     character: c.name,
     points: story.scenes.flatMap((scene) => {
       if (!c.sceneIds.includes(scene.id)) return []
+      const ai = aiReading(story, scene.id, c.name)
+      if (ai) return [{ sceneId: scene.id, sceneNumber: scene.number, reading: ai.reading, evidence: ai.evidence }]
       const beats = beatsFor(scene, c.name)
       if (!beats.length) return []
       const strongest = [...beats].filter((b) => b.reading.emotion !== 'neutral').sort((a, b) => b.reading.intensity - a.reading.intensity).slice(0, 2)

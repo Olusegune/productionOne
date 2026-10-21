@@ -8,8 +8,8 @@ export const emotionColor: Record<Emotion, string> = {
   neutral: "#77828c", joy: "#d1b47b", sadness: "#5c93b8", anger: "#c0705f", fear: "#9a86c4", surprise: "#8ec0b0", disgust: "#8fa06a", contempt: "#a08e7a", love: "#cf8fa0", determination: "#e9edf0",
 };
 
-export function EmotionChip({ emotion, intensity }: { emotion: Emotion; intensity?: number }) {
-  return <span className="po-emotion" style={{ borderColor: emotionColor[emotion], color: emotionColor[emotion] }}>{emotion}{intensity ? ` ${intensity}` : ""}</span>;
+export function EmotionChip({ emotion, intensity, ai }: { emotion: Emotion; intensity?: number; ai?: boolean }) {
+  return <span className="po-emotion" title={ai ? "Read by an AI model; its evidence quote was checked against the script" : undefined} style={{ borderColor: emotionColor[emotion], color: emotionColor[emotion] }}>{ai ? "✦ " : ""}{emotion}{intensity ? ` ${intensity}` : ""}</span>;
 }
 
 type Dot = "approved" | "review" | "busy" | "failed" | "planned";
@@ -95,12 +95,13 @@ export function AssetInspector({ asset, story }: { asset?: ExtractedAsset; story
           <ul className="po-plain">
             {arc.points.map((p) => (
               <li key={p.sceneId}>
-                <EmotionChip emotion={p.reading.emotion} intensity={p.reading.intensity} /> <small>scene {p.sceneNumber} · {Math.round(p.reading.confidence * 100)}% sure{p.reading.nuance ? ` · ${p.reading.nuance}` : ""}</small>
+                <EmotionChip emotion={p.reading.emotion} intensity={p.reading.intensity} ai={p.reading.source === "ai"} /> <small>scene {p.sceneNumber} · {Math.round(p.reading.confidence * 100)}% sure{p.reading.nuance ? ` · ${p.reading.nuance}` : ""}</small>
                 {p.evidence[0] && <q>{p.evidence[0].text}</q>}
+                {(() => { const b = (story as { ai?: Record<string, { beats: Array<{ character: string; subtext?: string; tell?: string }> }> }).ai?.[p.sceneId]?.beats.find((x) => x.character.toUpperCase() === asset.name.toUpperCase()); return b && (b.subtext || b.tell) ? <small className="po-ai-note">{b.subtext ? `Subtext: ${b.subtext}` : ""}{b.subtext && b.tell ? " · " : ""}{b.tell ? `Tell: ${b.tell}` : ""}</small> : null; })()}
               </li>
             ))}
           </ul>
-          <p className="helper">Read from the words themselves (rules, not AI). Check them against your intent.</p>
+          <p className="helper">{arc.points.some((p) => p.reading.source === "ai") ? "Marked ✦ were read by an AI model; its quotes were checked against the script. The rest are read by rules." : "Read from the words themselves (rules, not AI). Check them against your intent."}</p>
         </section>
       )}
       {plan.length > 1 && <section><h4>Expressions the story needs</h4><p className="po-chips">{plan.map((n) => <EmotionChip key={n.emotion} emotion={n.emotion} />)}</p></section>}

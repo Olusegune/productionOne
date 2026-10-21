@@ -17,6 +17,8 @@ export function TopBar(props: {
   onOpenSettings: () => void;
   onPalette: () => void;
   onProviders: () => void;
+  localUp?: boolean;
+  onLocal?: () => void;
 }) {
   const { steps, next } = useMemo(() => goldenPath(props.golden), [props.golden]);
   return (
@@ -41,6 +43,7 @@ export function TopBar(props: {
               {next.action} <ArrowRight size={14} />
             </button>
           )}
+          {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}
           <button className="icon-button" onClick={props.onPalette} title="Command palette (Ctrl+K)" aria-label="Open command palette"><CommandIcon size={16} /></button>
           <button className="icon-button" onClick={props.onProviders} title="Providers and keys" aria-label="Providers and keys"><WandSparkles size={16} /></button>
         </div>

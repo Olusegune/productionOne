@@ -6,6 +6,7 @@ import type { QueueState } from "../domain/generationQueue";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { mergeVideoModels, type DiscoveredCatalog } from "../domain/imageCatalog";
 import { primaryViewKeys } from "../domain/sheetSpecs";
+import { useLocalAi } from "../data/localAi";
 import type { StyleBible } from "../domain/visualDevelopment";
 
 /** A short motion clip (turnaround, walk, pose) made from an approved reference. It is a demo of the design, not part of the sheets. */
@@ -20,6 +21,9 @@ export function MotionDemo(props: {
   openProviders: () => void;
 }) {
   const { asset, queue, clips, setClips, style, desktop, notify, openProviders } = props;
+  const local = useLocalAi(desktop);
+  const localVideo = local.templates.filter((t) => t.kind === "video" && t.ready);
+  const [where, setWhere] = useState<string>("kie");
   const [discovered, setDiscovered] = useState<DiscoveredCatalog>({});
   useEffect(() => {
     if (desktop) void invoke<DiscoveredCatalog>("model_catalog").then((c) => setDiscovered(c ?? {})).catch(() => {});
@@ -43,8 +47,11 @@ export function MotionDemo(props: {
     setError("");
     const prompt = buildMotionPrompt(motion, custom, asset.name, style);
     try {
-      const path = await invoke<string>("generate_video", { model, prompt, aspect: "3:4", reference: anchor.outputPath, outputName: clipName(asset.id, motion), duration });
-      setClips((list) => [...list, { id: `CLIP-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion, model, path, prompt, duration, createdAt: Date.now() }]);
+      const useLocal = where.startsWith("local:") && local.status.comfyui[0];
+      const path = useLocal
+        ? await invoke<string>("comfy_generate_video", { base: local.status.comfyui[0].url, model: where.slice(6), prompt, aspect: "3:4", reference: anchor.outputPath, outputName: clipName(asset.id, motion), duration })
+        : await invoke<string>("generate_video", { model, prompt, aspect: "3:4", reference: anchor.outputPath, outputName: clipName(asset.id, motion), duration });
+      setClips((list) => [...list, { id: `CLIP-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion, model: where.startsWith("local:") ? `ComfyUI · ${where.slice(6)}` : model, path, prompt, duration, createdAt: Date.now() }]);
       notify(`Motion demo saved for ${asset.name}.`);
     } catch (e) {
       const message = String(e);
@@ -70,14 +77,19 @@ export function MotionDemo(props: {
                 {(Object.keys(motionPresets) as Array<keyof typeof motionPresets>).map((k) => <option key={k} value={k}>{motionPresets[k].label}</option>)}
                 <option value="custom">Your own description</option>
               </select></label>
-            <label><span>Video model (Kie.ai)</span>
+            <label><span>Make it with</span>
+              <select value={where} onChange={(e) => setWhere(e.target.value)} aria-label="Where to make the clip">
+                {localVideo.map((t) => <option key={t.id} value={`local:${t.id}`}>On this computer: {t.title}</option>)}
+                <option value="kie">Kie.ai (cloud)</option>
+              </select></label>
+            {where === "kie" && <label><span>Video model (Kie.ai)</span>
               <input list="video-models" value={model} onChange={(e) => setModel(e.target.value)} aria-label="Video model id" />
-              <datalist id="video-models">{models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</datalist></label>
+              <datalist id="video-models">{models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</datalist></label>}
             <label><span>Length (seconds)</span>
               <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>{[5, 8, 10].map((d) => <option key={d}>{d}</option>)}</select></label>
           </div>
           {motion === "custom" && <label className="settings-field"><span>Describe the motion</span><input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. turns slowly and raises the lantern" /></label>}
-          <p className="helper">{models.find((m) => m.id === model)?.note ?? "Custom Kie.ai model id: capabilities and price are not known to this app."} Video usually costs more than an image; your provider bills the account behind your key.</p>
+          <p className="helper">{where.startsWith("local:") ? "Made on this computer: free and offline. A few minutes on a mid-range graphics card." : `${models.find((m) => m.id === model)?.note ?? "Custom Kie.ai model id: capabilities and price are not known to this app."} Video usually costs more than an image; your provider bills the account behind your key.`}</p>
           <div className="sheet-actions-row">
             <button className="primary" disabled={!ready || !desktop} onClick={() => void run()}><Film size={15} /> {running ? "Making the clip… (a few minutes)" : "Generate motion demo"}</button>
           </div>

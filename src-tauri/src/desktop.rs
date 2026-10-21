@@ -228,6 +228,7 @@ pub fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<Wry>> {
         .item(&item("tools-prompt", "Prompt Studio", None)?)
         .item(&item("tools-queue", "Generation Queue", None)?)
         .item(&item("tools-providers", "Provider Settings", None)?)
+        .item(&item("tools-local", "Local AI (Ollama, LM Studio, ComfyUI)", None)?)
         .build()?;
     let window = SubmenuBuilder::new(app, "Window")
         .item(&PredefinedMenuItem::minimize(app, None)?)

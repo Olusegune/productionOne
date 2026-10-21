@@ -73,6 +73,9 @@ import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";
 import { MotionDemo } from "./components/MotionDemo";
 import { DirectRoom } from "./components/DirectRoom";
+import { LocalAiPanel } from "./components/LocalAiPanel";
+import { useLocalAi } from "./data/localAi";
+import { anyLocal } from "./domain/localAi";
 import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { ReadingPanel } from "./components/ReadingPanel";
@@ -183,10 +186,12 @@ export default function App() {
     [settingsOpen, setSettingsOpen] = useState(false),
     [queue, setQueueState] = useState<QueueState>(emptyQueue),
     [paletteOpen, setPaletteOpen] = useState(false),
+    [localOpen, setLocalOpen] = useState(false),
     [clips, setClipsState] = useState<DemoClip[]>([]),
     [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({});
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
+  const localAi = useLocalAi(isTauri);
   const scriptArea = useRef<HTMLTextAreaElement>(null),
     studioControl = useRef<{ generateFirst: () => void } | null>(null);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
@@ -1024,6 +1029,7 @@ export default function App() {
     "project-audit": () => setWorkspace("Deliver"),
     "tools-models": () => setProvidersOpen(true),
     "tools-providers": () => setProvidersOpen(true),
+    "tools-local": () => setLocalOpen(true),
     "tools-prompt": () => setWorkspace("Design"),
     "tools-queue": () => setWorkspace("Deliver"),
     "help-start": () => setHelpTopic("start"),
@@ -1078,6 +1084,7 @@ export default function App() {
     { id: "import", label: "Import a script…", hint: "File", run: () => actionsRef.current["file-import"]?.() },
     { id: "export", label: "Export the production package", hint: "Deliver", run: () => actionsRef.current["file-export"]?.() },
     { id: "providers", label: "Providers and API keys", hint: "Tools", run: () => setProvidersOpen(true) },
+    { id: "local", label: "Local AI: Ollama, LM Studio, ComfyUI", hint: "Tools · works offline", run: () => setLocalOpen(true) },
     { id: "settings", label: "Project settings", hint: "Project", run: () => setSettingsOpen(true) },
     { id: "rail", label: "Show or hide the side panels", hint: "View", run: () => setSidebarHidden((hidden) => !hidden) },
     { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
@@ -1125,8 +1132,11 @@ export default function App() {
         onOpenSettings={() => setSettingsOpen(true)}
         onPalette={() => setPaletteOpen(true)}
         onProviders={() => setProvidersOpen(true)}
+        localUp={anyLocal(localAi.status)}
+        onLocal={isTauri ? () => setLocalOpen(true) : undefined}
       />
       <main className="po-main">
+        {localOpen && <LocalAiPanel onClose={() => setLocalOpen(false)} notify={setNotice} />}
         {helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
         {pending && (
           <UnsavedSheet
@@ -1325,7 +1335,7 @@ export default function App() {
                   </h3>
                 </div>
               </div>
-              <ReadingPanel story={analysis.story} onJump={jumpToLine} />
+              <ReadingPanel story={analysis.story} onJump={jumpToLine} desktop={isTauri} onStory={(story) => setAnalysis((a) => ({ ...a, story }))} notify={setNotice} />
               <EditableInventory
                 analysis={analysis}
                 onChange={setAnalysis}
@@ -1356,6 +1366,7 @@ export default function App() {
               onApproved={onSheetApproved}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
+              openLocal={() => setLocalOpen(true)}
               controlRef={studioControl}
               refs={assetRefs}
               setRefs={setAssetRefs}
@@ -1630,6 +1641,7 @@ export default function App() {
               title={title}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
+              openLocal={() => setLocalOpen(true)}
             />
             {storyboardsEnabled && (
               <details className="po-classic">

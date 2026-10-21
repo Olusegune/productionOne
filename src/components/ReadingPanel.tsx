@@ -2,9 +2,16 @@ import { useMemo } from "react";
 import { characterArcs, sceneMood } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 import { EmotionChip } from "./bible";
+import { useState } from "react";
+import { Sparkles } from "lucide-react";
+import { runAiPass } from "../data/aiPass";
+import { useLocalAi } from "../data/localAi";
+import { applyAi } from "../engine/aiBeats";
 
 /** What the story engine found, each finding linked back to the script line it came from. */
-export function ReadingPanel({ story, onJump }: { story?: ParsedStory; onJump: (line: number) => void }) {
+export function ReadingPanel({ story, onJump, desktop = false, onStory, notify }: { story?: ParsedStory; onJump: (line: number) => void; desktop?: boolean; onStory?: (story: ParsedStory) => void; notify?: (message: string) => void }) {
+  const local = useLocalAi(desktop);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const arcs = useMemo(() => (story ? characterArcs(story) : []), [story]);
   if (!story || !story.scenes.length) return <section className="panel po-reading"><span className="eyebrow">THE ENGINE'S READING</span><h3>Nothing read yet</h3><p className="helper">Paste or import a script and press Analyze. Reading is free and happens on your computer.</p></section>;
   const jump = (line: number, label: string) => <button className="po-line" onClick={() => onJump(line)} title="Show this line in the script">{label}</button>;
@@ -14,6 +21,21 @@ export function ReadingPanel({ story, onJump }: { story?: ParsedStory; onJump: (
         <div><span className="eyebrow">THE ENGINE'S READING · FREE, LOCAL</span><h3>{story.scenes.length} scene{story.scenes.length === 1 ? "" : "s"} · {story.characters.length} character{story.characters.length === 1 ? "" : "s"} · {story.props.length} prop{story.props.length === 1 ? "" : "s"}</h3></div>
         <span className="pill">{story.format}</span>
       </div>
+      {desktop && onStory && (
+        <div className="ai-row">
+          <button className="secondary" disabled={!!progress || !local.config.textModel} onClick={async () => {
+            try {
+              setProgress({ done: 0, total: 1 });
+              const readings = await runAiPass(story, local.config, (done, total) => setProgress({ done, total }));
+              onStory(applyAi(story, readings));
+              const kept = readings.reduce((n, r) => n + r.beats.length, 0);
+              const dropped = readings.reduce((n, r) => n + r.dropped, 0);
+              notify?.(`Read ${readings.length} scene${readings.length === 1 ? "" : "s"} with ${local.config.textModel}: ${kept} beat${kept === 1 ? "" : "s"} kept${dropped ? `, ${dropped} dropped because their evidence was not in the script` : ""}.`);
+            } catch (e) { notify?.(String(e)); } finally { setProgress(null); }
+          }}><Sparkles size={14} /> {progress ? `Reading scene ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…` : "Deepen with local AI"}</button>
+          <small>{local.config.textModel ? `Uses ${local.config.textModel} on this computer. Nothing is sent online.` : "Open Local AI and choose a model to use this."}</small>
+        </div>
+      )}
       {story.warnings.map((w) => <p key={w} className="helper warn">{w}</p>)}
       <details open>
         <summary>Scenes and mood</summary>
@@ -28,7 +50,7 @@ export function ReadingPanel({ story, onJump }: { story?: ParsedStory; onJump: (
         <ul className="po-plain">
           {story.characters.map((c) => { const arc = arcs.find((a) => a.character === c.name); return (
             <li key={c.name}><b>{c.name}</b> <small>{c.dialogueCount} line{c.dialogueCount === 1 ? "" : "s"} · {c.sceneIds.length} scene{c.sceneIds.length === 1 ? "" : "s"}</small>
-              <span className="po-chips">{arc?.points.map((p) => <span key={p.sceneId} title={p.evidence[0]?.text}><EmotionChip emotion={p.reading.emotion} intensity={p.reading.intensity} /></span>)}</span>
+              <span className="po-chips">{arc?.points.map((p) => <span key={p.sceneId} title={p.evidence[0]?.text}><EmotionChip emotion={p.reading.emotion} intensity={p.reading.intensity} ai={p.reading.source === "ai"} /></span>)}</span>
             </li>
           ); })}
         </ul>

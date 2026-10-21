@@ -1,4 +1,4 @@
-export type ProviderKey = 'kie' | 'google' | 'openai' | 'openrouter' | 'fal'
+export type ProviderKey = 'kie' | 'google' | 'openai' | 'openrouter' | 'fal' | 'comfyui'
 
 export interface CatalogModel {
   provider: ProviderKey
@@ -10,11 +10,13 @@ export interface CatalogModel {
   note: string
 }
 
-export const providerLabels: Record<ProviderKey, string> = { kie: 'Kie.ai', google: 'Google Gemini', openai: 'OpenAI', openrouter: 'OpenRouter', fal: 'fal.ai' }
-export const providerOrder: ProviderKey[] = ['kie', 'google', 'openai', 'openrouter', 'fal']
+export const providerLabels: Record<ProviderKey, string> = { kie: 'Kie.ai', google: 'Google Gemini', openai: 'OpenAI', openrouter: 'OpenRouter', fal: 'fal.ai', comfyui: 'ComfyUI (on this computer)' }
+export const providerOrder: ProviderKey[] = ['comfyui', 'kie', 'google', 'openai', 'openrouter', 'fal']
+/** Providers that run on this computer or your network: free per image, and they work with no internet. */
+export const localProviders: ProviderKey[] = ['comfyui']
 
 /** Reference images are sent where the adapter supports them (see providers.rs). Kie depends on the model: see modelTakesReferences. */
-export const providerSendsReferences: Record<ProviderKey, boolean> = { kie: true, google: true, openrouter: true, openai: false, fal: false }
+export const providerSendsReferences: Record<ProviderKey, boolean> = { kie: true, google: true, openrouter: true, openai: false, fal: false, comfyui: false }
 
 const KIE_REFERENCE_MODELS = /image-to-image|edit|nanobanana|nano-banana-edit|pro-image|ideogram\/character|wan\/2-7-image|seedream\/(?:4-5|v4)-edit/i
 
@@ -75,8 +77,8 @@ export interface DiscoveredEntry { id: string; name: string }
 export type DiscoveredCatalog = Partial<Record<ProviderKey | 'kie-video', { fetchedAt: number; models: DiscoveredEntry[] }>>
 
 /** Built-in entries first, then anything the provider listed that the built-in list does not already have. */
-export function mergeCatalog(discovered: DiscoveredCatalog): CatalogModel[] {
-  const merged = [...builtInModels]
+export function mergeCatalog(discovered: DiscoveredCatalog, local: CatalogModel[] = []): CatalogModel[] {
+  const merged = [...local, ...builtInModels]
   for (const provider of providerOrder) {
     for (const model of discovered[provider]?.models ?? []) {
       if (merged.some((m) => m.provider === provider && m.id === model.id)) continue

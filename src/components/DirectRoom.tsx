@@ -34,8 +34,9 @@ export function DirectRoom(props: {
   title: string;
   notify: (message: string) => void;
   openProviders: () => void;
+  openLocal?: () => void;
 }) {
-  const { analysis, shots, setShots, queue, setQueue, style, assetRefs, desktop, providersVersion, enabled, setEnabled, title, notify, openProviders } = props;
+  const { analysis, shots, setShots, queue, setQueue, style, assetRefs, desktop, providersVersion, enabled, setEnabled, title, notify, openProviders, openLocal } = props;
   const choice = useModelChoice(desktop, providersVersion);
   const [sceneId, setSceneId] = useState(analysis.scenes[0]?.id ?? "");
   const [selected, setSelected] = useState<string | null>(null);
@@ -95,7 +96,10 @@ export function DirectRoom(props: {
     const result = enqueue(queue, requests, Date.now(), force);
     setQueue(() => result.state);
     if (!result.added) { notify("Those shots already have frames waiting or approved. Use Regenerate on a shot to make another version."); return; }
-    if (desktop && !choice.configured[choice.provider]) { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but there is no ${choice.provider} key yet.`); openProviders(); return; }
+    if (desktop && !choice.configured[choice.provider]) {
+      if (choice.provider === "comfyui") { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but ComfyUI is not running. Start it from Local AI.`); openLocal?.(); } else { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but there is no ${choice.provider} key yet.`); openProviders(); }
+      return;
+    }
     notify(`Generating ${result.added} storyboard frame${result.added === 1 ? "" : "s"}${takesRefs ? " from your approved references" : " (this model takes no reference images, so people are described, not matched)"}…`);
   };
 

@@ -39,7 +39,7 @@ import { detectStoryVariants, type SheetType, type StyleBible } from "../domain/
 import { characterArcs, expressionPlan } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 import { ModelPicker } from "./ModelPicker";
-import { readModelChoice, writeModelChoice } from "../data/modelChoice";
+import { useModelChoice } from "../data/modelChoice";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 
 const providers = providerOrder;
@@ -84,13 +84,14 @@ export function SheetStudio(props: {
   onApproved: (job: ImageJob, primary: boolean) => void;
   notify: (message: string) => void;
   openProviders: () => void;
+  openLocal?: () => void;
   /** Extra photos the person attached to each asset (actor, costume, location). Sent with every request to models that accept references. */
   refs: Record<string, string[]>;
   setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void } | null };
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, controlRef, refs, setRefs } = props;
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, refs, setRefs } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
@@ -98,18 +99,12 @@ export function SheetStudio(props: {
   const [sheetType, setSheetType] = useState<SheetType>("Turnaround");
   const [intensity, setIntensity] = useState<Intensity>("moderate");
   const [notes, setNotes] = useState("");
-  const [provider, setProvider] = useState<ProviderKey>(() => readModelChoice().provider);
-  const [modelId, setModelId] = useState(() => readModelChoice().modelId);
-  const startModel: Record<ProviderKey, string> = { kie: "google/nanobanana-2-1", google: "gemini-nano-banana-2.1", openai: "gpt-image-1.5", openrouter: "bytedance-seed/seedream-4.5", fal: "fal-ai/flux/dev" };
-  const switched = useRef(false);
-  const [configured, setConfigured] = useState<Record<string, boolean>>({});
-  const [discovered, setDiscovered] = useState<DiscoveredCatalog>({});
-  const [refreshing, setRefreshing] = useState(false);
+  const choice = useModelChoice(desktop, providersVersion);
+  const { provider, modelId, configured, catalog, refreshing } = choice;
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   const activeType: SheetType = sheetTypes.includes(sheetType) ? sheetType : (sheetTypes[0] ?? "Turnaround");
   const activeVariant = variants.includes(variant) ? variant : "Canonical";
-  const catalog = useMemo(() => mergeCatalog(discovered), [discovered]);
   useEffect(() => { setLightbox(null); }, [asset?.id, activeType, activeVariant]);
   const model: CatalogModel | undefined = catalog.find((m) => m.provider === provider && m.id === modelId);
   const [fromStory, setFromStory] = useState(true);
@@ -120,29 +115,6 @@ export function SheetStudio(props: {
   }, [story, asset]);
   const usePlan = fromStory && !!plan && plan.length > 1;
   const views = asset ? viewsFor(asset.type, activeType, intensity, usePlan ? plan : undefined) : [];
-
-  useEffect(() => {
-    if (!desktop) return;
-    let live = true;
-    void import("@tauri-apps/api/core").then(async ({ invoke }) => {
-      const status: Record<string, boolean> = {};
-      for (const p of providers) status[p] = await invoke<boolean>("credential_status", { provider: p }).catch(() => false);
-      let saved: DiscoveredCatalog = (await invoke<DiscoveredCatalog>("model_catalog").catch(() => ({}))) ?? {};
-      // Kie publishes its whole model list without a key: keep it fresh (once a day) so every current model is offered.
-      const age = Date.now() / 1000 - (saved.kie?.fetchedAt ?? 0);
-      if (age > 86400) saved = (await invoke<DiscoveredCatalog>("kie_models").catch(() => saved)) ?? saved;
-      if (live) {
-        setConfigured(status);
-        setDiscovered(saved);
-        if (!switched.current) {
-          switched.current = true;
-          const first = providers.find((p) => status[p]);
-          if (first && !status[provider]) { setProvider(first); setModelId(startModel[first]); }
-        }
-      }
-    });
-    return () => { live = false; };
-  }, [desktop, providersVersion]);
 
   const jobFor = (viewKey: string) => {
     const mine = queue.jobs.filter((j) => asset && j.assetId === asset.id && j.variant === activeVariant && j.sheetType === activeType && j.viewKey === viewKey);
@@ -164,24 +136,15 @@ export function SheetStudio(props: {
     setQueue(() => result.state);
     if (!result.added) { notify("Every view of this sheet is already queued or approved."); return; }
     const what = `${result.added} view${result.added === 1 ? "" : "s"}${testOneFirst ? " (a test of the first one)" : ""}`;
-    if (desktop && !configured[provider]) { notify(`Queued ${what}, but there is no ${providerLabels[provider]} key yet. Add it, then generation starts.`); openProviders(); return; }
+    if (desktop && !configured[provider]) {
+      if (provider === "comfyui") { notify(`Queued ${what}, but ComfyUI is not running. Start it from Local AI, then generation starts.`); openLocal?.(); } else { notify(`Queued ${what}, but there is no ${providerLabels[provider]} key yet. Add it, then generation starts.`); openProviders(); }
+      return;
+    }
     notify(`Generating ${what}…`);
   };
   if (controlRef) controlRef.current = { generateFirst: () => generate(true) };
 
-  const refreshModels = async () => {
-    setRefreshing(true);
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const next = await invoke<DiscoveredCatalog>(provider === "kie" ? "kie_models" : "discover_models", { provider });
-      setDiscovered(next);
-      notify(`Model list refreshed from ${providerLabels[provider]}.`);
-    } catch (error) {
-      notify(String(error));
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  const refreshModels = async () => { notify(await choice.refresh()); };
 
   const pickImages = async (multiple: boolean): Promise<Array<{ path: string; inspection: { width: number; height: number } }>> => {
     const chosen = await invoke<string[]>("pick_image_files", { multiple });
@@ -274,7 +237,7 @@ export function SheetStudio(props: {
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>{intensities.map((i) => <option key={i}>{i}</option>)}</select></label>
         )}
         <label className="ss-model"><span>Model</span>
-          <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={(p, id) => { setProvider(p); setModelId(id); writeModelChoice(p, id); }} onRefresh={() => void refreshModels()} refreshing={refreshing} />
+          <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={choice.pick} onRefresh={() => void refreshModels()} refreshing={refreshing} />
         </label>
       </div>
       {desktop && (
@@ -300,7 +263,7 @@ export function SheetStudio(props: {
         <input className="ss-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes for this sheet, e.g. dust-worn jacket, torn left sleeve" aria-label="Notes for this sheet" />
         <button className="primary" onClick={() => generate(false)} disabled={!views.length}><Sparkles size={15} /> Generate {views.length} view{views.length === 1 ? "" : "s"}</button>
         {views.length > 1 && <button className="secondary" onClick={() => generate(true)} title="Make one image first to check the look">Test one first</button>}
-        {!configured[provider] && desktop && <button className="secondary" onClick={openProviders}>Add {providerLabels[provider]} key</button>}
+        {!configured[provider] && desktop && (provider === "comfyui" ? <button className="secondary" onClick={openLocal}>Start ComfyUI</button> : <button className="secondary" onClick={openProviders}>Add {providerLabels[provider]} key</button>)}
       </div>
       {!desktop && <p className="helper">Image generation runs in the Windows app. The browser preview shows the plan only.</p>}
 

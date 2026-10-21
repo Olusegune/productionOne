@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, RefreshCw, Search } from "lucide-react";
-import { modelTakesReferences, providerLabels, providerOrder, type CatalogModel, type ProviderKey } from "../domain/imageCatalog";
+import { localProviders, modelTakesReferences, providerLabels, providerOrder, type CatalogModel, type ProviderKey } from "../domain/imageCatalog";
 
 /** One searchable list of every model from every provider. Pick any of them, or type your own id: nothing is hidden or locked. */
 export function ModelPicker(props: {
@@ -41,7 +41,7 @@ export function ModelPicker(props: {
     <div className="mp" ref={box}>
       <button className="mp-button" onClick={() => setOpen((o) => !o)} aria-haspopup="listbox" aria-expanded={open} aria-label="Choose image model">
         <span className="mp-name">{current?.name ?? modelId}</span>
-        <span className="mp-sub">{providerLabels[provider]}{configured[provider] ? "" : " · no key"}</span>
+        <span className="mp-sub">{providerLabels[provider]}{configured[provider] ? "" : localProviders.includes(provider) ? " · not running" : " · no key"}</span>
         <ChevronDown size={16} />
       </button>
       {open && (
@@ -54,7 +54,7 @@ export function ModelPicker(props: {
           <div className="mp-list" role="listbox">
             {groups.map(({ p, items }) => (
               <section key={p}>
-                <h5>{providerLabels[p]} <span>{items.length}</span>{!configured[p] && <em>no key yet</em>}</h5>
+                <h5>{providerLabels[p]} <span>{items.length}</span>{!configured[p] && <em>{localProviders.includes(p) ? "not running" : "no key yet"}</em>}</h5>
                 {items.map((m) => (
                   <button key={`${p}:${m.id}`} role="option" aria-selected={p === provider && m.id === modelId} className={`mp-item${p === provider && m.id === modelId ? " on" : ""}`} onClick={() => pick(p, m.id)}>
                     <span className="mp-item-name">{m.name}</span>

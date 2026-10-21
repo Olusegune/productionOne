@@ -1,6 +1,6 @@
 [package]
 name = "production-guy"
-version = "0.12.4"
+version = "0.13.1"
 description = "Your AI Production Department"
 authors = ["Production One"]
 edition = "2021"
@@ -16,10 +16,11 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 serde_yaml = "0.9"
-tokio = { version = "1", features = ["time"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["time", "macros"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "multipart"] }
 keyring = { version = "3", features = ["windows-native"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 font8x8 = "0.3"
