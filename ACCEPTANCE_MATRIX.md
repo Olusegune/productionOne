@@ -1,4 +1,4 @@
-# Production Guy 0.5 acceptance matrix
+# Production Guy 0.5.1 acceptance matrix
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
@@ -20,7 +20,7 @@
 | Production coverage | verified-file requirement, scene readiness and continuity warnings | Passed |
 | Production package | required folders, manifest, ledger, Style Bible, model usage, prompts, references, validation | Passed |
 | Direct video generation | KIE task/status adapter, secure key and budget gate, authenticated mock acceptance | Contract passed; paid live call awaits user key/authorization |
-| Windows installers | 0.5.0 NSIS and MSI x64 bundles | Passed, unsigned |
+| Windows installers | 0.5.1 NSIS and MSI x64 bundles; launcher PE subsystem verified as `Windows GUI` | Passed, unsigned |
 
 ## External acceptance gates
 
