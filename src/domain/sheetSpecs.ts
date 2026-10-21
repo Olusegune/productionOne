@@ -1,5 +1,6 @@
 import type { ExtractedAsset } from './productionStudio'
 import type { SheetType, StyleBible } from './visualDevelopment'
+import type { ExpressionNeed } from '../engine/emotion'
 
 /** One separate image inside a reference sheet. Each view is generated and saved as its own original-resolution file. */
 export interface ViewSpec {
@@ -78,7 +79,13 @@ const setViews: Partial<Record<SheetType, ViewSpec[]>> = {
   Lighting: [close('lighting', 'Practical lighting', 'The location lit only by its practical light sources, showing where each source sits.', '16:9')],
 }
 
-export function viewsFor(assetType: ExtractedAsset['type'], sheetType: SheetType, intensity: Intensity = 'moderate'): ViewSpec[] {
+/** Expression views for the emotions a character actually plays in the story, each at the intensity the script calls for. */
+export function emotionViews(needs: ExpressionNeed[]): ViewSpec[] {
+  return needs.map((need) => close(`${need.emotion}-${need.intensity}`, `${need.emotion[0].toUpperCase() + need.emotion.slice(1)} (${need.intensity})`, `Large face close-up showing ${need.emotion}, ${intensityWords[need.intensity]}. Head fills most of the frame.${need.sceneIds.length ? ` Story moment: ${need.why}` : ''}`, '1:1'))
+}
+
+export function viewsFor(assetType: ExtractedAsset['type'], sheetType: SheetType, intensity: Intensity = 'moderate', plan?: ExpressionNeed[]): ViewSpec[] {
+  if (assetType === 'character' && sheetType === 'Expressions' && plan?.length) return emotionViews(plan)
   if (assetType === 'character' && sheetType === 'Expressions') {
     return emotions.map((emotion) => close(`${emotion}-${intensity}`, `${emotion[0].toUpperCase() + emotion.slice(1)} (${intensity})`, `Large face close-up showing ${emotion}, ${intensityWords[intensity]}. Head fills most of the frame.`, '1:1'))
   }

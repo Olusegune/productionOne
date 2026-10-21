@@ -65,7 +65,12 @@ import "./animatic.css";
 import "./art-direction.css";
 import "./inventory.css";
 import "./production-one.css";
+import "./studio-shell.css";
+import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
+import { AssetInspector, BibleTree } from "./components/bible";
+import { ReadingPanel } from "./components/ReadingPanel";
+import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { GoldenPath } from "./components/GoldenPath";
@@ -108,15 +113,7 @@ const departmentCards = [
     description: "Audit, compile and export video-ready packages.",
   },
 ];
-const sampleScript = `EXT. SAVANNA - DUSK
-AMINA
-We are close.
-She holds the solar compass and studies the horizon.
-
-INT. CLIFF BEDROOM - NIGHT
-MARCUS
-Then we leave before dawn.
-Marcus places the weathered photograph on the table.`;
+const sampleScript = sampleStory;
 const initialShot: ShotRecord = {
   id: "SHOT-001",
   sceneId: "SCENE-001",
@@ -204,7 +201,9 @@ export default function App() {
     [zoom, setZoom] = useState(1),
     [sidebarHidden, setSidebarHidden] = useState(false),
     [settingsOpen, setSettingsOpen] = useState(false),
-    [queue, setQueueState] = useState<QueueState>(emptyQueue);
+    [queue, setQueueState] = useState<QueueState>(emptyQueue),
+    [paletteOpen, setPaletteOpen] = useState(false);
+  const scriptArea = useRef<HTMLTextAreaElement>(null);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
   const snapshot = useRef<string | null>(null),
     scriptInput = useRef<HTMLInputElement>(null),
@@ -1056,6 +1055,38 @@ export default function App() {
     });
     return () => { dead = true; offs.forEach((off) => off()); };
   }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((open) => !open); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  const jumpToLine = (line: number) => {
+    const area = scriptArea.current;
+    if (!area) return;
+    const lines = area.value.split("\n");
+    const start = lines.slice(0, Math.max(0, line - 1)).reduce((n, l) => n + l.length + 1, 0);
+    area.focus();
+    area.setSelectionRange(start, start + (lines[line - 1]?.length ?? 0));
+    area.scrollTop = Math.max(0, (line - 4) * 20);
+  };
+  const paletteCommands: PaletteCommand[] = [
+    ...["Projects", "Story", "Design", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
+    { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
+    { id: "new", label: "New project", hint: "File", run: () => actionsRef.current["file-new"]?.() },
+    { id: "open", label: "Open a project…", hint: "File", run: () => actionsRef.current["file-open"]?.() },
+    { id: "save", label: "Save project", hint: "File", run: () => actionsRef.current["file-save"]?.() },
+    { id: "saveas", label: "Save project as…", hint: "File", run: () => actionsRef.current["file-save-as"]?.() },
+    { id: "import", label: "Import a script…", hint: "File", run: () => actionsRef.current["file-import"]?.() },
+    { id: "export", label: "Export the production package", hint: "Deliver", run: () => actionsRef.current["file-export"]?.() },
+    { id: "providers", label: "Providers and API keys", hint: "Tools", run: () => setProvidersOpen(true) },
+    { id: "settings", label: "Project settings", hint: "Project", run: () => setSettingsOpen(true) },
+    { id: "rail", label: "Show or hide the side panels", hint: "View", run: () => setSidebarHidden((hidden) => !hidden) },
+    { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
+    { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
+    ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
+  ];
   useImageQueue(queue, setQueue, isTauri && hydrated);
   const onSheetApproved = (job: ImageJob, primary: boolean) => {
     if (!job.outputPath) return;
@@ -1076,78 +1107,21 @@ export default function App() {
     }
   }, [golden.next?.id]);
   return (
-    <div className={`app-shell${sidebarHidden ? " sidebar-hidden" : ""}`} style={{ zoom } as CSSProperties}>
+    <div className={`po-shell${sidebarHidden ? " rails-hidden" : ""}`} style={{ zoom } as CSSProperties}>
       <input ref={scriptInput} type="file" hidden accept=".txt,.md,.fountain,.screenplay,text/plain,text/markdown" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importScript(file); e.target.value = ""; }} />
       <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) openText(await file.text(), null); e.target.value = ""; }} />
-      <aside className="sidebar">
-        <div className="brand">
-          <BrandMark size={38} />
-          <div>
-            <strong>Production One</strong>
-            <span>Your AI Production Department</span>
-          </div>
-        </div>
-        <nav aria-label="Primary workspaces">
-          {workspaces.map(({ name, icon: Icon, optional }) => (
-            <button
-              key={name}
-              className={workspace === name ? "active" : ""}
-              onClick={() => setWorkspace(name)}
-            >
-              <Icon size={18} />
-              <span>{name}</span>
-              {optional && <em>Optional</em>}
-            </button>
-          ))}
-        </nav>
-        <div className="project-card">
-          <span>Current production</span>
-          <strong>{title}</strong>
-          <small>
-            {analysis.scenes.length} scenes · {analysis.assets.length} assets
-          </small>
-          <div className="progress">
-            <i
-              style={{
-                width: `${audit.ready ? 100 : Math.round((analysis.assets.filter((a) => a.status === "approved").length / Math.max(1, analysis.assets.length)) * 100)}%`,
-              }}
-            />
-          </div>
-          <small>
-            {audit.ready
-              ? "Production ready"
-              : `${audit.missingAssets.length} approvals remaining`}
-          </small>
-        </div>
-      </aside>
-      <main>
-        <header>
-          <div>
-            <span className="eyebrow">
-              {title.toUpperCase()} / {workspace.toUpperCase()}
-            </span>
-            <h1>{workspace}</h1>
-          </div>
-          <div className="header-actions">
-            <span className={`save-state${dirty ? " unsaved" : ""}`} role="status">
-              {dirty ? "Unsaved changes" : filePath ? "Saved" : "Autosaved"}
-            </span>
-            <label>
-              <Search size={15} />
-              <input
-                aria-label="Search production"
-                placeholder="Search production…"
-              />
-            </label>
-            <button
-              className="icon-button"
-              title="Global production tools"
-              onClick={() => setProvidersOpen(true)}
-            >
-              <WandSparkles size={18} />
-            </button>
-          </div>
-        </header>
+      <TopBar
+        title={title}
+        saveLabel={dirty ? "Unsaved changes" : filePath ? "Saved" : "Autosaved"}
+        unsaved={dirty}
+        workspace={workspace}
+        onWorkspace={setWorkspace}
+        golden={goldenInput}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onPalette={() => setPaletteOpen(true)}
+        onProviders={() => setProvidersOpen(true)}
+      />
+      <main className="po-main">
         {helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
         {pending && (
           <UnsavedSheet
@@ -1263,92 +1237,23 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <section className="projects-home">
-            <div className="projects-intro">
-              <span className="eyebrow">
-                {title.toUpperCase()} · ACTIVE PRODUCTION
-              </span>
-              <h2>Welcome back</h2>
-              <p>Turn your imagination into production-ready visuals.</p>
-            </div>
-            <article className="project-hero">
-              <div className="project-hero-copy">
-                <span className="pill">PRODUCTION ONE 0.8</span>
-                <h2>
-                  From story to
-                  <br />
-                  <em>screen-ready.</em>
-                </h2>
+          <section className="po-launch">
+            <div className="po-launch-head">
+              <div>
+                <span className="eyebrow">{filePath ?? "AUTOSAVED PRODUCTION"}</span>
+                <h2>{title}</h2>
                 <p>
-                  One connected production system for story intelligence, visual
-                  development, optional direction, and model-aware delivery.
+                  {analysis.scenes.length} scene{analysis.scenes.length === 1 ? "" : "s"} · {analysis.assets.filter((a) => a.type === "character").length} characters ·{" "}
+                  {analysis.assets.filter((a) => a.type === "prop").length} props · {analysis.assets.filter((a) => a.type === "set" || a.type === "environment").length} sets ·{" "}
+                  {goldenInput.approvedCount} of {goldenInput.assetCount} approved
                 </p>
-                <div className="hero-actions">
-                  <button
-                    className="primary"
-                    onClick={() => setWorkspace("Story")}
-                  >
-                    Continue production <ArrowRight size={15} />
-                  </button>
-                  <button
-                    className="secondary"
-                    onClick={() => void saveProject()}
-                  >
-                    <Download size={15} /> Save project
-                  </button>
-                  <button className="secondary" onClick={() => guard(() => void openProject())}>
-                    Open…
-                  </button>
-                  <button className="secondary" onClick={() => guard(newProject)}>
-                    New
-                  </button>
-                </div>
               </div>
-              <div className="project-hero-stats">
-                <div>
-                  <b>
-                    {
-                      analysis.assets.filter(
-                        (asset) => asset.type === "character",
-                      ).length
-                    }
-                  </b>
-                  <span>Characters</span>
-                </div>
-                <div>
-                  <b>
-                    {
-                      analysis.assets.filter((asset) => asset.type === "set")
-                        .length
-                    }
-                  </b>
-                  <span>Environments</span>
-                </div>
-                <div>
-                  <b>
-                    {
-                      analysis.assets.filter((asset) => asset.type === "prop")
-                        .length
-                    }
-                  </b>
-                  <span>Props</span>
-                </div>
-                <div>
-                  <b>{analysis.assets.length}</b>
-                  <span>Total assets</span>
-                </div>
+              <div className="hero-actions">
+                <button className="secondary" onClick={() => guard(newProject)}>New</button>
+                <button className="secondary" onClick={() => guard(() => void openProject())}>Open…</button>
+                <button className="secondary" onClick={() => void saveProject()}><Download size={15} /> Save</button>
               </div>
-              <div className="project-hero-visual">
-                <img
-                  src="/assets/amina-reference.png"
-                  alt="Amina approved visual reference"
-                />
-                <div>
-                  <b>{title}</b>
-                  <span>APPROVED REFERENCE · CHAR-001</span>
-                </div>
-              </div>
-            </article>
+            </div>
             <GoldenPath input={goldenInput} onGo={setWorkspace} />
             {recents.length > 0 && (
               <div className="recent-list">
@@ -1356,37 +1261,13 @@ export default function App() {
                 <ul>
                   {recents.slice(0, 5).map((path) => (
                     <li key={path}>
-                      <button onClick={() => guard(() => void openPath(path))} title={path}>
-                        {path.split(/[\\/]/).pop()}
-                      </button>
+                      <button onClick={() => guard(() => void openPath(path))} title={path}>{path.split(/[\\/]/).pop()}</button>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <div className="department-grid">
-              {departmentCards.map(
-                ({ name, icon: Icon, image, description }) => (
-                  <button
-                    key={name}
-                    className="department-card"
-                    style={{ "--card-image": `url(${image})` } as CSSProperties}
-                    onClick={() => setWorkspace(name)}
-                    aria-label={`Open ${name} workspace`}
-                  >
-                    <span className="department-shade" />
-                    <span className="department-copy">
-                      <Icon size={29} />
-                      <b>{name}</b>
-                      <small>{description}</small>
-                    </span>
-                    <span className="department-action">
-                      <ArrowUpRight size={19} />
-                    </span>
-                  </button>
-                ),
-              )}
-            </div>
+            <p className="helper">Press Ctrl+K for the command palette: it can open any asset, import a script, save or export without leaving the keyboard.</p>
           </section>
         )}
         {workspace === "Story" && (
@@ -1416,6 +1297,7 @@ export default function App() {
                 </div>
               </div>
               <textarea
+                ref={scriptArea}
                 className="script-editor"
                 value={script}
                 onChange={(e) => setScript(e.target.value)}
@@ -1437,19 +1319,7 @@ export default function App() {
                   </h3>
                 </div>
               </div>
-              <div className="scene-list compact-scenes">
-                {analysis.scenes.map((scene) => (
-                  <div key={scene.id}>
-                    <span>{scene.id}</span>
-                    <b>{scene.heading}</b>
-                    <small>
-                      {scene.dialogue.length} dialogue cue
-                      {scene.dialogue.length === 1 ? "" : "s"} ·{" "}
-                      {scene.timeOfDay}
-                    </small>
-                  </div>
-                ))}
-              </div>
+              <ReadingPanel story={analysis.story} onJump={jumpToLine} />
               <EditableInventory
                 analysis={analysis}
                 onChange={setAnalysis}
@@ -1459,7 +1329,9 @@ export default function App() {
           </section>
         )}
         {workspace === "Design" && (
-          <div className="design-workspace">
+          <div className="po-design">
+            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} />
+            <div className="po-canvas design-workspace">
             <ArtDirectionBar
               style={styleBible}
               onChange={setStyleBible}
@@ -1468,6 +1340,8 @@ export default function App() {
             <SheetStudio
               assets={analysis.assets}
               scenes={analysis.scenes}
+              story={analysis.story}
+              assetIndex={selectedAsset}
               style={styleBible}
               queue={queue}
               setQueue={setQueue}
@@ -1477,6 +1351,8 @@ export default function App() {
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
             />
+            <details className="po-classic">
+            <summary>Prompt Studio, model hub, imports and quality tools</summary>
             <section className="three-column">
               <div className="panel asset-browser">
                 <div className="panel-heading">
@@ -1737,6 +1613,9 @@ export default function App() {
                 </p>
               </div>
             </section>
+            </details>
+            </div>
+            <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} />
           </div>
         )}
         {workspace === "Direct" && (
@@ -2056,6 +1935,8 @@ export default function App() {
           </section>
         )}
       </main>
+      <QueueDock queue={queue} onOpen={() => setWorkspace("Design")} />
+      {paletteOpen && <CommandPalette commands={paletteCommands} onClose={() => setPaletteOpen(false)} />}
     </div>
   );
 }

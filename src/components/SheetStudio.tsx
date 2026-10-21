@@ -33,6 +33,8 @@ import {
 } from "../domain/sheetSpecs";
 import type { ExtractedAsset, ScriptScene } from "../domain/productionStudio";
 import { detectStoryVariants, type SheetType, type StyleBible } from "../domain/visualDevelopment";
+import { characterArcs, expressionPlan } from "../engine/emotion";
+import type { ParsedStory } from "../engine/story";
 
 const providers = ["google", "openai", "openrouter", "fal"] as const;
 type ProviderKey = (typeof providers)[number];
@@ -67,6 +69,8 @@ const statusLabel: Record<ImageJob["status"], string> = {
 export function SheetStudio(props: {
   assets: ExtractedAsset[];
   scenes: ScriptScene[];
+  story?: ParsedStory;
+  assetIndex: number;
   style: StyleBible;
   queue: QueueState;
   setQueue: (update: (q: QueueState) => QueueState) => void;
@@ -76,10 +80,9 @@ export function SheetStudio(props: {
   notify: (message: string) => void;
   openProviders: () => void;
 }) {
-  const { assets, scenes, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders } = props;
-  const [assetIndex, setAssetIndex] = useState(0);
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
-  const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes) : []), [asset, scenes]);
+  const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
   const sheetTypes = asset ? sheetTypesFor(asset.type) : [];
   const [sheetType, setSheetType] = useState<SheetType>("Turnaround");
@@ -100,7 +103,14 @@ export function SheetStudio(props: {
   const catalog = useMemo(() => mergeCatalog(discovered), [discovered]);
   const choices = catalog.filter((m) => m.provider === provider);
   const model: CatalogModel | undefined = catalog.find((m) => m.provider === provider && m.id === modelId);
-  const views = asset ? viewsFor(asset.type, activeType, intensity) : [];
+  const [fromStory, setFromStory] = useState(true);
+  const plan = useMemo(() => {
+    if (!story || !asset || asset.type !== "character") return undefined;
+    const arc = characterArcs(story).find((a) => a.character.toUpperCase() === asset.name.toUpperCase());
+    return arc ? expressionPlan(arc) : undefined;
+  }, [story, asset]);
+  const usePlan = fromStory && !!plan && plan.length > 1;
+  const views = asset ? viewsFor(asset.type, activeType, intensity, usePlan ? plan : undefined) : [];
 
   useEffect(() => {
     if (!desktop) return;
@@ -183,15 +193,18 @@ export function SheetStudio(props: {
       </div>
 
       <div className="sheet-controls">
-        <label><span>Asset</span>
-          <select value={assetIndex} onChange={(e) => { setAssetIndex(Number(e.target.value)); setVariant("Canonical"); }}>
-            {assets.map((a, i) => <option key={a.id} value={i}>{a.name} ({a.type})</option>)}
-          </select></label>
         <label><span>Story variant</span>
           <select value={activeVariant} onChange={(e) => setVariant(e.target.value)}>{variants.map((v) => <option key={v}>{v}</option>)}</select></label>
         <label><span>Sheet</span>
           <select value={activeType} onChange={(e) => setSheetType(e.target.value as SheetType)}>{sheetTypes.map((t) => <option key={t}>{t}</option>)}</select></label>
-        {asset.type === "character" && activeType === "Expressions" && (
+        {asset.type === "character" && activeType === "Expressions" && plan && plan.length > 1 && (
+          <label><span>Expression set</span>
+            <select value={fromStory ? "story" : "full"} onChange={(e) => setFromStory(e.target.value === "story")}>
+              <option value="story">From the story ({plan.length} expressions)</option>
+              <option value="full">Full set (8 emotions)</option>
+            </select></label>
+        )}
+        {asset.type === "character" && activeType === "Expressions" && !usePlan && (
           <label><span>Acting intensity</span>
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>{intensities.map((i) => <option key={i}>{i}</option>)}</select></label>
         )}

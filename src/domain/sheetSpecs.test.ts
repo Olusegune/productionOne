@@ -18,6 +18,15 @@ describe('sheet specs', () => {
     expect(subtle[1].instruction).not.toBe(loud[1].instruction)
     expect(subtle.every((v) => !v.fullBody && v.aspect === '1:1')).toBe(true)
   })
+  it('builds expression views from the story plan with its own intensities and reasons', () => {
+    const views = viewsFor('character', 'Expressions', 'moderate', [
+      { emotion: 'neutral', intensity: 'subtle', peak: 1, sceneIds: [], why: 'Baseline reference for the face.' },
+      { emotion: 'fear', intensity: 'moderate', peak: 5, sceneIds: ['SCENE-001'], why: 'Scene 1: I am afraid.' },
+    ])
+    expect(views.map((v) => v.key)).toEqual(['neutral-subtle', 'fear-moderate'])
+    expect(views[1].instruction).toContain('Scene 1')
+    expect(views[0].instruction).not.toContain('Story moment')
+  })
   it('covers props and sets, and returns nothing for an unplanned combination', () => {
     expect(viewsFor('prop', 'Multi-view')).toHaveLength(4)
     expect(viewsFor('set', 'Layout')[0].label).toBe('Floor plan')

@@ -66,7 +66,7 @@ const PRONOUN_START = /^(?:he|she|they|it|his|her|their|the|a|an|as|then|we see|
 
 const slug = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 const clean = (line: string) => line.replace(/^﻿/, '').replace(/\*\*|__/g, '').replace(/\t/g, '  ').trimEnd()
-const titleCase = (value: string) => value.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase())
+const titleCase = (value: string) => value.toLowerCase().replace(/(^|[\s-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase())
 const escapeRx = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export function detectFormat(lines: string[]): StoryFormat {
