@@ -261,7 +261,7 @@ export default function App() {
   );
   const totalAnimaticDuration = useMemo(() => animaticDuration(shots), [shots]);
   const plannedSheets = useMemo(
-    () => planAssetSheets(analysis.assets, analysis.scenes),
+    () => planAssetSheets(analysis.assets, analysis.scenes, analysis.story),
     [analysis],
   );
   const modelRecommendations = useMemo(

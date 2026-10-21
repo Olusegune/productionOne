@@ -1,3 +1,4 @@
+import type { ParsedStory } from '../engine/story'
 import type { ExtractedAsset, ScriptScene } from './productionStudio'
 
 export interface StyleBible {
@@ -33,8 +34,9 @@ const sheetTypes:Record<ExtractedAsset['type'],SheetType[]>={
   environment:['Establishing','Layout','Lighting'],
 }
 
-export function detectStoryVariants(asset:ExtractedAsset,scenes:ScriptScene[]):string[]{
+export function detectStoryVariants(asset:ExtractedAsset,scenes:ScriptScene[],story?:ParsedStory):string[]{
   if(asset.type!=='character')return ['Canonical']
+  if(story){const found=story.variants.filter(variant=>variant.character.toUpperCase()===asset.name.toUpperCase()).map(variant=>variant.value);return ['Canonical',...new Set(found)]}
   const text=scenes.filter(scene=>asset.sceneIds.includes(scene.id)).map(scene=>scene.body).join(' ')
   const escaped=asset.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')
   const variants=new Set<string>(['Canonical'])
@@ -45,8 +47,8 @@ export function detectStoryVariants(asset:ExtractedAsset,scenes:ScriptScene[]):s
   return [...variants]
 }
 
-export function planAssetSheets(assets:ExtractedAsset[],scenes:ScriptScene[]):SheetPlan[]{
-  return assets.flatMap(asset=>detectStoryVariants(asset,scenes).flatMap(variant=>sheetTypes[asset.type].map((type,index)=>({id:`SHEET-${asset.id}-${variant.toUpperCase().replace(/[^A-Z0-9]+/g,'-')}-${String(index+1).padStart(2,'0')}`,assetId:asset.id,type,variant,required:true,status:'planned' as const}))))
+export function planAssetSheets(assets:ExtractedAsset[],scenes:ScriptScene[],story?:ParsedStory):SheetPlan[]{
+  return assets.flatMap(asset=>detectStoryVariants(asset,scenes,story).flatMap(variant=>sheetTypes[asset.type].map((type,index)=>({id:`SHEET-${asset.id}-${variant.toUpperCase().replace(/[^A-Z0-9]+/g,'-')}-${String(index+1).padStart(2,'0')}`,assetId:asset.id,type,variant,required:true,status:'planned' as const}))))
 }
 
 export type ModelTask='identity'|'turnaround'|'editing'|'environment'|'graphic'

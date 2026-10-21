@@ -1,3 +1,5 @@
+import { parseStory, type ParsedStory } from '../engine/story'
+
 export type AssetType = 'character' | 'costume' | 'prop' | 'set' | 'environment'
 
 export interface ExtractedAsset {
@@ -19,47 +21,29 @@ export interface ScriptScene {
   dialogue: Array<{ speaker: string; line: string; source: 'script' | 'proposed' }>
 }
 
-export interface AnalysisResult { scenes: ScriptScene[]; assets: ExtractedAsset[] }
-
-const sceneHeading = /^(INT\.?|EXT\.?|INT\.\/EXT\.?|EXT\.\/INT\.?)\s+(.+?)(?:\s+-\s+(DAY|NIGHT|DAWN|DUSK|MORNING|EVENING|CONTINUOUS))?$/i
-const characterCue = /^[A-Z][A-Z0-9 .'-]{1,35}$/
+export interface AnalysisResult { scenes: ScriptScene[]; assets: ExtractedAsset[]; story?: ParsedStory }
 
 const slug = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
+/** Reads a script with the story engine (free, local) and maps it to scenes and production assets. The full reading, with line evidence, is kept in `story`. */
 export function analyzeScript(text: string): AnalysisResult {
-  const lines = text.replace(/\r/g, '').split('\n')
-  const scenes: ScriptScene[] = []
-  let current: ScriptScene | null = null
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index].trim()
-    const match = line.match(sceneHeading)
-    if (match) {
-      current = { id: `SCENE-${String(scenes.length + 1).padStart(3, '0')}`, number: scenes.length + 1, heading: line, setting: match[2].trim(), timeOfDay: match[3]?.toUpperCase() ?? 'UNSPECIFIED', body: '', dialogue: [] }
-      scenes.push(current)
-      continue
-    }
-    if (!current || !line) continue
-    current.body += `${current.body ? '\n' : ''}${line}`
-    if (characterCue.test(line) && lines[index + 1]?.trim() && !lines[index + 1].trim().match(sceneHeading)) {
-      current.dialogue.push({ speaker: line, line: lines[index + 1].trim(), source: 'script' })
-    }
-  }
+  const story = parseStory(text)
+  const scenes: ScriptScene[] = story.scenes.map((scene) => ({
+    id: scene.id, number: scene.number, heading: scene.heading, setting: scene.setting, timeOfDay: scene.timeOfDay, body: scene.body,
+    dialogue: scene.dialogue.filter((d) => d.speaker !== 'LYRIC').map((d) => ({ speaker: d.speaker, line: d.text, source: d.source })),
+  }))
   if (!scenes.length && text.trim()) scenes.push({ id: 'SCENE-001', number: 1, heading: 'UNTITLED SCENE', setting: 'Unspecified', timeOfDay: 'UNSPECIFIED', body: text.trim(), dialogue: [] })
-
   const assets = new Map<string, ExtractedAsset>()
-  const addAsset = (name: string, type: AssetType, sceneId: string) => {
+  const addAsset = (name: string, type: AssetType, sceneIds: string[]) => {
     const key = `${type}:${slug(name)}`
     const existing = assets.get(key)
-    if (existing) { if (!existing.sceneIds.includes(sceneId)) existing.sceneIds.push(sceneId); return }
-    assets.set(key, { id: `${type.slice(0, 4).toUpperCase()}-${slug(name)}-${String(assets.size + 1).padStart(3, '0')}`, name, type, sceneIds: [sceneId], status: 'planned' })
+    if (existing) { for (const id of sceneIds) if (!existing.sceneIds.includes(id)) existing.sceneIds.push(id); return }
+    assets.set(key, { id: `${type.slice(0, 4).toUpperCase()}-${slug(name)}-${String(assets.size + 1).padStart(3, '0')}`, name, type, sceneIds: [...sceneIds], status: 'planned' })
   }
-  for (const scene of scenes) {
-    addAsset(scene.setting, 'set', scene.id)
-    for (const dialogue of scene.dialogue) addAsset(dialogue.speaker.replace(/\s*\(.*\)$/, ''), 'character', scene.id)
-    const propMatches = scene.body.matchAll(/(?:holds?|carries|picks up|places|opens|uses)\s+(?:an? |the )?([a-z][a-z -]{2,40}?)(?=\s+and\s+|\s+on\s+|[,.]|$)/gi)
-    for (const match of propMatches) addAsset(match[1].trim().replace(/[.,].*$/, ''), 'prop', scene.id)
-  }
-  return { scenes, assets: [...assets.values()] }
+  for (const scene of scenes) addAsset(scene.setting, scene.setting === 'Unspecified' ? 'environment' : 'set', [scene.id])
+  for (const c of story.characters) addAsset(c.name, 'character', c.sceneIds)
+  for (const p of story.props) addAsset(p.name, 'prop', p.sceneIds)
+  return { scenes, assets: [...assets.values()], story }
 }
 
 export interface PromptPackage {
