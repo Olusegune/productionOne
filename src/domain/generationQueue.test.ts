@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
+  anchorFor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
   reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
 } from './generationQueue'
 
@@ -112,5 +112,27 @@ describe('control and recovery', () => {
     expect(r.jobs[1].status).toBe('needs-review')
     expect(r.jobs[1].outputPath).toBe('b.png')
     expect(summarize(r).needsReview).toBe(1)
+  })
+})
+
+describe('anchor view', () => {
+  const withAnchor = () => {
+    const base = funded(enqueue(emptyQueue(), [req('front'), req('side', { useAnchor: true })], 1).state)
+    return { ...base, concurrency: 5 }
+  }
+  it('holds the other views until the front is approved, then they use it as the reference', () => {
+    let s = withAnchor()
+    expect(startable(s).map((j) => j.viewKey)).toEqual(['front'])
+    const front = s.jobs[0].id
+    s = approve(markValidated(markValidating(markGenerating(s, front), front, { path: 'front.png', width: 1024, height: 1536 }), front, []), front)
+    expect(anchorFor(s, s.jobs[1])).toBe('front.png')
+    expect(startable(s).map((j) => j.viewKey)).toEqual(['side'])
+  })
+  it('does not wait forever on a rejected or absent front', () => {
+    let s = withAnchor()
+    const front = s.jobs[0].id
+    s = reject(markValidated(markValidating(markGenerating(s, front), front, { path: 'f.png', width: 1, height: 1 }), front, []), front)
+    expect(startable(s).map((j) => j.viewKey)).toEqual(['side'])
+    expect(anchorFor(s, s.jobs[1])).toBeUndefined()
   })
 })

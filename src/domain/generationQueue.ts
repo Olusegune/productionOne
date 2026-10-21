@@ -1,3 +1,5 @@
+import { primaryViewKeys } from './sheetSpecs'
+
 export type ImageJobStatus = 'pending' | 'queued' | 'generating' | 'validating' | 'completed' | 'needs-review' | 'failed' | 'cancelled'
 
 export interface ImageJob {
@@ -15,6 +17,8 @@ export interface ImageJob {
   provider: string
   model: string
   references: string[]
+  /** When true the approved front view of the same asset and variant is sent as the reference, and this job waits for it if one is still in progress. */
+  useAnchor: boolean
   outputName: string
   revision: number
   status: ImageJobStatus
@@ -57,6 +61,7 @@ export interface JobRequest {
   provider: string
   model: string
   references: string[]
+  useAnchor?: boolean
   outputName: (revision: number) => string
 }
 
@@ -77,7 +82,7 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
     if (latest && (live.includes(latest.status) || latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
-    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, createdAt: now, updatedAt: now }]
+    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, createdAt: now, updatedAt: now }]
     added++
   }
   return { state: { ...state, jobs }, added, skipped }
@@ -105,6 +110,7 @@ export function startable(state: QueueState, now = Date.now()): ImageJob[] {
   for (const job of state.jobs) {
     if (room === 0) break
     if (job.status !== 'queued' || (job.notBefore ?? 0) > now) continue
+    if (waitingForAnchor(state, job)) continue
     if (state.perImageUsd === null || state.totalCeilingUsd === null) break
     if (projected + state.perImageUsd > state.totalCeilingUsd + 1e-9) break
     out.push(job)
@@ -112,6 +118,19 @@ export function startable(state: QueueState, now = Date.now()): ImageJob[] {
     room--
   }
   return out
+}
+
+const sameSubject = (a: ImageJob, b: ImageJob) => a.assetId === b.assetId && a.variant === b.variant
+
+/** The approved primary view (front, full-front, ...) of the same asset and variant, if there is one. */
+export function anchorFor(state: QueueState, job: ImageJob): string | undefined {
+  return state.jobs.find((j) => sameSubject(j, job) && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey))?.outputPath
+}
+
+/** True while an anchor view exists in the queue but is not approved yet. */
+export function waitingForAnchor(state: QueueState, job: ImageJob): boolean {
+  if (!job.useAnchor || anchorFor(state, job)) return false
+  return state.jobs.some((j) => sameSubject(j, job) && primaryViewKeys.includes(j.viewKey) && !j.rejected && ['queued', 'pending', 'generating', 'validating', 'needs-review'].includes(j.status))
 }
 
 const patchJob = (state: QueueState, id: string, fn: (j: ImageJob) => ImageJob): QueueState => ({ ...state, jobs: state.jobs.map((j) => (j.id === id ? fn(j) : j)) })

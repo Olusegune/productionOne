@@ -11,6 +11,7 @@ import {
   retry,
   spendGate,
   summarize,
+  waitingForAnchor,
   type ImageJob,
   type QueueState,
 } from "../domain/generationQueue";
@@ -117,20 +118,15 @@ export function SheetStudio(props: {
     const mine = queue.jobs.filter((j) => asset && j.assetId === asset.id && j.variant === activeVariant && j.sheetType === activeType && j.viewKey === viewKey);
     return mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
   };
-  const canonicalRef = (): string[] => {
-    if (!asset || !providerSendsReferences[provider]) return [];
-    const anchor = queue.jobs.find((j) => j.assetId === asset.id && j.variant === activeVariant && j.approved && primaryViewKeys.includes(j.viewKey) && j.outputPath);
-    return anchor?.outputPath ? [anchor.outputPath] : [];
-  };
 
   const queueViews = () => {
     if (!asset) return;
-    const refs = canonicalRef();
     const requests = views.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
       prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes }),
       aspect: view.aspect, fullBody: view.fullBody, provider, model: modelId,
-      references: primaryViewKeys.includes(view.key) ? [] : refs,
+      references: [] as string[],
+      useAnchor: providerSendsReferences[provider] && !primaryViewKeys.includes(view.key),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));
     const result = enqueue(queue, requests);
@@ -241,6 +237,7 @@ export function SheetStudio(props: {
                 <span className={`job-status ${job?.status ?? ""}`}>{job ? `${statusLabel[job.status]}${job.revision > 1 ? ` · v${job.revision}` : ""}${job.approved ? " · Approved" : job.rejected ? " · Rejected" : ""}` : "Not queued"}</span>
                 {job?.qaNotes.map((n) => <small key={n} className="qa-note">{n}</small>)}
                 {job?.error && <small className="qa-note">{job.error}</small>}
+                {job && job.status === "queued" && waitingForAnchor(queue, job) && <small>Waiting for the approved front view, which it will use as its reference.</small>}
                 {job?.width && <small>{job.width}×{job.height} px · original file kept</small>}
               </div>
               <div className="view-actions">

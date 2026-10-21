@@ -5,6 +5,7 @@ import {
   markGenerating,
   markValidated,
   markValidating,
+  anchorFor,
   startable,
   type ImageJob,
   type QueueState,
@@ -64,7 +65,7 @@ export function useImageQueue(
             prompt: job.prompt,
             aspect: job.aspect,
             quality: queue.quality,
-            references: job.references,
+            references: job.useAnchor ? [anchorFor(queue, job)].filter((p): p is string => !!p) : job.references,
             outputName: job.outputName,
           });
           setQueue((q) => markValidating(q, job.id, { path: generated.path, width: generated.inspection.width, height: generated.inspection.height }));
