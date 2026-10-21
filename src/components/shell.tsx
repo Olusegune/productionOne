@@ -96,18 +96,45 @@ export function CommandPalette({ commands, onClose }: { commands: PaletteCommand
   );
 }
 
-export function QueueDock({ queue, onOpen, children }: { queue: QueueState; onOpen: () => void; children?: ReactNode }) {
+/** Cost is passive: a request counter always, and an optional spending cap the person can switch on when they want one. */
+function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (q: QueueState) => QueueState) => void }) {
+  const [open, setOpen] = useState(false);
+  const s = summarize(queue);
+  const label = queue.guard && queue.totalCeilingUsd !== null && queue.perImageUsd !== null ? `$${s.committedUsd.toFixed(2)} of $${queue.totalCeilingUsd.toFixed(2)}` : `${s.requests} request${s.requests === 1 ? "" : "s"}`;
+  const num = (v: string) => { const n = Number(v); return v.trim() === "" || !(n >= 0) ? null : n; };
+  return (
+    <span className="po-cost">
+      <button className="po-cost-chip" onClick={() => setOpen((o) => !o)} aria-expanded={open} title="Cost and spending cap">{label}{queue.guard ? " · cap on" : ""}</button>
+      {open && (
+        <div className="po-cost-pop" role="dialog" aria-label="Cost and spending cap">
+          <p>Your provider bills the account behind your key. This app does not state prices, so it counts requests, including retries.</p>
+          <label className="po-switch"><input type="checkbox" checked={queue.guard} onChange={(e) => setQueue((q) => ({ ...q, guard: e.target.checked }))} /> Stop at a spending cap</label>
+          <div className="po-cost-fields">
+            <label>Price per request (USD)<input inputMode="decimal" disabled={!queue.guard} value={queue.perImageUsd ?? ""} onChange={(e) => setQueue((q) => ({ ...q, perImageUsd: num(e.target.value) }))} aria-label="Price per request in dollars" /></label>
+            <label>Cap (USD)<input inputMode="decimal" disabled={!queue.guard} value={queue.totalCeilingUsd ?? ""} onChange={(e) => setQueue((q) => ({ ...q, totalCeilingUsd: num(e.target.value) }))} aria-label="Spending cap in dollars" /></label>
+          </div>
+          {queue.guard && (queue.perImageUsd === null || queue.totalCeilingUsd === null) && <p className="helper warn">Enter both figures and generation continues up to the cap. Until then nothing new starts.</p>}
+        </div>
+      )}
+    </span>
+  );
+}
+
+export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueState; setQueue: (update: (q: QueueState) => QueueState) => void; onOpen: () => void; children?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const s = summarize(queue);
   const busy = s.generating + s.validating;
   const line = s.total === 0 ? "Queue is empty" : `${s.queued} queued · ${busy} running · ${s.needsReview} to review · ${s.completed} done${s.failed ? ` · ${s.failed} failed` : ""}${queue.paused ? " · paused" : ""}`;
   return (
     <div className={`po-dock${open ? " open" : ""}`}>
-      <button className="po-dock-bar" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className={`po-dock-dot${busy ? " busy" : s.needsReview ? " review" : ""}`} />
-        <span>{line}</span>
-        {open ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-      </button>
+      <div className="po-dock-row">
+        <button className="po-dock-bar" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <span className={`po-dock-dot${busy ? " busy" : s.needsReview ? " review" : ""}`} />
+          <span>{line}</span>
+          {open ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </button>
+        <CostChip queue={queue} setQueue={setQueue} />
+      </div>
       {open && (
         <div className="po-dock-body">
           {queue.jobs.length === 0 && <p className="helper">Queued sheet views will appear here with their status.</p>}

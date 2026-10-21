@@ -41,13 +41,14 @@ export interface QueueState {
   jobs: ImageJob[]
   paused: boolean
   concurrency: number
-  /** The person's own price per image and total ceiling. Catalog prices are not invented, so nothing starts without these. */
+  /** Optional spending guard. Off by default so generation flows without interruption; when on, nothing starts past the person's own ceiling. Catalog prices are never invented. */
+  guard: boolean
   perImageUsd: number | null
   totalCeilingUsd: number | null
   quality: string
 }
 
-export const emptyQueue = (): QueueState => ({ jobs: [], paused: false, concurrency: 2, perImageUsd: null, totalCeilingUsd: null, quality: 'medium' })
+export const emptyQueue = (): QueueState => ({ jobs: [], paused: false, concurrency: 2, guard: false, perImageUsd: null, totalCeilingUsd: null, quality: 'medium' })
 
 export interface JobRequest {
   assetId: string
@@ -95,6 +96,7 @@ export const committedUsd = (state: QueueState) => (state.perImageUsd ?? 0) * at
 export type StartCheck = { ok: true } | { ok: false; reason: string }
 
 export function spendGate(state: QueueState): StartCheck {
+  if (!state.guard) return { ok: true }
   if (state.perImageUsd === null || state.totalCeilingUsd === null) return { ok: false, reason: 'Enter your price per image and a total spending ceiling and confirm before generating.' }
   if (committedUsd(state) + state.perImageUsd > state.totalCeilingUsd + 1e-9) return { ok: false, reason: `The spending ceiling of $${state.totalCeilingUsd.toFixed(2)} would be exceeded.` }
   return { ok: true }
@@ -111,10 +113,12 @@ export function startable(state: QueueState, now = Date.now()): ImageJob[] {
     if (room === 0) break
     if (job.status !== 'queued' || (job.notBefore ?? 0) > now) continue
     if (waitingForAnchor(state, job)) continue
-    if (state.perImageUsd === null || state.totalCeilingUsd === null) break
-    if (projected + state.perImageUsd > state.totalCeilingUsd + 1e-9) break
+    if (state.guard) {
+      if (state.perImageUsd === null || state.totalCeilingUsd === null) break
+      if (projected + state.perImageUsd > state.totalCeilingUsd + 1e-9) break
+      projected += state.perImageUsd
+    }
     out.push(job)
-    projected += state.perImageUsd
     room--
   }
   return out
@@ -194,6 +198,7 @@ export const reassignModel = (state: QueueState, ids: string[], provider: string
 export function recover(state: QueueState, now = Date.now()): QueueState {
   return {
     ...state,
+    guard: state.guard ?? (state.totalCeilingUsd != null && state.perImageUsd != null),
     paused: state.jobs.some((j) => j.status === 'generating' || j.status === 'validating') ? true : state.paused,
     jobs: state.jobs.map((j) => {
       if (j.status === 'validating') return touch(j, { status: j.outputPath ? 'needs-review' : 'queued', qaNotes: [...j.qaNotes, 'Recovered after the app closed: re-check this image.'] }, now)
@@ -205,7 +210,7 @@ export function recover(state: QueueState, now = Date.now()): QueueState {
 
 export function summarize(state: QueueState) {
   const count = (s: ImageJobStatus) => state.jobs.filter((j) => j.status === s).length
-  return { pending: count('pending'), queued: count('queued'), generating: count('generating'), validating: count('validating'), completed: count('completed'), needsReview: count('needs-review'), failed: count('failed'), cancelled: count('cancelled'), total: state.jobs.length, committedUsd: committedUsd(state) }
+  return { requests: attemptsSent(state), pending: count('pending'), queued: count('queued'), generating: count('generating'), validating: count('validating'), completed: count('completed'), needsReview: count('needs-review'), failed: count('failed'), cancelled: count('cancelled'), total: state.jobs.length, committedUsd: committedUsd(state) }
 }
 
 /** Upper bound for what the waiting jobs could still cost at the person's own price. Not a provider quote. */

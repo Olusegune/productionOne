@@ -66,6 +66,7 @@ import "./art-direction.css";
 import "./inventory.css";
 import "./production-one.css";
 import "./studio-shell.css";
+import "./theme.css";
 import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";
@@ -701,9 +702,7 @@ export default function App() {
     if (
       !asset ||
       !activePromptPackage ||
-      !openAiConfigured ||
-      !imageConfirmed ||
-      Number(imageBudget) <= 0
+      !openAiConfigured
     )
       return;
     setGeneratingImage(true);
@@ -783,8 +782,6 @@ export default function App() {
   const generateDirect = async () => {
     if (
       !kieConfigured ||
-      !generationConfirmed ||
-      Number(generationBudget) <= 0 ||
       model !== "Seedance 2.0"
     )
       return;
@@ -1452,35 +1449,10 @@ export default function App() {
                       </small>
                     </div>
                     <div className="image-generation-gate">
-                      <label>
-                        <span>Per-image spending ceiling (USD)</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={imageBudget}
-                          onChange={(event) =>
-                            setImageBudget(event.target.value)
-                          }
-                          placeholder="Required"
-                        />
-                      </label>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={imageConfirmed}
-                          onChange={(event) =>
-                            setImageConfirmed(event.target.checked)
-                          }
-                        />{" "}
-                        Authorize one OpenAI image request within this ceiling.
-                      </label>
                       <button
                         className="primary"
                         disabled={
                           !openAiConfigured ||
-                          !imageConfirmed ||
-                          Number(imageBudget) <= 0 ||
                           generatingImage
                         }
                         onClick={generateImageDirect}
@@ -1619,7 +1591,7 @@ export default function App() {
           </div>
         )}
         {workspace === "Direct" && (
-          <section className="studio-page">
+          <section className="studio-page legacy-ui">
             <div className="optional-banner">
               <div>
                 <span className="eyebrow">OPTIONAL WORKFLOW</span>
@@ -1772,7 +1744,7 @@ export default function App() {
           </section>
         )}
         {workspace === "Deliver" && (
-          <section className="three-column studio-page">
+          <section className="three-column studio-page legacy-ui">
             <div className="panel">
               <span className="eyebrow">PRODUCTION COVERAGE</span>
               <h3>{audit.ready ? "Ready to package" : "Action required"}</h3>
@@ -1890,32 +1862,11 @@ export default function App() {
                   : "Build clearly marked draft package"}
               </button>
               <div className="generation-gate">
-                <label>
-                  <span>Maximum approved spend (USD)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={generationBudget}
-                    onChange={(e) => setGenerationBudget(e.target.value)}
-                    placeholder="Required before submission"
-                  />
-                </label>
-                <label className="confirm-spend">
-                  <input
-                    type="checkbox"
-                    checked={generationConfirmed}
-                    onChange={(e) => setGenerationConfirmed(e.target.checked)}
-                  />{" "}
-                  I authorize one provider task within this ceiling.
-                </label>
               </div>
               <button
                 className="secondary full"
                 disabled={
                   !kieConfigured ||
-                  !generationConfirmed ||
-                  Number(generationBudget) <= 0 ||
                   model !== "Seedance 2.0" ||
                   submittingGeneration
                 }
@@ -1934,7 +1885,7 @@ export default function App() {
           </section>
         )}
       </main>
-      <QueueDock queue={queue} onOpen={() => setWorkspace("Design")} />
+      <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} />
       {paletteOpen && <CommandPalette commands={paletteCommands} onClose={() => setPaletteOpen(false)} />}
     </div>
   );

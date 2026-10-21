@@ -14,7 +14,7 @@ const request = (viewKey: string) => ({
   assetId: 'CHAR-001', variant: 'Canonical', sheetType: 'Turnaround', viewKey, label: viewKey, prompt: 'p', aspect: '3:4', fullBody: true,
   provider: 'google', model: 'm', references: [], outputName: (r: number) => `CHAR-001_${viewKey}_v${r}`,
 })
-const funded = (keys: string[]): QueueState => ({ ...enqueue(emptyQueue(), keys.map(request)).state, perImageUsd: 0.1, totalCeilingUsd: 1 })
+const funded = (keys: string[]): QueueState => ({ ...enqueue(emptyQueue(), keys.map(request)).state, guard: true, perImageUsd: 0.1, totalCeilingUsd: 1 })
 
 function harness(initial: QueueState) {
   return renderHook(() => {
@@ -40,8 +40,8 @@ describe('useImageQueue', () => {
     expect(calls.filter((n) => n === 'generate_image')).toHaveLength(1)
   })
 
-  it('sends nothing until a spending limit exists', async () => {
-    const { result } = harness(enqueue(emptyQueue(), [request('front')]).state)
+  it('with the guard on, sends nothing until a spending limit exists', async () => {
+    const { result } = harness({ ...enqueue(emptyQueue(), [request('front')]).state, guard: true })
     await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
     expect(calls).toEqual([])
     expect(result.current.jobs[0].status).toBe('queued')

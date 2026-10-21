@@ -32,17 +32,13 @@ function Harness({ initial = emptyQueue() }: { initial?: QueueState }) {
 }
 
 describe('SheetStudio generate flow', () => {
-  it('one Generate press queues the views, asks for the spending limit, then runs the front view first', async () => {
+  it('one Generate press queues the views and runs the front view first, without any cost prompt', async () => {
     calls.length = 0
     render(<Harness />)
     await waitFor(() => expect(calls.some((c) => c.name === 'credential_status')).toBe(true))
     fireEvent.click(await screen.findByRole('button', { name: /generate 5 views/i }))
-    // the spending sheet opens by itself because no limit exists yet
-    const price = await screen.findByLabelText(/price per image/i)
-    fireEvent.change(price, { target: { value: '0.05' } })
-    fireEvent.change(screen.getByLabelText(/total spending ceiling/i), { target: { value: '0.5' } })
-    fireEvent.click(screen.getByRole('checkbox'))
-    fireEvent.click(screen.getByRole('button', { name: /allow generation/i }))
+    // no spending dialog: generation starts straight away
+    expect(screen.queryByLabelText(/price per image/i)).toBeNull()
     await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image')).toHaveLength(1))
     expect(calls.find((c) => c.name === 'generate_image')!.args.outputName).toContain('front')
     await screen.findAllByText(/needs review/i)

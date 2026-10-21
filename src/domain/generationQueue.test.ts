@@ -8,7 +8,7 @@ const req = (viewKey: string, extra: Partial<JobRequest> = {}): JobRequest => ({
   assetId: 'CHAR-001', variant: 'Canonical', sheetType: 'Turnaround', viewKey, label: viewKey, prompt: 'p', aspect: '3:4', fullBody: true,
   provider: 'google', model: 'gemini-2.5-flash-image', references: [], outputName: (r) => `CHAR-001_${viewKey}_v${r}`, ...extra,
 })
-const funded = (state: QueueState): QueueState => ({ ...state, perImageUsd: 0.05, totalCeilingUsd: 1 })
+const funded = (state: QueueState): QueueState => ({ ...state, guard: true, perImageUsd: 0.05, totalCeilingUsd: 1 })
 const seeded = (...keys: string[]) => funded(enqueue(emptyQueue(), keys.map((k) => req(k)), 1000).state)
 
 describe('enqueue', () => {
@@ -41,8 +41,13 @@ describe('enqueue', () => {
 })
 
 describe('spending gate', () => {
-  it('refuses to start without a price and ceiling', () => {
-    const s = enqueue(emptyQueue(), [req('front')]).state
+  it('flows without any limit by default', () => {
+    const s = enqueue(emptyQueue(), [req('a'), req('b'), req('c')]).state
+    expect(spendGate(s).ok).toBe(true)
+    expect(startable(s)).toHaveLength(2)
+  })
+  it('with the guard on, refuses to start without a price and ceiling', () => {
+    const s = { ...enqueue(emptyQueue(), [req('front')]).state, guard: true }
     expect(spendGate(s).ok).toBe(false)
     expect(startable(s)).toEqual([])
   })
