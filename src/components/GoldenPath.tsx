@@ -1,12 +1,14 @@
 import { ArrowRight, Check } from "lucide-react";
-import { goldenPath, type GoldenPathInput } from "../domain/goldenPath";
+import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
 
 export function GoldenPath({
   input,
   onGo,
+  onNext,
 }: {
   input: GoldenPathInput;
   onGo: (workspace: string) => void;
+  onNext?: (step: GoldenStep) => void;
 }) {
   const { steps, next, progress } = goldenPath(input);
   return (
@@ -24,7 +26,7 @@ export function GoldenPath({
           </p>
         </div>
         {next && (
-          <button className="primary" onClick={() => onGo(next.workspace)}>
+          <button className="primary" onClick={() => (onNext ? onNext(next) : onGo(next.workspace))}>
             {next.action} <ArrowRight size={15} />
           </button>
         )}

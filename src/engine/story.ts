@@ -32,6 +32,8 @@ export interface StoryScene {
 }
 
 export interface StoryCharacter {
+  /** True when the name was found acting in the description but never speaks under a cue. */
+  fromAction?: boolean
   name: string
   sceneIds: string[]
   firstSceneId: string
@@ -112,7 +114,30 @@ const newScene = (b: Builder, heading: string, setting: string, intExt: StorySce
   return scene
 }
 
+const LABELS = new Set(['SCENE', 'SHOT', 'CAMERA', 'ACTION', 'NOTE', 'NOTES', 'LYRIC', 'EXPRESSION', 'LIGHTING', 'FRAMING', 'PERFORMANCE', 'SOUND', 'SFX', 'MUSIC', 'TITLE', 'CREDIT', 'LOCATION', 'TIME', 'VISUAL', 'VISUALS', 'DIALOGUE', 'SETTING', 'INT', 'EXT', 'CUT', 'FADE', 'TRANSITION', 'SUPER', 'CHARACTERS', 'CHARACTER', 'CAST', 'LOGLINE', 'GENRE', 'STYLE', 'FORMAT', 'DURATION', 'RUNTIME', 'ASPECT', 'MOOD', 'THEME', 'PROP', 'PROPS', 'ANGLE', 'LENS', 'MOVEMENT', 'SYNOPSIS', 'SUMMARY', 'EXAMPLE', 'WARNING', 'TIP', 'OPTION', 'STEP', 'DAY', 'NIGHT', 'WRITTEN BY', 'AUTHOR', 'DRAFT', 'DATE', 'CONTACT', 'ACT'])
+// "CHLOE: hello", "Chloe (whispering): hello", "CHLOE:" followed by lines. Name must look like a name, not a label.
+const COLON_LINE = /^(@)?([A-Za-z][A-Za-z0-9 .'’-]{0,30}?)(?:\s*\(([^)]{0,40})\))?\s*:\s*(.*)$/
+
+function colonSpeaker(t: string, counts: Map<string, number>): { name: string; parenthetical?: string; rest: string } | null {
+  const m = COLON_LINE.exec(t)
+  if (!m) return null
+  const name = m[2].trim()
+  const words = name.split(/\s+/)
+  if (words.length > 4 || LABELS.has(name.toUpperCase()) || SLUG.test(t) || /^\d/.test(name)) return null
+  const allCaps = name === name.toUpperCase()
+  if (!allCaps && (counts.get(name.toUpperCase()) ?? 0) < 2) return null
+  if (allCaps && name.length < 2) return null
+  return { name: name.toUpperCase() === name ? name : name.toUpperCase(), parenthetical: m[3]?.trim() || undefined, rest: m[4].trim() }
+}
+
+const stripQuotes = (value: string) => value.replace(/^["“”*_]+|["“”*_]+$/g, '').trim()
+
 function readScreenplay(lines: string[], b: Builder) {
+  const speakerCounts = new Map<string, number>()
+  for (const raw of lines) {
+    const m = COLON_LINE.exec(clean(raw).trim())
+    if (m && m[2].trim().split(/\s+/).length <= 4) speakerCounts.set(m[2].trim().toUpperCase(), (speakerCounts.get(m[2].trim().toUpperCase()) ?? 0) + 1)
+  }
   const known = new Set<string>()
   // First pass: names that cue dialogue, so action lines that start with a known name are read as action.
   lines.forEach((raw, i) => {
@@ -129,6 +154,22 @@ function readScreenplay(lines: string[], b: Builder) {
     if (slugged) { scene = newScene(b, t.replace(/^\./, ''), slugged.setting, slugged.intExt, slugged.timeOfDay, line); i++; continue }
     if (!t || !scene) { i++; continue }
     scene.endLine = line
+    const colon = colonSpeaker(t, speakerCounts)
+    if (colon) {
+      let text = stripQuotes(colon.rest)
+      let parenthetical = colon.parenthetical
+      const lead = /^\(([^)]{0,60})\)\s*(.*)$/.exec(text)
+      if (lead) { parenthetical = parenthetical ? `${parenthetical}; ${lead[1]}` : lead[1]; text = stripQuotes(lead[2]) }
+      let j = i + 1
+      if (!text) { const parts: string[] = []; while (j < lines.length && clean(lines[j]).trim() && !SLUG.test(clean(lines[j]).trim()) && !colonSpeaker(clean(lines[j]).trim(), speakerCounts)) { parts.push(stripQuotes(clean(lines[j]).trim())); j++ } text = parts.join(' ') }
+      if (text) {
+        scene.dialogue.push({ speaker: colon.name, text, parenthetical, voiceOver: /\((?:V\.?O\.?|O\.?S\.?)\)/i.test(t) || undefined, line, source: 'script' })
+        scene.body += `${scene.body ? '\n' : ''}${colon.name}\n${text}`
+        scene.endLine = j
+        i = j
+        continue
+      }
+    }
     const prevBlank = i === 0 || !clean(lines[i - 1]).trim() || SLUG.test(clean(lines[i - 1]).trim())
     const next = clean(lines[i + 1] ?? '').trim()
     if (prevBlank && isCueLine(t) && next && !SLUG.test(next)) {
@@ -223,7 +264,10 @@ function readProse(lines: string[], b: Builder) {
 }
 
 const NOT_PROPS = new Set(['hand', 'hands', 'arm', 'arms', 'head', 'eyes', 'eye', 'face', 'hair', 'breath', 'gaze', 'distance', 'horizon', 'moment', 'time', 'way', 'step', 'steps', 'it', 'him', 'her', 'them', 'back', 'side', 'air', 'silence', 'room', 'floor', 'ground', 'place', 'voice', 'mouth', 'lip', 'lips', 'fist', 'fists', 'finger', 'fingers', 'leg', 'legs', 'foot', 'feet', 'shoulder', 'shoulders', 'chest', 'heart', 'door', 'window', 'wall', 'table'])
-const PROP_VERB = '(?:holds?|holding|carries|carrying|picks? up|places?|placing|opens?|uses?|using|grabs?|draws?|wields?|clutches|clutching|raises?|lifts?|sets? down|puts? down|pulls? out|hands?|throws?|drops?|unfolds?|unrolls?|reads?|checks?|studies|inspects?|cradles?|tucks?|slides?)'
+const PROP_VERB = '(?:holds?|holding|carries|carrying|picks? up|places?|placing|opens?|uses?|using|grabs?|draws?|wields?|clutches|clutching|raises?|lifts?|sets? down|puts? down|pulls? out|throws?|drops?|unfolds?|unrolls?|reads?|checks?|studies|inspects?|cradles?|tucks?|slides?)'
+/** A prop phrase never starts with these (a preposition or auxiliary means the match is a clause, not an object) and never contains them. */
+const NOT_PHRASE_START = new Set(['on', 'in', 'at', 'by', 'of', 'off', 'up', 'out', 'down', 'over', 'under', 'with', 'without', 'for', 'from', 'into', 'onto', 'to', 'toward', 'towards', 'against', 'across', 'through', 'near', 'beside', 'behind', 'around', 'as', 'while', 'when', 'and', 'but', 'or', 'then', 'so', 'not', 'no', 'never', 'is', 'are', 'was', 'were', 'be', 'it', 'that', 'this', 'there', 'here'])
+const AUX = /\b(?:doesn't|don't|didn't|isn't|aren't|wasn't|won't|can't|cannot|does|do|did|is|are|was|were|will|would|could|should|has|have|had|not|never|shake|shakes|shaking|trembles?|tremble|feels?)\b/i
 const PROP_RX = new RegExp(`\\b${PROP_VERB}\\s+(?:(?:an?|the|his|her|their|its|some|one)\\s+)?([a-z][a-z'-]*(?:\\s+[a-z][a-z'-]*){0,3}?)(?=\\s+(?:and|on|in|at|to|with|from|into|onto|beside|toward|towards|against|for|as|while|then|before|after|over|under)\\b|[,.;:!?]|$)`, 'gi')
 const DAMAGE = /\b(broken|cracked|shattered|torn|burned|burnt|rusted|rusty|bent|chipped|damaged|weathered|worn|frayed|dented|scratched|stained|bloodied|charred|snapped)\b/i
 
@@ -234,7 +278,7 @@ function addProps(scenes: StoryScene[]): StoryProp[] {
       for (const m of act.text.matchAll(PROP_RX)) {
         const words = m[1].trim().split(/\s+/)
         const last = words[words.length - 1].toLowerCase()
-        if (NOT_PROPS.has(last) || words.length === 0 || /^(?:to|that|this|these|those|what|how|where)$/.test(words[0].toLowerCase())) continue
+        if (NOT_PROPS.has(last) || words.length === 0 || NOT_PHRASE_START.has(words[0].toLowerCase()) || /^(?:what|how|where|these|those)$/.test(words[0].toLowerCase()) || AUX.test(m[1]) || /(?:ing|ed)$/.test(last) && words.length === 1) continue
         const name = words.join(' ').toLowerCase()
         const key = last
         const existing = props.get(key)
@@ -302,6 +346,30 @@ function addVariants(scenes: StoryScene[], characters: string[]): StoryVariant[]
   return out
 }
 
+const COMMON = new Set('The She He They It As When Then After Before With Her His Their This That These Those There Here And But Soon Now Inside Outside Suddenly Later Meanwhile Behind Above Below Across Around Beside Beyond During While Still Just Every Each Both Some Many One Two Three All Any Not Yes Please Thank Finally Slowly Quietly Beneath Under Over Through Into Onto From For About Against Between Among Toward Towards Until Upon Within Without Also Even Only Once Maybe Perhaps Close Cut Fade Day Night Morning Evening Afternoon Dawn Dusk Monday Tuesday Wednesday Thursday Friday Saturday Sunday January February March April May June July August September October November December God Lord Mr Mrs Ms Dr We You Your Our Its What Who Why How Which Where Whose Like Let Maybe Okay Well Oh Hey Look See Come Go Take Get Make Put Use Give Tell Ask Keep Hold Stand Sit Turn Walk Run Wait Stop Start Begin End Open Shut Pull Push Reach Raise Lower Hear Feel Think Know Want Need Try Help Find Leave Stay Move Bring Carry Pick Place Set Hands Eyes Her Him Them Us Me My Mine'.split(' '))
+const ACTION_VERB = /^(?:is|was|walks?|runs?|looks?|turns?|stands?|sits?|moves?|enters?|exits?|crosses?|steps?|takes?|picks?|holds?|places?|opens?|closes?|reaches?|pulls?|pushes?|kneels?|smiles?|nods?|shakes?|stares?|watches?|listens?|falls?|rises?|lifts?|raises?|drops?|grabs?|leans?|laughs?|cries?|whispers?|says?|speaks?|asks?|replies?|feels?|thinks?|knows?|sees?|hears?|wants?|needs?|begins?|starts?|stops?|waits?|follows?|leads?|finds?|pauses?|hesitates?|frowns?|sighs?|grins?|prays?|bows?|has|have|does|did|can|will|would|then|climbs?|studies|carries|tells?|answers?|explains?|nervously|quietly|slowly|carefully)\b/i
+
+/** Names that act in the description (Chloe walks, Chloe looks) but never speak under a cue. Needs repeated evidence; it is labelled so the writer can check it. */
+function inferFromAction(scenes: StoryScene[], known: string[]): StoryCharacter[] {
+  const skip = new Set(known.map((k) => k.toUpperCase()))
+  for (const scene of scenes) for (const w of scene.setting.split(/[^A-Za-z']+/)) if (w) skip.add(w.toUpperCase().replace(/'S$/, ''))
+  const stats = new Map<string, { total: number; acting: number; scenes: Set<string>; shown: string }>()
+  for (const scene of scenes) {
+    for (const act of scene.action) {
+      for (const m of act.text.matchAll(/\b([A-Z][a-z]{2,})(?:'s)?(?=[\s,.;:!?)]|$)(.{0,18})/g)) {
+        const name = m[1]
+        if (COMMON.has(name) || skip.has(name.toUpperCase()) || /(?:ing|tion|ness|ment)$/.test(name)) continue
+        const st = stats.get(name.toUpperCase()) ?? { total: 0, acting: 0, scenes: new Set<string>(), shown: name }
+        st.total++
+        if (ACTION_VERB.test(m[2].trim().replace(/^,\s*/, '')) || /^\s*,\s*(?:who|a|an|the|her|his)\b/.test(m[2])) st.acting++
+        st.scenes.add(scene.id)
+        stats.set(name.toUpperCase(), st)
+      }
+    }
+  }
+  return [...stats.values()].filter((st) => st.total >= 3 && st.acting >= 2).map((st) => ({ name: st.shown.toUpperCase(), sceneIds: [...st.scenes].sort(), firstSceneId: [...st.scenes].sort()[0], dialogueCount: 0, mentionCount: st.total, fromAction: true }))
+}
+
 export function parseStory(input: string): ParsedStory {
   const lines = input.replace(/\r/g, '').split('\n')
   const format = detectFormat(lines)
@@ -336,6 +404,8 @@ export function parseStory(input: string): ParsedStory {
     c.sceneIds.sort()
   }
   const characters = [...base.values()]
+  if (format === 'screenplay' || format === 'shotlist') characters.push(...inferFromAction(b.scenes, characters.map((c) => c.name)))
+  if (!characters.length && b.scenes.length) b.warnings.push('No characters were found. Characters are read from speaker lines (CHLOE, or CHLOE: text) and from names that act in the description (Chloe walks…). Check how the script marks who is speaking.')
   const props = addProps(b.scenes)
   const variants = addVariants(b.scenes, characters.map((c) => c.name))
   if (!b.scenes.length && input.trim()) b.warnings.push('No scenes could be read from this text.')

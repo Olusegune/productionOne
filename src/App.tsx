@@ -68,6 +68,7 @@ import "./production-one.css";
 import "./studio-shell.css";
 import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
+import { RealImage } from "./components/RealImage";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { ReadingPanel } from "./components/ReadingPanel";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
@@ -76,7 +77,7 @@ import { emptyQueue, recover, type ImageJob, type QueueState } from "./domain/ge
 import { GoldenPath } from "./components/GoldenPath";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
-import { goldenPath, type GoldenPathInput } from "./domain/goldenPath";
+import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
 import { buildProjectFile, parseProjectFile, suggestedFileName, type ProjectFile } from "./data/projectFile";
 
 const workspaces = [
@@ -85,33 +86,6 @@ const workspaces = [
   { name: "Design", icon: Sparkles },
   { name: "Direct", icon: Clapperboard, optional: true },
   { name: "Deliver", icon: PackageCheck },
-];
-const departmentCards = [
-  {
-    name: "Story",
-    icon: PenTool,
-    image: "/assets/department-story.png",
-    description:
-      "Import scripts, analyze scenes and build your production world.",
-  },
-  {
-    name: "Design",
-    icon: Sparkles,
-    image: "/assets/department-design.png",
-    description: "Create characters, costumes, sets, props and environments.",
-  },
-  {
-    name: "Direct",
-    icon: Clapperboard,
-    image: "/assets/department-direct.png",
-    description: "Optional storyboards, shot lists, acting, camera and sound.",
-  },
-  {
-    name: "Deliver",
-    icon: PackageCheck,
-    image: "/assets/department-deliver.png",
-    description: "Audit, compile and export video-ready packages.",
-  },
 ];
 const sampleScript = sampleStory;
 const initialShot: ShotRecord = {
@@ -203,7 +177,8 @@ export default function App() {
     [settingsOpen, setSettingsOpen] = useState(false),
     [queue, setQueueState] = useState<QueueState>(emptyQueue),
     [paletteOpen, setPaletteOpen] = useState(false);
-  const scriptArea = useRef<HTMLTextAreaElement>(null);
+  const scriptArea = useRef<HTMLTextAreaElement>(null),
+    studioControl = useRef<{ generateFirst: () => void } | null>(null);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
   const snapshot = useRef<string | null>(null),
     scriptInput = useRef<HTMLInputElement>(null),
@@ -1071,7 +1046,13 @@ export default function App() {
     area.setSelectionRange(start, start + (lines[line - 1]?.length ?? 0));
     area.scrollTop = Math.max(0, (line - 4) * 20);
   };
+  /** The Golden Path button does the step, not just a page change: on Generate it queues a first image and asks for the spending limit. */
+  const goNext = (step: GoldenStep) => {
+    setWorkspace(step.workspace);
+    if (step.id === "generate") window.setTimeout(() => studioControl.current?.generateFirst(), 60);
+  };
   const paletteCommands: PaletteCommand[] = [
+    { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
     ...["Projects", "Story", "Design", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
     { id: "new", label: "New project", hint: "File", run: () => actionsRef.current["file-new"]?.() },
@@ -1116,6 +1097,7 @@ export default function App() {
         unsaved={dirty}
         workspace={workspace}
         onWorkspace={setWorkspace}
+        onNext={goNext}
         golden={goldenInput}
         onOpenSettings={() => setSettingsOpen(true)}
         onPalette={() => setPaletteOpen(true)}
@@ -1254,7 +1236,7 @@ export default function App() {
                 <button className="secondary" onClick={() => void saveProject()}><Download size={15} /> Save</button>
               </div>
             </div>
-            <GoldenPath input={goldenInput} onGo={setWorkspace} />
+            <GoldenPath input={goldenInput} onGo={setWorkspace} onNext={goNext} />
             {recents.length > 0 && (
               <div className="recent-list">
                 <span className="eyebrow">RECENT PROJECTS</span>
@@ -1350,6 +1332,7 @@ export default function App() {
               onApproved={onSheetApproved}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
+              controlRef={studioControl}
             />
             <details className="po-classic">
             <summary>Prompt Studio, model hub, imports and quality tools</summary>
@@ -1403,9 +1386,10 @@ export default function App() {
                         {analysis.assets[selectedAsset].status}
                       </span>
                     </div>
-                    <img
-                      src="/assets/amina-reference.png"
-                      alt="Visual reference preview"
+                    <RealImage
+                      path={assetOutputs[analysis.assets[selectedAsset].id]}
+                      label={`Approved reference for ${analysis.assets[selectedAsset].name}`}
+                      empty="No approved reference yet. Generate or add one above."
                     />
                     <div className="prompt-tabs">
                       {(
@@ -1638,10 +1622,9 @@ export default function App() {
             {storyboardsEnabled ? (
               <div className="two-column">
                 <div className="panel shot-preview">
-                  <img
-                    src="/assets/amina-reference.png"
-                    alt={`Animatic frame for ${activeShot.id}`}
-                  />
+                  <div className="real-empty" role="img" aria-label="No storyboard frame">
+                    Storyboard frames for {activeShot.id} are not generated yet. This preview shows only real frames.
+                  </div>
                   <div className="timeline">
                     <span
                       style={{

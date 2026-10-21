@@ -79,8 +79,10 @@ export function SheetStudio(props: {
   onApproved: (job: ImageJob, primary: boolean) => void;
   notify: (message: string) => void;
   openProviders: () => void;
+  /** Lets the top-bar Generate button start a test from outside this panel. */
+  controlRef?: { current: { generateFirst: () => void } | null };
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders } = props;
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, controlRef } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
@@ -129,9 +131,10 @@ export function SheetStudio(props: {
     return mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
   };
 
-  const queueViews = () => {
+  const generate = (testOneFirst = false) => {
     if (!asset) return;
-    const requests = views.map((view) => ({
+    const chosen = testOneFirst ? (views.filter((v) => primaryViewKeys.includes(v.key))[0] ? [views.filter((v) => primaryViewKeys.includes(v.key))[0]] : views.slice(0, 1)) : views;
+    const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
       prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes }),
       aspect: view.aspect, fullBody: view.fullBody, provider, model: modelId,
@@ -141,8 +144,13 @@ export function SheetStudio(props: {
     }));
     const result = enqueue(queue, requests);
     setQueue(() => result.state);
-    notify(result.added ? `Queued ${result.added} view${result.added === 1 ? "" : "s"}${result.skipped ? ` (${result.skipped} already queued or approved)` : ""}. Nothing is sent until you set and confirm a spending limit.` : "Every view of this sheet is already queued or approved.");
+    if (!result.added) { notify("Every view of this sheet is already queued or approved."); return; }
+    const what = `${result.added} view${result.added === 1 ? "" : "s"}${testOneFirst ? " (a test of the first one)" : ""}`;
+    if (desktop && !configured[provider]) { notify(`Queued ${what}, but there is no ${providerLabels[provider]} key yet. Add it, then generation starts.`); openProviders(); return; }
+    if (!spendGate(result.state).ok) { notify(`Queued ${what}. Set your spending limit to start.`); setConfirmOpen(true); return; }
+    notify(`Generating ${what}…`);
   };
+  if (controlRef) controlRef.current = { generateFirst: () => generate(true) };
 
   const confirmSpend = () => {
     const per = Number(price);
@@ -224,7 +232,8 @@ export function SheetStudio(props: {
         <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. dust-worn jacket, left sleeve torn" /></label>
 
       <div className="sheet-actions-row">
-        <button className="primary" onClick={queueViews} disabled={!views.length}><Sparkles size={15} /> Queue {views.length} view{views.length === 1 ? "" : "s"}</button>
+        <button className="primary" onClick={() => generate(false)} disabled={!views.length}><Sparkles size={15} /> Generate {views.length} view{views.length === 1 ? "" : "s"}</button>
+        {views.length > 1 && <button className="secondary" onClick={() => generate(true)} title="Make one image first to check the look before paying for the rest">Test one first</button>}
         <button className="secondary" onClick={() => setConfirmOpen(true)} disabled={!desktop}>Spending limit…</button>
         <button className="secondary" onClick={() => void refreshModels()} disabled={!desktop || refreshing || !configured[provider]}><RefreshCw size={14} /> Refresh models</button>
         {!configured[provider] && desktop && <button className="secondary" onClick={openProviders}>Add {providerLabels[provider]} key</button>}
@@ -260,7 +269,7 @@ export function SheetStudio(props: {
                 </>)}
                 {job && (job.status === "failed" || job.status === "cancelled") && <button className="secondary" onClick={() => setQueue((q) => retry(q, job.id))}>Retry</button>}
                 {job && job.status === "queued" && <button className="secondary" onClick={() => setQueue((q) => cancel(q, job.id))}>Cancel</button>}
-                {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={queueViews}>Regenerate</button>}
+                {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={() => generate(false)}>Regenerate</button>}
                 {job && (job.status === "queued" || job.status === "failed") && model && (job.provider !== provider || job.model !== modelId) && (
                   <button className="secondary" onClick={() => setQueue((q) => reassignModel(q, [job.id], provider, modelId))}>Move to {modelId.split("/").pop()}</button>
                 )}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, Command as CommandIcon, Check, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
 import { BrandMark } from "./BrandMark";
-import { goldenPath, type GoldenPathInput } from "../domain/goldenPath";
+import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
 import { summarize, type QueueState } from "../domain/generationQueue";
 
 export const workspaceNames = ["Projects", "Story", "Design", "Direct", "Deliver"] as const;
@@ -12,6 +12,7 @@ export function TopBar(props: {
   unsaved: boolean;
   workspace: string;
   onWorkspace: (name: string) => void;
+  onNext: (step: GoldenStep) => void;
   golden: GoldenPathInput;
   onOpenSettings: () => void;
   onPalette: () => void;
@@ -36,7 +37,7 @@ export function TopBar(props: {
         </nav>
         <div className="po-actions">
           {next && (
-            <button className="primary" onClick={() => props.onWorkspace(next.workspace)} title={next.detail}>
+            <button className="primary" onClick={() => props.onNext(next)} title={next.detail}>
               {next.action} <ArrowRight size={14} />
             </button>
           )}

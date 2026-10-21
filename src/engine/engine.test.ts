@@ -131,3 +131,45 @@ describe('emotions engine', () => {
     expect(mood.cues.length).toBeGreaterThan(0)
   })
 })
+
+describe('scripts written with colons and action-only characters', () => {
+  const colon = `INT. LINCOLN MIDDLE SCHOOL - PLAYGROUND - DAY
+
+Chloe walks across the yard with her lunch bag. Chloe looks at the other children. Her hand doesn't shake as she holds the water jar.
+
+CHLOE: (softly) I can do this.
+
+**JACOB:** "Are you sure?"
+
+Chloe sits on the stone rim. Chloe folds her hands in prayer. Chloe smiles at Jacob.
+
+NOTE: this scene runs two minutes.
+Camera: slow push in.
+
+SAMARIA:
+Come and see.
+She waits.
+`
+  const story = parseStory(colon)
+  it('reads CHLOE: style speakers, bold names and speaker blocks, but not labels like NOTE: or Camera:', () => {
+    const speakers = story.scenes[0].dialogue.map((d) => d.speaker)
+    expect(speakers).toEqual(['CHLOE', 'JACOB', 'SAMARIA'])
+    expect(story.scenes[0].dialogue[0]).toMatchObject({ text: 'I can do this.', parenthetical: 'softly' })
+    expect(story.scenes[0].dialogue[1].text).toBe('Are you sure?')
+    expect(story.scenes[0].dialogue[2].text).toContain('Come and see.')
+  })
+  it('does not invent props from verbs that are really nouns or clauses', () => {
+    const names = story.props.map((p) => p.name)
+    expect(names).not.toContain("doesn't shake")
+    expect(names.some((n) => /^(?:on|in) /.test(n))).toBe(false)
+    expect(names).toEqual(expect.arrayContaining(['water jar']))
+  })
+  it('finds characters that only act in the description and says they were inferred', () => {
+    const act = parseStory('INT. KITCHEN - DAY\n\nMaria walks to the stove. Maria looks at the pot. Maria smiles and nods.\n\nEXT. YARD - DAY\n\nMaria sits on the step. Maria waits.')
+    expect(act.characters.map((c) => c.name)).toEqual(['MARIA'])
+    expect(act.characters[0].fromAction).toBe(true)
+  })
+  it('warns when no characters can be found', () => {
+    expect(parseStory('INT. ROOM - DAY\n\nSilence fills the room.').warnings.join(' ')).toContain('No characters were found')
+  })
+})
