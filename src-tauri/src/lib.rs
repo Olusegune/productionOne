@@ -74,10 +74,25 @@ fn credential_status(provider: String) -> Result<bool, String> {
     Ok(credential(&provider)?.get_password().is_ok())
 }
 
+/// Catches the usual paste mistakes before a key is saved and rejected later with a vague 401. Never repeats any part of the key.
+fn key_shape_problem(provider: &str, key: &str) -> Option<String> {
+    let wrong = |what: &str| Some(format!("This does not look like a {what}. Check you pasted the whole key under the right provider, and that nothing was added or capitalised (copying from a document can change the first letter)."));
+    match provider {
+        "openrouter" if !key.starts_with("sk-or-") => wrong("OpenRouter key: they start with the lowercase letters sk-or-"),
+        "openai" if !key.starts_with("sk-") => wrong("OpenAI key: they start with sk-"),
+        "google" if !key.starts_with("AIza") => wrong("Google Gemini key: they start with AIza"),
+        "fal" if !key.contains(':') => wrong("fal.ai key: they are two parts joined by a colon (id:secret)"),
+        _ if key.chars().any(|c| c.is_whitespace() || c.is_control()) => Some("The key contains a space or line break. Paste only the key itself.".to_string()),
+        _ => None,
+    }
+}
+
 #[tauri::command]
 fn save_credential(provider: String, api_key: String) -> Result<(), String> {
-    if api_key.trim().len() < 8 { return Err("API key is too short".to_string()); }
-    credential(&provider)?.set_password(api_key.trim()).map_err(|error| error.to_string())
+    let key = api_key.trim();
+    if key.len() < 8 { return Err("API key is too short".to_string()); }
+    if let Some(problem) = key_shape_problem(&provider, key) { return Err(problem); }
+    credential(&provider)?.set_password(key).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -436,5 +451,17 @@ mod tests {
         assert!(archive.by_name("production_readme.md").is_ok());
         drop(archive);
         std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn catches_common_key_paste_mistakes_without_echoing_the_key() {
+        assert!(super::key_shape_problem("openrouter", "Sk-or-v1-abcdef").is_some());
+        assert!(super::key_shape_problem("openrouter", "sk-or-v1-abcdef").is_none());
+        assert!(super::key_shape_problem("fal", "justonepart").is_some());
+        assert!(super::key_shape_problem("fal", "id:secret").is_none());
+        assert!(super::key_shape_problem("google", "AIzaSyExample").is_none());
+        assert!(super::key_shape_problem("google", "xxxxxxxxxxx").is_some());
+        assert!(super::key_shape_problem("kie", "abc def ghi jkl").is_some());
+        assert!(!super::key_shape_problem("openrouter", "Sk-or-v1-secretvalue").unwrap().contains("secretvalue"));
     }
 }

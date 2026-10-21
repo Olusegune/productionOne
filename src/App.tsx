@@ -154,7 +154,8 @@ export default function App() {
     [notice, setNotice] = useState("");
   const [providersOpen, setProvidersOpen] = useState(false),
     [credentialProvider, setCredentialProvider] = useState<ProviderId>("kie"),
-    [apiKey, setApiKey] = useState("");
+    [apiKey, setApiKey] = useState(""),
+    [credentialError, setCredentialError] = useState("");
   const [credentialConfigured, setCredentialConfigured] = useState(false),
     [assetOutputs, setAssetOutputs] = useState<Record<string, string>>({});
   const [kieConfigured, setKieConfigured] = useState(false),
@@ -644,7 +645,13 @@ export default function App() {
       return;
     }
     const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("save_credential", { provider: credentialProvider, apiKey });
+    try {
+      await invoke("save_credential", { provider: credentialProvider, apiKey });
+    } catch (error) {
+      setCredentialError(String(error));
+      return;
+    }
+    setCredentialError("");
     setApiKey("");
     setCredentialConfigured(true);
     setNotice(
@@ -1214,7 +1221,7 @@ export default function App() {
                   <input
                     type="password"
                     value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
+                    onChange={(e) => { setApiKey(e.target.value); setCredentialError(""); }}
                     placeholder="Stored only in Windows Credential Manager"
                   />
                 </label>
@@ -1231,6 +1238,7 @@ export default function App() {
                   </button>
                 )}
               </div>
+              {credentialError && <p className="helper warn" role="alert">{credentialError}</p>}
             </section>
           </div>
         )}
