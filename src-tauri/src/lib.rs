@@ -304,16 +304,25 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
 
 /// Called by the UI once it has mounted: closes the splash window and shows the main window.
 #[tauri::command]
-fn app_ready(app: tauri::AppHandle) {
-    if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
-    if let Some(main) = app.get_webview_window("main") { let _ = main.show(); let _ = main.set_focus(); }
+fn app_ready(app: tauri::AppHandle, started: tauri::State<StartedAt>) {
+    // The splash stays up for a fixed minimum so the brand is actually seen, then the main window appears. Nothing here pretends to load anything.
+    let wait = SPLASH_MIN.saturating_sub(started.0.elapsed());
+    std::thread::spawn(move || {
+        std::thread::sleep(wait);
+        if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
+        if let Some(main) = app.get_webview_window("main") { let _ = main.show(); let _ = main.set_focus(); }
+    });
 }
+
+const SPLASH_MIN: std::time::Duration = std::time::Duration::from_millis(2600);
+struct StartedAt(std::time::Instant);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(desktop::Dirty::default())
+        .manage(StartedAt(std::time::Instant::now()))
         .setup(|app| {
             let menu = desktop::build_menu(app.handle())?;
             app.set_menu(menu)?;
