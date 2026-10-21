@@ -326,6 +326,42 @@ fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> 
     if canonical.starts_with(&root) { Ok(canonical) } else { Err("Only images in the Production One assets folder can be previewed".into()) }
 }
 
+/// Lets the person choose their own images. Returns the chosen paths (empty if they cancel).
+#[tauri::command]
+pub async fn pick_image_files(app: tauri::AppHandle, multiple: bool) -> Result<Vec<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let builder = app.dialog().file().set_title("Choose image").add_filter("Images", &["png", "jpg", "jpeg", "webp"]);
+    let picked = if multiple { builder.blocking_pick_files().unwrap_or_default() } else { builder.blocking_pick_file().into_iter().collect() };
+    picked.into_iter().map(|f| f.into_path().map(|p| p.to_string_lossy().into_owned()).map_err(|e| e.to_string())).collect()
+}
+
+/// Copies the person's own images into the project's assets folder byte for byte (no re-encode, original resolution) after checking each one really is an image.
+pub fn copy_supplied_image(source: &Path, dir: &Path) -> Result<PathBuf, String> {
+    let meta = fs::metadata(source).map_err(|e| format!("Could not open {}: {e}", source.display()))?;
+    if !meta.is_file() { return Err(format!("{} is not a file", source.display())); }
+    if meta.len() == 0 || meta.len() > 50 * 1024 * 1024 { return Err(format!("{} must be between 1 byte and 50 MB", source.display())); }
+    let bytes = fs::read(source).map_err(|e| e.to_string())?;
+    let ext = match image::guess_format(&bytes).map_err(|_| format!("{} is not a PNG, JPEG or WebP image", source.display()))? {
+        image::ImageFormat::Png => "png",
+        image::ImageFormat::Jpeg => "jpg",
+        image::ImageFormat::WebP => "webp",
+        _ => return Err(format!("{} is not a PNG, JPEG or WebP image", source.display())),
+    };
+    image::load_from_memory(&bytes).map_err(|e| format!("{} could not be read as an image: {e}", source.display()))?;
+    let stem = safe_package_name(&source.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let target = unique_path(dir, &format!("{}_yours", if stem.is_empty() { "image".to_string() } else { stem }), ext);
+    fs::write(&target, &bytes).map_err(|e| e.to_string())?;
+    Ok(target)
+}
+
+#[tauri::command]
+pub fn import_images(app: tauri::AppHandle, paths: Vec<String>) -> Result<Vec<ImportedAsset>, String> {
+    if paths.is_empty() || paths.len() > 40 { return Err("Choose between 1 and 40 images".into()); }
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
+    paths.iter().map(|p| { let copied = copy_supplied_image(Path::new(p), &dir)?; let inspection = inspect_image_file(&copied)?; Ok(ImportedAsset { path: copied.to_string_lossy().into_owned(), inspection }) }).collect()
+}
+
 /// A small JPEG data URL for showing generated files in the UI. The original file is never touched.
 #[tauri::command]
 pub fn image_preview(app: tauri::AppHandle, path: String, max_edge: u32) -> Result<String, String> {
@@ -432,6 +468,27 @@ mod tests {
         assert!(!is_trusted_fal_url("https://evil.com/fal.media/a.png"));
         assert!(!is_trusted_fal_url("https://fal.media@evil.com/a.png"));
         assert!(!is_trusted_fal_url("https://127.0.0.1/a.png"));
+    }
+
+    #[test]
+    fn imports_only_real_images_byte_for_byte() {
+        let dir = std::env::temp_dir().join(format!("po-import-{}", std::process::id()));
+        let out = dir.join("assets");
+        fs::create_dir_all(&dir).unwrap();
+        let mut img = image::RgbImage::new(64, 48);
+        for p in img.pixels_mut() { *p = image::Rgb([200, 120, 40]); }
+        let src = dir.join("My Actor (final).png");
+        img.save(&src).unwrap();
+        let copied = copy_supplied_image(&src, &out).unwrap();
+        assert_eq!(fs::read(&src).unwrap(), fs::read(&copied).unwrap());
+        assert!(copied.file_name().unwrap().to_string_lossy().ends_with("_yours.png"));
+        let again = copy_supplied_image(&src, &out).unwrap();
+        assert_ne!(copied, again);
+        let fake = dir.join("note.png");
+        fs::write(&fake, b"not an image").unwrap();
+        assert!(copy_supplied_image(&fake, &out).is_err());
+        assert!(copy_supplied_image(&dir.join("missing.png"), &out).is_err());
+        let _ = fs::remove_dir_all(dir);
     }
 
     #[test]

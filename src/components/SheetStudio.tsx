@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Maximize2, Pause, Play, Sparkles, X } from "lucide-react";
+import { Check, ImagePlus, Maximize2, Pause, Play, Sparkles, X } from "lucide-react";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
+  addSupplied,
   approve,
   cancel,
   cancelAllWaiting,
@@ -80,10 +83,13 @@ export function SheetStudio(props: {
   onApproved: (job: ImageJob, primary: boolean) => void;
   notify: (message: string) => void;
   openProviders: () => void;
+  /** Extra photos the person attached to each asset (actor, costume, location). Sent with every request to models that accept references. */
+  refs: Record<string, string[]>;
+  setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void } | null };
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, controlRef } = props;
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, controlRef, refs, setRefs } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
@@ -148,7 +154,7 @@ export function SheetStudio(props: {
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
       prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes }),
       aspect: view.aspect, fullBody: view.fullBody, provider, model: modelId,
-      references: [] as string[],
+      references: modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []) : [],
       useAnchor: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));
@@ -174,6 +180,55 @@ export function SheetStudio(props: {
       setRefreshing(false);
     }
   };
+
+  const pickImages = async (multiple: boolean): Promise<Array<{ path: string; inspection: { width: number; height: number } }>> => {
+    const chosen = await invoke<string[]>("pick_image_files", { multiple });
+    if (!chosen.length) return [];
+    return invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen });
+  };
+  const useOwnImage = async (viewKey: string, label: string, paths?: Array<{ path: string; inspection: { width: number; height: number } }>) => {
+    const view = views.find((v) => v.key === viewKey);
+    if (!asset || !view) return;
+    try {
+      const [file] = paths ?? (await pickImages(false));
+      if (!file) return;
+      const out = addSupplied(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey, label, aspect: view.aspect, fullBody: view.fullBody, path: file.path, width: file.inspection.width, height: file.inspection.height });
+      setQueue(() => out.state);
+      onApproved(out.job, primaryViewKeys.includes(viewKey));
+      notify(`Using your image for ${label}. It is saved as it came, at ${file.inspection.width}×${file.inspection.height}.`);
+    } catch (error) { notify(String(error)); }
+  };
+  const addRefPhotos = async (picked?: Array<{ path: string }>) => {
+    if (!asset) return;
+    try {
+      const files = picked ?? (await pickImages(true));
+      if (!files.length) return;
+      setRefs((r) => ({ ...r, [asset.id]: [...new Set([...(r[asset.id] ?? []), ...files.map((f) => f.path)])].slice(0, 8) }));
+      notify(`Added ${files.length} reference photo${files.length === 1 ? "" : "s"} for ${asset.name}.`);
+    } catch (error) { notify(String(error)); }
+  };
+  // Files dropped on the window go to the view card under the pointer, or to the asset's reference photos.
+  const dropHandler = useRef<(paths: string[], x: number, y: number) => void>(() => {});
+  dropHandler.current = async (paths, x, y) => {
+    const target = document.elementFromPoint(x / window.devicePixelRatio, y / window.devicePixelRatio)?.closest<HTMLElement>("[data-view-key]");
+    try {
+      const imported = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: paths.filter((p) => /\.(png|jpe?g|webp)$/i.test(p)).slice(0, 40) });
+      if (!imported.length) return;
+      if (target?.dataset.viewKey) await useOwnImage(target.dataset.viewKey, target.dataset.viewLabel ?? target.dataset.viewKey, [imported[0]]);
+      else await addRefPhotos(imported);
+    } catch (error) { notify(String(error)); }
+  };
+  useEffect(() => {
+    if (!desktop) return;
+    let off: Array<() => void> = [];
+    let dead = false;
+    void Promise.all([
+      listen<{ paths: string[]; position: { x: number; y: number } }>("tauri://drag-drop", (e) => { document.body.classList.remove("dropping"); dropHandler.current(e.payload.paths, e.payload.position.x, e.payload.position.y); }),
+      listen("tauri://drag-enter", () => document.body.classList.add("dropping")),
+      listen("tauri://drag-leave", () => document.body.classList.remove("dropping")),
+    ]).then((fns) => { if (dead) fns.forEach((f) => f()); else off = fns; });
+    return () => { dead = true; off.forEach((f) => f()); document.body.classList.remove("dropping"); };
+  }, [desktop]);
 
   const stats = summarize(queue);
   const waiting = stats.queued + stats.pending;
@@ -220,6 +275,20 @@ export function SheetStudio(props: {
           <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={(p, id) => { setProvider(p); setModelId(id); }} onRefresh={() => void refreshModels()} refreshing={refreshing} />
         </label>
       </div>
+      {desktop && (
+        <div className="ss-refs" aria-label="Your reference photos">
+          <div className="ss-refs-head">
+            <b>Your reference photos</b>
+            <button className="secondary" onClick={() => void addRefPhotos()}><ImagePlus size={14} /> Add photos</button>
+          </div>
+          <div className="ss-refs-row">
+            {(refs[asset.id] ?? []).map((p) => (
+              <figure key={p}><img src={convertFileSrc(p)} alt="Reference photo" /><button onClick={() => setRefs((r) => ({ ...r, [asset.id]: (r[asset.id] ?? []).filter((x) => x !== p) }))} aria-label="Remove this photo"><X size={13} /></button></figure>
+            ))}
+            {(refs[asset.id] ?? []).length === 0 && <p className="helper">Add photos of the actor, costume or location, or drop images on this window. They are sent with every request for {asset.name} to models that accept references.</p>}
+          </div>
+        </div>
+      )}
       <p className="helper">
         {model ? `${model.name}. ${model.note}` : "Custom model id: this app does not know its capabilities."}{" "}
         {modelTakesReferences(provider, modelId) ? "Your approved front view is sent as a reference to keep the character consistent." : "This model takes no reference images, so consistency relies on the written description."}
@@ -238,7 +307,7 @@ export function SheetStudio(props: {
           const job = jobFor(view.key);
           const at = viewItems.findIndex((it) => it.job.id === job?.id);
           return (
-            <article key={view.key} className={`view-card ${job?.status ?? "none"}`}>
+            <article key={view.key} className={`view-card ${job?.status ?? "none"}`} data-view-key={view.key} data-view-label={view.label}>
               <button className="view-thumb" disabled={at < 0} onClick={() => setLightbox(at)} aria-label={at >= 0 ? `Open ${view.label} full size` : `${view.label}: no image yet`}>
                 {job ? <Thumb job={job} /> : <div className="thumb-empty">Not generated</div>}
                 {at >= 0 && <span className="vt-zoom"><Maximize2 size={15} /></span>}
@@ -249,9 +318,10 @@ export function SheetStudio(props: {
                 {job?.qaNotes.map((n) => <small key={n} className="qa-note">{n}</small>)}
                 {job?.error && <small className="qa-note">{job.error}</small>}
                 {job && job.status === "queued" && waitingForAnchor(queue, job) && <small>Waits for the approved front view, then uses it as its reference.</small>}
-                {job?.width && <small>{job.width}×{job.height}px</small>}
+                {job?.width && <small>{job.width}×{job.height}px{job.source === "supplied" ? " · your image" : ""}</small>}
               </div>
               <div className="view-actions">
+                {desktop && <button className="secondary" onClick={() => void useOwnImage(view.key, view.label)} title="Use your own image for this view"><ImagePlus size={14} /> Use my image</button>}
                 {job?.status === "needs-review" && (<>
                   <button className="primary" onClick={() => doApprove(job)}><Check size={14} /> Approve</button>
                   <button className="secondary" onClick={() => doReject(job)}><X size={14} /> Reject</button>

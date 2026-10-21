@@ -20,6 +20,7 @@ export interface StudioState {
   title?: string
   queue?: QueueState
   clips?: DemoClip[]
+  assetRefs?: Record<string, string[]>
 }
 
 export const projectStore = {

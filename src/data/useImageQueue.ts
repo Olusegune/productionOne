@@ -65,7 +65,7 @@ export function useImageQueue(
             prompt: job.prompt,
             aspect: job.aspect,
             quality: queue.quality,
-            references: job.useAnchor ? [anchorFor(queue, job)].filter((p): p is string => !!p) : job.references,
+            references: [...new Set([...(job.useAnchor ? [anchorFor(queue, job)] : []), ...job.references].filter((p): p is string => !!p))].slice(0, 8),
             outputName: job.outputName,
           });
           setQueue((q) => markValidating(q, job.id, { path: generated.path, width: generated.inspection.width, height: generated.inspection.height }));

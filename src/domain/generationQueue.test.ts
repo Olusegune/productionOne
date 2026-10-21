@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  anchorFor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
+  addSupplied, anchorFor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
   reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
 } from './generationQueue'
 
@@ -139,5 +139,25 @@ describe('anchor view', () => {
     s = reject(markValidated(markValidating(markGenerating(s, front), front, { path: 'f.png', width: 1, height: 1 }), front, []), front)
     expect(startable(s).map((j) => j.viewKey)).toEqual(['side'])
     expect(anchorFor(s, s.jobs[1])).toBeUndefined()
+  })
+})
+
+describe('images the person supplies', () => {
+  const supplied = { assetId: 'CHAR-001', variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', aspect: '3:4', fullBody: true, path: 'C:/mine.png', width: 2000, height: 3000 }
+  it('arrives approved as a new revision, byte-for-byte path kept, and cancels waiting generation for that view', () => {
+    const s = seeded('front')
+    const { state, job } = addSupplied(s, supplied, 5000)
+    expect(job).toMatchObject({ source: 'supplied', approved: true, status: 'completed', revision: 2, provider: 'you', outputPath: 'C:/mine.png' })
+    expect(state.jobs[0].status).toBe('cancelled')
+    expect(startable(state)).toEqual([])
+  })
+  it('becomes the anchor for the other views, and keeps the earlier approved file in history', () => {
+    let s = funded(enqueue(emptyQueue(), [req('front'), req('side', { useAnchor: true })], 1).state)
+    const front = s.jobs[0].id
+    s = approve(markValidated(markValidating(markGenerating(s, front), front, { path: 'gen.png', width: 1, height: 1 }), front, []), front)
+    expect(anchorFor(s, s.jobs[1])).toBe('gen.png')
+    s = addSupplied(s, supplied, 9000).state
+    expect(anchorFor(s, s.jobs[1])).toBe('C:/mine.png')
+    expect(s.jobs.filter((j) => j.viewKey === 'front' && j.approved).map((j) => j.outputPath)).toEqual(['gen.png', 'C:/mine.png'])
   })
 })

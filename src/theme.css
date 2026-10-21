@@ -271,3 +271,16 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 @media (prefers-reduced-motion: reduce) {
   .view-card, .view-thumb img, .primary, .vt-zoom, .lb { transition: none; animation: none; }
 }
+
+/* Own images and reference photos */
+.ss-refs { margin: 14px 0 4px; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, .03); border: 1px dashed var(--stroke-strong); }
+.ss-refs-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.ss-refs-head b { font-size: 15px; font-weight: 600; }
+.ss-refs-head .secondary { height: 34px; font-size: 13px; }
+.ss-refs-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ss-refs-row figure { position: relative; margin: 0; width: 72px; height: 72px; border-radius: 12px; overflow: hidden; border: 1px solid var(--stroke); }
+.ss-refs-row img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ss-refs-row figure button { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 99px; background: rgba(10, 12, 15, .75); border: 0; color: var(--text); display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .15s; }
+.ss-refs-row figure:hover button, .ss-refs-row figure button:focus-visible { opacity: 1; }
+.ss-refs-row .helper { margin: 0 !important; }
+body.dropping .view-card, body.dropping .ss-refs { outline: 2px dashed var(--gold); outline-offset: -2px; background: rgba(217, 189, 134, .08); }

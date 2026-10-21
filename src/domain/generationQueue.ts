@@ -33,6 +33,8 @@ export interface ImageJob {
   error?: string
   approved: boolean
   rejected: boolean
+  /** 'supplied' means the person brought this image themselves; it is stored byte for byte and approved on arrival. */
+  source?: 'generated' | 'supplied'
   createdAt: number
   updatedAt: number
 }
@@ -128,7 +130,38 @@ const sameSubject = (a: ImageJob, b: ImageJob) => a.assetId === b.assetId && a.v
 
 /** The approved primary view (front, full-front, ...) of the same asset and variant, if there is one. */
 export function anchorFor(state: QueueState, job: ImageJob): string | undefined {
-  return state.jobs.find((j) => sameSubject(j, job) && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey))?.outputPath
+  const approved = state.jobs.filter((j) => sameSubject(j, job) && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey))
+  // The newest approved revision is the anchor; older approved files stay in the history untouched.
+  return approved.sort((a, b) => b.revision - a.revision || b.updatedAt - a.updatedAt)[0]?.outputPath
+}
+
+export interface SuppliedRequest {
+  assetId: string
+  variant: string
+  sheetType: string
+  viewKey: string
+  label: string
+  aspect: string
+  fullBody: boolean
+  path: string
+  width: number
+  height: number
+}
+
+/**
+ * Records an image the person brought themselves as the newest revision of a view, already approved. Anything still waiting to be generated for that view is cancelled so it cannot
+ * replace it, and earlier revisions (including approved ones) are kept.
+ */
+export function addSupplied(state: QueueState, r: SuppliedRequest, now = Date.now()): { state: QueueState; job: ImageJob } {
+  const same = (j: ImageJob) => j.assetId === r.assetId && j.variant === r.variant && j.sheetType === r.sheetType && j.viewKey === r.viewKey
+  const revision = state.jobs.filter(same).reduce((n, j) => Math.max(n, j.revision), 0) + 1
+  const jobs = state.jobs.map((j) => (same(j) && (j.status === 'queued' || j.status === 'pending') ? touch(j, { status: 'cancelled' }, now) : j))
+  const job: ImageJob = {
+    id: `IMG-${r.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(r, revision), assetId: r.assetId, variant: r.variant, sheetType: r.sheetType, viewKey: r.viewKey, label: r.label,
+    prompt: '', aspect: r.aspect, fullBody: r.fullBody, provider: 'you', model: 'your image', references: [], useAnchor: false, outputName: `${r.assetId}_${r.viewKey}_v${String(revision).padStart(2, '0')}_yours`,
+    revision, status: 'completed', attempts: 0, maxAttempts: 1, outputPath: r.path, width: r.width, height: r.height, qaNotes: [], approved: true, rejected: false, source: 'supplied', createdAt: now, updatedAt: now,
+  }
+  return { state: { ...state, jobs: [...jobs, job] }, job }
 }
 
 /** True while an anchor view exists in the queue but is not approved yet. */

@@ -180,7 +180,9 @@ export default function App() {
     [settingsOpen, setSettingsOpen] = useState(false),
     [queue, setQueueState] = useState<QueueState>(emptyQueue),
     [paletteOpen, setPaletteOpen] = useState(false),
-    [clips, setClipsState] = useState<DemoClip[]>([]);
+    [clips, setClipsState] = useState<DemoClip[]>([]),
+    [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({});
+  const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const scriptArea = useRef<HTMLTextAreaElement>(null),
     studioControl = useRef<{ generateFirst: () => void } | null>(null);
@@ -202,8 +204,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -271,6 +273,7 @@ export default function App() {
           setTitle(studio.title ?? "The Last Horizon");
           setQueueState(recover(studio.queue ?? emptyQueue()));
           setClipsState(studio.clips ?? []);
+          setAssetRefsState(studio.assetRefs ?? {});
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -917,6 +920,7 @@ export default function App() {
     setGraph(file.graph);
     setQueueState(recover(s.queue ?? emptyQueue()));
     setClipsState(s.clips ?? []);
+    setAssetRefsState(s.assetRefs ?? {});
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1336,6 +1340,8 @@ export default function App() {
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
               controlRef={studioControl}
+              refs={assetRefs}
+              setRefs={setAssetRefs}
             />
             <MotionDemo
               asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
