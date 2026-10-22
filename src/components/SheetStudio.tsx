@@ -132,7 +132,7 @@ export function SheetStudio(props: {
     const chosen = testOneFirst ? (views.filter((v) => primaryViewKeys.includes(v.key))[0] ? [views.filter((v) => primaryViewKeys.includes(v.key))[0]] : views.slice(0, 1)) : views;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId }),
       aspect: view.aspect, fullBody: view.fullBody, provider, model: modelId,
       references: modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []) : [],
       useAnchor: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key),

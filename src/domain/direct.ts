@@ -1,4 +1,5 @@
 import type { AnalysisResult, ExtractedAsset, ScriptScene, ShotRecord } from './productionStudio'
+import { artifactGuidance } from './cleanGuidance'
 import type { ImageJob, QueueState } from './generationQueue'
 import { primaryViewKeys } from './sheetSpecs'
 import type { StyleBible } from './visualDevelopment'
@@ -229,7 +230,7 @@ export function shotReferences(shot: ShotRecord, analysis: AnalysisResult, queue
   return out.slice(0, 8)
 }
 
-export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, style: StyleBible, refs: ShotRef[], aspect = '16:9'): string {
+export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, style: StyleBible, refs: ShotRef[], aspect = '16:9', model = ''): string {
   const scene = analysis.scenes.find((s) => s.id === shot.sceneId)
   const names = shot.assetIds.map((id) => analysis.assets.find((a) => a.id === id)).filter((a): a is ExtractedAsset => !!a)
   const chars = names.filter((a) => a.type === 'character')
@@ -244,6 +245,7 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     `Lighting: ${shot.lighting}.`,
     `Style: ${style.name}. ${style.description} Rendering: ${style.rendering}.`,
     refs.length ? `Reference images are attached in this order: ${refs.map((r, i) => `${i + 1} = ${r.label}`).join('; ')}. Keep every person's face, hair, build and costume identical to their reference, and keep the set and props consistent.` : '',
+    artifactGuidance(style, model, shot.lighting),
     'No text, no captions, no borders, no watermark. Photographic frame, not a collage.',
   ]
   return lines.filter(Boolean).join('\n')

@@ -102,7 +102,7 @@ export function DirectRoom(props: {
       const refs = takesRefs ? shotReferences(s, analysis, queue, assetRefs) : [];
       return {
         assetId: s.id, variant: "Storyboard", sheetType: "Storyboard", viewKey: "frame", label: s.title ?? s.id, aspect: ASPECT, fullBody: false, provider: choice.provider, model: choice.modelId,
-        prompt: buildShotPrompt(s, analysis, style, refs, ASPECT), references: refs.map((r) => r.path), outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, "0")}`,
+        prompt: buildShotPrompt(s, analysis, style, refs, ASPECT, choice.modelId), references: refs.map((r) => r.path), outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, "0")}`,
       };
     });
     const result = enqueue(queue, requests, Date.now(), force);

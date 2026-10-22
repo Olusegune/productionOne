@@ -1,4 +1,5 @@
 import type { ExtractedAsset } from './productionStudio'
+import { artifactGuidance } from './cleanGuidance'
 import type { SheetType, StyleBible } from './visualDevelopment'
 import type { ExpressionNeed } from '../engine/emotion'
 
@@ -95,6 +96,8 @@ export function viewsFor(assetType: ExtractedAsset['type'], sheetType: SheetType
 }
 
 export interface PromptInput {
+  /** The model id the prompt is for. Used only to tailor artifact guidance. */
+  model?: string
   style: StyleBible
   asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'>
   variant: string
@@ -103,7 +106,7 @@ export interface PromptInput {
   notes?: string
 }
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
@@ -113,6 +116,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes 
     'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',
     asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
     view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',
+    artifactGuidance(style, model, notes ?? ''),
   ]
   return lines.filter(Boolean).join('\n')
 }
