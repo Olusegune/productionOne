@@ -3,7 +3,7 @@ import type { StyleBible } from './visualDevelopment'
 /** CleanRender layer A: prompt guidance that heads off common artifacts, matched to the project's look. It never pushes a photographic texture onto a stylised project or removes a warm look the style asks for. */
 
 const stylised = /\b(anime|manga|cartoon|cel[- ]?shad|animated|animation|illustrat|painterly|painted|watercolou?r|comic|graphic novel|stylis|stylize|pixar|claymation|stop[- ]motion|low[- ]poly|pixel|vector|concept art|sketch)\w*/i
-const warmLook = /\b(warm|golden|amber|sepia|sunset|sunrise|dusk|candlew*|fire-?light|orange|honey|tungsten|vintage)\b/i
+const warmLook = /\b(warm|golden|amber|sepia|sunset|sunrise|dusk|candle\w*|fire-?light|orange|honey|tungsten|vintage)\b/i
 
 export function isStylised(style: Pick<StyleBible, 'name' | 'description' | 'rendering' | 'materials'>): boolean {
   return stylised.test([style.name, style.description, style.rendering, style.materials].join(' '))
