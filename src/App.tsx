@@ -1060,7 +1060,12 @@ export default function App() {
       const a = await listen<string>("menu-action", (e) => actionsRef.current[e.payload]?.());
       const b = await listen<string>("menu-open-recent", (e) => guardRef.current(() => openPathRef.current(e.payload)));
       const c = await listen("close-requested", () => actionsRef.current["file-exit"]?.());
-      if (dead) { a(); b(); c(); } else offs = [a, b, c];
+      const d = await listen<string>("open-file", (e) => guardRef.current(() => openPathRef.current(e.payload)));
+      if (dead) { a(); b(); c(); d(); } else offs = [a, b, c, d];
+      // Started by double-clicking a project file: open it once the window is ready.
+      const { invoke } = await import("@tauri-apps/api/core");
+      const launched = await invoke<string | null>("launch_file").catch(() => null);
+      if (launched && !dead) openPathRef.current(launched);
     });
     return () => { dead = true; offs.forEach((off) => off()); };
   }, []);

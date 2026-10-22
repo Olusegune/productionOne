@@ -6,7 +6,7 @@ mod script_file;
 mod cleanrender;
 mod comfy_install;
 use std::{fs, path::PathBuf};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use serde_json::{json, Value};
 use serde::{Deserialize, Serialize};
 use image::{GenericImageView, ImageBuffer, Rgba};
@@ -336,9 +336,25 @@ fn app_ready(app: tauri::AppHandle, started: tauri::State<StartedAt>) {
 const SPLASH_MIN: std::time::Duration = std::time::Duration::from_millis(2600);
 struct StartedAt(std::time::Instant);
 
+/// The project file Windows passed on the command line when the person double-clicked a .pone or .pguy file.
+fn project_arg<I: IntoIterator<Item = String>>(args: I) -> Option<String> {
+    args.into_iter().skip(1).find(|a| { let l = a.to_ascii_lowercase(); l.ends_with(".pone") || l.ends_with(".pguy") })
+}
+
+#[tauri::command]
+fn launch_file() -> Option<String> { project_arg(std::env::args()) }
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            // A second launch (for example double-clicking another project) hands its file to the window that is already open.
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+            if let Some(path) = project_arg(args) { let _ = app.emit("open-file", path); }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .manage(desktop::Dirty::default())
         .manage(StartedAt(std::time::Instant::now()))
@@ -353,13 +369,22 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn project_arg_picks_only_project_files_after_the_program_name() {
+        let v = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        assert_eq!(super::project_arg(v(&["ProductionOne.exe", "C:/films/Horizon.PONE"])), Some("C:/films/Horizon.PONE".into()));
+        assert_eq!(super::project_arg(v(&["ProductionOne.exe", "old.pguy"])), Some("old.pguy".into()));
+        assert_eq!(super::project_arg(v(&["ProductionOne.exe", "notes.txt"])), None);
+        assert_eq!(super::project_arg(v(&["thing.pone"])), None, "the first argument is the program itself");
+    }
+
     use std::io::{Read, Write};
     #[test]
     fn project_filename_is_portable() {

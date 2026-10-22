@@ -59,10 +59,40 @@
     "publisher": "Production One",
     "icon": [
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": {
+      "icons/project-file.ico": "project-file.ico"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "pone"
+        ],
+        "name": "Production One Project",
+        "description": "Production One project",
+        "role": "Editor",
+        "mimeType": "application/x-production-one-project"
+      },
+      {
+        "ext": [
+          "pguy"
+        ],
+        "name": "Production Guy Project",
+        "description": "Production Guy project (opens in Production One)",
+        "role": "Editor"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "installer-hooks.nsh",
+        "installMode": "currentUser"
+      }
+    }
   },
   "mainBinaryName": "ProductionOne"
 }
