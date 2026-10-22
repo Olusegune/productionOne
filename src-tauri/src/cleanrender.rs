@@ -1,10 +1,11 @@
+#![allow(clippy::chunks_exact_to_as_chunks)]
 //! CleanRender: measures common AI-image artifacts and applies gentle, adjustable corrections without touching the original file.
 //!
 //! What it does well: colour casts, clipped highlights, noise, haze around bright areas, over- or under-sharpening.
 //! What it cannot do: fix identity, anatomy or plastic-looking skin. Those are reported with the right remedy (regenerate, reference-condition, retouch) instead of being filtered.
 //! All maths runs on sRGB values scaled 0..1; each step is simple and its strength is a single slider, so results are predictable.
 
-use std::{fs, path::{Path, PathBuf}};
+use std::path::{Path, PathBuf};
 
 use base64::{engine::general_purpose::STANDARD as ENGINE, Engine};
 use image::{imageops::FilterType, DynamicImage, RgbImage};
@@ -341,6 +342,7 @@ pub async fn clean_save(app: tauri::AppHandle, path: String, params: CleanParams
 mod tests {
     use super::*;
     use image::Rgb;
+    use std::fs;
 
     fn grey(w: u32, h: u32, v: u8) -> RgbImage { RgbImage::from_pixel(w, h, Rgb([v, v, v])) }
     fn noisy(w: u32, h: u32, amp: i32) -> RgbImage {

@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)] // Tauri commands take each input as its own argument
 mod desktop;
 mod providers;
 mod kie;
@@ -258,7 +259,7 @@ fn export_prompt_archive(app: tauri::AppHandle, project_name: String, entries: V
 }
 
 fn write_prompt_archive(output_path: &std::path::Path, entries: &[PromptArchiveEntry]) -> Result<(), String> {
-    let file = fs::File::create(&output_path).map_err(|error| error.to_string())?;
+    let file = fs::File::create(output_path).map_err(|error| error.to_string())?;
     let mut archive = zip::ZipWriter::new(file);
     let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     for entry in entries {
@@ -290,7 +291,7 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
     serde_json::from_str::<Value>(&input.manifest).map_err(|error| format!("Asset manifest is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.style_bible).map_err(|error| format!("Style Bible is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.model_usage).map_err(|error| format!("Model usage record is invalid: {error}"))?;
-    let file = fs::File::create(&output_path).map_err(|error| error.to_string())?;
+    let file = fs::File::create(output_path).map_err(|error| error.to_string())?;
     let mut archive = zip::ZipWriter::new(file);
     let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     for directory in ["Project Bible/","Characters/","Expressions/","Poses/","Wardrobe/","Props/","Environments/","Vehicles and Creatures/","Lighting and FX/","Choreography/","Style References/","Prompts/","Manifests/","Approved References/"] { archive.add_directory(directory, options).map_err(|error| error.to_string())?; }

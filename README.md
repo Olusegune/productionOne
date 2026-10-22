@@ -1,49 +1,54 @@
-# Production Guy
+# Production One
 
-**Your AI Production Department.** A Windows-first preproduction and visual-development studio.
+**Your AI Production Department.** A Windows desktop studio for directors and producers: read the story, build the production bible, make consistent reference sheets, plan shots, generate storyboard frames, check continuity, play an animatic and deliver a package, with cloud models or AI running on your own computer.
 
-## Current release
+Built with Tauri 2 (Rust), React and TypeScript. Projects are saved as `.pone` files; older Production Guy `.pguy` projects still open and are never overwritten.
 
-- Premium graphite-and-champagne application shell
-- Five primary workspaces: Projects, Story, Design, Direct, Deliver
-- Optional storyboarding surfaced through Direct
-- Canonical typed Production Graph: Project → Scene → Shot → Asset → Story Variant → Sheet → Revision
-- Stable IDs, revision increments, transitive dependency discovery, and selective stale-state marking
-- Native atomic project persistence with schema versioning
-- Editable script-derived inventory and persistent custom Style Bible
-- Sheet matrix, story-variant detection, prompt modes and model matching
-- Durable prompt queue with pause, resume, cancel, retry and verified outputs
-- Native image import, QA, deterministic labels and budget-gated OpenAI generation
-- Multi-shot director, acting/audio metadata and timed animatic preview
-- Seedance/Kling/Veo Shot Compiler, scene coverage and validated production ZIPs
+## What it does
 
-## Run locally
+| Step | What you get |
+|---|---|
+| **Create / Story** | Paste or import a script (`.txt`, `.md`, Fountain, Final Draft `.fdx`, Word `.docx`, PDF). The reader finds scenes, characters, props, story variants (wardrobe, injury, age) and emotions, and shows the line each finding came from. |
+| **Design** | A production bible, a style bible, and reference sheets per character, prop and set (turnarounds, expressions from the story's feelings, poses, wardrobe, details). Your own images and reference photos work everywhere. Approved front views become the anchor that keeps later views consistent. Image quality (CleanRender) checks colour casts, clipping, noise, bloom and sharpness and corrects them as separate revisions. |
+| **Direct** (optional) | The Director's room: coverage planned per scene, a shot editor (camera, composition, blocking, cast and wardrobe, lighting, performance, audio), storyboard frames from your approved references, continuity checks and an animatic. |
+| **Deliver** | A readiness summary with the next thing to fix, a shot compiler with an editable prompt for Seedance, Kling and Veo, and verified or draft packages. |
+
+**Models.** Kie.ai (59 image and 47 video models read live), Google Gemini, OpenAI, OpenRouter, fal.ai, and local ComfyUI, Ollama and LM Studio. One searchable picker; any model id can be typed. Cost never interrupts you: an optional spending cap lives in the queue dock.
+
+**Local AI, no internet.** Production One finds Ollama, LM Studio and ComfyUI on your machine, can install ComfyUI and download SDXL and Wan 2.2 5B for you, and runs images, video and the optional AI story pass offline.
+
+## Install
+
+Download `Production One_<version>_x64-setup.exe` (or the `.msi`) from the [latest release](https://github.com/Olusegune/productionOne/releases), run it, and open Production One from the Start menu. The installer registers `.pone` and `.pguy` so double-clicking a project opens it.
+
+Windows 10 or 11 with WebView2 (included in Windows 11; the installer adds it on Windows 10).
+
+## First five minutes
+
+1. **Providers** (top bar): paste a key for one provider. Keys are stored in the Windows credential store, never in project files.
+2. **Story**: paste a script or choose **Import script**, then **Analyze script**.
+3. **Design**: approve the visual style, pick a character, choose a model, press **Generate**. Use **Test one first** to check the look cheaply.
+4. Approve the front view; the other views use it as their reference.
+5. **Direct → Plan all scenes**, then **Generate frames**. **Deliver** shows what is left.
+
+No key? Open **Local AI** (top bar) and let it find or install ComfyUI.
+
+## Develop
 
 ```powershell
 npm install
-npm run dev
-```
-
-## Run as a Windows desktop application
-
-```powershell
-npm run desktop:dev
-```
-
-## Build Windows installers
-
-```powershell
-npm run desktop:build
-```
-
-The MSI and NSIS installers are written under `src-tauri/target/release/bundle/`.
-
-## Verify
-
-```powershell
-npm test
-npm run build
+npm run dev            # browser preview (plans only; generation needs the desktop app)
+npm run desktop:dev    # desktop app with hot reload
+npm test               # 130+ unit and component tests
 cargo test --manifest-path src-tauri/Cargo.toml
+npm run desktop:build  # installers under src-tauri/target/release/bundle/
+python scripts/make-icons.py   # rebuild icons from branding/
 ```
 
-See [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) for the repository audit and phased preservation strategy.
+Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+
+## Honest limits
+
+- AI images can have wrong hands, drifting faces and plastic skin. Production One reduces these (prompt guidance, anchors, checks) and tells you when a filter cannot help; it does not remove them.
+- Cloud generation costs money at your provider. Production One never states prices; set your own cap if you want one.
+- The installer is not code-signed yet, so Windows SmartScreen may warn on first run.

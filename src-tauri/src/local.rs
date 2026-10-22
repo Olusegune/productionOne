@@ -309,7 +309,7 @@ fn friendly(msg: &str) -> String {
 pub async fn comfy_templates(base: String) -> Result<Value, String> {
     let base = normalize_base(&base)?;
     let info: Value = client(60)?.get(format!("{base}/object_info")).send().await.map_err(|_| format!("ComfyUI is not answering at {base}. Start it, then press Find local AI."))?.json().await.map_err(|e| e.to_string())?;
-    Ok(serde_json::to_value(plan_templates(&info)).map_err(|e| e.to_string())?)
+    serde_json::to_value(plan_templates(&info)).map_err(|e| e.to_string())
 }
 
 fn comfy_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -362,7 +362,7 @@ pub async fn comfy_run(app: &tauri::AppHandle, r: ComfyRequest) -> Result<(Vec<u
     let fps = 24.0;
     values.insert("prompt".into(), json!(r.prompt));
     values.insert("negative".into(), json!(r.negative));
-    values.insert("seed".into(), json!(r.seed.unwrap_or_else(|| (std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos() as i64).unwrap_or(1) & 0x7fff_ffff))));
+    values.insert("seed".into(), json!(r.seed.unwrap_or_else(|| std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos() as i64).unwrap_or(1) & 0x7fff_ffff)));
     values.insert("width".into(), json!(w));
     values.insert("height".into(), json!(h));
     values.insert("frames".into(), json!(((r.duration * fps / 4.0).round() as i64) * 4 + 1));
