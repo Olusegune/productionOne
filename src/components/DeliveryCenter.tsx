@@ -53,7 +53,7 @@ export function DeliveryCenter(props: {
 
   return (
     <section className="dc" aria-label="Delivery">
-      <header className="dc-summary">
+      <div className="dc-summary">
         <div className={`dc-ready ${audit.ready ? "ok" : "todo"}`}>
           <span className="eyebrow">Production readiness</span>
           <b>{percent}%</b>
@@ -71,7 +71,7 @@ export function DeliveryCenter(props: {
           <p>{next.label}</p>
           {next.go && <button className="primary" onClick={next.go}>{audit.ready ? <PackageCheck size={15} /> : <ArrowRight size={15} />} {audit.ready ? "Build the package" : "Take me there"}</button>}
         </div>
-      </header>
+      </div>
 
       <div className="dc-cols">
         <div className="panel dc-issues">

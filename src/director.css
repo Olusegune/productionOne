@@ -195,3 +195,6 @@
 .dr-menu .danger { color: #e29b8a; }
 .dr-card.on { box-shadow: 0 0 0 2px rgba(196, 154, 70, .35); }
 @media (max-width: 1280px) { .dr-grid { grid-template-columns: 180px minmax(0, 1fr); } .dr-inspector { grid-column: 1 / -1; position: static; width: auto !important; } }
+
+.dr-two { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.dr-inspector input:not([type=checkbox]), .dr-inspector select, .dr-inspector textarea { min-width: 0; width: 100%; box-sizing: border-box; }

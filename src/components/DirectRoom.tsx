@@ -252,7 +252,6 @@ export function DirectRoom(props: {
           {!shot ? <p className="helper">Select a shot to edit it.</p> : (
             <>
               <FramePreview shot={shot} aspect={ASPECT} />
-              <p className="dr-readout">{sizeLabels[shot.size ?? "MS"]} · {angleLabels[shot.angle ?? "eye-level"]} · {shot.lens ?? 40}mm</p>
               <label><span>Title</span><input value={shot.title ?? ""} onChange={(e) => update(shot.id, { title: e.target.value })} /></label>
               <Fold title="Camera" hint={`${shot.size ?? "MS"} · ${shot.lens ?? 40}mm`} defaultOpen id="camera">
                 <div className="dr-two">

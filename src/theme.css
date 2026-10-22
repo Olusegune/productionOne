@@ -143,7 +143,6 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 .ss-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
 .ss-bar label { display: grid; gap: 6px; min-width: 0; }
 .ss-bar label > span { font-size: 13px; color: var(--text-3); }
-.ss-model { grid-column: span 2; }
 .ss-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0 6px; }
 .ss-notes { flex: 1 1 280px; min-width: 200px; }
 .view-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; margin-top: 18px; }
@@ -294,8 +293,10 @@ body.dropping .view-card, body.dropping .ss-refs { outline: 2px dashed var(--gol
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); display: inline-block; }
 .dot.review { background: var(--gold); } .dot.busy { background: var(--blue); animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .35; } }
-.ss-bar { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) auto; padding-bottom: 14px; border-bottom: 1px solid var(--stroke); }
-.ss-model { grid-column: span 2; }
+.ss-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; padding-bottom: 14px; border-bottom: 1px solid var(--stroke); }
+.ss-bar label { flex: 1 1 170px; }
+.ss-bar .ss-model { flex: 2 1 320px; }
+.ss-bar .seg { flex: 0 0 auto; }
 .seg { display: inline-flex; border: 1px solid var(--stroke-strong); border-radius: 6px; overflow: hidden; height: 42px; }
 .seg button { all: unset; cursor: pointer; width: 40px; display: grid; place-items: center; color: var(--text-2); }
 .seg button.on { background: var(--gold); color: #17140e; }
@@ -329,3 +330,11 @@ body.dropping .view-card, body.dropping .ss-refs { outline: 2px dashed var(--gol
 .fold-body { padding: 2px 12px 12px; }
 @media (max-width: 1100px) { .ss-work { grid-template-columns: 1fr; } .ss-inspector { position: static; } }
 @media (prefers-reduced-motion: reduce) { .dot.busy { animation: none; } .fold-head svg { transition: none; } }
+
+.sheet-studio { container-type: inline-size; }
+@container (max-width: 1000px) {
+  .ss-work { grid-template-columns: 1fr; }
+  .ss-inspector { display: contents; }
+  .ss-inspector .ss-actions { order: -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .ss-inspector .fold { order: 1; }
+}
