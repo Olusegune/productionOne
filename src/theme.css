@@ -338,3 +338,6 @@ body.dropping .view-card, body.dropping .ss-refs { outline: 2px dashed var(--gol
   .ss-inspector .ss-actions { order: -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
   .ss-inspector .fold { order: 1; }
 }
+.ss-head { align-items: flex-start; flex-wrap: wrap; }
+.ss-head h3 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.ss-type { margin-left: 0; }
