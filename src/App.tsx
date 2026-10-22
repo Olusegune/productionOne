@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { DeliveryCenter } from "./components/DeliveryCenter";
 import { convertScript, type ScriptKind } from "./engine/importers";
 import {
   ArrowLeft,
@@ -69,6 +70,7 @@ import "./production-one.css";
 import "./studio-shell.css";
 import "./theme.css";
 import "./director.css";
+import "./delivery.css";
 import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";
@@ -1800,142 +1802,27 @@ export default function App() {
           </div>
         )}
         {workspace === "Deliver" && (
-          <section className="three-column studio-page legacy-ui">
-            <div className="panel">
-              <span className="eyebrow">PRODUCTION COVERAGE</span>
-              <h3>{audit.ready ? "Ready to package" : "Action required"}</h3>
-              <div className="big-stat">
-                <b>
-                  {audit.ready
-                    ? "100%"
-                    : `${Math.round(((analysis.assets.length - audit.missingAssets.length) / Math.max(1, analysis.assets.length)) * 100)}%`}
-                </b>
-                <span>verified asset coverage</span>
-              </div>
-              <div className="stat-row">
-                <span>Missing verified files</span>
-                <b>{audit.missingAssets.length}</b>
-              </div>
-              <div className="stat-row">
-                <span>Incomplete shots</span>
-                <b>{audit.incompleteShots.length}</b>
-              </div>
-              <div className="audit-list">
-                {[...audit.missingAssets, ...audit.incompleteShots].map(
-                  (id) => (
-                    <span key={id}>{id}</span>
-                  ),
-                )}
-              </div>
-              <div className="scene-coverage">
-                {sceneCoverage.map((scene) => (
-                  <article
-                    key={scene.sceneId}
-                    className={scene.videoReady ? "ready" : ""}
-                  >
-                    <div>
-                      <b>{scene.sceneId}</b>
-                      <span>
-                        {scene.videoReady ? "VIDEO READY" : "INCOMPLETE"}
-                      </span>
-                    </div>
-                    <small>
-                      {scene.verifiedAssets.length}/
-                      {scene.requiredAssets.length} references ·{" "}
-                      {scene.plannedShots.length} shots
-                    </small>
-                    {scene.warnings.map((warning) => (
-                      <p key={warning}>⚠ {warning}</p>
-                    ))}
-                  </article>
-                ))}
-              </div>
-            </div>
-            <div className="panel compiler">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">MODEL-AWARE SHOT COMPILER</span>
-                  <h3>{activeShot.id}</h3>
-                </div>
-              </div>
-              <label>
-                <span>Target video model</span>
-                <select
-                  value={model}
-                  onChange={(e) => setModel(e.target.value as VideoModel)}
-                >
-                  {Object.keys(videoPresets).map((name) => (
-                    <option key={name}>{name}</option>
-                  ))}
-                </select>
-              </label>
-              <div className="capabilities">
-                <span>{videoPresets[model].maxReferences} references</span>
-                <span>
-                  {videoPresets[model].supportsAudio
-                    ? "Model audio"
-                    : "Post audio"}
-                </span>
-                <span>
-                  {videoPresets[model].supportsFirstLastFrame
-                    ? "First/last frames"
-                    : "Single frame"}
-                </span>
-              </div>
-              <div className="prompt-box">
-                <span>COMPILED PROMPT</span>
-                <p>{compiled.prompt}</p>
-              </div>
-              <div className="warnings">
-                {compiled.warnings.map((warning) => (
-                  <p key={warning}>⚠ {warning}</p>
-                ))}
-              </div>
-            </div>
-            <div className="panel">
-              <span className="eyebrow">PRODUCTION PACKAGE</span>
-              <h3>Portable delivery</h3>
-              <p className="helper">
-                Exports preserve stable IDs, source dialogue, acting/audio
-                direction, original references, Style Bible, ledger, model
-                record, and warnings.
-              </p>
-              <button
-                className="primary full"
-                onClick={() =>
-                  downloadJson(
-                    `${activeShot.id}-${model.replace(/\s/g, "-")}.json`,
-                    compiled,
-                  )
-                }
-              >
-                <Download size={14} /> Export shot package
-              </button>
-              <button className="secondary full" onClick={buildProductionZip}>
-                <PackageCheck size={14} />{" "}
-                {audit.ready
-                  ? "Build production package"
-                  : "Build clearly marked draft package"}
-              </button>
-              <button
-                className="secondary full"
-                disabled={
-                  !kieConfigured ||
-                  model !== "Seedance 2.0" ||
-                  submittingGeneration
-                }
-                onClick={generateDirect}
-              >
-                <Pause size={14} />{" "}
-                {submittingGeneration
-                  ? "Submitting…"
-                  : "Generate directly with KIE"}
-              </button>
-              <p className="helper">
-                Requires the Windows build, a saved KIE key and Seedance 2.0.
-              </p>
-            </div>
-          </section>
+          <DeliveryCenter
+            analysis={analysis}
+            shots={shots}
+            audit={audit}
+            sceneCoverage={sceneCoverage}
+            queue={queue}
+            setQueue={setQueue}
+            compiled={compiled}
+            model={model}
+            setModel={setModel}
+            selectedShot={selectedShot}
+            setSelectedShot={setSelectedShot}
+            kieConfigured={kieConfigured}
+            submitting={submittingGeneration}
+            onExportShot={() => downloadJson(`${activeShot.id}-${model.replace(/\s/g, "-")}.json`, compiled)}
+            onBuild={buildProductionZip}
+            onDirect={generateDirect}
+            openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }}
+            openShot={(id) => { const i = shots.findIndex((x) => x.id === id); if (i >= 0) setSelectedShot(i); setWorkspace(storyboardsEnabled ? "Direct" : "Design"); }}
+            notify={setNotice}
+          />
         )}
       </main>
       <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} />
