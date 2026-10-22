@@ -34,7 +34,7 @@ export interface ImageJob {
   approved: boolean
   rejected: boolean
   /** 'supplied' means the person brought this image themselves; it is stored byte for byte and approved on arrival. */
-  source?: 'generated' | 'supplied'
+  source?: 'generated' | 'supplied' | 'cleaned'
   createdAt: number
   updatedAt: number
 }
@@ -162,6 +162,16 @@ export function addSupplied(state: QueueState, r: SuppliedRequest, now = Date.no
     revision, status: 'completed', attempts: 0, maxAttempts: 1, outputPath: r.path, width: r.width, height: r.height, qaNotes: [], approved: true, rejected: false, source: 'supplied', createdAt: now, updatedAt: now,
   }
   return { state: { ...state, jobs: [...jobs, job] }, job }
+}
+
+/**
+ * A CleanRender correction saved as a new revision of the same view. The image it was made from stays in the history; the new one keeps its approval.
+ */
+export function addCleaned(state: QueueState, from: ImageJob, file: { path: string; width: number; height: number }, now = Date.now()): { state: QueueState; job: ImageJob } {
+  const same = (j: ImageJob) => j.assetId === from.assetId && j.variant === from.variant && j.sheetType === from.sheetType && j.viewKey === from.viewKey
+  const revision = state.jobs.filter(same).reduce((n, j) => Math.max(n, j.revision), 0) + 1
+  const job: ImageJob = { ...from, id: `IMG-${from.assetId}-${now.toString(36)}-${state.jobs.length + 1}`, key: [from.assetId, from.variant, from.sheetType, from.viewKey, revision].join('|'), revision, outputName: `${from.outputName}_clean`, outputPath: file.path, width: file.width, height: file.height, status: 'completed', attempts: 0, qaNotes: [], error: undefined, source: 'cleaned', approved: from.approved, rejected: false, createdAt: now, updatedAt: now }
+  return { state: { ...state, jobs: [...state.jobs, job] }, job }
 }
 
 /** True while an anchor view exists in the queue but is not approved yet. */

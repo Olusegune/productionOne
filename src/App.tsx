@@ -71,6 +71,7 @@ import "./studio-shell.css";
 import "./theme.css";
 import "./director.css";
 import "./delivery.css";
+import "./cleanrender.css";
 import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";

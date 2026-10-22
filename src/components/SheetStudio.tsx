@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Columns2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, Sparkles, Square, X } from "lucide-react";
+import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, Sparkles, Square, X } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
+  addCleaned,
   addSupplied,
   approve,
   cancel,
@@ -42,6 +43,7 @@ import { ModelPicker } from "./ModelPicker";
 import { useModelChoice } from "../data/modelChoice";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { Fold } from "./Fold";
+import { CleanRender } from "./CleanRender";
 
 const providers = providerOrder;
 
@@ -105,6 +107,7 @@ export function SheetStudio(props: {
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [size, setSize] = useState<"grid" | "large">("grid");
   const [compare, setCompare] = useState<string[]>([]);
+  const [quality, setQuality] = useState<number | null>(null);
 
   const activeType: SheetType = sheetTypes.includes(sheetType) ? sheetType : (sheetTypes[0] ?? "Turnaround");
   const activeVariant = variants.includes(variant) ? variant : "Canonical";
@@ -235,6 +238,7 @@ export function SheetStudio(props: {
             <button className="secondary" disabled={!waiting && !stats.generating} onClick={() => setQueue((q) => ({ ...q, paused: true }))}><Pause size={14} /> Pause</button>
           )}
           <button className="secondary" disabled={!waiting} onClick={() => setQueue((q) => cancelAllWaiting(q))}>Cancel waiting</button>
+          {desktop && <button className="secondary" disabled={viewItems.length === 0} onClick={() => setQuality(0)} title="Check colour, noise, highlights and sharpness, and correct them without changing the original"><Wand2 size={14} /> Image quality</button>}
         </div>
       </header>
 
@@ -344,6 +348,10 @@ export function SheetStudio(props: {
         </aside>
       </div>
 
+      {quality !== null && viewItems.length > 0 && (
+        <CleanRender items={viewItems.map((it) => it.job)} index={Math.min(quality, viewItems.length - 1)} onIndex={setQuality} onClose={() => setQuality(null)} notify={notify}
+          onSaved={(from, file) => { const out = addCleaned(queue, from, file); setQueue(() => out.state); if (out.job.approved) onApproved(out.job, primaryViewKeys.includes(out.job.viewKey)); }} />
+      )}
       {lightbox !== null && viewItems.length > 0 && (
         <Lightbox items={viewItems} index={Math.min(lightbox, viewItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={doApprove} onReject={doReject} />
       )}

@@ -324,7 +324,7 @@ pub fn model_catalog(app: tauri::AppHandle) -> Value {
     catalog_path(&app).ok().and_then(|p| fs::read_to_string(p).ok()).and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_else(|| json!({}))
 }
 
-fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> {
+pub(crate) fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> {
     let assets = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
     let canonical = fs::canonicalize(path).map_err(|e| format!("Could not open the image: {e}"))?;
     let root = fs::canonicalize(&assets).map_err(|e| e.to_string())?;
