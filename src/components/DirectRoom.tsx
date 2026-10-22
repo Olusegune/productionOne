@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, Maximize2, Sparkles, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Wand2, X } from "lucide-react";
 import {
   angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
   shotReferences, shotSizes, sizeLabels, sortShots, type CameraAngle, type Movement, type ScreenDir, type ShotSize,
@@ -13,6 +13,7 @@ import { emotions } from "../engine/emotion";
 import { useModelChoice } from "../data/modelChoice";
 import { Animatic } from "./Animatic";
 import { FramePreview } from "./FramePreview";
+import { Fold } from "./Fold";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { ModelPicker } from "./ModelPicker";
 
@@ -41,6 +42,11 @@ export function DirectRoom(props: {
   const [sceneId, setSceneId] = useState(analysis.scenes[0]?.id ?? "");
   const [selected, setSelected] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [view, setView] = useState<"grid" | "list" | "large">("grid");
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const [inspW, setInspW] = useState<number>(() => { try { return Number(localStorage.getItem("po.inspW")) || 380; } catch { return 380; } });
+  useEffect(() => { try { localStorage.setItem("po.inspW", String(inspW)); } catch { /* storage may be unavailable */ } }, [inspW]);
   const scene = analysis.scenes.find((s) => s.id === sceneId) ?? analysis.scenes[0];
   const sceneShots = shots.filter((s) => s.sceneId === scene?.id);
   const shot = shots.find((s) => s.id === selected) ?? sceneShots[0];
@@ -73,6 +79,12 @@ export function DirectRoom(props: {
     notify(`Planned coverage for ${scene.heading}. Shots with approved frames were kept.`);
   };
   const move = (id: string, d: number) => setShots((list) => { const i = list.findIndex((s) => s.id === id); const j = i + d; if (i < 0 || j < 0 || j >= list.length || list[j].sceneId !== list[i].sceneId) return list; const copy = [...list]; [copy[i], copy[j]] = [copy[j], copy[i]]; return sortShots(copy.map((s, k) => ({ ...s, order: k + 1 })), analysis); });
+  const reorderTo = (fromId: string, toId: string) => setShots((list) => {
+    const from = list.findIndex((s) => s.id === fromId); const to = list.findIndex((s) => s.id === toId);
+    if (from < 0 || to < 0 || from === to || list[from].sceneId !== list[to].sceneId) return list;
+    const copy = [...list]; const [m] = copy.splice(from, 1); copy.splice(to, 0, m);
+    return sortShots(copy.map((s, k) => ({ ...s, order: k + 1 })), analysis);
+  });
   const duplicate = (s: ShotRecord) => setShots((list) => { const n = list.reduce((m, x) => Math.max(m, Number(/(\d+)$/.exec(x.id)?.[1] ?? 0)), 0) + 1; const copy = { ...s, id: `SHOT-${String(n).padStart(3, "0")}`, title: `${s.title ?? s.id} (copy)`, storyboardStatus: "planned" as const }; const i = list.findIndex((x) => x.id === s.id); const out = [...list]; out.splice(i + 1, 0, copy); return out.map((x, k) => ({ ...x, order: k + 1 })); });
   const remove = (id: string) => { setShots((list) => list.filter((s) => s.id !== id).map((s, k) => ({ ...s, order: k + 1 }))); if (selected === id) setSelected(null); };
   const addShot = () => {
@@ -164,6 +176,11 @@ export function DirectRoom(props: {
           <div className="dr-board-bar">
             <h3>{scene?.heading ?? "No scene"}</h3>
             <div className="dr-board-actions">
+              <div className="seg" role="group" aria-label="Card layout">
+                <button className={view === "grid" ? "on" : ""} aria-pressed={view === "grid"} aria-label="Grid" title="Grid" onClick={() => setView("grid")}><LayoutGrid size={15} /></button>
+                <button className={view === "list" ? "on" : ""} aria-pressed={view === "list"} aria-label="List" title="List" onClick={() => setView("list")}><List size={15} /></button>
+                <button className={view === "large" ? "on" : ""} aria-pressed={view === "large"} aria-label="Large storyboard" title="Large storyboard" onClick={() => setView("large")}><Square size={15} /></button>
+              </div>
               <button className="secondary" onClick={planScene} disabled={!scene}><Wand2 size={14} /> Plan this scene</button>
               <button className="secondary" onClick={addShot} disabled={!scene}>Add shot</button>
               <button className="secondary" disabled={!needFrames.length} onClick={() => makeFrames(needFrames, false, true)} title="Make one frame first to check the look">Test one first</button>
@@ -171,7 +188,13 @@ export function DirectRoom(props: {
             </div>
           </div>
           {sceneShots.length === 0 && <div className="dr-empty"><p>No shots in this scene yet.</p><button className="primary" onClick={planScene} disabled={!scene}><Wand2 size={15} /> Plan the coverage for this scene</button></div>}
-          <div className="dr-cards">
+          <div className={`dr-cards ${view}`} onKeyDown={(e) => {
+            if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key) || (e.target as HTMLElement).closest("input, textarea, select")) return;
+            const i = sceneShots.findIndex((x) => x.id === shot?.id); if (i < 0) return;
+            const j = Math.max(0, Math.min(sceneShots.length - 1, i + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1)));
+            e.preventDefault(); setSelected(sceneShots[j].id);
+            requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-shot="${sceneShots[j].id}"] .dr-thumb`)?.focus());
+          }}>
             {sceneShots.map((s, i) => {
               const frame = frameForShot(queue, s.id);
               const mine = frameJobs(queue, s.id);
@@ -179,8 +202,8 @@ export function DirectRoom(props: {
               const warns = findings.filter((f) => f.shotId === s.id && f.level === "warn").length;
               const at = lbItems.findIndex((it) => it.job.id === frame?.id);
               return (
-                <article key={s.id} className={`dr-card${s.id === shot?.id ? " on" : ""}`} data-shot={s.id}>
-                  <button className="dr-thumb" onClick={() => setSelected(s.id)} aria-label={`Select ${s.title ?? s.id}`}>
+                <article key={s.id} className={`dr-card${s.id === shot?.id ? " on" : ""}${dragOver === s.id ? " drop" : ""}`} data-shot={s.id} draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", s.id); e.dataTransfer.effectAllowed = "move"; }} onDragOver={(e) => { e.preventDefault(); if (dragOver !== s.id) setDragOver(s.id); }} onDragLeave={() => setDragOver((d) => (d === s.id ? null : d))} onDrop={(e) => { e.preventDefault(); setDragOver(null); reorderTo(e.dataTransfer.getData("text/plain"), s.id); }}>
+                  <button className="dr-thumb" onClick={() => setSelected(s.id)} onDoubleClick={() => at >= 0 && setLightbox(at)} aria-label={`Select ${s.title ?? s.id}`}>
                     {frame?.outputPath ? <img src={convertFileSrc(frame.outputPath)} alt={`Frame for ${s.title ?? s.id}`} /> : <FramePreview shot={s} aspect={ASPECT} />}
                     <span className="dr-num">{i + 1}</span>
                     <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.status === "needs-review" ? "Needs review" : "Frame") : "No frame"}</span>
@@ -188,19 +211,27 @@ export function DirectRoom(props: {
                     {at >= 0 && <span className="dr-zoom" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setLightbox(at); }} onKeyDown={(e) => { if (e.key === "Enter") setLightbox(at); }} aria-label="Open full size"><Maximize2 size={14} /></span>}
                   </button>
                   <div className="dr-meta">
-                    <b>{s.title ?? s.id}</b>
-                    <span className="dr-chips"><i>{s.coverage ? coverageLabels[s.coverage] : "Shot"}</i><i>{s.size}</i><i>{s.lens}mm</i><i>{s.movement ? movementLabels[s.movement] : "Static"}</i><i>{s.duration}s</i></span>
+                    <div className="dr-title"><b>{s.title ?? s.id}</b><small>{s.coverage ? coverageLabels[s.coverage] : "Shot"}</small></div>
+                    <dl className="dr-specs"><div><dt>Size</dt><dd>{s.size}</dd></div><div><dt>Lens</dt><dd>{s.lens}mm</dd></div><div><dt>Move</dt><dd>{s.movement ? movementLabels[s.movement] : "Static"}</dd></div><div><dt>Time</dt><dd>{s.duration}s</dd></div></dl>
                     {s.dialogue && <q>{s.speaker}: {s.dialogue}</q>}
                   </div>
                   <div className="dr-actions">
                     {frame?.status === "needs-review" && (<><button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button><button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button></>)}
-                    {!live && frame?.status !== "needs-review" && <button className="secondary" onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Frame"}</button>}
+                    {!live && frame?.status !== "needs-review" && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
+                    {live && <span className="dr-busy">{live.status}…</span>}
                     {mine.some((j) => j.status === "failed") && !live && <button className="secondary" onClick={() => { const j = mine.find((x) => x.status === "failed"); if (j) setQueue((q) => retry(q, j.id)); }}>Retry</button>}
-                    {desktop && <button className="icon-mini" onClick={() => void useOwnFrame(s)} title="Use your own image as this frame" aria-label="Use my own image"><ImagePlus size={14} /></button>}
-                    <button className="icon-mini" onClick={() => move(s.id, -1)} aria-label="Move up"><ArrowUp size={14} /></button>
-                    <button className="icon-mini" onClick={() => move(s.id, 1)} aria-label="Move down"><ArrowDown size={14} /></button>
-                    <button className="icon-mini" onClick={() => duplicate(s)} aria-label="Duplicate shot"><Copy size={14} /></button>
-                    <button className="icon-mini" onClick={() => remove(s.id)} aria-label="Delete shot"><Trash2 size={14} /></button>
+                    <div className="dr-more">
+                      <button className="icon-mini" aria-haspopup="menu" aria-expanded={menuFor === s.id} aria-label="More actions" onClick={() => setMenuFor((m) => (m === s.id ? null : s.id))}><MoreHorizontal size={16} /></button>
+                      {menuFor === s.id && (
+                        <div className="dr-menu" role="menu" onMouseLeave={() => setMenuFor(null)}>
+                          {desktop && <button role="menuitem" onClick={() => { setMenuFor(null); void useOwnFrame(s); }}><ImagePlus size={14} /> Use my own image</button>}
+                          <button role="menuitem" onClick={() => { setMenuFor(null); move(s.id, -1); }}><ArrowUp size={14} /> Move earlier</button>
+                          <button role="menuitem" onClick={() => { setMenuFor(null); move(s.id, 1); }}><ArrowDown size={14} /> Move later</button>
+                          <button role="menuitem" onClick={() => { setMenuFor(null); duplicate(s); }}><Copy size={14} /> Duplicate shot</button>
+                          <button role="menuitem" className="danger" onClick={() => { setMenuFor(null); remove(s.id); }}><Trash2 size={14} /> Delete shot</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </article>
               );
@@ -214,33 +245,55 @@ export function DirectRoom(props: {
           )}
         </section>
 
-        <aside className="dr-inspector panel" aria-label="Shot editor">
+        <aside className="dr-inspector panel" aria-label="Shot editor" style={{ width: inspW }}>
+          <div className="dr-resize" role="separator" aria-orientation="vertical" aria-label="Resize the shot editor" tabIndex={0}
+            onPointerDown={(e) => { const x0 = e.clientX; const w0 = inspW; const move = (ev: PointerEvent) => setInspW(Math.min(640, Math.max(300, w0 + (x0 - ev.clientX)))); const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); }; window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); }}
+            onKeyDown={(e) => { if (e.key === "ArrowLeft") setInspW((w) => Math.min(640, w + 24)); if (e.key === "ArrowRight") setInspW((w) => Math.max(300, w - 24)); }} />
           {!shot ? <p className="helper">Select a shot to edit it.</p> : (
             <>
               <FramePreview shot={shot} aspect={ASPECT} />
+              <p className="dr-readout">{sizeLabels[shot.size ?? "MS"]} · {angleLabels[shot.angle ?? "eye-level"]} · {shot.lens ?? 40}mm</p>
               <label><span>Title</span><input value={shot.title ?? ""} onChange={(e) => update(shot.id, { title: e.target.value })} /></label>
-              <div className="dr-two">
-                <label><span>Size</span><select value={shot.size ?? "MS"} onChange={(e) => { const size = e.target.value as ShotSize; update(shot.id, { size, lens: defaultLens[size], cameraFraming: sizeLabels[size] }); }}>{shotSizes.map((s) => <option key={s} value={s}>{sizeLabels[s]}</option>)}</select></label>
-                <label><span>Angle</span><select value={shot.angle ?? "eye-level"} onChange={(e) => update(shot.id, { angle: e.target.value as CameraAngle })}>{angles.map((a) => <option key={a} value={a}>{angleLabels[a]}</option>)}</select></label>
-                <label><span>Lens (mm)</span><input type="number" min={8} max={400} value={shot.lens ?? 40} onChange={(e) => update(shot.id, { lens: Number(e.target.value) || 40 })} /></label>
-                <label><span>Movement</span><select value={shot.movement ?? "static"} onChange={(e) => update(shot.id, { movement: e.target.value as Movement, cameraMovement: movementLabels[e.target.value as Movement] })}>{movements.map((m) => <option key={m} value={m}>{movementLabels[m]}</option>)}</select></label>
-                <label><span>Screen direction</span><select value={shot.screenDir ?? "neutral"} onChange={(e) => update(shot.id, { screenDir: e.target.value as ScreenDir })}><option value="neutral">Neutral</option><option value="L>R">Facing right</option><option value="R>L">Facing left</option></select></label>
-                <label><span>Length (s)</span><input type="number" min={1} max={30} step={0.5} value={shot.duration} onChange={(e) => update(shot.id, { duration: Math.max(1, Number(e.target.value) || 4) })} /></label>
-              </div>
-              <fieldset><legend>Composition</legend><div className="dr-tags">{compositionRules.map((c) => { const on = shot.composition?.includes(c); return <button key={c} className={on ? "on" : ""} onClick={() => update(shot.id, { composition: on ? (shot.composition ?? []).filter((x) => x !== c) : [...(shot.composition ?? []), c] })}>{c}</button>; })}</div></fieldset>
-              <fieldset><legend>In the shot</legend>
-                <div className="dr-tags">{characters.map((c) => { const on = shot.assetIds.includes(c.id); return <button key={c.id} className={on ? "on" : ""} onClick={() => update(shot.id, { assetIds: on ? shot.assetIds.filter((x) => x !== c.id) : [...shot.assetIds, c.id], focusAssetId: shot.focusAssetId ?? c.id })}>{c.name}</button>; })}</div>
+              <Fold title="Camera" hint={`${shot.size ?? "MS"} · ${shot.lens ?? 40}mm`} defaultOpen id="camera">
+                <div className="dr-two">
+                  <label><span>Shot size</span><select value={shot.size ?? "MS"} onChange={(e) => { const size = e.target.value as ShotSize; update(shot.id, { size, lens: defaultLens[size], cameraFraming: sizeLabels[size] }); }}>{shotSizes.map((s) => <option key={s} value={s}>{sizeLabels[s]}</option>)}</select></label>
+                  <label><span>Camera angle</span><select value={shot.angle ?? "eye-level"} onChange={(e) => update(shot.id, { angle: e.target.value as CameraAngle })}>{angles.map((a) => <option key={a} value={a}>{angleLabels[a]}</option>)}</select></label>
+                  <label><span>Lens (mm)</span><input type="number" min={8} max={400} value={shot.lens ?? 40} onChange={(e) => update(shot.id, { lens: Number(e.target.value) || 40 })} /></label>
+                  <label><span>Movement</span><select value={shot.movement ?? "static"} onChange={(e) => update(shot.id, { movement: e.target.value as Movement, cameraMovement: movementLabels[e.target.value as Movement] })}>{movements.map((m) => <option key={m} value={m}>{movementLabels[m]}</option>)}</select></label>
+                  <label><span>Duration (s)</span><input type="number" min={1} max={30} step={0.5} value={shot.duration} onChange={(e) => update(shot.id, { duration: Math.max(1, Number(e.target.value) || 4) })} /></label>
+                </div>
+              </Fold>
+              <Fold title="Composition" hint={`${shot.composition?.length ?? 0} guides`} id="composition">
+                <div className="dr-checks">{compositionRules.map((c) => { const on = !!shot.composition?.includes(c); return <label key={c} className={on ? "on" : ""}><input type="checkbox" checked={on} onChange={() => update(shot.id, { composition: on ? (shot.composition ?? []).filter((x) => x !== c) : [...(shot.composition ?? []), c] })} /> {c}</label>; })}</div>
+              </Fold>
+              <Fold title="Blocking" hint={shot.screenDir === "L>R" ? "facing right" : shot.screenDir === "R>L" ? "facing left" : "neutral"} id="blocking">
+                <div className="seg wide" role="group" aria-label="Screen direction">
+                  {([["neutral", "Neutral"], ["L>R", "Facing right"], ["R>L", "Facing left"]] as const).map(([v, label]) => <button key={v} className={(shot.screenDir ?? "neutral") === v ? "on" : ""} aria-pressed={(shot.screenDir ?? "neutral") === v} onClick={() => update(shot.id, { screenDir: v as ScreenDir })}>{label}</button>)}
+                </div>
+              </Fold>
+              <Fold title="Cast and wardrobe" hint={`${shot.assetIds.filter((id) => characters.some((c) => c.id === id)).length} in shot`} defaultOpen id="cast">
+                <div className="dr-tiles">{characters.map((c) => { const on = shot.assetIds.includes(c.id); return <button key={c.id} className={on ? "on" : ""} aria-pressed={on} onClick={() => update(shot.id, { assetIds: on ? shot.assetIds.filter((x) => x !== c.id) : [...shot.assetIds, c.id], focusAssetId: shot.focusAssetId ?? c.id })}>{on && <Check size={13} />} {c.name}</button>; })}</div>
                 {shot.assetIds.filter((id) => characters.some((c) => c.id === id)).map((id) => { const c = characters.find((x) => x.id === id)!; const looks = ["Canonical", ...new Set((analysis.story?.variants ?? []).filter((v) => v.character.toUpperCase() === c.name.toUpperCase()).map((v) => v.value))]; return <label key={id} className="dr-look"><span>{c.name} wears</span><select value={shot.looks?.[id] ?? "Canonical"} onChange={(e) => update(shot.id, { looks: { ...(shot.looks ?? {}), [id]: e.target.value } })}>{looks.map((l) => <option key={l}>{l}</option>)}</select></label>; })}
                 <label className="dr-look"><span>Set</span><select value={shot.setAssetId ?? ""} onChange={(e) => update(shot.id, { setAssetId: e.target.value || undefined, assetIds: [...shot.assetIds.filter((x) => !sets.some((s) => s.id === x)), ...(e.target.value ? [e.target.value] : [])] })}><option value="">None</option>{sets.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-              </fieldset>
-              <label><span>Action</span><textarea rows={3} value={shot.action} onChange={(e) => update(shot.id, { action: e.target.value })} /></label>
-              <div className="dr-two">
-                <label><span>Speaker</span><input value={shot.speaker} onChange={(e) => update(shot.id, { speaker: e.target.value.toUpperCase() })} /></label>
+              </Fold>
+              <Fold title="Lighting" hint={shot.lighting ? "set" : "from the scene"} id="lighting">
+                <label><span>Time of day, style, atmosphere</span><input value={shot.lighting} onChange={(e) => update(shot.id, { lighting: e.target.value })} placeholder="e.g. warm low sun, soft haze" /></label>
+              </Fold>
+              <Fold title="Performance" hint={shot.emotion ?? "neutral"} id="performance">
+                <label><span>Action</span><textarea rows={3} value={shot.action} onChange={(e) => update(shot.id, { action: e.target.value })} /></label>
                 <label><span>Feeling</span><select value={shot.emotion ?? "neutral"} onChange={(e) => update(shot.id, { emotion: e.target.value })}>{emotions.map((e) => <option key={e}>{e}</option>)}</select></label>
-              </div>
-              <label><span>Dialogue (from the script)</span><textarea rows={2} value={shot.dialogue} onChange={(e) => update(shot.id, { dialogue: e.target.value })} /></label>
-              <label><span>Lighting</span><input value={shot.lighting} onChange={(e) => update(shot.id, { lighting: e.target.value })} /></label>
-              <label><span>Sound</span><input value={shot.soundEffects} onChange={(e) => update(shot.id, { soundEffects: e.target.value })} placeholder="Sound effects, ambience, silence" /></label>
+                <label><span>Acting direction</span><input value={shot.facialActing} onChange={(e) => update(shot.id, { facialActing: e.target.value })} /></label>
+                <label><span>Micro-animation</span><input value={shot.microAnimation} onChange={(e) => update(shot.id, { microAnimation: e.target.value })} /></label>
+              </Fold>
+              <Fold title="Audio" hint={shot.dialogue ? "dialogue" : "none"} id="audio">
+                <div className="dr-two">
+                  <label><span>Speaker</span><input value={shot.speaker} onChange={(e) => update(shot.id, { speaker: e.target.value.toUpperCase() })} /></label>
+                  <label><span>Music</span><input value={shot.music} onChange={(e) => update(shot.id, { music: e.target.value })} /></label>
+                </div>
+                <label><span>Dialogue (from the script)</span><textarea rows={2} value={shot.dialogue} onChange={(e) => update(shot.id, { dialogue: e.target.value })} /></label>
+                <label><span>Sound effects</span><input value={shot.soundEffects} onChange={(e) => update(shot.id, { soundEffects: e.target.value })} placeholder="Sound effects, silence" /></label>
+                <label><span>Ambience</span><input value={shot.ambience} onChange={(e) => update(shot.id, { ambience: e.target.value })} /></label>
+              </Fold>
             </>
           )}
         </aside>

@@ -50,7 +50,7 @@ describe('Directors room', () => {
     fireEvent.click(screen.getByRole('button', { name: /plan all scenes/i }))
     await waitFor(() => expect(latest.shots.length).toBeGreaterThan(8))
     const first = latest.shots[0]
-    const size = (await screen.findAllByLabelText(/^size$/i))[0] as HTMLSelectElement
+    const size = (await screen.findAllByLabelText(/^shot size$/i))[0] as HTMLSelectElement
     fireEvent.change(size, { target: { value: 'CU' } })
     const edited = latest.shots.find((s) => s.id === first.id)!
     expect(edited).toMatchObject({ size: 'CU', lens: 85, cameraFraming: 'Close-up' })
