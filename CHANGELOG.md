@@ -17,6 +17,11 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.5
+
+- Added a 100-style visual library with independent animation approaches and world treatments.
+- Added style-bible controls for movement language and world coherence.
+
 # 0.14.4
 
 - Expanded the project style library with animation, anime-inspired, stop-motion, graphic, futuristic, fantasy, architectural, and editorial families.

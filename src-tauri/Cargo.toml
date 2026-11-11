@@ -1,6 +1,6 @@
 [package]
 name = "production-guy"
-version = "0.14.4"
+version = "0.14.5"
 description = "Your AI Production Department"
 authors = ["Production One"]
 edition = "2021"

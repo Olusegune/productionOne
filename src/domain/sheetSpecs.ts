@@ -1,6 +1,6 @@
 import type { ExtractedAsset } from './productionStudio'
 import { artifactGuidance } from './cleanGuidance'
-import type { SheetType, StyleBible } from './visualDevelopment'
+import { styleGuidance, type SheetType, type StyleBible } from './visualDevelopment'
 import type { ExpressionNeed } from '../engine/emotion'
 
 /** One separate image inside a reference sheet. Each view is generated and saved as its own original-resolution file. */
@@ -112,7 +112,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
     view.instruction,
     notes ? `Production notes: ${notes}` : '',
-    `Visual style: ${style.name}. ${style.description} Materials: ${style.materials}. Rendering: ${style.rendering}. Lighting: ${style.lighting}.`,
+    `Visual style bible: ${styleGuidance(style)}.`,
     'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',
     asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
     view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',

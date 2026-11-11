@@ -1,5 +1,5 @@
 import { Lock, LockOpen, Palette } from 'lucide-react'
-import { stylePresets, type StyleBible } from '../domain/visualDevelopment'
+import { animationApproaches, stylePresets, worldTreatments, type StyleBible } from '../domain/visualDevelopment'
 
 interface Props { style: StyleBible; onChange: (style: StyleBible) => void; sheetCount: number }
 
@@ -31,6 +31,8 @@ export function ArtDirectionBar({ style, onChange }: Props) {
       <div className="ad-fields">
         <label><span>Creative direction</span><input value={style.description} disabled={style.locked} onChange={(e) => patch({ description: e.target.value })} /></label>
         <label><span>Materials</span><input value={style.materials} disabled={style.locked} onChange={(e) => patch({ materials: e.target.value })} /></label>
+        <label><span>Animation approach</span><select value={style.animationApproach ?? ''} disabled={style.locked} onChange={(e) => patch({ animationApproach: e.target.value })}><option value="">Choose movement language</option>{animationApproaches.map(item => <option key={item}>{item}</option>)}</select></label>
+        <label><span>World treatment</span><select value={style.worldTreatment ?? ''} disabled={style.locked} onChange={(e) => patch({ worldTreatment: e.target.value })}><option value="">Choose world treatment</option>{worldTreatments.map(item => <option key={item}>{item}</option>)}</select></label>
       </div>
     </section>
   )
