@@ -17,6 +17,11 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.9
+
+- Added Character Bible navigation linking identity, turnaround, poses, expressions, wardrobe, details, motion, and voice.
+- Character Bible tabs drive the separate sheet generator while sharing the approved identity anchor.
+
 # 0.14.8
 
 - Added broad aspect-ratio selection for storyboard and video workflows, including 21:9 and 2.39:1 cinema formats.

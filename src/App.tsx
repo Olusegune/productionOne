@@ -23,6 +23,7 @@ import {
 import { BrandMark } from "./components/BrandMark";
 import { ArtDirectionBar } from "./components/ArtDirectionBar";
 import { AssetLab } from "./components/AssetLab";
+import { CharacterBible } from "./components/CharacterBible";
 import { ScriptTemplatePicker } from "./components/ScriptTemplatePicker";
 import { EditableInventory } from "./components/EditableInventory";
 import { projectStore, studioStore, type StudioState } from "./data/projectStore";
@@ -60,6 +61,7 @@ import {
   defaultStyleBible,
   planAssetSheets,
   recommendModels,
+  type SheetType,
   type StyleBible,
 } from "./domain/visualDevelopment";
 import "./styles.css";
@@ -175,6 +177,7 @@ export default function App() {
     [animaticPlaying, setAnimaticPlaying] = useState(false),
     [animaticTime, setAnimaticTime] = useState(0);
   const [styleBible, setStyleBible] = useState<StyleBible>(defaultStyleBible);
+  const [focusSheetType, setFocusSheetType] = useState<SheetType | undefined>();
   const [promptMode, setPromptMode] =
     useState<keyof PromptPackage>("universal");
   const [openAiConfigured, setOpenAiConfigured] = useState(false),
@@ -1374,6 +1377,7 @@ export default function App() {
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
               notify={setNotice}
             />
+            <CharacterBible asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} />
             <SheetStudio
               assets={analysis.assets}
               scenes={analysis.scenes}
@@ -1391,6 +1395,7 @@ export default function App() {
               controlRef={studioControl}
               refs={assetRefs}
               setRefs={setAssetRefs}
+              focusSheetType={focusSheetType}
             />
             <MotionDemo
               asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}

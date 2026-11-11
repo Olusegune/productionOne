@@ -2,7 +2,7 @@
 
 ## Current state
 
-Current release: 0.14.5. This release includes the Asset Lab Golden Path with Identity, Motion, Interaction, Sound, and Continuity modes for characters, costumes, props, sets, and environments. It also includes editable asset prompts, motion/interaction/sound direction, character identity fields (age, gender, race, ethnicity, role), image/video model-purpose selection, and the 100-style visual library with independent animation and world-treatment controls.
+Current release: 0.14.9. This release includes the Character Bible with linked Identity, Turnaround, Poses, Expressions, Wardrobe, Details, Motion video, and Voice sections, plus the Asset Lab Golden Path with Identity, Motion, Interaction, Sound, and Continuity modes for characters, costumes, props, sets, and environments. It also includes editable asset prompts, motion/interaction/sound direction, character identity fields (age, gender, race, ethnicity, role), image/video model-purpose selection, aspect-ratio selection, and the expanded visual library with independent animation and world-treatment controls.
 
 Production One is a Tauri 2 + React + TypeScript + Rust desktop asset-preparation studio. It analyzes scripts, plans references, queues image work, supports technical/creative review, and exports production packages. It does not render finished films.
 

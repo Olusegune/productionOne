@@ -93,8 +93,9 @@ export function SheetStudio(props: {
   setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void } | null };
+  focusSheetType?: SheetType;
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, refs, setRefs } = props;
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, refs, setRefs, focusSheetType } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
@@ -110,6 +111,7 @@ export function SheetStudio(props: {
   const [quality, setQuality] = useState<number | null>(null);
 
   const activeType: SheetType = sheetTypes.includes(sheetType) ? sheetType : (sheetTypes[0] ?? "Turnaround");
+  useEffect(() => { if (focusSheetType && sheetTypes.includes(focusSheetType)) setSheetType(focusSheetType); }, [focusSheetType, asset?.id]);
   const activeVariant = variants.includes(variant) ? variant : "Canonical";
   useEffect(() => { setLightbox(null); setCompare([]); }, [asset?.id, activeType, activeVariant]);
   const model: CatalogModel | undefined = catalog.find((m) => m.provider === provider && m.id === modelId);
