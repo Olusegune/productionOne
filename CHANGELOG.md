@@ -17,6 +17,15 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.10
+
+## UI/UX: calm studio pass
+
+- Reduced shell, panel, rail, and action density so the selected asset and next action lead.
+- Added responsive workspace collapse rules for narrower windows.
+- Made Character Bible sections horizontally scrollable instead of wrapping into a busy control wall.
+- Tightened Design workspace columns, spacing, shadows, and sheet-card density.
+
 # 0.14.9
 
 - Added Character Bible navigation linking identity, turnaround, poses, expressions, wardrobe, details, motion, and voice.
