@@ -17,6 +17,11 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.4
+
+- Expanded the project style library with animation, anime-inspired, stop-motion, graphic, futuristic, fantasy, architectural, and editorial families.
+- Made the project-wide style bible explicitly flow into assets, motion, storyboards, and delivery.
+
 # 0.14.3
 
 - Added Asset Lab Golden Path for identity, motion, interaction, sound, and continuity.

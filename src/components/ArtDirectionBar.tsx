@@ -11,7 +11,7 @@ export function ArtDirectionBar({ style, onChange }: Props) {
       <div className="ad-head">
         <Palette size={18} />
         <div className="ad-name">
-          <span>Visual style · version {style.revision}</span>
+          <span>Visual style · {stylePresets.length} presets · version {style.revision}</span>
           <select aria-label="Choose a style preset" value={stylePresets.findIndex((preset) => preset.name === style.name)} disabled={style.locked} onChange={(e) => { const preset = stylePresets[Number(e.target.value)]; if (preset) onChange({ ...preset, locked: false, revision: style.revision + 1 }) }}>
             <option value={-1}>Custom style</option>
             {stylePresets.map((preset, index) => <option key={preset.name} value={index}>{preset.name}</option>)}
@@ -27,6 +27,7 @@ export function ArtDirectionBar({ style, onChange }: Props) {
           {style.locked ? <Lock size={14} /> : <LockOpen size={14} />} {style.locked ? 'Locked' : 'Lock style'}
         </button>
       </div>
+      <p className="ad-coherence">Project-wide visual bible: the selected style flows into characters, costumes, props, sets, storyboards, motion prompts, and delivery packages.</p>
       <div className="ad-fields">
         <label><span>Creative direction</span><input value={style.description} disabled={style.locked} onChange={(e) => patch({ description: e.target.value })} /></label>
         <label><span>Materials</span><input value={style.materials} disabled={style.locked} onChange={(e) => patch({ materials: e.target.value })} /></label>
