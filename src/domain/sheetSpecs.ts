@@ -10,8 +10,11 @@ export interface ViewSpec {
   instruction: string
   /** True when the whole figure must be inside the frame, so QA can flag a cropped head or feet. */
   fullBody: boolean
-  aspect: '1:1' | '3:4' | '4:3' | '16:9'
+  aspect: string
 }
+
+/** Common delivery and reference-sheet canvases, including cinema, broadcast, print and social formats. */
+export const aspectRatios = ['21:9', '2.39:1', '2:1', '16:9', '3:2', '4:3', '5:4', '1:1', '4:5', '3:4', '2:3', '9:16'] as const
 
 export type Intensity = 'subtle' | 'moderate' | 'exaggerated'
 export const intensities: Intensity[] = ['subtle', 'moderate', 'exaggerated']
@@ -39,10 +42,13 @@ const characterViews: Partial<Record<SheetType, ViewSpec[]>> = {
     full('rear', 'Rear', 'Full body standing REAR view, same pose and scale as the front view.'),
   ],
   Poses: [
+    full('a-pose', 'Neutral A-pose', 'Full body neutral A-pose for rigging and proportion review, fingers separated, feet visible.'),
     full('standing', 'Standing', 'Full body natural standing pose, weight on one leg.'),
+    full('profile', 'Profile stance', 'Full body side-profile stance with clear silhouette and readable posture.'),
     full('walking', 'Walking', 'Full body mid-stride walking pose, readable leg and arm swing.'),
     full('running', 'Running', 'Full body running pose with believable anatomy and balance.'),
     full('sitting', 'Sitting', 'Full body seated pose on a plain stool, feet visible.'),
+    full('crouching', 'Crouching', 'Full body crouching pose with believable joint compression and grounded feet.'),
     full('gesture', 'Gesture', 'Full body pose making a clear communicative hand gesture, both hands visible.'),
   ],
   Wardrobe: [

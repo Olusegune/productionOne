@@ -40,6 +40,7 @@ export function DeliveryCenter(props: {
 }) {
   const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked } = props;
   const [videoPurpose, setVideoPurpose] = useState<VideoPurpose>("acting");
+  const [videoAspect, setVideoAspect] = useState("16:9");
   const preset = videoPresets[model];
   const name = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id;
   const kind = (id: string) => analysis.assets.find((a) => a.id === id)?.type ?? "asset";
@@ -129,8 +130,9 @@ export function DeliveryCenter(props: {
               <select value={model} onChange={(e) => setModel(e.target.value as VideoModel)}>{Object.keys(videoPresets).map((m) => <option key={m}>{m}</option>)}</select></label>
             <label><span>Video purpose</span>
               <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+            <label><span>Video aspect ratio</span><select aria-label="Choose video aspect ratio" value={videoAspect} onChange={(e) => setVideoAspect(e.target.value)}>{preset.aspectRatios.map(ratio => <option key={ratio}>{ratio}</option>)}</select></label>
           </div>
-          <div className="video-model-card"><b>{preset.provider} · {preset.model}</b><span>{preset.tasks.join(' · ')}</span><small>{preset.note}</small></div>
+          <div className="video-model-card"><b>{preset.provider} · {preset.model} · {videoAspect}</b><span>{preset.tasks.join(' · ')}</span><small>{preset.note}</small></div>
           <ul className="dc-caps">
             <li className={refsOver ? "bad" : "ok"}>{refsOver ? <AlertTriangle size={14} /> : <Check size={14} />} {compiled.references.length} of {preset.maxReferences} references</li>
             <li className="ok"><Check size={14} /> {preset.supportsAudio ? "Model audio" : "Audio added in post"}</li>

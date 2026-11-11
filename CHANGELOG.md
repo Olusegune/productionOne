@@ -17,6 +17,11 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.8
+
+- Added broad aspect-ratio selection for storyboard and video workflows, including 21:9 and 2.39:1 cinema formats.
+- Expanded character pose sheets with neutral A-pose, profile, crouch, walk, run, sit, and gesture views.
+
 # 0.14.7
 
 - Added provider-aware video model catalog for Kie.ai, Gemini, and fal.ai.
