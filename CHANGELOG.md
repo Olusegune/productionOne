@@ -17,6 +17,11 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.6
+
+- Replaced the oversized native style dropdown with a searchable, grouped visual-style browser.
+- Added category filtering and style descriptions for faster selection.
+
 # 0.14.5
 
 - Added a 100-style visual library with independent animation approaches and world treatments.
