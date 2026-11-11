@@ -23,6 +23,14 @@ export const defaultStyleBible: StyleBible = {
   revision: 1,
 }
 
+export const stylePresets: StyleBible[] = [
+  defaultStyleBible,
+  { name: 'Watercolor Storybook', description: 'Hand-painted storybook shapes, soft edges, visible pigment variation, and expressive simplified forms.', palette: ['#203447', '#d9b77b', '#91a9a3', '#efe1bd'], materials: 'Paper grain, watercolor wash, dry-brush edges', rendering: 'Hand-painted 2D watercolor illustration', lighting: 'Soft neutral reference light; preserve paper texture', locked: false, revision: 1 },
+  { name: 'Stylized 3D Feature', description: 'Appealing stylized proportions, clear silhouettes, polished shapes, and controlled cinematic staging.', palette: ['#17202b', '#e2a75e', '#5d8791', '#e6d4b2'], materials: 'Painted resin, cloth, brushed metal, soft matte surfaces', rendering: 'Stylized 3D feature animation visual development', lighting: 'Neutral reference light with motivated story accents', locked: false, revision: 1 },
+  { name: 'Graphic Novel Noir', description: 'Strong silhouette design, graphic shadow shapes, selective color, and expressive ink linework.', palette: ['#101318', '#e1c27a', '#7a3030', '#c8c9c2'], materials: 'Ink, paper, halftone grain, dry brush', rendering: 'Graphic novel ink and selective color', lighting: 'High-contrast neutral reference lighting; hard motivated shadows', locked: false, revision: 1 },
+  { name: 'Documentary Naturalism', description: 'Observed human detail, authentic locations, restrained composition, and natural imperfections.', palette: ['#252a29', '#c8a66a', '#7b887d', '#ddd6c7'], materials: 'Worn wood, natural fiber, practical metal, weathered paint', rendering: 'Naturalistic documentary visual development', lighting: 'Available light and neutral technical references', locked: false, revision: 1 },
+]
+
 export type SheetType = 'Identity'|'Turnaround'|'Expressions'|'Poses'|'Wardrobe'|'Detail'|'Multi-view'|'Functional'|'Establishing'|'Interior'|'Exterior'|'Layout'|'Lighting'
 export interface SheetPlan { id:string; assetId:string; type:SheetType; variant:string; required:boolean; status:'planned'|'approved'|'waived' }
 

@@ -258,7 +258,7 @@ export function SheetStudio(props: {
           <label><span>Intensity</span>
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>{intensities.map((i) => <option key={i}>{i}</option>)}</select></label>
         )}
-        <label className="ss-model"><span>Model</span>
+        <label className="ss-model"><span>Image model · reference sheets</span>
           <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={choice.pick} onRefresh={() => void refreshModels()} refreshing={refreshing} />
         </label>
         <div className="seg" role="group" aria-label="Preview size">

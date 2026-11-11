@@ -9,6 +9,15 @@ export interface ExtractedAsset {
   type: AssetType
   sceneIds: string[]
   status: 'planned' | 'approved'
+  /** Optional, user-confirmed character identity fields. Empty means unknown, never guessed. */
+  age?: string
+  gender?: string
+  race?: string
+  ethnicity?: string
+  role?: string
+  motionDirection?: string
+  interactionDirection?: string
+  soundDirection?: string
   prompt?: string
 }
 
@@ -56,8 +65,13 @@ export interface PromptPackage {
 
 export function compileAssetPrompt(asset: ExtractedAsset, style: string): PromptPackage {
   const identity = `${asset.type} ${asset.name}`
+  const identityNotes = asset.type === 'character'
+    ? [asset.age && `age ${asset.age}`, asset.gender, asset.race, asset.ethnicity, asset.role].filter(Boolean).join(', ')
+    : ''
+  const identityLine = identityNotes ? `Character identity notes: ${identityNotes}.` : ''
+  const universal = asset.prompt?.trim() || `Create a production-ready ${identity}. Preserve canonical identity across every view. ${style}. Neutral reference lighting, clean background, accurate materials, complete silhouette, no embedded text.`
   return {
-    universal: `Create a production-ready ${identity}. Preserve canonical identity across every view. ${style}. Neutral reference lighting, clean background, accurate materials, complete silhouette, no embedded text.`,
+    universal: `${universal}${identityLine ? ` ${identityLine}` : ''}`,
     compact: `${identity}, ${style}, production reference, neutral lighting, consistent identity, clean background`,
     technical: `${identity}. Orthographic reference presentation; front, three-quarter, side, and rear views; consistent scale and proportions; neutral 5500K lighting; uncluttered graphite-gray background; artwork only.`,
     negative: 'embedded labels, watermark, cropped subject, duplicate limbs, inconsistent costume, dramatic color cast, heavy bloom, illegible details',

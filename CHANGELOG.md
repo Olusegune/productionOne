@@ -13,3 +13,23 @@
 Local AI: Ollama, LM Studio and ComfyUI detection; one-click ComfyUI install; local image and video workflows; AI beat pass.
 
 Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md).
+# Unreleased
+
+- Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
+- Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.3
+
+- Added Asset Lab Golden Path for identity, motion, interaction, sound, and continuity.
+- Added asset-specific motion studies for characters, costumes, props, sets, and environments.
+- Added editable motion, interaction, sound, and character identity direction.
+
+# 0.14.2
+
+- Added Story workspace script templates for screenplay, Fountain, narrated prose/PDF, and shot-list workflows.
+- Improved guidance for structured extraction of characters, scenes, sets, and props.
+
+# 0.14.1
+
+- Replaced the startup splash artwork with a production-design studio composition that avoids prominent generated hands and faces.
+- Preserved the previous splash as `public/splash-v1.jpg`.
+

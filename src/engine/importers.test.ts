@@ -52,4 +52,15 @@ describe('script importers', () => {
     expect(convertScript('text', 'INT. A - DAY\n\nHi.').text).toContain('INT. A - DAY')
     expect(convertScript('docx', 'INT. A - DAY\nANNA\nHi.').text).toContain('\n\nANNA')
   })
+  it('parses narrated PDF-style bracketed acts into sections and recurring characters', () => {
+    const s = parseStory(`[OPENING]\nA boy named Beau lived above a laundromat. His mother sang hymns. Beau loved Jesus. Jesus was his hope.\n\n[ACT ONE – THE PREACHER]\nBeau became Bishop Beaumont. Bishop Bling Bling preached to crowds. Bishop Bling Bling gathered crowds. His wife warned him.\n\n[ENDING]\nBeau returned home.`)
+    expect(s.scenes.map((scene) => scene.heading)).toEqual(['OPENING', 'ACT ONE – THE PREACHER', 'ENDING'])
+    expect(s.characters.map((character) => character.name)).toEqual(expect.arrayContaining(['BEAU', 'JESUS', 'BISHOP BLING BLING']))
+    expect(s.scenes.length).toBe(3)
+  })
+  it('does not promote ordinary sentence words into characters or create a front-matter scene', () => {
+    const s = parseStory(`BISHOP BLING BLING\nThe Pastor Who Lost Jesus\n\n[OPENING]\nBeau was sincere. Not because he was impressive. Because he was sincere. Another crowd watched Beau.\n\n[ENDING]\nBeau came home.`)
+    expect(s.scenes.map((scene) => scene.heading)).toEqual(['OPENING', 'ENDING'])
+    expect(s.characters.map((character) => character.name)).toEqual(['BEAU'])
+  })
 })

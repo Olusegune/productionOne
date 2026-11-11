@@ -52,3 +52,7 @@ Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_P
 - AI images can have wrong hands, drifting faces and plastic skin. Production One reduces these (prompt guidance, anchors, checks) and tells you when a filter cannot help; it does not remove them.
 - Cloud generation costs money at your provider. Production One never states prices; set your own cap if you want one.
 - The installer is not code-signed yet, so Windows SmartScreen may warn on first run.
+
+### Delivery modes
+
+Desktop package export is explicit: incomplete projects are exported as `draft` and include an incomplete-reference report. A `verified` export is rejected when referenced media is missing, and deliveries never silently overwrite an earlier ZIP. The app validates the manifest and required package records; provider billing and remote-task reconciliation remain provider-dependent.

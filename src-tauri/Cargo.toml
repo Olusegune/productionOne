@@ -1,6 +1,6 @@
 [package]
 name = "production-guy"
-version = "0.14.0"
+version = "0.14.3"
 description = "Your AI Production Department"
 authors = ["Production One"]
 edition = "2021"
@@ -28,6 +28,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 font8x8 = "0.3"
 base64 = "0.22"
 zip = { version = "4", default-features = false, features = ["deflate"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 [profile.release]
 panic = "abort"

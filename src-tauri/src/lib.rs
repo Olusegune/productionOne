@@ -6,6 +6,7 @@ mod local;
 mod script_file;
 mod cleanrender;
 mod comfy_install;
+mod ledger;
 use std::{fs, path::PathBuf};
 use tauri::{Emitter, Manager};
 use serde_json::{json, Value};
@@ -24,6 +25,16 @@ fn project_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 
 fn studio_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path().app_data_dir().map(|path| path.join("production-state.pguy.json")).map_err(|error| error.to_string())
+}
+
+fn ledger_path(app: &tauri::AppHandle) -> Result<PathBuf, String> { app.path().app_data_dir().map(|path| path.join("production-ledger.sqlite")).map_err(|error| error.to_string()) }
+
+#[tauri::command]
+fn ledger_append(app: tauri::AppHandle, project_id: String, job_id: String, attempt_id: String, kind: String, provider: String, model: String, input_revision: String, request_fingerprint: String, provider_task_id: Option<String>, detail: Option<String>) -> Result<i64, String> {
+    let path = ledger_path(&app)?;
+    if let Some(parent) = path.parent() { fs::create_dir_all(parent).map_err(|error| error.to_string())?; }
+    let connection = ledger::open(&path).map_err(|error| error.to_string())?;
+    ledger::append(&connection, &ledger::LedgerEvent { id: 0, project_id, job_id, attempt_id, kind, provider, model, input_revision, request_fingerprint, provider_task_id, detail, created_at: ledger::now() }).map_err(|error| error.to_string())
 }
 
 fn read_optional(path: PathBuf) -> Result<Option<String>, String> {
@@ -273,25 +284,35 @@ fn write_prompt_archive(output_path: &std::path::Path, entries: &[PromptArchiveE
 }
 
 #[derive(Deserialize)]
-struct ProductionPackageInput { manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String> }
+struct ProductionPackageInput { manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String }
 
 #[tauri::command]
-fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>) -> Result<String, String> {
+fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String) -> Result<String, String> {
     let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Exports");
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
     let safe_name = safe_package_name(&package_name);
     if safe_name.is_empty() { return Err("Package name is required".to_string()); }
-    let output_path = export_dir.join(format!("{safe_name}.zip"));
-    let input = ProductionPackageInput { manifest, asset_ledger_csv, style_bible, model_usage, prompt, reference_paths };
+    let mut output_path = export_dir.join(format!("{safe_name}.zip"));
+    if output_path.exists() {
+        let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|error| error.to_string())?.as_secs();
+        output_path = export_dir.join(format!("{safe_name}-{stamp}.zip"));
+    }
+    let input = ProductionPackageInput { manifest, asset_ledger_csv, style_bible, model_usage, prompt, reference_paths, export_mode };
     write_production_package(&output_path, &input)?;
     Ok(output_path.to_string_lossy().to_string())
 }
 
 fn write_production_package(output_path: &std::path::Path, input: &ProductionPackageInput) -> Result<(), String> {
-    serde_json::from_str::<Value>(&input.manifest).map_err(|error| format!("Asset manifest is invalid: {error}"))?;
+    let manifest: Value = serde_json::from_str(&input.manifest).map_err(|error| format!("Asset manifest is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.style_bible).map_err(|error| format!("Style Bible is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.model_usage).map_err(|error| format!("Model usage record is invalid: {error}"))?;
-    let file = fs::File::create(output_path).map_err(|error| error.to_string())?;
+    if input.export_mode != "draft" && input.export_mode != "verified" { return Err("Export mode must be draft or verified".to_string()); }
+    if input.export_mode == "verified" && manifest.get("status").and_then(Value::as_str) != Some("production-ready") { return Err("Verified package requires a production-ready manifest".to_string()); }
+    let missing: Vec<&String> = input.reference_paths.iter().filter(|source_path| !std::path::Path::new(source_path.as_str()).is_file()).collect();
+    if input.export_mode == "verified" && !missing.is_empty() { return Err(format!("Verified package has missing references: {}", missing.iter().map(|p| p.as_str()).collect::<Vec<_>>().join(", "))); }
+    let incomplete = if missing.is_empty() { "None".to_string() } else { missing.iter().map(|p| p.as_str()).collect::<Vec<_>>().join("\n") };
+    let temporary = output_path.with_extension("zip.tmp");
+    let file = fs::File::create(&temporary).map_err(|error| error.to_string())?;
     let mut archive = zip::ZipWriter::new(file);
     let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     for directory in ["Project Bible/","Characters/","Expressions/","Poses/","Wardrobe/","Props/","Environments/","Vehicles and Creatures/","Lighting and FX/","Choreography/","Style References/","Prompts/","Manifests/","Approved References/"] { archive.add_directory(directory, options).map_err(|error| error.to_string())?; }
@@ -301,7 +322,7 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
         ("Project Bible/style_bible.json", input.style_bible.as_str()),
         ("Manifests/model_usage.json", input.model_usage.as_str()),
         ("Prompts/shot-prompt.txt", input.prompt.as_str()),
-        ("production_readme.md", "# Production One Package\n\nOriginal-resolution approved references, production metadata, and model-aware prompts. IDs remain stable across revisions.\n"),
+        ("production_readme.md", &format!("# Production One Package\n\nExport mode: {}\n\nIncomplete references:\n{}\n", input.export_mode, incomplete)),
     ];
     for (name, contents) in files { archive.start_file(name, options).map_err(|error| error.to_string())?; archive.write_all(contents.as_bytes()).map_err(|error| error.to_string())?; }
     for (index, source_path) in input.reference_paths.iter().enumerate() {
@@ -316,6 +337,8 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
         archive.write_all(&buffer).map_err(|error| error.to_string())?;
     }
     archive.finish().map_err(|error| error.to_string())?;
+    if output_path.exists() { return Err("Refusing to overwrite an existing delivery".to_string()); }
+    fs::rename(&temporary, output_path).map_err(|error| error.to_string())?;
     let file = fs::File::open(output_path).map_err(|error| error.to_string())?;
     let mut validation = zip::ZipArchive::new(file).map_err(|error| format!("Package validation failed: {error}"))?;
     for required in ["Manifests/asset_manifest.json","Manifests/asset_ledger.csv","Project Bible/style_bible.json","Manifests/model_usage.json","Prompts/shot-prompt.txt","production_readme.md"] { validation.by_name(required).map_err(|_| format!("Package validation failed: missing {required}"))?; }
@@ -370,7 +393,7 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }
@@ -472,7 +495,7 @@ mod tests {
     #[test]
     fn production_zip_is_validated_and_contains_interchange_records() {
         let path = std::env::temp_dir().join(format!("production-one-package-{}.zip", std::process::id()));
-        let input = super::ProductionPackageInput { manifest: "{\"format\":\"production-one-package\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![] };
+        let input = super::ProductionPackageInput { manifest: "{\"format\":\"production-one-package\",\"status\":\"production-ready\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![], export_mode: "verified".into() };
         super::write_production_package(&path, &input).unwrap();
         let file = std::fs::File::open(&path).unwrap();
         let mut archive = zip::ZipArchive::new(file).unwrap();
@@ -481,6 +504,15 @@ mod tests {
         assert!(archive.by_name("production_readme.md").is_ok());
         drop(archive);
         std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn verified_package_rejects_incomplete_manifest() {
+        let path = std::env::temp_dir().join(format!("production-one-incomplete-{}.zip", std::process::id()));
+        let input = super::ProductionPackageInput { manifest: "{\"status\":\"draft-incomplete\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![], export_mode: "verified".into() };
+        let result = super::write_production_package(&path, &input);
+        assert!(result.is_err());
+        assert!(!path.exists());
     }
 
     #[test]

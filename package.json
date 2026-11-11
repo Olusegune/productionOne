@@ -1,12 +1,13 @@
 {
   "name": "production-one",
   "private": true,
-  "version": "0.14.0",
+  "version": "0.14.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
+    "qa:accessibility": "node scripts/qa/accessibility-release.mjs",
     "test:watch": "vitest",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build"

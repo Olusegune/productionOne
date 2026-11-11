@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://production-one.local/contracts/production-one-package.schema.json",
+  "title": "Production One asset package",
+  "type": "object",
+  "required": ["format", "schemaVersion", "mode", "projectId", "entries"],
+  "properties": {
+    "format": { "const": "production-one-package" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "mode": { "enum": ["draft", "verified"] },
+    "status": { "type": "string" },
+    "projectId": { "type": "string", "minLength": 1 },
+    "entries": { "type": "array", "items": { "type": "object", "required": ["id", "relativePath", "approved", "required"], "properties": { "id": { "type": "string" }, "relativePath": { "type": "string" }, "sha256": { "type": "string" }, "size": { "type": "integer", "minimum": 0 }, "approved": { "type": "boolean" }, "stale": { "type": "boolean" }, "required": { "type": "boolean" } } } }
+  }
+}

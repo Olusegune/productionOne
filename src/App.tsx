@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { BrandMark } from "./components/BrandMark";
 import { ArtDirectionBar } from "./components/ArtDirectionBar";
+import { AssetLab } from "./components/AssetLab";
+import { ScriptTemplatePicker } from "./components/ScriptTemplatePicker";
 import { EditableInventory } from "./components/EditableInventory";
 import { projectStore, studioStore, type StudioState } from "./data/projectStore";
 import { demoGraph } from "./domain/demoGraph";
@@ -895,7 +897,7 @@ export default function App() {
     ].join("\n");
     const { invoke } = await import("@tauri-apps/api/core");
     const path = await invoke<string>("export_production_package", {
-      packageName: `The-Last-Horizon-${activeShot.id}`,
+      packageName: `${title || "production-one"}-${activeShot.id}`,
       manifest: JSON.stringify(packageManifest, null, 2),
       assetLedgerCsv: ledger,
       styleBible: JSON.stringify(styleBible, null, 2),
@@ -915,6 +917,7 @@ export default function App() {
       ),
       prompt: compiled.prompt,
       referencePaths: Object.values(assetOutputs),
+      exportMode: audit.ready ? "verified" : "draft",
     });
     setNotice(
       `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
@@ -1318,6 +1321,13 @@ export default function App() {
                   </button>
                 </div>
               </div>
+              <ScriptTemplatePicker
+                onUse={(text) => {
+                  setScript(text);
+                  setNotice("Template loaded. Review it before analyzing.");
+                }}
+                notify={setNotice}
+              />
               <textarea
                 ref={scriptArea}
                 className="script-editor"
@@ -1358,6 +1368,11 @@ export default function App() {
               style={styleBible}
               onChange={setStyleBible}
               sheetCount={plannedSheets.length}
+            />
+            <AssetLab
+              asset={analysis.assets[selectedAsset]}
+              onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
+              notify={setNotice}
             />
             <SheetStudio
               assets={analysis.assets}
@@ -1464,7 +1479,7 @@ export default function App() {
                     </div>
                     <div className="prompt-box">
                       <span>{promptMode.toUpperCase()} PROMPT</span>
-                      <p>{activePromptPackage[promptMode]}</p>
+                      {promptMode === "universal" ? <textarea className="asset-prompt-editor" aria-label="Editable asset prompt" value={activePromptPackage[promptMode]} onChange={(e) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item, index) => index === selectedAsset ? { ...item, prompt: e.target.value } : item) }))} /> : <p>{activePromptPackage[promptMode]}</p>}
                     </div>
                     <div className="prompt-actions">
                       <button className="secondary" onClick={copyPrompt}>
@@ -1828,6 +1843,7 @@ export default function App() {
             openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }}
             openShot={(id) => { const i = shots.findIndex((x) => x.id === id); if (i >= 0) setSelectedShot(i); setWorkspace(storyboardsEnabled ? "Direct" : "Design"); }}
             notify={setNotice}
+            styleLocked={styleBible.locked}
           />
         )}
       </main>

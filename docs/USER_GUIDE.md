@@ -42,3 +42,6 @@ Cloud models bill at the provider. The small counter in the queue dock counts re
 | Nothing generates in the browser preview | Generation runs in the Windows app. |
 | Word/PDF import says no text | The PDF is a scan; run OCR first or paste the text. |
 | ComfyUI "not running" | Open Local AI and press Start. |
+
+### Script templates
+The Story workspace includes a **Script template** chooser. Use **Screenplay** for the strongest automatic extraction of scenes, characters, sets and props; use **Fountain** for plain-text screenplay files; use **Narrated treatment / PDF prose** for scripts written as prose, sermons or bracketed acts such as *Bishop Bling Bling*; and use **Shot list / visual plan** for director coverage. The template is a starting point only: imported source text is preserved, and nothing is replaced until you choose **Use as starting point**.

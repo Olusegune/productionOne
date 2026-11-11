@@ -1,5 +1,5 @@
 import { Lock, LockOpen, Palette } from 'lucide-react'
-import type { StyleBible } from '../domain/visualDevelopment'
+import { stylePresets, type StyleBible } from '../domain/visualDevelopment'
 
 interface Props { style: StyleBible; onChange: (style: StyleBible) => void; sheetCount: number }
 
@@ -12,6 +12,10 @@ export function ArtDirectionBar({ style, onChange }: Props) {
         <Palette size={18} />
         <div className="ad-name">
           <span>Visual style · version {style.revision}</span>
+          <select aria-label="Choose a style preset" value={stylePresets.findIndex((preset) => preset.name === style.name)} disabled={style.locked} onChange={(e) => { const preset = stylePresets[Number(e.target.value)]; if (preset) onChange({ ...preset, locked: false, revision: style.revision + 1 }) }}>
+            <option value={-1}>Custom style</option>
+            {stylePresets.map((preset, index) => <option key={preset.name} value={index}>{preset.name}</option>)}
+          </select>
           <input aria-label="Style name" value={style.name} disabled={style.locked} onChange={(e) => patch({ name: e.target.value })} />
         </div>
         <div className="ad-palette" aria-label="Palette">

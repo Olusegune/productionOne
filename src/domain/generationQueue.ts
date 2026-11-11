@@ -1,6 +1,7 @@
 import { primaryViewKeys } from './sheetSpecs'
 
 export type ImageJobStatus = 'pending' | 'queued' | 'generating' | 'validating' | 'completed' | 'needs-review' | 'failed' | 'cancelled'
+export type SubmissionState = 'not-submitted' | 'intent-persisted' | 'accepted' | 'completed' | 'ambiguous' | 'failed'
 
 export interface ImageJob {
   id: string
@@ -37,6 +38,12 @@ export interface ImageJob {
   source?: 'generated' | 'supplied' | 'cleaned'
   createdAt: number
   updatedAt: number
+  /** Durable submission provenance. Optional for legacy .pone/.pguy files. */
+  attemptId?: string
+  submissionState?: SubmissionState
+  providerTaskId?: string
+  receiptAt?: number
+  recoveryNote?: string
 }
 
 export interface QueueState {
@@ -85,7 +92,7 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
     if (latest && (live.includes(latest.status) || (!force && (latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))))) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
-    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, createdAt: now, updatedAt: now }]
+    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
     added++
   }
   return { state: { ...state, jobs }, added, skipped }
@@ -183,10 +190,10 @@ export function waitingForAnchor(state: QueueState, job: ImageJob): boolean {
 const patchJob = (state: QueueState, id: string, fn: (j: ImageJob) => ImageJob): QueueState => ({ ...state, jobs: state.jobs.map((j) => (j.id === id ? fn(j) : j)) })
 
 export const markGenerating = (state: QueueState, id: string, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'queued' ? touch(j, { status: 'generating', attempts: j.attempts + 1, error: undefined, notBefore: undefined }, now) : j))
+  patchJob(state, id, (j) => (j.status === 'queued' ? touch(j, { status: 'generating', attempts: j.attempts + 1, attemptId: `${j.id}-attempt-${j.attempts + 1}`, submissionState: 'intent-persisted', error: undefined, notBefore: undefined }, now) : j))
 
 export const markValidating = (state: QueueState, id: string, file: { path: string; width: number; height: number }, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'generating' ? touch(j, { status: 'validating', outputPath: file.path, width: file.width, height: file.height }, now) : j))
+  patchJob(state, id, (j) => (j.status === 'generating' ? touch(j, { status: 'validating', submissionState: 'completed', receiptAt: now, outputPath: file.path, width: file.width, height: file.height }, now) : j))
 
 /** Validation done: any note sends the image to a person (needs-review); a clean pass still waits for approval, never auto-approves. */
 export const markValidated = (state: QueueState, id: string, notes: string[], now = Date.now()) =>
@@ -226,12 +233,14 @@ export const cancel = (state: QueueState, id: string, now = Date.now()) =>
 export const cancelAllWaiting = (state: QueueState, now = Date.now()) => ({ ...state, jobs: state.jobs.map((j) => (j.status === 'queued' || j.status === 'pending' ? touch(j, { status: 'cancelled' }, now) : j)) })
 
 export const retry = (state: QueueState, id: string, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'failed' || j.status === 'cancelled' ? touch(j, { status: 'queued', attempts: 0, error: undefined, notBefore: undefined }, now) : j))
+  // Attempts are immutable submission history. A manual retry starts a new
+  // retry cycle, but must never erase a request that may already be billable.
+  patchJob(state, id, (j) => (j.status === 'failed' || j.status === 'cancelled' ? touch(j, { status: 'queued', error: undefined, notBefore: undefined }, now) : j))
 
 /** Moves jobs that have not produced a file to another provider/model. Completed work is never reassigned. */
 export const reassignModel = (state: QueueState, ids: string[], provider: string, model: string, now = Date.now()): QueueState => ({
   ...state,
-  jobs: state.jobs.map((j) => (ids.includes(j.id) && (j.status === 'queued' || j.status === 'failed' || j.status === 'cancelled') ? touch(j, { provider, model, status: j.status === 'queued' ? 'queued' : 'queued', attempts: j.status === 'queued' ? j.attempts : 0, error: undefined }, now) : j)),
+  jobs: state.jobs.map((j) => (ids.includes(j.id) && (j.status === 'queued' || j.status === 'failed' || j.status === 'cancelled') ? touch(j, { provider, model, status: 'queued', error: undefined }, now) : j)),
 })
 
 /**
@@ -246,7 +255,7 @@ export function recover(state: QueueState, now = Date.now()): QueueState {
     paused: state.jobs.some((j) => j.status === 'generating' || j.status === 'validating') ? true : state.paused,
     jobs: state.jobs.map((j) => {
       if (j.status === 'validating') return touch(j, { status: j.outputPath ? 'needs-review' : 'queued', qaNotes: [...j.qaNotes, 'Recovered after the app closed: re-check this image.'] }, now)
-      if (j.status === 'generating') return touch(j, { status: 'queued', error: 'The app closed while this was generating. It will run again when you resume.' }, now)
+      if (j.status === 'generating') return touch(j, { status: 'failed', submissionState: 'ambiguous', recoveryNote: 'The app closed after submission intent was persisted. Reconcile the provider task before retrying; it may already be billable.', error: 'Ambiguous provider outcome after restart; reconciliation is required before retrying.' }, now)
       return j
     }),
   }
