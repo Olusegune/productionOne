@@ -17,6 +17,12 @@ Earlier releases are described in [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_
 
 - Preserved cumulative submission attempts and spending history across manual retries and model reassignment.
 - Added explicit draft/verified package export modes, missing-reference reporting, and non-overwriting atomic delivery writes.
+# 0.14.7
+
+- Added provider-aware video model catalog for Kie.ai, Gemini, and fal.ai.
+- Added task capability metadata for turnaround, acting, pose, expression, vehicles, props, cloth, dialogue, and extensions.
+- Added explicit export-only and direct-generation status messaging.
+
 # 0.14.6
 
 - Replaced the oversized native style dropdown with a searchable, grouped visual-style browser.

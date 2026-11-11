@@ -130,6 +130,7 @@ export function DeliveryCenter(props: {
             <label><span>Video purpose</span>
               <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
           </div>
+          <div className="video-model-card"><b>{preset.provider} · {preset.model}</b><span>{preset.tasks.join(' · ')}</span><small>{preset.note}</small></div>
           <ul className="dc-caps">
             <li className={refsOver ? "bad" : "ok"}>{refsOver ? <AlertTriangle size={14} /> : <Check size={14} />} {compiled.references.length} of {preset.maxReferences} references</li>
             <li className="ok"><Check size={14} /> {preset.supportsAudio ? "Model audio" : "Audio added in post"}</li>
