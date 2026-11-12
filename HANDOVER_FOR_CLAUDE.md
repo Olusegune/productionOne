@@ -99,3 +99,7 @@ Do not claim guaranteed identity consistency, artifact-free images, universal mo
 
 ## 0.18.0
 - `src/domain/identityAnchor.ts` (suggestReferenceModel, anchorStatus, anchoredPromptLine); SheetStudio Identity lock panel; `buildViewPrompt` `anchored` flag. Existing machinery: `anchorFor`, `useAnchor`, `waitingForAnchor`. Next: live test that the face holds; per-view choice of anchor; save notes with project.
+
+
+## 0.19.0
+- `src-tauri/src/voice_cloud.rs` (ElevenLabs: /v1/text-to-speech, /v1/sound-generation, /v1/text-to-voice/design + /v1/text-to-voice, /v2/voices; VoiceKiller: /api/generate-speech, /voicelist). Credential names: elevenlabs, voicekiller, voicekiller-user. UI: `VoiceCloud.tsx`; direction logic in `voiceDirection.ts` (eventTags/stateTags/tagModels/takesInstructions). All unverified live. VoiceKiller clone endpoint not wired.

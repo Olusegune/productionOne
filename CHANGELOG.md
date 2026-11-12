@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.0 (2026-11-12): ElevenLabs and VoiceKiller
+- ElevenLabs (cloud): speak lines (Eleven v3 reads inline tags such as [whispers], [laughs], [sighs]), load your voices, design a new voice from a written description then keep it, and make separate sound effects (grunts, laughs, engines) for characters and props.
+- VoiceKiller (cloud): speak lines; emotion and physical state go in its instructions field; voice list read leniently because its reply shape is not published.
+- Keys are entered by you in the Connect section and stored in the Windows Credential Manager; never shown again.
+- Direction is honest per engine: tags only where documented, otherwise listed as not applied.
+- NOT run against either live service. Calls follow the published API pages. Every action spends your credits.
+- Tests: 173 JS, 64 Rust.
+
 ## 0.18.0 (2026-11-12): reference-anchored generation made visible
 - Anchoring already existed for models that accept reference images; it was invisible and off with the default text-only model. Now the Identity lock panel opens by default, says whether the character is locked, waiting for an approved front view, or unprotected, and offers one-click "Switch to <model>" (a reference-capable model on a provider you have a key for).
 - Views that travel with the approved front view as a reference now tell the model it is the exact same subject (face, hair, skin, build, costume) and to change only the pose, angle or expression.

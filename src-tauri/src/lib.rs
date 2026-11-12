@@ -8,6 +8,7 @@ mod cleanrender;
 mod comfy_install;
 mod ledger;
 mod voice;
+mod voice_cloud;
 use std::{fs, path::PathBuf};
 use tauri::{Emitter, Manager};
 use serde_json::{json, Value};
@@ -80,7 +81,7 @@ fn save_prompt_package(app: tauri::AppHandle, asset_id: String, contents: String
 }
 
 fn credential(provider: &str) -> Result<keyring::Entry, String> {
-    if !matches!(provider, "kie" | "fal" | "openai" | "google" | "openrouter") {
+    if !matches!(provider, "kie" | "fal" | "openai" | "google" | "openrouter" | "elevenlabs" | "voicekiller" | "voicekiller-user") {
         return Err("Unsupported provider".to_string());
     }
     keyring::Entry::new(CREDENTIAL_SERVICE, provider).map_err(|error| error.to_string())
@@ -107,7 +108,9 @@ fn key_shape_problem(provider: &str, key: &str) -> Option<String> {
 #[tauri::command]
 fn save_credential(provider: String, api_key: String) -> Result<(), String> {
     let key = api_key.trim();
-    if key.len() < 8 { return Err("API key is too short".to_string()); }
+    // A VoiceKiller user id is short; every real API key is longer than eight characters.
+    let min = if provider == "voicekiller-user" { 1 } else { 8 };
+    if key.len() < min { return Err("API key is too short".to_string()); }
     if let Some(problem) = key_shape_problem(&provider, key) { return Err(problem); }
     credential(&provider)?.set_password(key).map_err(|error| error.to_string())
 }
@@ -394,7 +397,7 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }

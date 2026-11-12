@@ -3,6 +3,8 @@ import { buildPerformance, emptyDirection, performanceBrief, providerById } from
 
 const chatterbox = providerById('chatterbox')
 const windows = providerById('windows')
+const eleven = providerById('elevenlabs')
+const killer = providerById('voicekiller')
 
 describe('voice performance direction', () => {
   it('sends a plain line unchanged', () => {
@@ -36,5 +38,20 @@ describe('voice performance direction', () => {
     expect(b).toMatch(/weary/)
     expect(b).toMatch(/heavy load/)
     expect(b).toMatch(/grunt/)
+  })
+  it('uses ElevenLabs tags only on the v3 model', () => {
+    const dir = { ...emptyDirection, state: 'whispering' as const, events: [{ event: 'laugh' as const, at: 'after' as const }] }
+    expect(buildPerformance('Come here.', dir, eleven, 'eleven_v3').text).toBe('[whispers] Come here. [laughs]')
+    const old = buildPerformance('Come here.', dir, eleven, 'eleven_multilingual_v2')
+    expect(old.text).toBe('Come here.')
+    expect(old.notApplied.join(' ')).toMatch(/with this model/)
+  })
+  it('sends emotion and state to VoiceKiller as instructions, not as sounds', () => {
+    const dir = { emotion: 'weary', state: 'carrying a heavy load' as const, events: [{ event: 'grunt' as const, at: 'before' as const }] }
+    const p = buildPerformance('Lift.', dir, killer)
+    expect(p.text).toBe('Lift.')
+    expect(p.instructions).toMatch(/carrying a heavy load/)
+    expect(p.instructions).toMatch(/weary/)
+    expect(p.notApplied.join(' ')).toMatch(/Grunt/)
   })
 })
