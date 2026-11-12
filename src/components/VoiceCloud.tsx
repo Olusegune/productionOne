@@ -78,7 +78,7 @@ export function VoiceCloud(props: {
       <button className="secondary" onClick={() => openProviders(provider.keys?.[0]?.id)}>{connected ? 'Change keys' : 'Add your key'} in Settings</button>
     </div>
     {!soundOnly && <div className="sheet-controls">
-      {provider.id === 'elevenlabs' && <label><span>Model</span><select value={model} onChange={(e) => setModel(e.target.value)}><option value="latest">Latest ({latestModel ?? 'eleven_v4'}): updates itself</option>{(models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name || m.id}</option>)}</select></label>}
+      {provider.id === 'elevenlabs' && <label><span>Model</span><select value={model} onChange={(e) => setModel(e.target.value)}><option value="latest">Latest ({latestModel ?? 'eleven_v4'})</option>{(models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name || m.id}</option>)}</select></label>}
       {voices.length > 0
         ? <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)}>{voices.map((v) => <option key={v.id} value={v.id}>{v.name}{v.detail ? ` · ${v.detail}` : ''}</option>)}</select></label>
         : <label><span>{provider.id === 'elevenlabs' ? 'Voice id' : 'Voice name'}</span><input value={voice} onChange={(e) => setVoice(e.target.value)} placeholder={provider.id === 'elevenlabs' ? 'load your voices, or paste a voice id' : 'e.g. Jett'} /></label>}

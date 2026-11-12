@@ -125,7 +125,7 @@ body { min-width: 0; }
 .golden-head { margin-bottom: 17px; }
 .golden-head h3 { font-size: 23px; }
 .golden-steps b { font-size: 13px; }
-.golden-steps small { font-size: 11px; }
+.golden-steps small { font-size: 12px; }
 .po-dock-bar { padding: 7px 20px; }
 .po-dock-body { padding: 4px 20px 12px; }
 @media (max-width: 1280px) {
@@ -153,7 +153,7 @@ body { min-width: 0; }
 .po-tabs button { padding: 8px 18px; font-size: 14px; font-weight: 500; border-radius: 6px; border-bottom: 0; color: var(--text-3); transition: background .2s, color .2s; }
 .po-tabs button:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
 .po-tabs button.active { background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .07)); color: var(--text); box-shadow: 0 1px 0 rgba(255, 255, 255, .12) inset, 0 4px 14px rgba(0, 0, 0, .3); }
-.po-tabs em { font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--text-3); }
+.po-tabs em { font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--text-3); }
 .po-steps { padding: 2px 26px 10px; font-size: 13px; gap: 6px; }
 .po-steps li button { padding: 4px 11px; color: var(--text-3); }
 .po-steps .done { color: var(--text-2); }
@@ -249,7 +249,7 @@ body { min-width: 0; }
 .mp-item-name { font-size: 15px; color: var(--text); }
 .mp-item small { grid-column: 1; font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mp-tags { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 5px; align-items: center; }
-.mp-tags i { font-style: normal; font-size: 11px; padding: 2px 8px; border-radius: 5px; background: rgba(106, 166, 207, .16); color: #9cc6e4; }
+.mp-tags i { font-style: normal; font-size: 12px; padding: 2px 8px; border-radius: 5px; background: rgba(106, 166, 207, .16); color: #9cc6e4; }
 .mp-tags i.new { background: rgba(135, 191, 166, .16); color: #a9d0bd; }
 .mp-empty { padding: 20px; text-align: center; color: var(--text-3); }
 .mp-custom { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--stroke); font-size: 13px; color: var(--text-3); }
@@ -284,7 +284,7 @@ body { min-width: 0; }
 .lb-info { flex: 1; display: grid; gap: 3px; min-width: 0; }
 .lb-info small { font-size: 13px; color: var(--text-3); }
 .lb-actions { display: flex; gap: 10px; }
-.lb-actions kbd, .view-actions kbd { font-size: 11px; opacity: .7; border: 1px solid currentColor; border-radius: 5px; padding: 0 5px; margin-left: 6px; }
+.lb-actions kbd, .view-actions kbd { font-size: 12px; opacity: .7; border: 1px solid currentColor; border-radius: 5px; padding: 0 5px; margin-left: 6px; }
 .lb-state { font-size: 14px; color: var(--gold); }
 
 /* Dock and cost chip */

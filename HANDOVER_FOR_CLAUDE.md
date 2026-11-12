@@ -107,3 +107,7 @@ Do not claim guaranteed identity consistency, artifact-free images, universal mo
 
 ## 0.19.1
 - `src/domain/elevenModels.ts` (latest model by account list, tag support by pattern), `elevenlabs_models` command, voice keys added to `providerRegistry` (Settings dialog). VoiceCloud no longer holds key entry.
+
+
+## 0.20.0
+- `src/refresh.css` loads after all styles (imported last in main.tsx); Geist via @fontsource-variable/geist. Legacy sheets had their 8-11px sizes and low-contrast greys bulk-replaced. Contrast audit snippet is approximate (CSS colours only).

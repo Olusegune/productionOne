@@ -1,10 +1,10 @@
 .timeline{min-height:48px;height:auto;display:grid;grid-template-columns:auto auto 1fr;padding:7px 12px}
 .timeline>span{transition:width .1s linear}
-.timeline small{position:relative;font-size:8px;color:#727d86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.timeline small{position:relative;font-size:12px;color:#9aa5ae;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .timeline-play{display:grid;place-items:center;border:0;background:transparent;color:#d1b47b;cursor:pointer}
 .editor-actions{display:flex;gap:6px;margin-top:10px}
 .editor-actions .secondary{padding:7px 9px}
 .editor-actions .danger{margin-left:auto;color:#d99a91}
 .shot-strip>button.selected{border-color:#9b8255;background:#211e18}
-.shot-strip small{display:block;font-size:8px;color:#69747d;margin-top:4px}
+.shot-strip small{display:block;font-size:12px;color:#9aa5ae;margin-top:4px}
 .shot-strip>button:not(:last-child){display:block}
