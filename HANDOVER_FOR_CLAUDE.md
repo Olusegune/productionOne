@@ -8,7 +8,7 @@ Written 2026-11-12 at release 0.20.0. Older notes are kept unchanged under "Earl
 - **Working branch:** `release/0.14.3-asset-lab` (all work since v0.14.10 is on it; history is intact, nothing was rewritten)
 - **Release tags (newest first):** v0.20.0, v0.19.1, v0.19.0, v0.18.0, v0.17.2, v0.17.1, v0.17.0, v0.16.0, v0.15.0
 - Windows installers for each release were built to `C:\Users\eduni\Desktop\ProductionOne-Release-<version>` (setup EXE, MSI, portable EXE, portable ZIP, SHA256, notes). Those binaries are NOT in git. Rebuild with the steps below.
-- Per-release detail: `CHANGELOG.md` and `RELEASE_NOTES_<version>.md`. QA notes: `docs/QA_REPORT_*.md`. Live test results from the paid end-to-end run: `ProductionOne-E2E-Test-0.17.1/E2E_TEST_REPORT.md` on the owner's Desktop (summarised below).
+- Per-release detail: `CHANGELOG.md` and `RELEASE_NOTES_<version>.md`. QA notes: `docs/QA_REPORT_*.md`. Live test results from the paid end-to-end runs: `docs/E2E_TEST_REPORT_2026-11-12.md` and `docs/ELEVENLABS_TEST_2026-11-12.md` (summarised below; the generated images, video and audio stay on the owner's Desktop, not in git).
 
 ## What the app is
 
