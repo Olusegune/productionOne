@@ -1,6 +1,6 @@
 /** Voice providers and per-line performance direction. A provider only offers the controls it can honour; anything it cannot do is reported, never faked. */
 
-export type ProviderId = 'windows' | 'chatterbox' | 'qwen-tts' | 'speech-server'
+export type ProviderId = 'windows' | 'chatterbox' | 'qwen-tts' | 'wazobia' | 'speech-server'
 export type VoiceEvent = 'laugh' | 'chuckle' | 'cough' | 'grunt' | 'sigh' | 'gasp'
 export type VoiceState = 'neutral' | 'out of breath' | 'eating' | 'carrying a heavy load' | 'whispering' | 'shouting'
 
@@ -15,6 +15,8 @@ export interface VoiceProvider {
   inlineEvents: VoiceEvent[]
   /** Can make a voice from a written description in the voice field. */
   describesVoice: boolean
+  /** Nigerian-language engine with its own language, reference clip and expressiveness settings. */
+  languages?: Array<{ id: string; label: string }>
   /** True only for providers that have been run end to end. */
   verified: boolean
   note: string
@@ -24,6 +26,7 @@ export const providers: VoiceProvider[] = [
   { id: 'windows', label: 'Windows voices (stand-in)', transport: 'windows', defaultBase: '', defaultModel: '', inlineEvents: [], describesVoice: false, verified: true, note: 'Free and offline. For casting and timing only.' },
   { id: 'chatterbox', label: 'Chatterbox (local server)', transport: 'http', defaultBase: 'http://127.0.0.1:4123', defaultModel: 'chatterbox', inlineEvents: ['laugh', 'chuckle', 'cough'], describesVoice: false, verified: false, note: 'Open model by Resemble AI that you run yourself. Inline sound tags depend on the version you install; the voice is a name or a reference clip your server knows.' },
   { id: 'qwen-tts', label: 'Qwen TTS (local server)', transport: 'http', defaultBase: 'http://127.0.0.1:8000', defaultModel: 'qwen3-tts', inlineEvents: [], describesVoice: true, verified: false, note: 'Alibaba open model you run yourself. Whether the voice field accepts a written description depends on the server you use.' },
+  { id: 'wazobia', label: 'WazobiaVoice (local server, Nigerian languages)', transport: 'http', defaultBase: 'http://127.0.0.1:8765', defaultModel: 'wazobia', inlineEvents: [], describesVoice: false, languages: [{ id: 'en', label: 'Nigerian English' }, { id: 'pcm', label: 'Nigerian Pidgin' }, { id: 'ig', label: 'Igbo' }, { id: 'ha', label: 'Hausa' }, { id: 'yo', label: 'Yoruba (weakest, per its model card)' }], verified: false, note: 'Run tools/wazobia_server.py (see its header for setup). Weights are research and non-commercial only. The voice field is the path to a 5-10 second reference clip on this computer; leave it empty for the default voice.' },
   { id: 'speech-server', label: 'Other speech server', transport: 'http', defaultBase: 'http://127.0.0.1:8000', defaultModel: '', inlineEvents: [], describesVoice: false, verified: false, note: 'Any server on this computer or your network with a /v1/audio/speech route.' },
 ]
 

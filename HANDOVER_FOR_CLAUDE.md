@@ -87,3 +87,7 @@ Do not claim guaranteed identity consistency, artifact-free images, universal mo
 - `src/domain/voiceDirection.ts`: provider registry (windows, chatterbox, qwen-tts, speech-server), `buildPerformance` (applied vs notApplied), `performanceBrief`.
 - `src-tauri/src/voice.rs`: `speak_http` (local/private addresses only via `local::normalize_base`; `audio_extension` rejects non-audio).
 - UI: `VoiceAudition.tsx`. All HTTP providers are `verified: false` until run against a live server. Next: live test, then Kie/other providers once docs are available.
+
+
+## 0.17.1
+- Wazobia provider in `voiceDirection.ts`; `tools/wazobia_server.py` follows the HF model card (`WazobiaVoiceMultilingualTTS.generate`). Unrun. `speak_http` takes `extra` (whitelisted by `merge_extra`).

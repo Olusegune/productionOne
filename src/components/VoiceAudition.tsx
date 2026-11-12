@@ -22,6 +22,8 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   const [base, setBase] = useState(() => { try { return localStorage.getItem('po.voice.base.' + providerId) || provider.defaultBase } catch { return provider.defaultBase } })
   const [model, setModel] = useState(provider.defaultModel)
   const [serverVoice, setServerVoice] = useState('')
+  const [language, setLanguage] = useState('en')
+  const [expressiveness, setExpressiveness] = useState(0.5)
   const [direction, setDirection] = useState(emptyDirection)
   const chooseProvider = (id: ProviderId) => {
     const p = providerById(id)
@@ -46,7 +48,7 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
       let path: string
       if (provider.transport === 'http') {
         try { localStorage.setItem('po.voice.base.' + providerId, base) } catch { /* storage unavailable */ }
-        path = await invoke<string>('speak_http', { base, model, voice: serverVoice || asset.soundDirection || '', text: performance.text, speed: 1 + rate / 10, outputName })
+        path = await invoke<string>('speak_http', { base, model, voice: serverVoice || asset.soundDirection || '', text: performance.text, speed: 1 + rate / 10, extra: provider.languages ? { language, exaggeration: expressiveness } : undefined, outputName })
       } else path = await invoke<string>('speak_local', { text: performance.text, voice, rate, outputName })
       setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: provider.transport === 'http' ? `${provider.label} · ${serverVoice || 'default voice'}` : `Windows voice · ${voice || 'default'}`, path, prompt: `${voiceBrief(asset, line)}
 ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind: 'audio', line }])
@@ -62,7 +64,7 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
       {!desktop && <p className="helper">Voice auditions run in the Windows app.</p>}
       <div className="sheet-controls">
         {provider.transport === 'windows' && <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)} disabled={!voices.length}>{voices.length === 0 && <option value="">No Windows voices found</option>}{voices.map((v) => <option key={v.name} value={v.name}>{v.name} · {v.gender} · {v.culture}</option>)}</select></label>}
-        {provider.transport === 'http' && <><label><span>Server address</span><input value={base} onChange={(e) => setBase(e.target.value)} aria-label="Speech server address" /></label><label><span>Model</span><input value={model} onChange={(e) => setModel(e.target.value)} /></label><label><span>{provider.describesVoice ? 'Voice name or description' : 'Voice name'}</span><input value={serverVoice} onChange={(e) => setServerVoice(e.target.value)} placeholder={asset.soundDirection || 'as your server names it'} /></label></>}
+        {provider.transport === 'http' && <><label><span>Server address</span><input value={base} onChange={(e) => setBase(e.target.value)} aria-label="Speech server address" /></label><label><span>Model</span><input value={model} onChange={(e) => setModel(e.target.value)} /></label>{provider.languages && <><label><span>Language</span><select value={language} onChange={(e) => setLanguage(e.target.value)}>{provider.languages.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></label><label><span>Expressiveness</span><input type="range" min={0} max={1.5} step={0.05} value={expressiveness} onChange={(e) => setExpressiveness(Number(e.target.value))} aria-label="Expressiveness" /></label></>}<label><span>{provider.languages ? 'Reference clip path (optional)' : provider.describesVoice ? 'Voice name or description' : 'Voice name'}</span><input value={serverVoice} onChange={(e) => setServerVoice(e.target.value)} placeholder={asset.soundDirection || 'as your server names it'} /></label></>}
         <label><span>Pace</span><input type="range" min={-6} max={6} value={rate} onChange={(e) => setRate(Number(e.target.value))} aria-label="Speaking pace" /></label>
         {lines.length > 0 && <label><span>Line from the script</span><select value={picked} onChange={(e) => { setPicked(Number(e.target.value)); setCustom('') }}>{lines.map((l, i) => <option key={l.line} value={i}>Line {l.line}: {l.text.slice(0, 48)}</option>)}</select></label>}
       </div>

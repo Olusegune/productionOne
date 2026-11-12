@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.1 (2026-11-12): WazobiaVoice engine
+- New voice engine WazobiaVoice (Yoruba, Hausa, Igbo, Pidgin, Nigerian English) with language picker, expressiveness slider and optional reference-clip path.
+- `tools/wazobia_server.py`: local-only (127.0.0.1) /v1/audio/speech server around the model card API. Syntax-checked only; never run (gated weights, no GPU here). Weights are non-commercial research licence.
+- `speak_http` passes only language, exaggeration and cfg_weight onward. Tests: 164 JS, 58 Rust.
+
 ## 0.17.0 (2026-11-12): voice engines and performance direction
 - Voice audition can now use a speech server on this computer or your network (`POST /v1/audio/speech`): presets for Chatterbox and Qwen TTS, plus any other server. New `speak_http` command; address must be local or private network; returned bytes are checked to be real audio.
 - Performance direction per line: physical state, emotion and laugh/grunt/cough cues. The app applies only what the engine supports (inline tags, pauses) and lists everything else as not applied; the casting brief carries it.
