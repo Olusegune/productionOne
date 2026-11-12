@@ -2,7 +2,7 @@
 
 ## Current state
 
-Current release: 0.14.10. This release adds the calm studio UI/UX pass: reduced navigation and surface density, clearer primary actions, compact design rails, responsive collapse behavior, and horizontally scrollable section tabs. It also includes the Character Bible with linked Identity, Turnaround, Poses, Expressions, Wardrobe, Details, Motion video, and Voice sections, plus the Asset Lab Golden Path with Identity, Motion, Interaction, Sound, and Continuity modes.
+Current release: 0.15.0. 0.15.0 adds queue-derived Character Bible progress (src/domain/characterBible.ts), an ARIA tablist with keyboard navigation, gated Motion/Voice sections, and an explainable script reading (src/engine/explain.ts, "How this was read" in ReadingPanel). Earlier: 0.14.10 calm studio UI/UX pass. This release adds the calm studio UI/UX pass: reduced navigation and surface density, clearer primary actions, compact design rails, responsive collapse behavior, and horizontally scrollable section tabs. It also includes the Character Bible with linked Identity, Turnaround, Poses, Expressions, Wardrobe, Details, Motion video, and Voice sections, plus the Asset Lab Golden Path with Identity, Motion, Interaction, Sound, and Continuity modes.
 
 Production One is a Tauri 2 + React + TypeScript + Rust desktop asset-preparation studio. It analyzes scripts, plans references, queues image work, supports technical/creative review, and exports production packages. It does not render finished films.
 
@@ -23,7 +23,18 @@ Production One is a Tauri 2 + React + TypeScript + Rust desktop asset-preparatio
 - Added a static accessibility release gate and release-manifest signing script requiring an externally managed private key.
 - Expanded the Delivery Center readiness summary with review and recorded-spend indicators.
 
-## Validation completed
+## Validation completed (0.15.0)
+
+- `npm test`: 150 passed. `npm run build` and `npm run qa:accessibility` passed. See docs/QA_REPORT_0.15.0.md.
+
+## Next steps recommended after 0.15.0
+
+- Real Motion-video and Voice panels (currently guidance only; Motion test generation is not wired to a Character Bible section).
+- Responsive/visual QA at 1024px and below needs a WebView2 run; only the static a11y gate and unit tests were run.
+- Expose explainStory confidence as editable asset confirmation before generation.
+- Reduce App.tsx (~1860 lines) into feature modules.
+
+## Older validation (0.14.x)
 
 - `npm test`: 138 tests passed.
 - `npm run build`: passed.

@@ -7,11 +7,13 @@ import { Sparkles } from "lucide-react";
 import { runAiPass } from "../data/aiPass";
 import { useLocalAi } from "../data/localAi";
 import { applyAi } from "../engine/aiBeats";
+import { explainStory } from "../engine/explain";
 
 /** What the story engine found, each finding linked back to the script line it came from. */
 export function ReadingPanel({ story, onJump, desktop = false, onStory, notify }: { story?: ParsedStory; onJump: (line: number) => void; desktop?: boolean; onStory?: (story: ParsedStory) => void; notify?: (message: string) => void }) {
   const local = useLocalAi(desktop);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const why = useMemo(() => (story ? explainStory(story) : null), [story]);
   const arcs = useMemo(() => (story ? characterArcs(story) : []), [story]);
   if (!story || !story.scenes.length) return <section className="panel po-reading"><span className="eyebrow">THE ENGINE'S READING</span><h3>Nothing read yet</h3><p className="helper">Paste or import a script and press Analyze. Reading is free and happens on your computer.</p></section>;
   const jump = (line: number, label: string) => <button className="po-line" onClick={() => onJump(line)} title="Show this line in the script">{label}</button>;
@@ -37,6 +39,10 @@ export function ReadingPanel({ story, onJump, desktop = false, onStory, notify }
         </div>
       )}
       {story.warnings.map((w) => <p key={w} className="helper warn">{w}</p>)}
+      {why && <details open={why.needsReview > 0}>
+        <summary>How this was read{why.needsReview > 0 ? ` · ${why.needsReview} to check` : ""}</summary>
+        <ul className="po-plain">{why.findings.map((f, i) => <li key={i}><span className={`pill conf-${f.confidence}`}>{f.confidence}</span> <b>{f.subject}</b> <small>{f.reason}</small>{f.line ? <> {jump(f.line, `line ${f.line}`)}</> : null}</li>)}</ul>
+      </details>}
       <details open>
         <summary>Scenes and mood</summary>
         <ul className="po-plain">

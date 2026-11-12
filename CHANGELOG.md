@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0 (2026-11-12): Character Bible progress, accessible tabs, explainable parsing
+- Character Bible sections derive state from the generation queue (newest revision per view); Motion and Voice are gated with plain next steps.
+- Character Bible tabs are an ARIA tablist with arrow/Home/End navigation and a tabpanel.
+- New `explainStory` engine and "How this was read" panel with per-finding confidence and source-line links.
+- Tests: 150 (was 141). No data-format changes.
+
 ## 0.14.0 (2026-10-22): professional UI, CleanRender, branding
 - **Design system.** Restrained radii (panels 8, cards 6, controls 5-6), deeper gold (#C49A46, hover #D6AD59, pressed #A77E31), one type family (Inter), primary buttons flat gold with dark text.
 - **Character Sheet Studio.** Status header (approved, to review, in queue), toolbar, large previews (grid or large), side-by-side compare, and an inspector with reference thumbnails, notes, identity lock and model, in collapsible sections. Narrow panels move the actions first and settings below the artwork.

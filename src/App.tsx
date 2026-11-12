@@ -1377,7 +1377,7 @@ export default function App() {
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
               notify={setNotice}
             />
-            <CharacterBible asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} />
+            <CharacterBible asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
             <SheetStudio
               assets={analysis.assets}
               scenes={analysis.scenes}
