@@ -1,4 +1,96 @@
-# Production One handover
+# Production One handover (START HERE)
+
+Written 2026-11-12 at release 0.20.0. Older notes are kept unchanged under "Earlier notes" at the bottom.
+
+## Where the code is
+
+- **GitHub:** https://github.com/Olusegune/productionOne
+- **Working branch:** `release/0.14.3-asset-lab` (all work since v0.14.10 is on it; history is intact, nothing was rewritten)
+- **Release tags (newest first):** v0.20.0, v0.19.1, v0.19.0, v0.18.0, v0.17.2, v0.17.1, v0.17.0, v0.16.0, v0.15.0
+- Windows installers for each release were built to `C:\Users\eduni\Desktop\ProductionOne-Release-<version>` (setup EXE, MSI, portable EXE, portable ZIP, SHA256, notes). Those binaries are NOT in git. Rebuild with the steps below.
+- Per-release detail: `CHANGELOG.md` and `RELEASE_NOTES_<version>.md`. QA notes: `docs/QA_REPORT_*.md`. Live test results from the paid end-to-end run: `ProductionOne-E2E-Test-0.17.1/E2E_TEST_REPORT.md` on the owner's Desktop (summarised below).
+
+## What the app is
+
+Tauri 2 + React + TypeScript + Rust Windows desktop studio that turns a script into production-ready reference assets: it parses a script, plans reference sheets, queues image generation (Kie.ai, OpenAI, Google, fal, OpenRouter, local ComfyUI), supports review and approval, then exports a package. Motion and voice "auditions" let you see and hear a character or prop before committing. It does not render finished films.
+
+## Build, test, release (Windows)
+
+```
+npm ci
+npx tsc --noEmit -p .          # typecheck
+npx vitest run                 # JS tests (177 pass at 0.20.0)
+cd src-tauri && cargo test     # Rust tests (65 pass at 0.19.1)
+# build installers. The long scratch path breaks the linker (LNK1104), so use a SHORT target dir:
+CARGO_TARGET_DIR='C:\t\po' npx tauri build
+```
+
+Gotchas learned the hard way:
+- Repo files are CRLF on disk; string-replace scripts must normalise line endings first.
+- Version lives in: `package.json`, `package-lock.json` (two places), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` (production-guy entry), `public/splash.html`.
+- Portable EXE = `C:\t\po\release\ProductionOne.exe`. The NSIS silent switch (`/S`) did nothing on the owner's PC and the MSI needs admin; the interactive NSIS setup works but remembers an old install folder (`C:\Users\eduni\po-install-test`). Running the portable build from the release folder is the easy way to test.
+- Only one copy of the app can run at once (a second launch hands off to the first).
+- Commit messages end with the Claude co-author line; keys are never committed.
+
+## Secrets
+
+API keys are entered by the owner in the app: Settings dialog (the "AI Provider Registry") and are stored in the Windows Credential Manager under these names: `kie`, `fal`, `openai`, `google`, `openrouter`, `elevenlabs`, `voicekiller`, `voicekiller-user`. Never put a key in code, notes or chat. Live tests spend the owner's credits: ask first.
+
+## What was built since 0.14.10
+
+| Release | Summary |
+|---|---|
+| 0.15.0 | Character Bible progress derived from the queue, ARIA tabs, explainable script reading, pinned dependencies, Windows CI |
+| 0.16.0 | Motion audition (presets for characters, vehicles, props), voice audition with Windows voices, sound briefs for props, confirmed identity facts now reach every image and motion prompt |
+| 0.17.x | Voice engines through any local `/v1/audio/speech` server (Chatterbox, Qwen TTS, WazobiaVoice via `tools/wazobia_server.py`), per-line performance direction (state, emotion, laugh/grunt cues) that is honest about what each engine can do; prompts demand one image per view; sheet notes per asset; fewer false crop warnings |
+| 0.18.0 | Identity lock made visible: panel says locked / waiting for approved front / unprotected, and offers one-click "Switch to <reference model>"; reference prompts say the attached image is the same subject |
+| 0.19.x | ElevenLabs (speech, voice design, sound effects; "Latest" model follows the account's own model list, v4 now) and VoiceKiller (speech with instructions); voice keys in Settings |
+| 0.20.0 | Geist typeface, no text under 12px, higher contrast, stronger focus ring, tidier voice/sound panels |
+
+Key new files: `src/domain/voiceDirection.ts` (providers + performance logic), `src/domain/elevenModels.ts`, `src/domain/identityAnchor.ts`, `src/components/VoiceAudition.tsx`, `src/components/VoiceCloud.tsx`, `src-tauri/src/voice.rs` (Windows voices + local speech servers), `src-tauri/src/voice_cloud.rs` (ElevenLabs, VoiceKiller), `src/refresh.css` (loaded last), `tools/wazobia_server.py`.
+
+## What was verified live, and what was not
+
+Verified on the owner's PC (2026-11-12) through the real app, with real keys:
+- Kie.ai image generation (Seedream 5.0 Flash, Nano Banana 2.1), turnaround, expression and prop sheets, approval gating, Kling 5 s image-to-video clip (identity held, no audio track), Windows-voice audition.
+- Reference anchoring: after switching to Nano Banana 2.1, a regenerated Side view matched the approved Front (one sample).
+- ElevenLabs: key save in Settings, load voices, speak a line with a `[laughs]` tag (3.5 s MP3), a sound effect (2 s MP3), voice design (3 previews). Nobody has LISTENED to the audio yet.
+
+NOT verified: VoiceKiller (no key; voice-list reply shape unknown), keeping a designed ElevenLabs voice, whether "Latest" came from `/v1/models` or the fallback, Chatterbox/Qwen/Wazobia servers, prop sound effects, truck motion, pose/set sheets, anything in the packaged installer UI beyond the screens listed above.
+
+## OUTSTANDING (in rough priority order)
+
+### Image pipeline
+1. **"Generate N views" does nothing when views already exist.** Users must Reject each view then Regenerate. Needs a clear "regenerate all" path.
+2. **Sheet notes are not saved with the project** (kept per asset in memory only, lost on reload). No UI test covers the per-asset notes fix.
+3. **Parser misses**: a lowercase prop in an action line ("old rusted blue pickup truck") was not detected; age, gender, ethnicity and costume colour written in the script were not extracted into the asset.
+4. **Contact sheets**: prompts now demand one image per view and four samples complied, but there is no automatic detection of collages.
+5. **Crop warning** still flagged a side edge on one regenerated image (may be real); the check is heuristic.
+6. **Anchor**: only the newest approved *front* view is used. Let the owner pick the anchor, consider several references, and warn when approved views disagree (the earlier green-suit approval does not match the navy front).
+7. **No cost estimate** next to Generate buttons; spend guard should be on by default; add a parse-confirmation step before paid generation.
+8. **Stale sample shot text** ("solar compass", "We are close") appears in Deliver > Shot compiler in a new project with no shots.
+
+### Voice and sound
+9. **Listen to and judge the ElevenLabs outputs**; then verify the "Latest" model path against `/v1/models`, keeping a designed voice (uses a custom voice slot), and prop sound effects.
+10. **Persist a voice per character** (provider, voice id, model, direction) so every line reuses it. Today only free-text `soundDirection` is saved.
+11. **VoiceKiller**: needs the owner's key + user ID for a live test; confirm the voice-list reply shape; clone endpoint (`/api/generate-speech/clone`) and speaking styles are not wired.
+12. **Local engines**: Chatterbox, Qwen TTS and `tools/wazobia_server.py` are unrun. WazobiaVoice weights are research/non-commercial only: get the owner's commercial answer before shipping it. Qwen cloud route not built. Suno via Kie is song generation, not dialogue, and is not integrated.
+13. **Speaking while eating / carrying a heavy load** cannot be done reliably by TTS. Current behaviour: tags or instructions where documented, otherwise listed as "not applied" and kept in the casting brief. Idea not built: a small mixer that layers a generated effect (breath, grunt, chewing) under the line.
+14. Motion clips have **no audio**; Kie's `generate_audio` flag exists in `kie_task_body` but is not exposed. A "speak while moving" clip needs audio muxed or a video model with audio.
+
+### Platform and quality
+15. **Installer**: silent install is a no-op, MSI needs admin, installs go to a remembered old folder; builds are **unsigned**; no WebView2 smoke test on a clean Windows runner in CI.
+16. **UI**: narrow-window layout (still needs about 1100px), full screen-reader pass, light theme, and `App.tsx` is about 1,900 lines and should be split. The contrast audit was approximate (computed from CSS colours); run a real WCAG audit.
+17. Audit provider adapters and reconciliation, review the reference-image workflow and model/aspect pickers.
+18. Housekeeping: `@fontsource-variable/fraunces` is still a dependency but no longer imported.
+
+## Owner preferences seen so far
+
+Wants plain-language reports that say what was and was not verified; wants real models for voice (ElevenLabs latest, Qwen, Chatterbox, Wazobia, VoiceKiller) both local and cloud; wants motion and voice "auditions" for characters and props (cars etc.); wants a sleek but accessible interface; keeps the base history intact and each release in its own Desktop folder.
+
+---
+
+# Earlier notes (unchanged)
 
 ## Current state
 
