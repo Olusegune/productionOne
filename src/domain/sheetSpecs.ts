@@ -105,11 +105,18 @@ export interface PromptInput {
   /** The model id the prompt is for. Used only to tailor artifact guidance. */
   model?: string
   style: StyleBible
-  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'>
+  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role'>>
   variant: string
   sheetType: SheetType
   view: ViewSpec
   notes?: string
+}
+
+/** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
+export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age' | 'gender' | 'race' | 'ethnicity' | 'role'>>): string {
+  if (asset.type && asset.type !== 'character') return ''
+  const facts = [asset.age && `age ${asset.age}`, asset.gender, asset.race, asset.ethnicity, asset.role].filter(Boolean).join(', ')
+  return facts ? `Confirmed character identity: ${facts}.` : ''
 }
 
 export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model }: PromptInput): string {
@@ -117,6 +124,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
     view.instruction,
+    identityFacts(asset),
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,
     'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',

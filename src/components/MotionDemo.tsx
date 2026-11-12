@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
-import { buildMotionPrompt, clipName, motionPresets, type DemoClip, type MotionKey } from "../domain/demoClips";
+import { buildMotionPrompt, clipName, motionKeysFor, presetFor, type DemoClip, type MotionKey } from "../domain/demoClips";
 import type { QueueState } from "../domain/generationQueue";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { mergeVideoModels, type DiscoveredCatalog } from "../domain/imageCatalog";
-import { primaryViewKeys } from "../domain/sheetSpecs";
+import { identityFacts, primaryViewKeys } from "../domain/sheetSpecs";
 import { useLocalAi } from "../data/localAi";
 import type { StyleBible } from "../domain/visualDevelopment";
 
@@ -38,14 +38,15 @@ export function MotionDemo(props: {
 
   if (!asset || asset.type === "set" || asset.type === "environment") return null;
   const anchor = queue.jobs.find((j) => j.assetId === asset.id && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey));
-  const mine = clips.filter((c) => c.assetId === asset.id);
+  const mine = clips.filter((c) => c.assetId === asset.id && c.kind !== "audio");
+  const motionKeys = motionKeysFor(asset.type, asset.name) as Array<Exclude<MotionKey, "custom">>;
   const ready = !!anchor && !running && (motion !== "custom" || custom.trim().length > 4);
 
   const run = async () => {
     if (!anchor?.outputPath) return;
     setRunning(true);
     setError("");
-    const prompt = buildMotionPrompt(motion, custom, asset.name, style);
+    const prompt = buildMotionPrompt(motion, custom, asset.name, style, identityFacts(asset));
     try {
       const useLocal = where.startsWith("local:") && local.status.comfyui[0];
       const path = useLocal
@@ -63,9 +64,9 @@ export function MotionDemo(props: {
   };
 
   return (
-    <section className="panel motion-demo" aria-label="Motion demo">
+    <section className="panel motion-demo" id="motion-audition" tabIndex={-1} aria-label="Motion audition">
       <div className="panel-heading">
-        <div><span className="eyebrow">MOTION DEMO · VIDEO</span><h3>{asset.name}: turnaround and pose clip</h3></div>
+        <div><span className="eyebrow">MOTION AUDITION · VIDEO</span><h3>{asset.name}: see how {asset.type === "character" ? "they move" : "it moves"}</h3></div>
       </div>
       {!desktop && <p className="helper">Video generation runs in the Windows app.</p>}
       {!anchor && <p className="helper">Approve a front view first. The clip is made from your approved reference so the character stays the same.</p>}
@@ -74,7 +75,7 @@ export function MotionDemo(props: {
           <div className="sheet-controls">
             <label><span>Motion</span>
               <select value={motion} onChange={(e) => setMotion(e.target.value as MotionKey)}>
-                {(Object.keys(motionPresets) as Array<keyof typeof motionPresets>).map((k) => <option key={k} value={k}>{motionPresets[k].label}</option>)}
+                {motionKeys.map((k) => <option key={k} value={k}>{presetFor(k).label}</option>)}
                 <option value="custom">Your own description</option>
               </select></label>
             <label><span>Make it with</span>
@@ -101,7 +102,7 @@ export function MotionDemo(props: {
           {mine.slice().reverse().map((c) => (
             <figure key={c.id}>
               <video controls loop muted playsInline src={convertFileSrc(c.path)} aria-label={`${c.assetName} ${c.motion} demo`} />
-              <figcaption><b>{c.motion === "custom" ? "Custom motion" : motionPresets[c.motion].label}</b><small>{c.model} · {c.duration}s</small></figcaption>
+              <figcaption><b>{c.motion === "custom" ? "Custom motion" : presetFor(c.motion).label}</b><small>{c.model} · {c.duration}s</small></figcaption>
             </figure>
           ))}
         </div>

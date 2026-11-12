@@ -80,6 +80,7 @@ import { sampleStory } from "./engine/sampleStory";
 import { SheetStudio } from "./components/SheetStudio";
 import { RealImage } from "./components/RealImage";
 import { MotionDemo } from "./components/MotionDemo";
+import { VoiceAudition } from "./components/VoiceAudition";
 import { DirectRoom } from "./components/DirectRoom";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
@@ -1406,6 +1407,15 @@ export default function App() {
               desktop={isTauri}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
+            />
+            <VoiceAudition
+              asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
+              story={analysis.story}
+              clips={clips}
+              setClips={setClips}
+              desktop={isTauri}
+              notify={setNotice}
+              onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
             />
             <details className="po-classic">
             <summary>Prompt Studio, model hub, imports and quality tools</summary>

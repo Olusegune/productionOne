@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.0 (2026-11-12): motion and voice auditions
+- Motion audition presets by asset type (characters, vehicles, props); voice audition with installed Windows voices; sound briefs for props.
+- Confirmed identity fields now reach every image sheet prompt and motion prompt.
+- Pinned dependencies, added CI. Tests: 159 JS, 56 Rust.
+
 ## 0.15.0 (2026-11-12): Character Bible progress, accessible tabs, explainable parsing
 - Character Bible sections derive state from the generation queue (newest revision per view); Motion and Voice are gated with plain next steps.
 - Character Bible tabs are an ARIA tablist with arrow/Home/End navigation and a tabpanel.

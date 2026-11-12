@@ -41,7 +41,7 @@ export function CharacterBible({ asset, onSheet, notify, jobs = [], dialogueLine
     <div className="character-bible-tabs" role="tablist" aria-label="Character Bible sections">{tabs.map((tab, index) => { const Icon = tab.icon; const p = progress.find((x) => x.id === tab.id)!; const on = active === tab.id
       return <button key={tab.id} ref={(el) => { refs.current[index] = el }} id={`bible-tab-${tab.id}`} role="tab" aria-selected={on} aria-controls="bible-panel" tabIndex={on ? 0 : -1} className={`${on ? 'on' : ''} state-${p.state}`} onClick={() => choose(tab)} onKeyDown={(e) => onKey(e, index)}><Icon size={13} aria-hidden="true" />{tab.label}<span className="bible-state">{stateText[p.state]}</span></button> })}</div>
     <div className="character-bible-next" id="bible-panel" role="tabpanel" aria-labelledby={`bible-tab-${current.id}`} aria-live="polite"><b>{current.label}</b><span>{currentProgress.next}</span>
-      {current.id === 'motion' && currentProgress.state === 'ready' && <button className="secondary" onClick={() => notify(`Motion tests for ${asset.name} will use the approved Identity and Turnaround sheets as references. Choose a video model in the Direct workspace.`)}>How motion uses these references</button>}
+      {(current.id === 'motion' || current.id === 'voice') && <button className={currentProgress.state === 'blocked' ? 'secondary' : 'primary'} onClick={() => { const el = document.getElementById(current.id === 'motion' ? 'motion-audition' : 'voice-audition'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus?.() }}>{current.id === 'motion' ? 'Open motion audition' : 'Open voice audition'}</button>}
     </div>
   </section>
 }
