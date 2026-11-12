@@ -38,6 +38,8 @@ describe('sheet specs', () => {
     expect(prompt).toContain('Amina')
     expect(prompt).toContain('Weathered jacket')
     expect(prompt).toContain('no text')
+    expect(prompt).toMatch(/ONE single image/)
+    expect(prompt).toMatch(/grid, contact sheet, collage/)
     expect(prompt).toContain('nothing cropped')
     expect(prompt).toContain('same face')
   })

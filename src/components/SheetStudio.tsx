@@ -102,7 +102,10 @@ export function SheetStudio(props: {
   const sheetTypes = asset ? sheetTypesFor(asset.type) : [];
   const [sheetType, setSheetType] = useState<SheetType>("Turnaround");
   const [intensity, setIntensity] = useState<Intensity>("moderate");
-  const [notes, setNotes] = useState("");
+  // Notes belong to one asset: switching assets must never carry another asset's notes into its prompts.
+  const [notesByAsset, setNotesByAsset] = useState<Record<string, string>>({});
+  const notes = asset ? notesByAsset[asset.id] ?? "" : "";
+  const setNotes = (value: string) => { if (asset) setNotesByAsset((m) => ({ ...m, [asset.id]: value })); };
   const choice = useModelChoice(desktop, providersVersion);
   const { provider, modelId, configured, catalog, refreshing } = choice;
   const [lightbox, setLightbox] = useState<number | null>(null);

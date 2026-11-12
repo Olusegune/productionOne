@@ -91,3 +91,7 @@ Do not claim guaranteed identity consistency, artifact-free images, universal mo
 
 ## 0.17.1
 - Wazobia provider in `voiceDirection.ts`; `tools/wazobia_server.py` follows the HF model card (`WazobiaVoiceMultilingualTTS.generate`). Unrun. `speak_http` takes `extra` (whitelisted by `merge_extra`).
+
+
+## 0.17.2
+- SheetStudio notes now `notesByAsset`; `buildViewPrompt` adds a single-image line; `qa_pixels` uses per-edge median. Remaining defects: see CHANGELOG 0.17.2 and Desktop/ProductionOne-E2E-Test-0.17.1/E2E_TEST_REPORT.md.

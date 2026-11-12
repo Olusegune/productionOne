@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.2 (2026-11-12): fixes from the end-to-end test
+- Every sheet prompt now demands exactly one image of one subject in one view (no grids, contact sheets or collages). Models can still ignore it; no automatic detection of collages yet.
+- Sheet notes are kept per asset, so one asset's notes no longer appear in another's prompts.
+- Cropped-figure check compares each edge with its own tone, so studio gradients and floor shadows are no longer flagged as a cropped head or feet.
+- Not fixed: truck/prop and identity details not extracted from action lines, stale sample shot text in Deliver, no cost estimate on Generate, no cross-view consistency for text-only models.
+- Tests: 164 JS, 59 Rust.
+
 ## 0.17.1 (2026-11-12): WazobiaVoice engine
 - New voice engine WazobiaVoice (Yoruba, Hausa, Igbo, Pidgin, Nigerian English) with language picker, expressiveness slider and optional reference-clip path.
 - `tools/wazobia_server.py`: local-only (127.0.0.1) /v1/audio/speech server around the model card API. Syntax-checked only; never run (gated weights, no GPU here). Weights are non-commercial research licence.

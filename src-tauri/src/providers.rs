@@ -392,12 +392,10 @@ pub fn qa_pixels(img: &image::RgbImage, full_body: bool) -> ImageQa {
     let count = (w * h) as f32;
     let mean = img.pixels().map(luma).sum::<f32>() / count;
     let spread = (img.pixels().map(|p| (luma(p) - mean).powi(2)).sum::<f32>() / count).sqrt();
-    let corners = [img.get_pixel(2, 2), img.get_pixel(w - 3, 2), img.get_pixel(2, h - 3), img.get_pixel(w - 3, h - 3)];
-    let background = corners.iter().map(|p| luma(p)).sum::<f32>() / 4.0;
-    let differs = |p: &image::Rgb<u8>| (luma(p) - background).abs() > 28.0;
     let band = (h / 100).max(2);
     let side = (w / 100).max(2);
-    let frac = |pixels: &mut dyn Iterator<Item = &image::Rgb<u8>>| { let (mut n, mut hit) = (0u32, 0u32); for p in pixels { n += 1; if differs(p) { hit += 1; } } if n == 0 { 0.0 } else { hit as f32 / n as f32 } };
+    // Each edge is compared with its own typical tone, so a smooth studio gradient or floor shadow is not mistaken for a figure touching the frame.
+    let frac = |pixels: &mut dyn Iterator<Item = &image::Rgb<u8>>| { let mut lumas: Vec<f32> = pixels.map(luma).collect(); if lumas.is_empty() { return 0.0; } let mut sorted = lumas.clone(); sorted.sort_by(|a, b| a.total_cmp(b)); let median = sorted[sorted.len() / 2]; lumas.retain(|l| (l - median).abs() > 36.0); lumas.len() as f32 / sorted.len() as f32 };
     let top = frac(&mut (0..band).flat_map(|y| (0..w).map(move |x| (x, y))).map(|(x, y)| img.get_pixel(x, y)));
     let bottom = frac(&mut (h - band..h).flat_map(|y| (0..w).map(move |x| (x, y))).map(|(x, y)| img.get_pixel(x, y)));
     let left = frac(&mut (0..side).flat_map(|x| (0..h).map(move |y| (x, y))).map(|(x, y)| img.get_pixel(x, y)));
@@ -527,5 +525,12 @@ mod tests {
         let report = qa_pixels(&cropped, true);
         assert!(report.subject_touches_bottom && report.notes.iter().any(|n| n.contains("feet")));
         assert!(qa_pixels(&cropped, false).notes.is_empty());
+    }
+    #[test]
+    fn qa_ignores_smooth_backdrop_gradients() {
+        let mut img = image::RgbImage::new(200, 300);
+        for y in 0..300u32 { for x in 0..200u32 { let v = (150 + y / 4 + x / 8) as u8; img.put_pixel(x, y, image::Rgb([v, v, v])); } }
+        for y in 40..260 { for x in 70..130 { img.put_pixel(x, y, image::Rgb([20, 20, 30])); } }
+        assert!(qa_pixels(&img, true).notes.is_empty(), "{:?}", qa_pixels(&img, true).notes);
     }
 }
