@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.19.1 (2026-11-12): ElevenLabs v4 that keeps itself current; keys in Settings
+- ElevenLabs now defaults to "Latest": the newest speech model your own account lists (GET /v1/models), falling back to eleven_v4. A newer generation (v5...) is picked up and its audio-tag support recognised without an app update. You can still pin a model.
+- ElevenLabs and VoiceKiller keys (and VoiceKiller user ID) are now saved in the same Settings dialog as every other provider key, not inside the Voice audition. The audition shows key status and a button that opens Settings.
+- Not run against the live services. Tests: 177 JS, 65 Rust.
+
 ## 0.19.0 (2026-11-12): ElevenLabs and VoiceKiller
 - ElevenLabs (cloud): speak lines (Eleven v3 reads inline tags such as [whispers], [laughs], [sighs]), load your voices, design a new voice from a written description then keep it, and make separate sound effects (grunts, laughs, engines) for characters and props.
 - VoiceKiller (cloud): speak lines; emotion and physical state go in its instructions field; voice list read leniently because its reply shape is not published.

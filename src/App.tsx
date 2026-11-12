@@ -1261,7 +1261,7 @@ export default function App() {
                 </label>
                 <button
                   className="primary"
-                  disabled={apiKey.length < 8}
+                  disabled={apiKey.length < (credentialProvider === "voicekiller-user" ? 1 : 8)}
                   onClick={saveCredential}
                 >
                   Save securely
@@ -1415,6 +1415,8 @@ export default function App() {
               setClips={setClips}
               desktop={isTauri}
               notify={setNotice}
+              providersVersion={Number(providersOpen)}
+              openProviders={(id) => { if (id) setCredentialProvider(id as ProviderId); setProvidersOpen(true); }}
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
             />
             <details className="po-classic">

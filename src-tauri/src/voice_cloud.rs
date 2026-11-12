@@ -72,6 +72,19 @@ pub fn parse_voicekiller_voices(json: &str) -> Vec<CloudVoice> {
     }).collect()).unwrap_or_default()
 }
 
+/// Speech models only (not voice-conversion or alpha-access ones), as id and name.
+pub fn parse_eleven_models(json: &str) -> Vec<CloudVoice> {
+    let v: Value = match serde_json::from_str(json) { Ok(v) => v, Err(_) => return vec![] };
+    v.as_array().map(|a| a.iter().filter_map(|m| {
+        if !m.get("can_do_text_to_speech").and_then(Value::as_bool).unwrap_or(false) { return None; }
+        if m.get("requires_alpha_access").and_then(Value::as_bool).unwrap_or(false) { return None; }
+        let id = m.get("model_id")?.as_str()?.to_string();
+        let name = m.get("name").and_then(Value::as_str).unwrap_or(&id).to_string();
+        let detail = m.get("description").and_then(Value::as_str).unwrap_or("").chars().take(160).collect();
+        valid_id(&id).then_some(CloudVoice { id, name, detail })
+    }).collect()).unwrap_or_default()
+}
+
 pub fn parse_previews(json: &str) -> Vec<(String, Vec<u8>)> {
     let v: Value = match serde_json::from_str(json) { Ok(v) => v, Err(_) => return vec![] };
     v.get("previews").and_then(Value::as_array).map(|a| a.iter().filter_map(|p| {
@@ -93,6 +106,17 @@ pub async fn elevenlabs_voices() -> Result<Vec<CloudVoice>, String> {
     let text = res.text().await.map_err(|e| e.to_string())?;
     if !status.is_success() { return Err(format!("ElevenLabs answered {status}: {}", text.chars().take(300).collect::<String>())); }
     Ok(parse_eleven_voices(&text))
+}
+
+/// The text-to-speech models this account can use, straight from ElevenLabs, so new generations appear without an app update.
+#[tauri::command]
+pub async fn elevenlabs_models() -> Result<Vec<CloudVoice>, String> {
+    let key = secret("elevenlabs")?;
+    let res = client()?.get(format!("{ELEVEN}/v1/models")).header("xi-api-key", key).send().await.map_err(|e| format!("Could not reach ElevenLabs: {e}"))?;
+    let status = res.status();
+    let text = res.text().await.map_err(|e| e.to_string())?;
+    if !status.is_success() { return Err(format!("ElevenLabs answered {status}: {}", text.chars().take(300).collect::<String>())); }
+    Ok(parse_eleven_models(&text))
 }
 
 #[tauri::command]
@@ -206,6 +230,13 @@ mod tests {
         assert_eq!(parse_voicekiller_voices(r#"["Jett","Abby"]"#).len(), 2);
         assert_eq!(parse_voicekiller_voices(r#"{"voices":[{"voice_name":"Jett"}]}"#)[0].name, "Jett");
         assert!(parse_voicekiller_voices(r#"{"ok":true}"#).is_empty());
+    }
+    #[test]
+    fn only_speech_models_are_listed() {
+        let j = r#"[{"model_id":"eleven_v4","name":"Eleven v4","can_do_text_to_speech":true},{"model_id":"eleven_sts","can_do_text_to_speech":false},{"model_id":"eleven_alpha","can_do_text_to_speech":true,"requires_alpha_access":true},{"model_id":"../x","can_do_text_to_speech":true}]"#;
+        let m = parse_eleven_models(j);
+        assert_eq!(m.len(), 1);
+        assert_eq!(m[0].id, "eleven_v4");
     }
     #[test]
     fn previews_decode() {

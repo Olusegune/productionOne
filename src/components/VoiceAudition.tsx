@@ -6,11 +6,12 @@ import type { ParsedStory } from '../engine/story'
 import type { DemoClip } from '../domain/demoClips'
 import { buildPerformance, emptyDirection, performanceBrief, providerById, providers, voiceEvents, voiceStates, type EventCue, type ProviderId, type VoiceEvent, type VoiceState } from '../domain/voiceDirection'
 import { VoiceCloud } from './VoiceCloud'
+import { latestElevenModel, rankElevenModels, type CloudModel } from '../domain/elevenModels'
 import { sampleLines, soundBrief, suggestVoice, voiceBrief, type InstalledVoice } from '../domain/voiceAudition'
 
 /** Hear a character speak (installed Windows voices, free and offline) or get a sound brief for a prop. Auditions are saved with the project like motion clips. */
-export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedStory; clips: DemoClip[]; setClips: (update: (clips: DemoClip[]) => DemoClip[]) => void; desktop: boolean; notify: (message: string) => void; onChange: (asset: ExtractedAsset) => void }) {
-  const { asset, story, clips, setClips, desktop, notify, onChange } = props
+export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedStory; clips: DemoClip[]; setClips: (update: (clips: DemoClip[]) => DemoClip[]) => void; desktop: boolean; notify: (message: string) => void; providersVersion: number; openProviders: (providerId?: string) => void; onChange: (asset: ExtractedAsset) => void }) {
+  const { asset, story, clips, setClips, desktop, notify, onChange, providersVersion, openProviders } = props
   const [voices, setVoices] = useState<InstalledVoice[]>([])
   const [voice, setVoice] = useState('')
   const [rate, setRate] = useState(0)
@@ -27,6 +28,7 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   const [expressiveness, setExpressiveness] = useState(0.5)
   const [direction, setDirection] = useState(emptyDirection)
   const [cloudVoice, setCloudVoice] = useState('')
+  const [elevenModels, setElevenModels] = useState<CloudModel[]>([])
   const chooseProvider = (id: ProviderId) => {
     const p = providerById(id)
     setProviderId(id); setModel(p.defaultModel); setCloudVoice('')
@@ -36,13 +38,22 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   }
   const setCue = (index: number, patch: Partial<EventCue>) => setDirection((d) => ({ ...d, events: d.events.map((c, i) => (i === index ? { ...c, ...patch } : c)) }))
   useEffect(() => { if (desktop) void invoke<InstalledVoice[]>('local_voices').then(setVoices).catch((e) => setError(String(e))) }, [desktop])
+  // The newest ElevenLabs speech models come from the account itself, so a new generation shows up without an app update.
+  useEffect(() => {
+    if (!desktop || providerId !== 'elevenlabs') return
+    let live = true
+    void invoke<boolean>('credential_status', { provider: 'elevenlabs' }).then((ok) => ok ? invoke<CloudModel[]>('elevenlabs_models') : []).then((list) => { if (live) setElevenModels(rankElevenModels(list)) }).catch(() => { if (live) setElevenModels([]) })
+    return () => { live = false }
+  }, [desktop, providerId, providersVersion])
   const lines = useMemo(() => (asset ? sampleLines(story, asset.name) : []), [story, asset])
   useEffect(() => { if (asset && !voice) setVoice(suggestVoice(voices, asset)?.name ?? '') }, [voices, asset, voice])
   if (!asset || asset.type === 'set' || asset.type === 'environment' || asset.type === 'costume') return null
   const isCharacter = asset.type === 'character'
   const line = custom.trim() || lines[picked]?.text || ''
   const mine = clips.filter((c) => c.assetId === asset.id && c.kind === 'audio')
-  const performance = buildPerformance(line, direction, provider, model)
+  const latest = latestElevenModel(elevenModels)
+  const activeModel = provider.id === 'elevenlabs' && model === 'latest' ? latest : model
+  const performance = buildPerformance(line, direction, provider, activeModel)
   const speak = async () => {
     setBusy(true); setError('')
     try {
@@ -52,7 +63,7 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
         try { localStorage.setItem('po.voice.base.' + providerId, base) } catch { /* storage unavailable */ }
         path = await invoke<string>('speak_http', { base, model, voice: serverVoice || asset.soundDirection || '', text: performance.text, speed: 1 + rate / 10, extra: provider.languages ? { language, exaggeration: expressiveness } : undefined, outputName })
       } else if (provider.id === 'elevenlabs') {
-        path = await invoke<string>('speak_elevenlabs', { voiceId: cloudVoice, modelId: model, text: performance.text, stability: 0.5, speed: Math.min(1.2, Math.max(0.7, 1 + rate / 20)), outputName })
+        path = await invoke<string>('speak_elevenlabs', { voiceId: cloudVoice, modelId: activeModel, text: performance.text, stability: 0.5, speed: Math.min(1.2, Math.max(0.7, 1 + rate / 20)), outputName })
       } else if (provider.id === 'voicekiller') {
         path = await invoke<string>('speak_voicekiller', { voiceName: cloudVoice, script: performance.text, instructions: [asset.soundDirection, performance.instructions].filter(Boolean).join(' '), outputName })
       } else path = await invoke<string>('speak_local', { text: performance.text, voice, rate, outputName })
@@ -68,7 +79,7 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
       <label className="settings-field"><span>Voice engine</span><select value={providerId} onChange={(e) => chooseProvider(e.target.value as ProviderId)}>{providers.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
       <p className="helper">{provider.note}{!provider.verified && ' Not yet tested against a live server: if it fails, the error below says why.'}</p>
       {!desktop && <p className="helper">Voice auditions run in the Windows app.</p>}
-      {provider.transport === 'cloud' && <VoiceCloud provider={provider} desktop={desktop} assetId={asset.id} voice={cloudVoice} setVoice={setCloudVoice} model={model} setModel={setModel} notify={notify} setError={setError} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: 0, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
+      {provider.transport === 'cloud' && <VoiceCloud provider={provider} desktop={desktop} assetId={asset.id} voice={cloudVoice} setVoice={setCloudVoice} model={model} setModel={setModel} models={elevenModels} latestModel={latest} providersVersion={providersVersion} openProviders={openProviders} notify={notify} setError={setError} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: 0, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
       <div className="sheet-controls">
         {provider.transport === 'windows' && <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)} disabled={!voices.length}>{voices.length === 0 && <option value="">No Windows voices found</option>}{voices.map((v) => <option key={v.name} value={v.name}>{v.name} · {v.gender} · {v.culture}</option>)}</select></label>}
         {provider.transport === 'http' && <><label><span>Server address</span><input value={base} onChange={(e) => setBase(e.target.value)} aria-label="Speech server address" /></label><label><span>Model</span><input value={model} onChange={(e) => setModel(e.target.value)} /></label>{provider.languages && <><label><span>Language</span><select value={language} onChange={(e) => setLanguage(e.target.value)}>{provider.languages.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></label><label><span>Expressiveness</span><input type="range" min={0} max={1.5} step={0.05} value={expressiveness} onChange={(e) => setExpressiveness(Number(e.target.value))} aria-label="Expressiveness" /></label></>}<label><span>{provider.languages ? 'Reference clip path (optional)' : provider.describesVoice ? 'Voice name or description' : 'Voice name'}</span><input value={serverVoice} onChange={(e) => setServerVoice(e.target.value)} placeholder={asset.soundDirection || 'as your server names it'} /></label></>}
@@ -98,7 +109,7 @@ ${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</b
       </div>
     </> : <>
       <p className="helper">This brief lists what to record or generate; it is also saved with the asset's sound direction. You can make each sound as a short effect below with ElevenLabs (paid, needs your key).</p>
-      {desktop && <VoiceCloud provider={providerById('elevenlabs')} desktop={desktop} assetId={asset.id} voice={cloudVoice} setVoice={setCloudVoice} model={model} setModel={setModel} notify={notify} setError={setError} soundOnly soundHint={`e.g. ${soundBrief(asset).split('Sounds to supply: ')[1]?.split(',')[0] ?? 'engine start'}`} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: 0, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
+      {desktop && <VoiceCloud provider={providerById('elevenlabs')} desktop={desktop} assetId={asset.id} voice={cloudVoice} setVoice={setCloudVoice} model={model} setModel={setModel} models={elevenModels} latestModel={latest} providersVersion={providersVersion} openProviders={openProviders} notify={notify} setError={setError} soundOnly soundHint={`e.g. ${soundBrief(asset).split('Sounds to supply: ')[1]?.split(',')[0] ?? 'engine start'}`} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: 0, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
       <label className="settings-field"><span>Sounds to supply</span><textarea rows={3} value={asset.soundDirection ?? ''} onChange={(e) => onChange({ ...asset, soundDirection: e.target.value })} placeholder="Leave empty to use the suggested list below" /></label>
       <pre className="helper" style={{ whiteSpace: 'pre-wrap' }}>{soundBrief(asset)}</pre>
       <div className="sheet-actions-row"><button className="secondary" onClick={() => copy(soundBrief(asset))}><Copy size={14} /> Copy sound brief</button></div>

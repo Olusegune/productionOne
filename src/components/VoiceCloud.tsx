@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { KeyRound, Sparkles, Volume2 } from 'lucide-react'
+import type { CloudModel } from '../domain/elevenModels'
 import type { VoiceProvider } from '../domain/voiceDirection'
 
 interface CloudVoice { id: string; name: string; detail: string }
@@ -15,6 +16,12 @@ export function VoiceCloud(props: {
   setVoice: (voice: string) => void
   model: string
   setModel: (model: string) => void
+  /** ElevenLabs models the account offers, newest first. */
+  models?: CloudModel[]
+  latestModel?: string
+  /** Bumps when the key settings dialog closes, so key status is re-read. */
+  providersVersion: number
+  openProviders: (providerId?: string) => void
   onClip: (clip: { path: string; label: string; line: string }) => void
   notify: (message: string) => void
   setError: (message: string) => void
@@ -22,9 +29,8 @@ export function VoiceCloud(props: {
   soundOnly?: boolean
   soundHint?: string
 }) {
-  const { provider, desktop, assetId, voice, setVoice, model, setModel, onClip, notify, setError, soundOnly, soundHint } = props
+  const { provider, desktop, assetId, voice, setVoice, model, setModel, models, latestModel, providersVersion, openProviders, onClip, notify, setError, soundOnly, soundHint } = props
   const [saved, setSaved] = useState<Record<string, boolean>>({})
-  const [entry, setEntry] = useState<Record<string, string>>({})
   const [voices, setVoices] = useState<CloudVoice[]>([])
   const [busy, setBusy] = useState('')
   const [description, setDescription] = useState('')
@@ -40,17 +46,11 @@ export function VoiceCloud(props: {
     for (const k of provider.keys ?? []) next[k.id] = await invoke<boolean>('credential_status', { provider: k.id }).catch(() => false)
     setSaved(next)
   }
-  useEffect(() => { void refreshStatus(); setVoices([]); setPreviews([]) }, [provider.id, desktop])
+  useEffect(() => { void refreshStatus() }, [provider.id, desktop, providersVersion])
+  useEffect(() => { setVoices([]); setPreviews([]) }, [provider.id])
   const connected = (provider.keys ?? []).every((k) => saved[k.id])
   const run = async (what: string, job: () => Promise<void>) => { setBusy(what); setError(''); try { await job() } catch (e) { setError(String(e)) } finally { setBusy('') } }
 
-  const saveKey = (id: string) => run('key', async () => {
-    await invoke('save_credential', { provider: id, apiKey: entry[id] ?? '' })
-    setEntry((e) => ({ ...e, [id]: '' }))
-    await refreshStatus()
-    notify('Saved to the Windows Credential Manager.')
-  })
-  const removeKey = (id: string) => run('key', async () => { await invoke('delete_credential', { provider: id }); await refreshStatus() })
   const loadVoices = () => run('voices', async () => {
     const list = await invoke<CloudVoice[]>(provider.id === 'elevenlabs' ? 'elevenlabs_voices' : 'voicekiller_voices')
     setVoices(list)
@@ -73,16 +73,12 @@ export function VoiceCloud(props: {
 
   return <div className="voice-cloud">
     <p className="helper warn">Every action here spends credits on your {provider.label.replace(' (cloud)', '')} account.</p>
-    <details open={!connected}>
-      <summary><KeyRound size={14} /> Connect {connected ? '(keys saved)' : '(needed)'}</summary>
-      {(provider.keys ?? []).map((k) => <div className="sheet-controls" key={k.id}>
-        <label><span>{k.label} {saved[k.id] ? '· saved' : ''}</span><input type="password" autoComplete="off" value={entry[k.id] ?? ''} onChange={(e) => setEntry((x) => ({ ...x, [k.id]: e.target.value }))} placeholder={saved[k.id] ? 'Saved. Paste a new one to replace it' : 'Paste it here'} aria-label={k.label} /></label>
-        <button className="secondary" disabled={!desktop || !(entry[k.id] ?? '').trim() || busy === 'key'} onClick={() => void saveKey(k.id)}>Save</button>
-        {saved[k.id] && <button className="secondary" onClick={() => void removeKey(k.id)}>Remove</button>}
-      </div>)}
-    </details>
+    <div className="sheet-actions-row">
+      <span className="helper"><KeyRound size={14} /> {connected ? 'Key saved in Settings.' : 'No key yet.'}</span>
+      <button className="secondary" onClick={() => openProviders(provider.keys?.[0]?.id)}>{connected ? 'Change keys' : 'Add your key'} in Settings</button>
+    </div>
     {!soundOnly && <div className="sheet-controls">
-      {provider.models && <label><span>Model</span><select value={model} onChange={(e) => setModel(e.target.value)}>{provider.models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label>}
+      {provider.id === 'elevenlabs' && <label><span>Model</span><select value={model} onChange={(e) => setModel(e.target.value)}><option value="latest">Latest ({latestModel ?? 'eleven_v4'}): updates itself</option>{(models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name || m.id}</option>)}</select></label>}
       {voices.length > 0
         ? <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)}>{voices.map((v) => <option key={v.id} value={v.id}>{v.name}{v.detail ? ` · ${v.detail}` : ''}</option>)}</select></label>
         : <label><span>{provider.id === 'elevenlabs' ? 'Voice id' : 'Voice name'}</span><input value={voice} onChange={(e) => setVoice(e.target.value)} placeholder={provider.id === 'elevenlabs' ? 'load your voices, or paste a voice id' : 'e.g. Jett'} /></label>}

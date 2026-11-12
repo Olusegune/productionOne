@@ -1,5 +1,7 @@
 /** Voice providers and per-line performance direction. A provider only offers the controls it can honour; anything it cannot do is reported, never faked. */
 
+import { supportsAudioTags } from './elevenModels'
+
 export type ProviderId = 'windows' | 'chatterbox' | 'qwen-tts' | 'wazobia' | 'speech-server' | 'elevenlabs' | 'voicekiller'
 export type VoiceEvent = 'laugh' | 'chuckle' | 'cough' | 'grunt' | 'sigh' | 'gasp'
 export type VoiceState = 'neutral' | 'out of breath' | 'eating' | 'carrying a heavy load' | 'whispering' | 'shouting'
@@ -15,8 +17,8 @@ export interface VoiceProvider {
   eventTags?: Partial<Record<VoiceEvent, string>>
   /** Physical states the model reads as a tag (for example whispering). */
   stateTags?: Partial<Record<VoiceState, string>>
-  /** Tags only work with these model ids. */
-  tagModels?: string[]
+  /** Tags only work with models this says yes to (matched by pattern so newer models work without an update). */
+  tagModelCheck?: (modelId: string) => boolean
   /** The emotion is passed as a tag the model may or may not honour. */
   emotionAsTag?: boolean
   /** Emotion and physical state are sent as a plain-language instruction field. */
@@ -43,7 +45,7 @@ export const providers: VoiceProvider[] = [
   { id: 'chatterbox', label: 'Chatterbox (local server)', transport: 'http', defaultBase: 'http://127.0.0.1:4123', defaultModel: 'chatterbox', eventTags: { laugh: 'laugh', chuckle: 'chuckle', cough: 'cough' }, describesVoice: false, verified: false, note: 'Open model by Resemble AI that you run yourself. Inline sound tags depend on the version you install; the voice is a name or a reference clip your server knows.' },
   { id: 'qwen-tts', label: 'Qwen TTS (local server)', transport: 'http', defaultBase: 'http://127.0.0.1:8000', defaultModel: 'qwen3-tts',  describesVoice: true, verified: false, note: 'Alibaba open model you run yourself. Whether the voice field accepts a written description depends on the server you use.' },
   { id: 'wazobia', label: 'WazobiaVoice (local server, Nigerian languages)', transport: 'http', defaultBase: 'http://127.0.0.1:8765', defaultModel: 'wazobia',  describesVoice: false, languages: [{ id: 'en', label: 'Nigerian English' }, { id: 'pcm', label: 'Nigerian Pidgin' }, { id: 'ig', label: 'Igbo' }, { id: 'ha', label: 'Hausa' }, { id: 'yo', label: 'Yoruba (weakest, per its model card)' }], verified: false, note: 'Run tools/wazobia_server.py (see its header for setup). Weights are research and non-commercial only. The voice field is the path to a 5-10 second reference clip on this computer; leave it empty for the default voice.' },
-  { id: 'elevenlabs', label: 'ElevenLabs (cloud)', transport: 'cloud', defaultBase: '', defaultModel: 'eleven_v3', describesVoice: true, designsVoices: true, soundEffects: true, eventTags: { laugh: 'laughs', sigh: 'sighs' }, stateTags: { whispering: 'whispers' }, tagModels: ['eleven_v3'], emotionAsTag: true, models: [{ id: 'eleven_v3', label: 'Eleven v3 (sound tags)' }, { id: 'eleven_multilingual_v2', label: 'Multilingual v2' }, { id: 'eleven_flash_v2_5', label: 'Flash v2.5 (fast)' }], keys: [{ id: 'elevenlabs', label: 'ElevenLabs API key' }], verified: false, note: 'Paid cloud service: every line spends your ElevenLabs credits. Designs a voice from a description, speaks lines with inline sound tags on Eleven v3, and makes separate sound effects. Not yet run against the live service.' },
+  { id: 'elevenlabs', label: 'ElevenLabs (cloud)', transport: 'cloud', defaultBase: '', defaultModel: 'latest', describesVoice: true, designsVoices: true, soundEffects: true, eventTags: { laugh: 'laughs', sigh: 'sighs' }, stateTags: { whispering: 'whispers' }, tagModelCheck: supportsAudioTags, emotionAsTag: true, keys: [{ id: 'elevenlabs', label: 'ElevenLabs API key' }], verified: false, note: 'Paid cloud service: every line spends your ElevenLabs credits. Designs a voice from a description, speaks lines with inline sound tags on Eleven v3 and later (the newest model your account offers is used automatically), and makes separate sound effects. Not yet run against the live service.' },
   { id: 'voicekiller', label: 'VoiceKiller (cloud)', transport: 'cloud', defaultBase: '', defaultModel: '', describesVoice: false, takesInstructions: true, keys: [{ id: 'voicekiller', label: 'VoiceKiller API key' }, { id: 'voicekiller-user', label: 'VoiceKiller user ID' }], verified: false, note: 'Paid cloud service. Emotion and physical state are sent as plain-language instructions, which only directable voices act on. Laughs and grunts are not documented, so they are not applied. Not yet run against the live service.' },
   { id: 'speech-server', label: 'Other speech server', transport: 'http', defaultBase: 'http://127.0.0.1:8000', defaultModel: '',  describesVoice: false, verified: false, note: 'Any server on this computer or your network with a /v1/audio/speech route.' },
 ]
@@ -76,7 +78,7 @@ export function buildPerformance(line: string, direction: VoiceDirection, provid
   const applied: string[] = []
   const notApplied: string[] = []
   const instructionParts: string[] = []
-  const tagsOn = !!provider.eventTags && (!provider.tagModels || (!!model && provider.tagModels.includes(model)))
+  const tagsOn = !!provider.eventTags && (!provider.tagModelCheck || (!!model && provider.tagModelCheck(model)))
   const tagWord = (event: VoiceEvent) => (tagsOn ? provider.eventTags?.[event] : undefined)
   const emotion = direction.emotion.trim()
   if (direction.state === 'out of breath') {
@@ -111,7 +113,7 @@ export function buildPerformance(line: string, direction: VoiceDirection, provid
       text = cue.at === 'before' ? `[${word}] ${text}` : `${text} [${word}]`
       applied.push(`${cap(cue.event)} ${cue.at} the line (inline tag).`)
     } else {
-      notApplied.push(`${cap(cue.event)} ${cue.at} the line: ${provider.label} has no ${cue.event} sound${provider.tagModels && !tagsOn ? ' with this model' : ''}. ${provider.soundEffects ? 'Make it as a separate sound effect below and layer it' : 'Layer a separate sound effect'} ${cue.at} this line.`)
+      notApplied.push(`${cap(cue.event)} ${cue.at} the line: ${provider.label} has no ${cue.event} sound${provider.tagModelCheck && !tagsOn ? ' with this model' : ''}. ${provider.soundEffects ? 'Make it as a separate sound effect below and layer it' : 'Layer a separate sound effect'} ${cue.at} this line.`)
     }
   }
   return { text, instructions: instructionParts.join(' '), applied, notApplied }

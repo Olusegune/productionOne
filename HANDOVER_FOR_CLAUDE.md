@@ -103,3 +103,7 @@ Do not claim guaranteed identity consistency, artifact-free images, universal mo
 
 ## 0.19.0
 - `src-tauri/src/voice_cloud.rs` (ElevenLabs: /v1/text-to-speech, /v1/sound-generation, /v1/text-to-voice/design + /v1/text-to-voice, /v2/voices; VoiceKiller: /api/generate-speech, /voicelist). Credential names: elevenlabs, voicekiller, voicekiller-user. UI: `VoiceCloud.tsx`; direction logic in `voiceDirection.ts` (eventTags/stateTags/tagModels/takesInstructions). All unverified live. VoiceKiller clone endpoint not wired.
+
+
+## 0.19.1
+- `src/domain/elevenModels.ts` (latest model by account list, tag support by pattern), `elevenlabs_models` command, voice keys added to `providerRegistry` (Settings dialog). VoiceCloud no longer holds key entry.

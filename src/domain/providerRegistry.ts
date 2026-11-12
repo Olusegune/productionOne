@@ -1,5 +1,5 @@
-export type ProviderId = 'openai' | 'google' | 'fal' | 'kie' | 'openrouter'
-export type ProviderCapability = 'image-generation' | 'image-editing' | 'model-discovery' | 'durable-queue' | 'video-generation'
+export type ProviderId = 'openai' | 'google' | 'fal' | 'kie' | 'openrouter' | 'elevenlabs' | 'voicekiller' | 'voicekiller-user'
+export type ProviderCapability = 'image-generation' | 'image-editing' | 'model-discovery' | 'durable-queue' | 'video-generation' | 'voice'
 
 export interface ProviderDefinition {
   id: ProviderId
@@ -18,6 +18,9 @@ export const providerRegistry: ProviderDefinition[] = [
   { id:'fal',name:'fal.ai',capabilities:['image-generation','image-editing','durable-queue'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-10-20',documentationUrl:'https://fal.ai/docs/documentation/model-apis/inference/queue',status:'catalog-ready',notes:'Official persistent queue supports submit, status, result, cancel, retries, and webhooks.' },
   { id:'kie',name:'KIE.ai',capabilities:['image-generation','image-editing','video-generation','durable-queue'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/bytedance/seedance-2',status:'adapter-ready',notes:'Native task creation and status adapter implemented for verified KIE job endpoints.' },
   { id:'openrouter',name:'OpenRouter',capabilities:['image-generation','image-editing','model-discovery'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-10-20',documentationUrl:'https://openrouter.ai/docs/api/api-reference/images/list-image-models',status:'catalog-ready',notes:'Unified image API exposes model and endpoint capability discovery.' },
+  { id:'elevenlabs',name:'ElevenLabs (voice and sound effects)',capabilities:['voice'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-12',documentationUrl:'https://elevenlabs.io/docs/api-reference',status:'catalog-ready',notes:'Speech, voice design and sound effects in the Voice audition. Paid: spends your ElevenLabs credits. Not yet run against the live service.' },
+  { id:'voicekiller',name:'VoiceKiller API key',capabilities:['voice'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-12',documentationUrl:'https://voicekiller.com/api-docs',status:'catalog-ready',notes:'Speech in the Voice audition. Needs the API key and the user ID below, both from your VoiceKiller dashboard. Not yet run against the live service.' },
+  { id:'voicekiller-user',name:'VoiceKiller user ID',capabilities:['voice'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-12',documentationUrl:'https://voicekiller.com/api-docs',status:'catalog-ready',notes:'The user ID that goes with the VoiceKiller API key.' },
 ]
 
 export const imageModels = [
