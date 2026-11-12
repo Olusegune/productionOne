@@ -58,6 +58,10 @@ Verified on the owner's PC (2026-11-12) through the real app, with real keys:
 
 NOT verified: VoiceKiller (no key; voice-list reply shape unknown), keeping a designed ElevenLabs voice, whether "Latest" came from `/v1/models` or the fallback, Chatterbox/Qwen/Wazobia servers, prop sound effects, truck motion, pose/set sheets, anything in the packaged installer UI beyond the screens listed above.
 
+## UI/UX brief
+
+The full brief is **docs/UI_UX_BRIEF.md**: what the owner asked for (sleeker but accessible type, an interface that makes auditioning motion and voice easy), what 0.20.0 changed, 14 UX findings from the real-PC test, and a prioritised UI/UX to-do list (regenerate flow, notes saved, cost shown before paid actions, stale sample text, noisy warnings, long Design screen, voice panel regrouping, narrow-window layout, real WCAG/screen-reader audit, light theme, onboarding, splitting App.tsx). Read it before touching the interface.
+
 ## OUTSTANDING (in rough priority order)
 
 ### Image pipeline
