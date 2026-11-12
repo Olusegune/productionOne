@@ -2,6 +2,7 @@ import type { ExtractedAsset } from './productionStudio'
 import { artifactGuidance } from './cleanGuidance'
 import { styleGuidance, type SheetType, type StyleBible } from './visualDevelopment'
 import type { ExpressionNeed } from '../engine/emotion'
+import { anchoredPromptLine } from './identityAnchor'
 
 /** One separate image inside a reference sheet. Each view is generated and saved as its own original-resolution file. */
 export interface ViewSpec {
@@ -110,6 +111,8 @@ export interface PromptInput {
   sheetType: SheetType
   view: ViewSpec
   notes?: string
+  /** True when the approved front view is sent along as a reference image. */
+  anchored?: boolean
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -119,12 +122,13 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
   return facts ? `Confirmed character identity: ${facts}.` : ''
 }
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
     view.instruction,
     identityFacts(asset),
+    anchored ? anchoredPromptLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,
     'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',

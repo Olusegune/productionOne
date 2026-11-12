@@ -32,6 +32,12 @@ describe('sheet specs', () => {
     expect(viewsFor('set', 'Layout')[0].label).toBe('Floor plan')
     expect(viewsFor('prop', 'Turnaround')).toEqual([])
   })
+  it('tells the model the reference image is the same subject only when one is attached', () => {
+    const view = viewsFor('character', 'Turnaround')[1]
+    const base = { style: defaultStyleBible, asset: amina, variant: 'Canonical', sheetType: 'Turnaround' as const, view }
+    expect(buildViewPrompt({ ...base, anchored: true })).toMatch(/attached reference image is this exact same subject/)
+    expect(buildViewPrompt(base)).not.toMatch(/attached reference image/)
+  })
   it('writes prompts that demand identity, neutral light, no text and no cropping', () => {
     const view = viewsFor('character', 'Turnaround')[0]
     const prompt = buildViewPrompt({ style: defaultStyleBible, asset: amina, variant: 'Weathered jacket', sheetType: 'Turnaround', view })

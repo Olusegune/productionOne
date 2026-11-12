@@ -95,3 +95,7 @@ Do not claim guaranteed identity consistency, artifact-free images, universal mo
 
 ## 0.17.2
 - SheetStudio notes now `notesByAsset`; `buildViewPrompt` adds a single-image line; `qa_pixels` uses per-edge median. Remaining defects: see CHANGELOG 0.17.2 and Desktop/ProductionOne-E2E-Test-0.17.1/E2E_TEST_REPORT.md.
+
+
+## 0.18.0
+- `src/domain/identityAnchor.ts` (suggestReferenceModel, anchorStatus, anchoredPromptLine); SheetStudio Identity lock panel; `buildViewPrompt` `anchored` flag. Existing machinery: `anchorFor`, `useAnchor`, `waitingForAnchor`. Next: live test that the face holds; per-view choice of anchor; save notes with project.

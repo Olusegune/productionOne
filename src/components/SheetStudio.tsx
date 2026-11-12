@@ -11,6 +11,7 @@ import {
   enqueue,
   reassignModel,
   reject,
+  anchorFor,
   retry,
   summarize,
   waitingForAnchor,
@@ -26,6 +27,7 @@ import {
   type CatalogModel,
   type DiscoveredCatalog,
 } from "../domain/imageCatalog";
+import { anchorStatus, suggestReferenceModel } from "../domain/identityAnchor";
 import {
   buildViewPrompt,
   intensities,
@@ -137,7 +139,7 @@ export function SheetStudio(props: {
     const chosen = testOneFirst ? (views.filter((v) => primaryViewKeys.includes(v.key))[0] ? [views.filter((v) => primaryViewKeys.includes(v.key))[0]] : views.slice(0, 1)) : views;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, anchored: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key) }),
       aspect: view.aspect, fullBody: view.fullBody, provider, model: modelId,
       references: modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []) : [],
       useAnchor: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key),
@@ -219,6 +221,9 @@ export function SheetStudio(props: {
   const reviewCount = views.filter((v) => jobFor(v.key)?.status === "needs-review").length;
   const mine = refs[asset.id] ?? [];
   const anchorOn = modelTakesReferences(provider, modelId);
+  const anchorPath = anchorFor(queue, { assetId: asset.id, variant: activeVariant } as ImageJob);
+  const lock = anchorStatus({ takesReferences: anchorOn, anchorPath, anchorLabel: "front view" });
+  const suggestion = anchorOn ? undefined : suggestReferenceModel(catalog, { provider, modelId }, configured);
   const toggleCompare = (key: string) => setCompare((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key].slice(-2)));
   const compareItems = compare.map((k) => ({ key: k, view: views.find((v) => v.key === k), job: jobFor(k) })).filter((x): x is { key: string; view: (typeof views)[number]; job: ImageJob } => !!x.view && !!x.job?.outputPath);
 
@@ -344,8 +349,10 @@ export function SheetStudio(props: {
           <Fold title="Notes" hint="added to every prompt" defaultOpen>
             <textarea className="ss-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. dust-worn jacket, torn left sleeve" aria-label="Notes for this sheet" />
           </Fold>
-          <Fold title="Identity lock" hint={anchorOn ? "on" : "model has no references"}>
-            <p className="helper">{anchorOn ? "Your approved front view is sent as a reference to keep the character consistent across the other views." : "This model takes no reference images, so consistency relies on the written description. Choose a model that takes references to lock identity."}</p>
+          <Fold title="Identity lock" hint={lock.kind === "locked" ? "on" : lock.kind === "waiting-for-anchor" ? "needs approved front" : "off: model has no references"} defaultOpen={lock.kind !== "locked"}>
+            <p className="helper" role={lock.kind === "no-references" ? "alert" : undefined}>{lock.message}</p>
+            {suggestion && <button className="secondary" onClick={() => { choice.pick(suggestion.provider, suggestion.id); notify(`Switched to ${suggestion.name}: it uses your approved front view as a reference.`); }}>Switch to {suggestion.name}</button>}
+            {lock.kind === "no-references" && !suggestion && <p className="helper">No model with reference support is available with your current keys. Add a Kie.ai or Google key to lock identity.</p>}
           </Fold>
           <Fold title="Model">
             <p className="helper">{model ? `${model.name}. ${model.note}` : "Custom model id: this app does not know its capabilities."}</p>

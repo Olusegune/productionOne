@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.0 (2026-11-12): reference-anchored generation made visible
+- Anchoring already existed for models that accept reference images; it was invisible and off with the default text-only model. Now the Identity lock panel opens by default, says whether the character is locked, waiting for an approved front view, or unprotected, and offers one-click "Switch to <model>" (a reference-capable model on a provider you have a key for).
+- Views that travel with the approved front view as a reference now tell the model it is the exact same subject (face, hair, skin, build, costume) and to change only the pose, angle or expression.
+- Not live-tested yet: that a reference model actually keeps the face across views.
+- Tests: 171 JS, 59 Rust.
+
 ## 0.17.2 (2026-11-12): fixes from the end-to-end test
 - Every sheet prompt now demands exactly one image of one subject in one view (no grids, contact sheets or collages). Models can still ignore it; no automatic detection of collages yet.
 - Sheet notes are kept per asset, so one asset's notes no longer appear in another's prompts.
