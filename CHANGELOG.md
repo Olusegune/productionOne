@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.0 (2026-11-12): voice engines and performance direction
+- Voice audition can now use a speech server on this computer or your network (`POST /v1/audio/speech`): presets for Chatterbox and Qwen TTS, plus any other server. New `speak_http` command; address must be local or private network; returned bytes are checked to be real audio.
+- Performance direction per line: physical state, emotion and laugh/grunt/cough cues. The app applies only what the engine supports (inline tags, pauses) and lists everything else as not applied; the casting brief carries it.
+- NOT verified against a live server. Suno via Kie, VoiceKiller and Wazobia are not integrated (no documented API available).
+- Tests: 164 JS, 57 Rust.
+
 ## 0.16.0 (2026-11-12): motion and voice auditions
 - Motion audition presets by asset type (characters, vehicles, props); voice audition with installed Windows voices; sound briefs for props.
 - Confirmed identity fields now reach every image sheet prompt and motion prompt.

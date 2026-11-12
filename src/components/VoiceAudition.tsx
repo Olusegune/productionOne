@@ -4,6 +4,7 @@ import { Copy, Volume2 } from 'lucide-react'
 import type { ExtractedAsset } from '../domain/productionStudio'
 import type { ParsedStory } from '../engine/story'
 import type { DemoClip } from '../domain/demoClips'
+import { buildPerformance, emptyDirection, performanceBrief, providerById, providers, voiceEvents, voiceStates, type EventCue, type ProviderId, type VoiceEvent, type VoiceState } from '../domain/voiceDirection'
 import { sampleLines, soundBrief, suggestVoice, voiceBrief, type InstalledVoice } from '../domain/voiceAudition'
 
 /** Hear a character speak (installed Windows voices, free and offline) or get a sound brief for a prop. Auditions are saved with the project like motion clips. */
@@ -16,6 +17,20 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   const [picked, setPicked] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [providerId, setProviderId] = useState<ProviderId>(() => { try { return (localStorage.getItem('po.voice.provider') as ProviderId) || 'windows' } catch { return 'windows' } })
+  const provider = providerById(providerId)
+  const [base, setBase] = useState(() => { try { return localStorage.getItem('po.voice.base.' + providerId) || provider.defaultBase } catch { return provider.defaultBase } })
+  const [model, setModel] = useState(provider.defaultModel)
+  const [serverVoice, setServerVoice] = useState('')
+  const [direction, setDirection] = useState(emptyDirection)
+  const chooseProvider = (id: ProviderId) => {
+    const p = providerById(id)
+    setProviderId(id); setModel(p.defaultModel)
+    let saved = ''
+    try { localStorage.setItem('po.voice.provider', id); saved = localStorage.getItem('po.voice.base.' + id) ?? '' } catch { /* storage unavailable */ }
+    setBase(saved || p.defaultBase)
+  }
+  const setCue = (index: number, patch: Partial<EventCue>) => setDirection((d) => ({ ...d, events: d.events.map((c, i) => (i === index ? { ...c, ...patch } : c)) }))
   useEffect(() => { if (desktop) void invoke<InstalledVoice[]>('local_voices').then(setVoices).catch((e) => setError(String(e))) }, [desktop])
   const lines = useMemo(() => (asset ? sampleLines(story, asset.name) : []), [story, asset])
   useEffect(() => { if (asset && !voice) setVoice(suggestVoice(voices, asset)?.name ?? '') }, [voices, asset, voice])
@@ -23,11 +38,18 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   const isCharacter = asset.type === 'character'
   const line = custom.trim() || lines[picked]?.text || ''
   const mine = clips.filter((c) => c.assetId === asset.id && c.kind === 'audio')
+  const performance = buildPerformance(line, direction, provider)
   const speak = async () => {
     setBusy(true); setError('')
     try {
-      const path = await invoke<string>('speak_local', { text: line, voice, rate, outputName: `${asset.id}_voice_audition` })
-      setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: `Windows voice · ${voice || 'default'}`, path, prompt: voiceBrief(asset, line), duration: 0, createdAt: Date.now(), kind: 'audio', line }])
+      const outputName = `${asset.id}_voice_audition`
+      let path: string
+      if (provider.transport === 'http') {
+        try { localStorage.setItem('po.voice.base.' + providerId, base) } catch { /* storage unavailable */ }
+        path = await invoke<string>('speak_http', { base, model, voice: serverVoice || asset.soundDirection || '', text: performance.text, speed: 1 + rate / 10, outputName })
+      } else path = await invoke<string>('speak_local', { text: performance.text, voice, rate, outputName })
+      setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: provider.transport === 'http' ? `${provider.label} · ${serverVoice || 'default voice'}` : `Windows voice · ${voice || 'default'}`, path, prompt: `${voiceBrief(asset, line)}
+${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind: 'audio', line }])
       notify(`Voice audition saved for ${asset.name}.`)
     } catch (e) { setError(String(e)) } finally { setBusy(false) }
   }
@@ -35,18 +57,35 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   return <section className="panel voice-audition" id="voice-audition" tabIndex={-1} aria-label="Voice and sound audition">
     <div className="panel-heading"><div><span className="eyebrow">{isCharacter ? 'VOICE AUDITION · SOUND' : 'SOUND AUDITION'}</span><h3>{asset.name}: {isCharacter ? 'hear them speak' : 'what it sounds like'}</h3></div></div>
     {isCharacter ? <>
-      <p className="helper">Stand-in voices from this computer: free and offline. They are for casting, pace and timing, not final performance. Use the brief to cast a real voice elsewhere.</p>
+      <label className="settings-field"><span>Voice engine</span><select value={providerId} onChange={(e) => chooseProvider(e.target.value as ProviderId)}>{providers.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
+      <p className="helper">{provider.note}{!provider.verified && ' Not yet tested against a live server: if it fails, the error below says why.'}</p>
       {!desktop && <p className="helper">Voice auditions run in the Windows app.</p>}
       <div className="sheet-controls">
-        <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)} disabled={!voices.length}>{voices.length === 0 && <option value="">No Windows voices found</option>}{voices.map((v) => <option key={v.name} value={v.name}>{v.name} · {v.gender} · {v.culture}</option>)}</select></label>
+        {provider.transport === 'windows' && <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)} disabled={!voices.length}>{voices.length === 0 && <option value="">No Windows voices found</option>}{voices.map((v) => <option key={v.name} value={v.name}>{v.name} · {v.gender} · {v.culture}</option>)}</select></label>}
+        {provider.transport === 'http' && <><label><span>Server address</span><input value={base} onChange={(e) => setBase(e.target.value)} aria-label="Speech server address" /></label><label><span>Model</span><input value={model} onChange={(e) => setModel(e.target.value)} /></label><label><span>{provider.describesVoice ? 'Voice name or description' : 'Voice name'}</span><input value={serverVoice} onChange={(e) => setServerVoice(e.target.value)} placeholder={asset.soundDirection || 'as your server names it'} /></label></>}
         <label><span>Pace</span><input type="range" min={-6} max={6} value={rate} onChange={(e) => setRate(Number(e.target.value))} aria-label="Speaking pace" /></label>
         {lines.length > 0 && <label><span>Line from the script</span><select value={picked} onChange={(e) => { setPicked(Number(e.target.value)); setCustom('') }}>{lines.map((l, i) => <option key={l.line} value={i}>Line {l.line}: {l.text.slice(0, 48)}</option>)}</select></label>}
       </div>
       <label className="settings-field"><span>{lines.length ? 'Or type your own line' : 'Line to speak (no dialogue for this character in the script)'}</span><input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Type a line to hear" /></label>
       <label className="settings-field"><span>Voice direction (saved with the character)</span><input value={asset.soundDirection ?? ''} onChange={(e) => onChange({ ...asset, soundDirection: e.target.value })} placeholder="e.g. low, tired, measured, slight northern accent" /></label>
+      <fieldset className="settings-field"><legend>Performance direction</legend>
+        <div className="sheet-controls">
+          <label><span>Physical state</span><select value={direction.state} onChange={(e) => setDirection({ ...direction, state: e.target.value as VoiceState })}>{voiceStates.map((s) => <option key={s}>{s}</option>)}</select></label>
+          <label><span>Emotion</span><input value={direction.emotion} onChange={(e) => setDirection({ ...direction, emotion: e.target.value })} placeholder="e.g. weary, amused" /></label>
+        </div>
+        {direction.events.map((c, i) => <div className="sheet-controls" key={i}>
+          <label><span>Sound</span><select value={c.event} onChange={(e) => setCue(i, { event: e.target.value as VoiceEvent })}>{voiceEvents.map((v) => <option key={v}>{v}</option>)}</select></label>
+          <label><span>Where</span><select value={c.at} onChange={(e) => setCue(i, { at: e.target.value as EventCue['at'] })}><option value="before">before the line</option><option value="after">after the line</option></select></label>
+          <button className="secondary" onClick={() => setDirection({ ...direction, events: direction.events.filter((_, j) => j !== i) })}>Remove</button>
+        </div>)}
+        <button className="secondary" onClick={() => setDirection({ ...direction, events: [...direction.events, { event: 'laugh', at: 'after' }] })}>Add a laugh, grunt or other sound</button>
+        {performance.applied.map((a) => <p className="helper" key={a}>✓ {a}</p>)}
+        {performance.notApplied.map((a) => <p className="helper warn" key={a}>Not applied: {a}</p>)}
+      </fieldset>
       <div className="sheet-actions-row">
-        <button className="primary" disabled={!desktop || busy || !line || !voices.length} onClick={() => void speak()}><Volume2 size={15} /> {busy ? 'Speaking…' : 'Hear this line'}</button>
-        <button className="secondary" onClick={() => copy(voiceBrief(asset, line))}><Copy size={14} /> Copy casting brief</button>
+        <button className="primary" disabled={!desktop || busy || !line || (provider.transport === 'windows' && !voices.length)} onClick={() => void speak()}><Volume2 size={15} /> {busy ? 'Speaking…' : 'Hear this line'}</button>
+        <button className="secondary" onClick={() => copy(`${voiceBrief(asset, line)}
+${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</button>
       </div>
     </> : <>
       <p className="helper">Sound is not generated in this version. This brief lists what to record or generate; it is also saved with the asset's sound direction.</p>

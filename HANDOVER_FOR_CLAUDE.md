@@ -81,3 +81,9 @@ These were copied to the Windows Desktop. The installer is not code-signed.
 ## Release honesty
 
 Do not claim guaranteed identity consistency, artifact-free images, universal model support, exactly-once paid execution, or Hollywood-standard output. Those require provider capabilities and human review that are not universally available.
+
+
+## 0.17.0 voice engines
+- `src/domain/voiceDirection.ts`: provider registry (windows, chatterbox, qwen-tts, speech-server), `buildPerformance` (applied vs notApplied), `performanceBrief`.
+- `src-tauri/src/voice.rs`: `speak_http` (local/private addresses only via `local::normalize_base`; `audio_extension` rejects non-audio).
+- UI: `VoiceAudition.tsx`. All HTTP providers are `verified: false` until run against a live server. Next: live test, then Kie/other providers once docs are available.
