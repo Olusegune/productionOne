@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Check, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
+import { Eyebrow } from "./Eyebrow";
+import { AlertTriangle, ArrowRight, Check, Compass, ShieldCheck, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
 import { committedUsd, retry, type QueueState } from "../domain/generationQueue";
 import { videoPresets, type AnalysisResult, type CompiledShotPackage, type SceneCoverage, type ShotRecord, type VideoModel } from "../domain/productionStudio";
 import { Fold } from "./Fold";
@@ -68,7 +69,7 @@ export function DeliveryCenter(props: {
     <section className="dc" aria-label="Delivery">
       <div className="dc-summary">
         <div className={`dc-ready ${audit.ready ? "ok" : "todo"}`}>
-          <span className="eyebrow">Production readiness</span>
+          <Eyebrow icon={ShieldCheck}>Production readiness</Eyebrow>
           <b>{percent}%</b>
           <small>{audit.ready ? "Ready to package" : "Action required"}</small>
           <i className="dc-bar"><u style={{ width: `${percent}%` }} /></i>
@@ -82,7 +83,7 @@ export function DeliveryCenter(props: {
           <div><dt>Recorded spend</dt><dd>{queue.perImageUsd === null ? "Unknown" : `$${committedUsd(queue).toFixed(2)}`}</dd></div>
         </dl>
         <div className="dc-next">
-          <span className="eyebrow">Next recommended action</span>
+          <Eyebrow icon={Compass}>Next recommended action</Eyebrow>
           <p>{next.label}</p>
           {next.go && <button className="primary" onClick={next.go}>{audit.ready ? <PackageCheck size={15} /> : <ArrowRight size={15} />} {audit.ready ? "Build the package" : "Take me there"}</button>}
         </div>

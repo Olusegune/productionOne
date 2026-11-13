@@ -295,3 +295,33 @@ button, .primary, .secondary, .eyebrow, label span, .po-tabs button { font-famil
 .po-bible .po-emotion { flex: none; }
 .po-bible-head { flex-wrap: wrap; gap: 2px 10px; }
 .ad-name input { font-size: 20px !important; text-overflow: ellipsis; }
+
+/* ======================= 0.27: eyebrow icons and illustrated empty states ======================= */
+.eyebrow.has-icon { display: inline-flex; align-items: center; gap: 7px; }
+.eyebrow.has-icon > svg { color: var(--gold-2); flex: none; }
+.empty-state { --c: var(--gold-2); display: grid; justify-items: center; text-align: center; gap: 6px; padding: 26px 20px 22px; border: 1px dashed color-mix(in srgb, var(--c) 38%, transparent); border-radius: 14px; background: radial-gradient(70% 90% at 50% 0%, color-mix(in srgb, var(--c) 12%, transparent), transparent 70%); }
+.empty-state.tone-blue { --c: #8fb4d8; } .empty-state.tone-green { --c: #7fc4a8; } .empty-state.tone-violet { --c: #c58fd0; }
+.empty-state h4 { margin: 0; font: 560 1.15rem var(--display); color: var(--text); }
+.empty-state p { margin: 0; max-width: 42ch; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.empty-art { position: relative; width: 112px; height: 112px; margin-bottom: 4px; }
+.empty-art svg { display: block; }
+.empty-art .ring-outer { fill: none; stroke: color-mix(in srgb, var(--c) 28%, transparent); stroke-width: 1.5; stroke-dasharray: 3 6; transform-origin: 60px 60px; animation: spin 40s linear infinite; }
+.empty-art .ring-inner { fill: color-mix(in srgb, var(--c) 12%, transparent); stroke: color-mix(in srgb, var(--c) 40%, transparent); stroke-width: 1; }
+.empty-art .spark { fill: var(--c); opacity: .75; animation: twinkle 3.4s ease-in-out infinite; }
+.empty-art .s2 { animation-delay: .7s; } .empty-art .s3 { animation-delay: 1.4s; } .empty-art .s4 { animation-delay: 2.1s; }
+.empty-icon { position: absolute; inset: 0; display: grid; place-items: center; color: var(--c); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes twinkle { 50% { opacity: .15; transform: scale(.7); } }
+@media (prefers-reduced-motion: reduce) { .empty-art .ring-outer, .empty-art .spark { animation: none; } }
+
+/* Views waiting for an image: a soft colour wash instead of a grey hole */
+.view-card.none .thumb-empty, .thumb-empty { background: radial-gradient(80% 80% at 50% 30%, rgba(214, 173, 89, .12), transparent 70%), var(--surface); color: var(--text-3); border: 1px dashed rgba(214, 173, 89, .25); border-radius: 10px; }
+.view-card.queued .thumb-empty, .view-card.generating .thumb-empty { background: radial-gradient(80% 80% at 50% 30%, rgba(143, 180, 216, .16), transparent 70%), var(--surface); border-color: rgba(143, 180, 216, .35); animation: pulse-soft 2.2s ease-in-out infinite; }
+.view-card.failed .thumb-empty { background: radial-gradient(80% 80% at 50% 30%, rgba(192, 112, 95, .16), transparent 70%), var(--surface); border-color: rgba(192, 112, 95, .4); }
+@keyframes pulse-soft { 50% { opacity: .7; } }
+h3.with-icon { display: flex; align-items: center; gap: 10px; }
+h3.with-icon > svg { flex: none; color: var(--gold-2); }
+.modal-backdrop { backdrop-filter: blur(6px); animation: fade var(--t) var(--ease) both; }
+.sheet, .provider-modal { animation: rise var(--t-slow) var(--ease) both; }
+@keyframes fade { from { opacity: 0; } }
+.studio-page .panel-heading { flex-wrap: wrap; gap: 10px 14px; }

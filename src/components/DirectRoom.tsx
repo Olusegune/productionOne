@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Wand2, X } from "lucide-react";
 import {
   angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
@@ -58,7 +59,7 @@ export function DirectRoom(props: {
   if (!enabled) {
     return (
       <section className="panel dr-off">
-        <span className="eyebrow">Optional</span>
+        <Eyebrow icon={Sparkles}>Optional</Eyebrow>
         <h3>Director's room</h3>
         <p className="helper">Plan shots from your script, make storyboard frames with your approved characters and sets, check continuity and play an animatic. Nothing here is needed to make character sheets or a delivery package.</p>
         <button className="primary" onClick={() => setEnabled(true)}><Clapperboard size={15} /> Turn on the Director's room</button>
@@ -146,7 +147,7 @@ export function DirectRoom(props: {
     <div className="dr">
       <div className="dr-top">
         <div>
-          <span className="eyebrow">Director's room</span>
+          <Eyebrow icon={Clapperboard}>Director's room</Eyebrow>
           <h2>{shots.length} shots · {frameCount} with frames</h2>
         </div>
         <div className="dr-top-actions">

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.27.0 (2026-11-13): icons on every screen, illustrated empty states, first views split out
+- Icons on the Story, Direct, Deliver and Animatic panel labels, and on the Settings, Providers, Help and Unsaved dialogs.
+- Illustrated empty states (cast, reading, reference sheets) with a soft colour glow and drifting sparkles; still under reduced-motion. Image slots waiting for a picture now show a tinted wash (gold waiting, blue in progress, red failed).
+- App.tsx: Projects and Story workspaces moved to src/views/ProjectsView.tsx and StoryView.tsx (App.tsx 1,860 to about 1,790 lines; Design and Direct still inline).
+- Tests: 194 JS, 65 Rust.
+
 ## 0.26.0 (2026-11-13): new type pairing, icons everywhere
 - Fonts: Fraunces (cinematic serif) for titles, Plus Jakarta Sans for everything else; both bundled, work offline. Replaces Geist.
 - Icons: every workspace tab, every Golden Path step (icon medallions), Production Bible groups and assets (coloured avatar with a status badge), New/Open/Save.

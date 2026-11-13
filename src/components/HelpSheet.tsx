@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { CircleHelp } from "lucide-react";
 import { BrandMark } from "./BrandMark";
 
 export type HelpTopic = "start" | "docs" | "shortcuts" | "trouble" | "updates" | "about";
@@ -101,7 +102,7 @@ export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () =>
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="panel-heading">
-          <h3>{title}</h3>
+          <h3 className="with-icon"><CircleHelp size={20} aria-hidden="true" />{title}</h3>
           <button ref={ref} className="secondary" onClick={onClose}>Close</button>
         </div>
         <div className="sheet-body">{body}</div>

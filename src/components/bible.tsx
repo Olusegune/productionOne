@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { EmptyState } from "./EmptyState";
 import { Box, Mountain, Shirt, Users, type LucideIcon } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import type { QueueState } from "../domain/generationQueue";
@@ -32,7 +33,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect }: { assets
   return (
     <aside className="po-bible" aria-label="Production bible">
       <div className="po-bible-head"><span className="eyebrow">PRODUCTION BIBLE</span><small>{approved} of {assets.length} approved</small></div>
-      {assets.length === 0 && <p className="helper">Analyze a script in Story and the people, props and places it needs appear here.</p>}
+      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here.</EmptyState>}
       {groups.map(([label, types]) => {
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         if (!items.length) return null;

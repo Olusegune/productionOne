@@ -2,8 +2,9 @@ import { toggleTheme } from "./data/theme";
 import { addPropAsset, applyReadAge } from "./domain/readingActions";
 import { workspaceShortcut } from "./domain/shortcuts";
 import { initialShot, designSections, downloadJson, downloadText } from "./appHelpers";
-import { StatTiles } from "./components/StatTiles";
-import { FirstRun } from "./components/FirstRun";
+import { Eyebrow } from "./components/Eyebrow";
+import { ProjectsView } from "./views/ProjectsView";
+import { StoryView } from "./views/StoryView";
 import { SectionNav } from "./components/SectionNav";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { DeliveryCenter } from "./components/DeliveryCenter";
@@ -16,9 +17,12 @@ import {
   Clapperboard,
   Copy,
   Download,
-  FilePlus2,
+  Globe,
+  Library,
+  ListOrdered,
+  KeyRound,
+  Settings2,
   FolderKanban,
-  FolderOpen,
   PackageCheck,
   Pause,
   PenTool,
@@ -33,8 +37,6 @@ import { BrandMark } from "./components/BrandMark";
 import { ArtDirectionBar } from "./components/ArtDirectionBar";
 import { AssetLab } from "./components/AssetLab";
 import { CharacterBible } from "./components/CharacterBible";
-import { ScriptTemplatePicker } from "./components/ScriptTemplatePicker";
-import { EditableInventory } from "./components/EditableInventory";
 import { projectStore, studioStore, type StudioState } from "./data/projectStore";
 import { demoGraph } from "./domain/demoGraph";
 import {
@@ -96,11 +98,9 @@ import { useLocalAi } from "./data/localAi";
 import { anyLocal } from "./domain/localAi";
 import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
-import { ReadingPanel } from "./components/ReadingPanel";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
-import { GoldenPath } from "./components/GoldenPath";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -1161,7 +1161,7 @@ export default function App() {
           <div className="modal-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}>
             <section className="sheet" role="dialog" aria-modal="true" aria-label="Project settings" onClick={(e) => e.stopPropagation()}>
               <div className="panel-heading">
-                <h3>Project settings</h3>
+                <h3 className="with-icon"><Settings2 size={20} aria-hidden="true" />Project settings</h3>
                 <button className="secondary" onClick={() => setSettingsOpen(false)}>Done</button>
               </div>
               <label className="settings-field">
@@ -1189,8 +1189,8 @@ export default function App() {
             >
               <div className="panel-heading">
                 <div>
-                  <span className="eyebrow">GLOBAL SERVICE</span>
-                  <h3>AI Provider Registry</h3>
+                  <Eyebrow icon={Globe}>GLOBAL SERVICE</Eyebrow>
+                  <h3 className="with-icon"><KeyRound size={20} aria-hidden="true" />AI Provider Registry</h3>
                 </div>
                 <button
                   className="secondary"
@@ -1264,89 +1264,10 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <section className="po-launch">
-            <div className="po-launch-head">
-              <div>
-                <span className="eyebrow">{filePath ?? "AUTOSAVED PRODUCTION"}</span>
-                <h2>{title}</h2>
-                <StatTiles scenes={analysis.scenes.length} characters={analysis.assets.filter((a) => a.type === "character").length} props={analysis.assets.filter((a) => a.type === "prop").length} sets={analysis.assets.filter((a) => a.type === "set" || a.type === "environment").length} approved={goldenInput.approvedCount} total={goldenInput.assetCount} />
-              </div>
-              <div className="hero-actions">
-                <button className="secondary" onClick={() => guard(newProject)}><FilePlus2 size={15} /> New</button>
-                <button className="secondary" onClick={() => guard(() => void openProject())}><FolderOpen size={15} /> Open…</button>
-                <button className="secondary" onClick={() => void saveProject()}><Download size={15} /> Save</button>
-              </div>
-            </div>
-            <FirstRun onKeys={() => setProvidersOpen(true)} onStory={() => setWorkspace("Story")} />
-            <GoldenPath input={goldenInput} onGo={setWorkspace} onNext={goNext} />
-            {recents.length > 0 && (
-              <div className="recent-list">
-                <span className="eyebrow">RECENT PROJECTS</span>
-                <ul>
-                  {recents.slice(0, 5).map((path) => (
-                    <li key={path}>
-                      <button onClick={() => guard(() => void openPath(path))} title={path}>{path.split(/[\\/]/).pop()}</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <p className="helper kbd-hint"><kbd>Ctrl</kbd><kbd>K</kbd> Command palette: open any asset, import a script, save or export without leaving the keyboard. <span><kbd>Alt</kbd><kbd>1</kbd>–<kbd>5</kbd> switches workspace.</span></p>
-          </section>
+          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(newProject)} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
         )}
         {workspace === "Story" && (
-          <section className="two-column studio-page">
-            <div className="panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">SCRIPT INTELLIGENCE</span>
-                  <h3>Source material</h3>
-                </div>
-                <div className="button-row">
-                  <button className="secondary" onClick={() => void importScriptNative()}>Import script</button>
-                  <button className="primary" onClick={analyze}>
-                    Analyze script
-                  </button>
-                </div>
-              </div>
-              <ScriptTemplatePicker
-                onUse={(text) => {
-                  setScript(text);
-                  setNotice("Template loaded. Review it before analyzing.");
-                }}
-                notify={setNotice}
-              />
-              <textarea
-                ref={scriptArea}
-                className="script-editor"
-                value={script}
-                onChange={(e) => setScript(e.target.value)}
-                aria-label="Script source"
-              />
-              <p className="helper">
-                Scene headings, source dialogue, characters, sets, and used
-                props are extracted locally. Suggested dialogue is never mixed
-                with source dialogue.
-              </p>
-            </div>
-            <div className="panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">EDITABLE INVENTORY</span>
-                  <h3>
-                    {analysis.scenes.length} scenes · {analysis.assets.length}{" "}
-                    assets
-                  </h3>
-                </div>
-              </div>
-              <ReadingPanel story={analysis.story} onJump={jumpToLine} desktop={isTauri} onStory={(story) => setAnalysis((a) => ({ ...a, story }))} notify={setNotice} onAddProp={addNamedProp} onUseAge={useAgeFromReading} />
-              <EditableInventory
-                analysis={analysis}
-                onChange={setAnalysis}
-                onAdd={addManualAsset}
-              />
-            </div>
-          </section>
+          <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} />
         )}
         {workspace === "Design" && (
           <div className="po-design">
@@ -1420,7 +1341,7 @@ export default function App() {
               <div className="panel asset-browser">
                 <div className="panel-heading">
                   <div>
-                    <span className="eyebrow">SHARED ASSET REGISTRY</span>
+                    <Eyebrow icon={Library}>SHARED ASSET REGISTRY</Eyebrow>
                     <h3>Production assets</h3>
                   </div>
                 </div>
@@ -1577,7 +1498,7 @@ export default function App() {
               <div className="panel">
                 <div className="panel-heading">
                   <div>
-                    <span className="eyebrow">DURABLE QUEUE</span>
+                    <Eyebrow icon={ListOrdered}>DURABLE QUEUE</Eyebrow>
                     <h3>Production jobs</h3>
                   </div>
                   <div className="queue-controls">
@@ -1682,7 +1603,7 @@ export default function App() {
           <section className="studio-page legacy-ui">
             <div className="optional-banner">
               <div>
-                <span className="eyebrow">OPTIONAL WORKFLOW</span>
+                <Eyebrow icon={Clapperboard}>OPTIONAL WORKFLOW</Eyebrow>
                 <h2>Director’s Room</h2>
                 <p>Enable shot planning without rebuilding the project.</p>
               </div>

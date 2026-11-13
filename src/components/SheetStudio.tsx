@@ -47,6 +47,7 @@ import { ModelPicker } from "./ModelPicker";
 import { useModelChoice } from "../data/modelChoice";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { Fold } from "./Fold";
+import { EmptyState } from "./EmptyState";
 import { CleanRender } from "./CleanRender";
 
 const providers = providerOrder;
@@ -225,7 +226,7 @@ export function SheetStudio(props: {
   const doApprove = (job: ImageJob) => { setQueue((q) => approve(q, job.id)); onApproved(job, primaryViewKeys.includes(job.viewKey)); };
   const doReject = (job: ImageJob) => setQueue((q) => reject(q, job.id));
 
-  if (!asset) return <section className="panel sheet-studio"><h3>Analyze a script first</h3><p className="helper">Sheets are planned per character, prop and set once your script has been analyzed.</p></section>;
+  if (!asset) return <section className="panel sheet-studio"><EmptyState icon={Sparkles} title="Analyze a script first" tone="gold">Sheets are planned per character, prop and set once your script has been analyzed.</EmptyState></section>;
 
   const newKeys = views.filter((v) => wouldEnqueue(jobFor(v.key))).map((v) => v.key);
   const redoKeys = views.filter((v) => { const j = jobFor(v.key); return !!j && !j.approved && wouldEnqueue(j, true) && !wouldEnqueue(j); }).map((v) => v.key);

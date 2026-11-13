@@ -3,7 +3,8 @@ import { characterArcs, sceneMood } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 import { EmotionChip } from "./bible";
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { ScanText, Sparkles } from "lucide-react";
+import { EmptyState } from "./EmptyState";
 import { runAiPass } from "../data/aiPass";
 import { useLocalAi } from "../data/localAi";
 import { applyAi } from "../engine/aiBeats";
@@ -16,7 +17,7 @@ export function ReadingPanel({ story, onJump, desktop = false, onStory, notify, 
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const why = useMemo(() => (story ? explainStory(story) : null), [story]);
   const arcs = useMemo(() => (story ? characterArcs(story) : []), [story]);
-  if (!story || !story.scenes.length) return <section className="panel po-reading"><span className="eyebrow">THE ENGINE'S READING</span><h3>Nothing read yet</h3><p className="helper">Paste or import a script and press Analyze. Reading is free and happens on your computer.</p></section>;
+  if (!story || !story.scenes.length) return <section className="panel po-reading"><EmptyState icon={ScanText} title="Nothing read yet" tone="blue">Paste or import a script and press Analyze. Reading is free and happens on your computer.</EmptyState></section>;
   const jump = (line: number, label: string) => <button className="po-line" onClick={() => onJump(line)} title="Show this line in the script">{label}</button>;
   return (
     <section className="panel po-reading" aria-label="What the engine found">
