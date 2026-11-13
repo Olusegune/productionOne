@@ -221,3 +221,14 @@ kbd { font: 600 12px/1 var(--ui); color: var(--text-2); background: rgba(255, 25
 .add-prop { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin: 6px 0 10px; }
 .add-prop label { display: grid; gap: 4px; flex: 1 1 200px; font-size: 13px; color: var(--text-2); }
 .po-plain .tertiary { font-size: 13px; color: var(--gold-2); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 2px 4px; }
+
+/* ---------- Searchable select ---------- */
+.search-select { position: relative; }
+.search-select input { width: 100%; }
+.search-select ul { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); max-height: 260px; overflow: auto; margin: 0; padding: 4px; list-style: none; border: 1px solid var(--stroke-strong); border-radius: 10px; background: #12161b; box-shadow: 0 16px 40px rgba(0, 0, 0, .5); }
+:root[data-theme="light"] .search-select ul { background: #fff; box-shadow: 0 16px 40px rgba(60, 50, 30, .2); }
+.search-select li { padding: 9px 12px; border-radius: 7px; font-size: 14px; color: var(--text); cursor: pointer; }
+.search-select li.active { background: rgba(214, 173, 89, .16); }
+.search-select li[aria-selected="true"] { color: var(--gold-2); font-weight: 600; }
+.search-select .ss-empty { color: var(--text-3); cursor: default; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

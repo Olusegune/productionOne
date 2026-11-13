@@ -1,3 +1,4 @@
+import { SearchSelect } from './SearchSelect'
 import { useEffect, useState } from 'react'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { KeyRound, Sparkles, Volume2 } from 'lucide-react'
@@ -80,7 +81,7 @@ export function VoiceCloud(props: {
     {!soundOnly && <div className="sheet-controls">
       {provider.id === 'elevenlabs' && <label><span>Model</span><select value={model} onChange={(e) => setModel(e.target.value)}><option value="latest">Latest ({latestModel ?? 'eleven_v4'})</option>{(models ?? []).map((m) => <option key={m.id} value={m.id}>{m.name || m.id}</option>)}</select></label>}
       {voices.length > 0
-        ? <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)}>{voices.map((v) => <option key={v.id} value={v.id}>{v.name}{v.detail ? ` · ${v.detail}` : ''}</option>)}</select></label>
+        ? <label><span>Voice (type to search)</span><SearchSelect label="Voice" value={voice} onChange={setVoice} options={voices.map((v) => ({ value: v.id, label: `${v.name}${v.detail ? ` · ${v.detail}` : ''}` }))} /></label>
         : <label><span>{provider.id === 'elevenlabs' ? 'Voice id' : 'Voice name'}</span><input value={voice} onChange={(e) => setVoice(e.target.value)} placeholder={provider.id === 'elevenlabs' ? 'load your voices, or paste a voice id' : 'e.g. Jett'} /></label>}
       <button className="secondary" disabled={!desktop || !connected || busy === 'voices'} onClick={() => void loadVoices()}>{busy === 'voices' ? 'Loading…' : 'Load my voices'}</button>
     </div>}

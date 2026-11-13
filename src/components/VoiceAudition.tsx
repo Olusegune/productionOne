@@ -5,6 +5,7 @@ import type { ExtractedAsset } from '../domain/productionStudio'
 import type { ParsedStory } from '../engine/story'
 import type { DemoClip } from '../domain/demoClips'
 import { buildPerformance, emptyDirection, performanceBrief, providerById, providers, voiceEvents, voiceStates, type EventCue, type ProviderId, type VoiceEvent, type VoiceState } from '../domain/voiceDirection'
+import { SearchSelect } from './SearchSelect'
 import { VoiceCloud } from './VoiceCloud'
 import { latestElevenModel, rankElevenModels, type CloudModel } from '../domain/elevenModels'
 import { sampleLines, soundBrief, suggestVoice, voiceBrief, type InstalledVoice } from '../domain/voiceAudition'
@@ -82,7 +83,7 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
       {!desktop && <p className="helper">Voice auditions run in the Windows app.</p>}
       {provider.transport === 'cloud' && <VoiceCloud provider={provider} desktop={desktop} assetId={asset.id} voice={cloudVoice} setVoice={setCloudVoice} model={model} setModel={setModel} models={elevenModels} latestModel={latest} providersVersion={providersVersion} openProviders={openProviders} notify={notify} setError={setError} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: 0, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
       <div className="sheet-controls">
-        {provider.transport === 'windows' && <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)} disabled={!voices.length}>{voices.length === 0 && <option value="">No Windows voices found</option>}{voices.map((v) => <option key={v.name} value={v.name}>{v.name} · {v.gender} · {v.culture}</option>)}</select></label>}
+        {provider.transport === 'windows' && <label><span>Voice (type to search)</span><SearchSelect label="Windows voice" value={voice} onChange={setVoice} emptyText="No Windows voices found" options={voices.map((v) => ({ value: v.name, label: `${v.name} · ${v.gender} · ${v.culture}` }))} /></label>}
         {provider.transport === 'http' && <><label><span>Server address</span><input value={base} onChange={(e) => setBase(e.target.value)} aria-label="Speech server address" /></label><label><span>Model</span><input value={model} onChange={(e) => setModel(e.target.value)} /></label>{provider.languages && <><label><span>Language</span><select value={language} onChange={(e) => setLanguage(e.target.value)}>{provider.languages.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></label><label><span>Expressiveness</span><input type="range" min={0} max={1.5} step={0.05} value={expressiveness} onChange={(e) => setExpressiveness(Number(e.target.value))} aria-label="Expressiveness" /></label></>}<label><span>{provider.languages ? 'Reference clip path (optional)' : provider.describesVoice ? 'Voice name or description' : 'Voice name'}</span><input value={serverVoice} onChange={(e) => setServerVoice(e.target.value)} placeholder={asset.soundDirection || 'as your server names it'} /></label></>}
         <label><span>Pace</span><input type="range" min={-6} max={6} value={rate} onChange={(e) => setRate(Number(e.target.value))} aria-label="Speaking pace" /></label>
       </div>

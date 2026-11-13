@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.24.0 (2026-11-13): searchable voice lists
+- New SearchSelect (WAI-ARIA combobox: type to filter, arrow keys, Home/End, Enter, Escape, live match count) used for the Windows voice list and the ElevenLabs/VoiceKiller voice list. Multi-word search matches in any order.
+- Tests: 188 JS, 65 Rust. The component is covered by unit tests only; not yet seen in the packaged app, no screen-reader pass.
+- Not done: replacing the remaining short native dropdowns; splitting App.tsx.
+
 ## 0.23.0 (2026-11-13): voice groups, script reading actions
 - Voice audition is now four numbered groups: Engine and voice, Line, Direction, Result.
 - Script reading: "Add as prop" for a prop the reading missed (never duplicates an asset), and "Use as <name>'s age" on an age the reading found; the age is saved as the character's confirmed age and flows into image prompts.
