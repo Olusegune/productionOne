@@ -1,0 +1,223 @@
+/* ===== 0.21 polish layer: loaded after refresh.css. =====
+   Goal: calm, sleek, a little magical. Depth through light (not borders), one easing curve everywhere,
+   gentle entrances, tactile buttons. Every animation is switched off by prefers-reduced-motion. */
+:root {
+  --ease: cubic-bezier(.22, .8, .24, 1);       /* quick start, soft landing */
+  --ease-spring: cubic-bezier(.34, 1.4, .5, 1); /* tiny overshoot for press/pop feedback */
+  --t-fast: .14s;
+  --t: .24s;
+  --t-slow: .5s;
+  --glow-gold: 0 0 0 1px rgba(214, 173, 89, .35), 0 8px 28px rgba(196, 154, 70, .18);
+  --edge: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .03) 40%, rgba(255, 255, 255, .06));
+  --step--1: .8125rem;  /* 13 */
+  --step-0: .9375rem;   /* 15 */
+  --step-1: 1.125rem;   /* 18 */
+  --step-2: 1.4rem;
+  --step-3: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+}
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+body { font-variant-numeric: tabular-nums; }
+h1 { font-size: var(--step-3); font-weight: 600; letter-spacing: -.03em; }
+.po-save, .po-hint, .pill, [class*="count"], time { font-variant-numeric: tabular-nums; }
+
+/* ---------- Atmosphere: a slow, barely-there light drift behind everything ---------- */
+body::before {
+  content: ""; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 20% 15%, rgba(214, 173, 89, .08), transparent 70%),
+    radial-gradient(35% 30% at 85% 85%, rgba(106, 166, 207, .07), transparent 70%);
+  animation: drift 40s ease-in-out infinite alternate;
+}
+@keyframes drift { to { transform: translate3d(3%, 2%, 0) scale(1.06); } }
+
+/* ---------- Screen entrance: content eases in whenever a workspace changes ---------- */
+.po-main > * { animation: rise var(--t-slow) var(--ease) both; }
+.po-main > *:nth-child(2) { animation-delay: .05s; }
+.po-main > *:nth-child(3) { animation-delay: .1s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Header ---------- */
+.po-top { backdrop-filter: blur(18px) saturate(1.3); background: rgba(10, 12, 15, .72); position: sticky; top: 0; z-index: 20; }
+.po-tabs { background: rgba(255, 255, 255, .035); border: 1px solid var(--stroke); border-radius: 12px; padding: 3px; }
+.po-tabs button { position: relative; border-radius: 9px; color: var(--text-2); transition: color var(--t-fast), background var(--t); }
+.po-tabs button:hover { color: var(--text); background: rgba(255, 255, 255, .05); }
+.po-tabs button.active { color: var(--text); background: rgba(255, 255, 255, .09); box-shadow: 0 1px 0 rgba(255, 255, 255, .08) inset, 0 4px 14px rgba(0, 0, 0, .3); }
+.po-tabs button.active::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 2px; height: 2px; border-radius: 2px; background: var(--gold-2); box-shadow: 0 0 10px rgba(214, 173, 89, .7); animation: grow var(--t) var(--ease) both; }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.po-tabs em { font-style: normal; font-size: 11px; opacity: .7; margin-left: 4px; }
+/* the next-step button shrinks gracefully instead of clipping mid-word */
+.po-actions .primary { min-width: 0; flex: 0 1 auto; }
+.po-actions .primary > .btn-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.po-actions .primary > svg { flex: none; transition: transform var(--t) var(--ease); }
+.po-actions .primary:hover > svg { transform: translateX(3px); }
+.po-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.po-save { color: var(--text-3); transition: color var(--t); }
+.po-save.unsaved { color: var(--gold-2); }
+
+/* ---------- Golden Path: the spine of the app should feel alive ---------- */
+.po-steps li.active .po-step-dot, .po-steps li.current .po-step-dot { box-shadow: 0 0 0 4px rgba(214, 173, 89, .16); animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: 0 0 0 7px rgba(214, 173, 89, .06); } }
+.po-step-dot { transition: background var(--t), border-color var(--t), transform var(--t) var(--ease-spring); }
+.po-steps li.done .po-step-dot { animation: pop var(--t) var(--ease-spring) both; }
+@keyframes pop { from { transform: scale(.6); } to { transform: scale(1); } }
+.po-steps li button { border-radius: 999px; transition: background var(--t-fast), color var(--t-fast); }
+.po-steps li button:hover { background: rgba(255, 255, 255, .06); }
+.golden-path { position: relative; overflow: hidden; }
+.golden-path::before { /* soft gold light along the top edge */
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(214, 173, 89, .55), transparent);
+}
+
+/* ---------- Surfaces: a lit top edge instead of a flat outline ---------- */
+.panel, .po-bible, .po-inspector, .golden-path, .sheet, .character-bible { position: relative; transition: border-color var(--t), box-shadow var(--t), transform var(--t) var(--ease); }
+.panel:hover, .golden-path:hover { border-color: rgba(255, 255, 255, .13); }
+.panel > h3, .panel-heading h3 { letter-spacing: -.02em; }
+
+/* ---------- Buttons: tactile ---------- */
+.primary, .secondary, .icon-button { transition: transform var(--t-fast) var(--ease), box-shadow var(--t) var(--ease), background var(--t), border-color var(--t), color var(--t); }
+.primary:active:not(:disabled), .secondary:active:not(:disabled), .icon-button:active { transform: scale(.97); }
+.primary { position: relative; overflow: hidden; isolation: isolate; }
+.primary::after { /* a single soft sheen passes over the primary action on hover */
+  content: ""; position: absolute; inset: 0; z-index: -1; transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .28) 50%, transparent 70%);
+}
+.primary:hover:not(:disabled)::after { transform: translateX(120%); transition: transform .7s var(--ease); }
+.secondary:hover:not(:disabled), .icon-button:hover { transform: translateY(-1px); }
+
+/* ---------- Lists and selections ---------- */
+.po-bible li button { position: relative; border-radius: 8px; transition: background var(--t-fast), transform var(--t) var(--ease); }
+.po-bible li button:hover { background: rgba(255, 255, 255, .055); transform: translateX(2px); }
+.po-bible li button.active, .po-bible li button[aria-current="true"], .po-bible li.active > button { background: rgba(214, 173, 89, .1); }
+.po-bible li button.active::before, .po-bible li button[aria-current="true"]::before, .po-bible li.active > button::before {
+  content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; width: 3px; border-radius: 3px; background: var(--gold-2); box-shadow: 0 0 10px rgba(214, 173, 89, .6);
+}
+.character-bible-tabs button { transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast); }
+
+/* ---------- Fields ---------- */
+select, input, textarea { transition: border-color var(--t), box-shadow var(--t), background var(--t); }
+select:focus, input:focus, textarea:focus { background: rgba(0, 0, 0, .38); }
+::placeholder { color: var(--text-3); opacity: 1; }
+
+/* ---------- Keyboard hint chips (replaces plain "Press Ctrl+K" sentences) ---------- */
+kbd { font: 600 12px/1 var(--ui); color: var(--text-2); background: rgba(255, 255, 255, .07); border: 1px solid var(--stroke-strong); border-bottom-width: 2px; border-radius: 6px; padding: 3px 7px; }
+.kbd-hint { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 22px auto 0; color: var(--text-3); font-size: 14px; max-width: none; text-align: center; }
+
+/* ---------- Status and feedback ---------- */
+.po-local span { transition: background var(--t), box-shadow var(--t); }
+.po-local.up span { box-shadow: 0 0 0 4px rgba(120, 200, 140, .18); }
+[role="status"] { transition: color var(--t); }
+.skeleton { border-radius: 8px; background: linear-gradient(100deg, rgba(255,255,255,.04) 30%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 70%) 0 0 / 200% 100%; animation: shimmer 1.6s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---------- Images: fade in as they arrive instead of popping ---------- */
+.sheet img, .clip-grid img, .clip-grid video { animation: rise var(--t-slow) var(--ease) both; border-radius: 6px; }
+.sheet img:hover { transform: scale(1.015); transition: transform var(--t) var(--ease); }
+
+/* ---------- Narrow windows (brief item 8): no horizontal page scroll, header never clips ---------- */
+@media (max-width: 1180px) {
+  .po-bar { grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; }
+  .po-tabs { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; display: flex; }
+  .po-tabs button { flex: 1 1 auto; justify-content: center; }
+  .po-hint { display: none; }
+}
+@media (max-width: 900px) {
+  .po-actions .primary { max-width: 170px; }
+  .po-main { padding-inline: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before, .po-main > *, .po-tabs button.active::after, .po-step-dot, .skeleton, .sheet img, .clip-grid img, .clip-grid video { animation: none !important; }
+  .primary::after { display: none; }
+}
+@media (prefers-contrast: more) {
+  body::before { display: none; }
+  kbd { border-color: rgba(255, 255, 255, .6); }
+}
+
+/* ---------- Cost line under paid buttons, and view selection ---------- */
+.ss-cost { margin: -2px 2px 6px; font-size: 13px; line-height: 1.4; color: var(--text-3); }
+.view-pick { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-2); cursor: pointer; min-height: 28px; padding: 0 4px; }
+.view-pick input { width: 16px; height: 16px; }
+
+/* Several image warnings collapse into one quiet line with a details toggle */
+.qa-group { margin: 2px 0; }
+.qa-group summary { cursor: pointer; font-size: 13px; color: var(--gold-2); min-height: 24px; display: flex; align-items: center; }
+.qa-group[open] summary { margin-bottom: 4px; }
+.qa-group .qa-note { display: block; margin-top: 4px; }
+
+/* ---------- Sticky in-page navigation (long Design screen) ---------- */
+.section-nav { position: sticky; top: 6px; z-index: 12; display: flex; gap: 4px; padding: 4px; width: fit-content; max-width: 100%; overflow-x: auto; margin: 0 0 12px; border: 1px solid var(--stroke); border-radius: 12px; background: rgba(16, 19, 24, .82); backdrop-filter: blur(16px) saturate(1.3); box-shadow: 0 8px 24px rgba(0, 0, 0, .3); }
+.section-nav button { flex: none; min-height: 32px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font: 500 13px var(--ui); cursor: pointer; transition: background var(--t-fast), color var(--t-fast); }
+.section-nav button:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.section-nav button.on { background: rgba(214, 173, 89, .14); color: var(--gold-2); }
+[id^="sec-"] { scroll-margin-top: 64px; }
+
+/* ---------- First-run guide ---------- */
+.first-run { margin: 0 0 16px; padding: 20px 22px; border: 1px solid rgba(214, 173, 89, .35); border-radius: 12px; background: linear-gradient(180deg, rgba(214, 173, 89, .09), rgba(214, 173, 89, .02)); display: grid; gap: 14px; }
+.first-run header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.first-run h3 { margin: 2px 0 0; font-size: 20px; }
+.first-run ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.first-run li { display: flex; gap: 12px; padding: 14px; border: 1px solid var(--stroke); border-radius: 10px; background: var(--surface); }
+.first-run li > svg { flex: none; margin-top: 2px; color: var(--gold-2); }
+.first-run li p { margin: 4px 0 10px; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.first-run .primary { justify-self: start; }
+
+/* ---------- Light theme (opt-in from the command palette; dark stays the default) ---------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f1ea; --surface: rgba(255, 255, 255, .75); --surface-2: rgba(20, 24, 30, .06);
+  --stroke: rgba(20, 24, 30, .14); --stroke-strong: rgba(20, 24, 30, .3);
+  --text: #15181c; --text-2: #3b434b; --text-3: #566069;
+  --gold: #b68a2e; --gold-2: #8a6416; --gold-deep: #7a5610; --blue: #1f6aa5;
+  --shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 12px 34px rgba(60, 50, 30, .12);
+  --ivory: #15181c; --obsidian: #f4f1ea; --graphite: #e6e1d6;
+}
+:root[data-theme="light"] .po-dock { background: #ebe6da; border-top-color: var(--stroke); }
+:root[data-theme="light"] .po-dock-bar { color: var(--text-2); }
+:root[data-theme="light"] .po-title:hover { background: rgba(20, 24, 30, .07); }
+:root[data-theme="light"] .po-dock-dot { background: #9aa3ab; }
+:root[data-theme="light"] .first-run header { border: 0; }
+:root[data-theme="light"] body { background: radial-gradient(1100px 600px at 12% -10%, rgba(196, 154, 70, .14), transparent 60%), var(--bg); }
+:root[data-theme="light"] body::before { opacity: .5; }
+:root[data-theme="light"] .panel, :root[data-theme="light"] .po-bible, :root[data-theme="light"] .po-inspector, :root[data-theme="light"] .golden-path, :root[data-theme="light"] .sheet, :root[data-theme="light"] .po-classic, :root[data-theme="light"] .character-bible, :root[data-theme="light"] .po-palette, :root[data-theme="light"] .mp-pop, :root[data-theme="light"] .po-cost-pop { background: rgba(255, 255, 255, .72); }
+:root[data-theme="light"] .po-top, :root[data-theme="light"] .section-nav { background: rgba(244, 241, 234, .88); }
+:root[data-theme="light"] .po-tabs, :root[data-theme="light"] .po-tabs button.active { background: rgba(20, 24, 30, .06); }
+:root[data-theme="light"] .po-tabs button:hover, :root[data-theme="light"] .po-steps li button:hover, :root[data-theme="light"] .section-nav button:hover, :root[data-theme="light"] .po-bible li button:hover { background: rgba(20, 24, 30, .06); }
+:root[data-theme="light"] .secondary, :root[data-theme="light"] .icon-button { background: rgba(20, 24, 30, .05); color: var(--text); }
+:root[data-theme="light"] .secondary:hover:not(:disabled), :root[data-theme="light"] .icon-button:hover { background: rgba(20, 24, 30, .1); }
+:root[data-theme="light"] .primary { color: #fff; background: var(--gold-deep); }
+:root[data-theme="light"] .primary:hover:not(:disabled) { background: #6a490c; }
+:root[data-theme="light"] select, :root[data-theme="light"] input:not([type="checkbox"]), :root[data-theme="light"] textarea { background: #fff; color: var(--text); }
+:root[data-theme="light"] select:focus, :root[data-theme="light"] input:focus, :root[data-theme="light"] textarea:focus { background: #fff; }
+:root[data-theme="light"] kbd { background: rgba(20, 24, 30, .06); }
+:root[data-theme="light"] .helper { color: var(--text-3) !important; }
+:root[data-theme="light"] .pill { color: var(--gold-deep); background: rgba(182, 138, 46, .16); }
+:root[data-theme="light"] * { scrollbar-color: rgba(20, 24, 30, .3) transparent; }
+:root[data-theme="light"] .po-bible li button.active, :root[data-theme="light"] .section-nav button.on { color: var(--gold-deep); }
+:root[data-theme="light"] button.selected, :root[data-theme="light"] .style-browser-trigger, :root[data-theme="light"] .prompt-box, :root[data-theme="light"] .model-match { background: #fff; color: var(--text); }
+:root[data-theme="light"] .image-generation-gate { background: #f7efd9; color: var(--text); }
+:root[data-theme="light"] .po-name, :root[data-theme="light"] .po-bible li, :root[data-theme="light"] summary, :root[data-theme="light"] .po-bible b { color: var(--text); }
+:root[data-theme="light"] button.on, :root[data-theme="light"] .character-bible-tabs button.on { background: rgba(182, 138, 46, .18); color: var(--gold-deep); }
+:root[data-theme="light"] .kind.character { background: #f0e4c4; color: #5a430f; }
+:root[data-theme="light"] .kind.prop { background: #eadcee; color: #55305e; }
+:root[data-theme="light"] .kind.set { background: #d9e8ee; color: #1c4a5c; }
+:root[data-theme="light"] .vt-status.none { background: rgba(255, 255, 255, .85); color: var(--text-2); }
+:root[data-theme="light"] .po-bible li button { color: var(--text); }
+:root[data-theme="light"] .asset-lab { background: rgba(255, 255, 255, .72); border-color: var(--stroke); color: var(--text); }
+:root[data-theme="light"] .asset-lab h3 small, :root[data-theme="light"] .asset-lab-lede, :root[data-theme="light"] .asset-lab label { color: var(--text-2); }
+:root[data-theme="light"] .asset-lab-tabs { border-bottom-color: var(--stroke); }
+:root[data-theme="light"] .asset-lab-tabs button { background: #fff; border-color: var(--stroke); color: var(--text-2); }
+:root[data-theme="light"] .asset-lab-tabs button.on { background: rgba(182, 138, 46, .18); border-color: var(--gold); color: var(--gold-deep); }
+:root[data-theme="light"] .asset-lab input, :root[data-theme="light"] .asset-lab textarea { background: #fff; border-color: var(--stroke); color: var(--text); }
+:root[data-theme="light"] .mp-button { background: #fff; color: var(--text); border-color: var(--stroke); }
+:root[data-theme="light"] .mp-name { color: var(--text); }
+:root[data-theme="light"] .mp-sub { color: var(--text-2); }
+
+/* ---------- Voice panel: four numbered groups instead of one long form ---------- */
+.vg { display: grid; gap: 4px; padding: 16px 0 6px; border-top: 1px solid var(--stroke); }
+.vg:first-of-type { border-top: 0; padding-top: 4px; }
+.vg-title { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+.vg-title i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font: 600 12px var(--ui); font-style: normal; color: var(--gold-2); background: rgba(214, 173, 89, .14); }
+.add-prop { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin: 6px 0 10px; }
+.add-prop label { display: grid; gap: 4px; flex: 1 1 200px; font-size: 13px; color: var(--text-2); }
+.po-plain .tertiary { font-size: 13px; color: var(--gold-2); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; padding: 2px 4px; }

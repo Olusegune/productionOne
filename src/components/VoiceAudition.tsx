@@ -76,6 +76,7 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
   return <section className="panel voice-audition" id="voice-audition" tabIndex={-1} aria-label="Voice and sound audition">
     <div className="panel-heading"><div><span className="eyebrow">{isCharacter ? 'VOICE AUDITION · SOUND' : 'SOUND AUDITION'}</span><h3>{asset.name}: {isCharacter ? 'hear them speak' : 'what it sounds like'}</h3></div></div>
     {isCharacter ? <>
+      <section className="vg" aria-labelledby="vg-engine"><h4 className="vg-title" id="vg-engine"><i>1</i>Engine and voice</h4>
       <label className="settings-field"><span>Voice engine</span><select value={providerId} onChange={(e) => chooseProvider(e.target.value as ProviderId)}>{providers.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
       <p className="helper">{provider.note}{!provider.verified && ' Not yet tested against a live server: if it fails, the error below says why.'}</p>
       {!desktop && <p className="helper">Voice auditions run in the Windows app.</p>}
@@ -84,9 +85,13 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
         {provider.transport === 'windows' && <label><span>Voice</span><select value={voice} onChange={(e) => setVoice(e.target.value)} disabled={!voices.length}>{voices.length === 0 && <option value="">No Windows voices found</option>}{voices.map((v) => <option key={v.name} value={v.name}>{v.name} · {v.gender} · {v.culture}</option>)}</select></label>}
         {provider.transport === 'http' && <><label><span>Server address</span><input value={base} onChange={(e) => setBase(e.target.value)} aria-label="Speech server address" /></label><label><span>Model</span><input value={model} onChange={(e) => setModel(e.target.value)} /></label>{provider.languages && <><label><span>Language</span><select value={language} onChange={(e) => setLanguage(e.target.value)}>{provider.languages.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}</select></label><label><span>Expressiveness</span><input type="range" min={0} max={1.5} step={0.05} value={expressiveness} onChange={(e) => setExpressiveness(Number(e.target.value))} aria-label="Expressiveness" /></label></>}<label><span>{provider.languages ? 'Reference clip path (optional)' : provider.describesVoice ? 'Voice name or description' : 'Voice name'}</span><input value={serverVoice} onChange={(e) => setServerVoice(e.target.value)} placeholder={asset.soundDirection || 'as your server names it'} /></label></>}
         <label><span>Pace</span><input type="range" min={-6} max={6} value={rate} onChange={(e) => setRate(Number(e.target.value))} aria-label="Speaking pace" /></label>
-        {lines.length > 0 && <label><span>Line from the script</span><select value={picked} onChange={(e) => { setPicked(Number(e.target.value)); setCustom('') }}>{lines.map((l, i) => <option key={l.line} value={i}>Line {l.line}: {l.text.slice(0, 48)}</option>)}</select></label>}
       </div>
+      </section>
+      <section className="vg" aria-labelledby="vg-line"><h4 className="vg-title" id="vg-line"><i>2</i>Line</h4>
+      {lines.length > 0 && <div className="sheet-controls">{lines.length > 0 && <label><span>Line from the script</span><select value={picked} onChange={(e) => { setPicked(Number(e.target.value)); setCustom('') }}>{lines.map((l, i) => <option key={l.line} value={i}>Line {l.line}: {l.text.slice(0, 48)}</option>)}</select></label>}</div>}
       <label className="settings-field"><span>{lines.length ? 'Or type your own line' : 'Line to speak (no dialogue for this character in the script)'}</span><input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Type a line to hear" /></label>
+      </section>
+      <section className="vg" aria-labelledby="vg-dir"><h4 className="vg-title" id="vg-dir"><i>3</i>Direction</h4>
       <label className="settings-field"><span>Voice direction (saved with the character)</span><input value={asset.soundDirection ?? ''} onChange={(e) => onChange({ ...asset, soundDirection: e.target.value })} placeholder="e.g. low, tired, measured, slight northern accent" /></label>
       <fieldset className="settings-field"><legend>Performance direction</legend>
         <div className="sheet-controls">
@@ -102,11 +107,14 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
         {performance.applied.map((a) => <p className="helper" key={a}>✓ {a}</p>)}
         {performance.notApplied.map((a) => <p className="helper warn" key={a}>Not applied: {a}</p>)}
       </fieldset>
+      </section>
+      <section className="vg" aria-labelledby="vg-result"><h4 className="vg-title" id="vg-result"><i>4</i>Result</h4>
       <div className="sheet-actions-row">
         <button className="primary" disabled={!desktop || busy || !line || (provider.transport === 'windows' && !voices.length) || (provider.transport === 'cloud' && !cloudVoice.trim())} onClick={() => void speak()}><Volume2 size={15} /> {busy ? 'Speaking…' : 'Hear this line'}</button>
         <button className="secondary" onClick={() => copy(`${voiceBrief(asset, line)}
 ${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</button>
       </div>
+      </section>
     </> : <>
       <p className="helper">This brief lists what to record or generate; it is also saved with the asset's sound direction. You can make each sound as a short effect below with ElevenLabs (paid, needs your key).</p>
       {desktop && <VoiceCloud provider={providerById('elevenlabs')} desktop={desktop} assetId={asset.id} voice={cloudVoice} setVoice={setCloudVoice} model={model} setModel={setModel} models={elevenModels} latestModel={latest} providersVersion={providersVersion} openProviders={openProviders} notify={notify} setError={setError} soundOnly soundHint={`e.g. ${soundBrief(asset).split('Sounds to supply: ')[1]?.split(',')[0] ?? 'engine start'}`} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: 0, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}

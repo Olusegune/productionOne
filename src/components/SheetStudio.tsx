@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, Sparkles, Square, X } from "lucide-react";
+import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, X } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -14,6 +14,8 @@ import {
   anchorFor,
   retry,
   summarize,
+  wouldEnqueue,
+  costPreview,
   waitingForAnchor,
   type ImageJob,
   type QueueState,
@@ -96,6 +98,9 @@ export function SheetStudio(props: {
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void } | null };
   focusSheetType?: SheetType;
+  /** When given, notes are held by the project and saved with it; otherwise they live only in this panel. */
+  notesByAsset?: Record<string, string>;
+  setNotesByAsset?: (update: (m: Record<string, string>) => Record<string, string>) => void;
 }) {
   const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, refs, setRefs, focusSheetType } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
@@ -105,7 +110,9 @@ export function SheetStudio(props: {
   const [sheetType, setSheetType] = useState<SheetType>("Turnaround");
   const [intensity, setIntensity] = useState<Intensity>("moderate");
   // Notes belong to one asset: switching assets must never carry another asset's notes into its prompts.
-  const [notesByAsset, setNotesByAsset] = useState<Record<string, string>>({});
+  const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
+  const notesByAsset = props.notesByAsset ?? localNotes;
+  const setNotesByAsset = props.setNotesByAsset ?? setLocalNotes;
   const notes = asset ? notesByAsset[asset.id] ?? "" : "";
   const setNotes = (value: string) => { if (asset) setNotesByAsset((m) => ({ ...m, [asset.id]: value })); };
   const choice = useModelChoice(desktop, providersVersion);
@@ -114,11 +121,12 @@ export function SheetStudio(props: {
   const [size, setSize] = useState<"grid" | "large">("grid");
   const [compare, setCompare] = useState<string[]>([]);
   const [quality, setQuality] = useState<number | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
 
   const activeType: SheetType = sheetTypes.includes(sheetType) ? sheetType : (sheetTypes[0] ?? "Turnaround");
   useEffect(() => { if (focusSheetType && sheetTypes.includes(focusSheetType)) setSheetType(focusSheetType); }, [focusSheetType, asset?.id]);
   const activeVariant = variants.includes(variant) ? variant : "Canonical";
-  useEffect(() => { setLightbox(null); setCompare([]); }, [asset?.id, activeType, activeVariant]);
+  useEffect(() => { setLightbox(null); setCompare([]); setPicked([]); },[asset?.id, activeType, activeVariant]);
   const model: CatalogModel | undefined = catalog.find((m) => m.provider === provider && m.id === modelId);
   const [fromStory, setFromStory] = useState(true);
   const plan = useMemo(() => {
@@ -134,9 +142,11 @@ export function SheetStudio(props: {
     return mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
   };
 
-  const generate = (testOneFirst = false) => {
+  /** `only` limits the run to those view keys; `force` makes a new revision even where an image already exists (never for views still in the queue). */
+  const generate = (testOneFirst = false, only?: string[], force = false) => {
     if (!asset) return;
-    const chosen = testOneFirst ? (views.filter((v) => primaryViewKeys.includes(v.key))[0] ? [views.filter((v) => primaryViewKeys.includes(v.key))[0]] : views.slice(0, 1)) : views;
+    const pool = only ? views.filter((v) => only.includes(v.key)) : views;
+    const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
       prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, anchored: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key) }),
@@ -145,9 +155,10 @@ export function SheetStudio(props: {
       useAnchor: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));
-    const result = enqueue(queue, requests);
+    const result = enqueue(queue, requests, Date.now(), force);
     setQueue(() => result.state);
-    if (!result.added) { notify("Every view of this sheet is already queued or approved."); return; }
+    if (!result.added) { notify("Nothing was added: every view already has an image or is in the queue. To make new versions, tick the views you want and press Regenerate, or use Regenerate unapproved."); return; }
+    setPicked([]);
     const what = `${result.added} view${result.added === 1 ? "" : "s"}${testOneFirst ? " (a test of the first one)" : ""}`;
     if (desktop && !configured[provider]) {
       if (provider === "comfyui") { notify(`Queued ${what}, but ComfyUI is not running. Start it from Local AI, then generation starts.`); openLocal?.(); } else { notify(`Queued ${what}, but there is no ${providerLabels[provider]} key yet. Add it, then generation starts.`); openProviders(); }
@@ -216,6 +227,13 @@ export function SheetStudio(props: {
 
   if (!asset) return <section className="panel sheet-studio"><h3>Analyze a script first</h3><p className="helper">Sheets are planned per character, prop and set once your script has been analyzed.</p></section>;
 
+  const newKeys = views.filter((v) => wouldEnqueue(jobFor(v.key))).map((v) => v.key);
+  const redoKeys = views.filter((v) => { const j = jobFor(v.key); return !!j && !j.approved && wouldEnqueue(j, true) && !wouldEnqueue(j); }).map((v) => v.key);
+  const pickedKeys = picked.filter((k) => { const j = jobFor(k); return !!j && wouldEnqueue(j, true); });
+  const newCost = costPreview(newKeys.length, queue.perImageUsd);
+  const redoCost = costPreview(redoKeys.length, queue.perImageUsd);
+  const pickedCost = costPreview(pickedKeys.length, queue.perImageUsd);
+  const togglePick = (key: string) => setPicked((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key]));
   const approvedCount = views.filter((v) => jobFor(v.key)?.approved).length;
   const generatingCount = views.filter((v) => ["generating", "validating", "queued", "pending"].includes(jobFor(v.key)?.status ?? "")).length;
   const reviewCount = views.filter((v) => jobFor(v.key)?.status === "needs-review").length;
@@ -306,7 +324,13 @@ export function SheetStudio(props: {
                   </button>
                   <div className="view-meta">
                     <b>{view.label}</b>
-                    {job?.qaNotes.map((n) => <small key={n} className="qa-note">{n}</small>)}
+                    {job && job.qaNotes.length === 1 && <small className="qa-note">{job.qaNotes[0]}</small>}
+                    {job && job.qaNotes.length > 1 && (
+                      <details className="qa-group">
+                        <summary>{job.qaNotes.length} quality notes</summary>
+                        {job.qaNotes.map((n) => <small key={n} className="qa-note">{n}</small>)}
+                      </details>
+                    )}
                     {job?.error && <small className="qa-note">{job.error}</small>}
                     {job && job.status === "queued" && waitingForAnchor(queue, job) && <small>Waits for the approved front view, then uses it as its reference.</small>}
                     {job?.width && <small>{job.width}×{job.height}px{job.source === "supplied" ? " · your image" : ""}</small>}
@@ -318,7 +342,8 @@ export function SheetStudio(props: {
                     </>)}
                     {job && (job.status === "failed" || job.status === "cancelled") && <button className="secondary" onClick={() => setQueue((q) => retry(q, job.id))}>Retry</button>}
                     {job && job.status === "queued" && <button className="secondary" onClick={() => setQueue((q) => cancel(q, job.id))}>Cancel</button>}
-                    {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={() => generate(false)}>Regenerate</button>}
+                    {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={() => generate(false, [view.key], true)}>Regenerate</button>}
+                    {job && wouldEnqueue(job, true) && !job.approved && <label className="view-pick"><input type="checkbox" checked={picked.includes(view.key)} onChange={() => togglePick(view.key)} /> Select</label>}
                     {job && (job.status === "queued" || job.status === "failed") && model && (job.provider !== provider || job.model !== modelId) && (
                       <button className="secondary" onClick={() => setQueue((q) => reassignModel(q, [job.id], provider, modelId))}>Use {model.name}</button>
                     )}
@@ -333,8 +358,17 @@ export function SheetStudio(props: {
 
         <aside className="ss-inspector" aria-label="Sheet settings">
           <div className="ss-actions">
-            <button className="primary" onClick={() => generate(false)} disabled={!views.length}><Sparkles size={15} /> Generate {views.length} view{views.length === 1 ? "" : "s"}</button>
-            {views.length > 1 && <button className="secondary" onClick={() => generate(true)} title="Make one image first to check the look">Test one first</button>}
+            <button className="primary" onClick={() => generate(false)} disabled={!newKeys.length}><Sparkles size={15} /> Generate {newKeys.length} view{newKeys.length === 1 ? "" : "s"}</button>
+            <p className="ss-cost" aria-live="polite">{newCost.label}</p>
+            {newKeys.length > 1 && <button className="secondary" onClick={() => generate(true, newKeys)} title="Make one image first to check the look">Test one first</button>}
+            {redoKeys.length > 0 && <>
+              <button className="secondary" onClick={() => generate(false, redoKeys, true)} title="Makes a new version of every view that is not approved yet. Approved views are left alone."><RefreshCw size={14} /> Regenerate {redoKeys.length} unapproved</button>
+              <p className="ss-cost">{redoCost.label}</p>
+            </>}
+            {pickedKeys.length > 0 && <>
+              <button className="secondary" onClick={() => generate(false, pickedKeys, true)}><RefreshCw size={14} /> Regenerate {pickedKeys.length} selected</button>
+              <p className="ss-cost">{pickedCost.label}</p>
+            </>}
             {!configured[provider] && desktop && (provider === "comfyui" ? <button className="secondary" onClick={openLocal}>Start ComfyUI</button> : <button className="secondary" onClick={openProviders}>Add {providerLabels[provider]} key</button>)}
           </div>
           <Fold title="Reference photos" hint={mine.length ? `${mine.length} added` : "none yet"} defaultOpen>
@@ -346,7 +380,7 @@ export function SheetStudio(props: {
             </div>
             {mine.length === 0 && <p className="helper">Photos of the actor, costume or location. Drop images on the window too. They go with every request to models that accept references.</p>}
           </Fold>
-          <Fold title="Notes" hint="added to every prompt" defaultOpen>
+          <Fold title="Notes" hint="added to every prompt, saved with the project" defaultOpen>
             <textarea className="ss-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. dust-worn jacket, torn left sleeve" aria-label="Notes for this sheet" />
           </Fold>
           <Fold title="Identity lock" hint={lock.kind === "locked" ? "on" : lock.kind === "waiting-for-anchor" ? "needs approved front" : "off: model has no references"} defaultOpen={lock.kind !== "locked"}>

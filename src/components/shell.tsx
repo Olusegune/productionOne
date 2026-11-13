@@ -40,7 +40,7 @@ export function TopBar(props: {
         <div className="po-actions">
           {next && (
             <button className="primary" onClick={() => props.onNext(next)} title={next.detail}>
-              {next.action} <ArrowRight size={14} />
+              <span className="btn-label">{next.action}</span> <ArrowRight size={14} aria-hidden="true" />
             </button>
           )}
           {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}

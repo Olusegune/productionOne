@@ -21,6 +21,8 @@ export interface StudioState {
   queue?: QueueState
   clips?: DemoClip[]
   assetRefs?: Record<string, string[]>
+  /** Notes typed on each asset's reference sheet; saved so they survive closing the project. */
+  sheetNotes?: Record<string, string>
 }
 
 export const projectStore = {

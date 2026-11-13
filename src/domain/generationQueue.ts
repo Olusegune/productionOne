@@ -83,6 +83,23 @@ const live: ImageJobStatus[] = ['pending', 'queued', 'generating', 'validating']
  * Adds jobs. A view that already has a live job or an approved/unrejected result is skipped (idempotent). A view whose last result was rejected or failed gets
  * a NEW revision, so earlier files and approvals are never replaced.
  */
+/** Would pressing Generate add a new revision for a view whose latest job is `latest`? Shared by enqueue and the cost preview so they can never disagree. */
+export function wouldEnqueue(latest: ImageJob | undefined, force = false): boolean {
+  if (!latest) return true
+  if (live.includes(latest.status)) return false
+  if (!force && (latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))) return false
+  return true
+}
+
+/** What a paid click will cost at the person's own price per request. Catalog prices are never invented: with no price set, the count is still shown and the cost says so. */
+export function costPreview(count: number, perImageUsd: number | null): { count: number; usd: number | null; label: string } {
+  const noun = `${count} image${count === 1 ? '' : 's'}`
+  if (count === 0) return { count, usd: 0, label: 'Nothing new to generate' }
+  if (perImageUsd === null) return { count, usd: null, label: `${noun} · cost unknown: set a price in the spending limit` }
+  const usd = count * perImageUsd
+  return { count, usd, label: `${noun} · about $${usd.toFixed(2)} at your $${perImageUsd.toFixed(2)} each` }
+}
+
 export function enqueue(state: QueueState, requests: JobRequest[], now = Date.now(), force = false): { state: QueueState; added: number; skipped: number } {
   let jobs = state.jobs
   let added = 0
@@ -90,7 +107,7 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
   for (const request of requests) {
     const same = jobs.filter((j) => j.assetId === request.assetId && j.variant === request.variant && j.sheetType === request.sheetType && j.viewKey === request.viewKey)
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
-    if (latest && (live.includes(latest.status) || (!force && (latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))))) { skipped++; continue }
+    if (!wouldEnqueue(latest, force)) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
     jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
     added++

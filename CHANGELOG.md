@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.23.0 (2026-11-13): voice groups, script reading actions
+- Voice audition is now four numbered groups: Engine and voice, Line, Direction, Result.
+- Script reading: "Add as prop" for a prop the reading missed (never duplicates an asset), and "Use as <name>'s age" on an age the reading found; the age is saved as the character's confirmed age and flows into image prompts.
+- Tests: 183 JS, 65 Rust.
+- Not done: searchable replacements for long native dropdowns; splitting App.tsx.
+
+## 0.22.0 (2026-11-13): first-run guide, saved notes, light theme
+- First-run guide on Projects (keys, script, Golden Path); dismiss once, remembered.
+- Sheet notes are now saved with the project (they used to vanish on close).
+- Light theme, opt-in: command palette (Ctrl+K) > "Switch between dark and light theme". Dark stays the default. Best effort: the main screens were checked in a preview, the Direct, Deliver and dialog screens were not.
+- Tests: 180 JS, 65 Rust.
+
+## 0.21.0 (2026-11-13): polish, regenerate and cost
+- New `src/polish.css` layer: one easing curve, screen entrance, sliding tab indicator, breathing Golden Path step, tactile buttons, key chips, slow background light. All motion switches off under reduced-motion.
+- Header: tabs wrap to their own row at 1180px and below, so nothing clips at 1024px.
+- Reference sheets: "Generate" now counts only views that need an image. New "Regenerate N unapproved" and "Regenerate N selected" (tick Select on a view). Approved views are never regenerated unless ticked. When nothing is added the message says what to do next.
+- Cost: every paid button shows its count and cost at the person's own price per request (never an invented price; "cost unknown" until one is set in the spending limit).
+- Several image warnings collapse into one "N quality notes" toggle.
+- Design screen: sticky in-page navigation (Identity, Reference sheets, Motion, Voice and sound).
+- Tests: 180 JS. Checked in a browser preview and as a packaged build; no screen-reader pass, no light theme yet.
+
 ## 0.20.0 (2026-11-12): type and layout refresh
 - New typeface: Geist (bundled, works offline) with Inter and Segoe UI Variable as fallbacks; roomier line height, tighter headings, balanced wrapping.
 - Accessibility: no text under 12px (legacy 8-11px labels raised; monospace boxes 13px); low-contrast greys in the older style sheets lifted; a script audit of the Projects, Story, Design, Direct and Deliver screens found no text below 4.5:1 (approximate, computed from CSS colours, not a full WCAG audit); stronger focus ring; readable disabled buttons; reduced-motion and high-contrast settings honoured.

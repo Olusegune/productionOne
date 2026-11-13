@@ -10,7 +10,8 @@ import { applyAi } from "../engine/aiBeats";
 import { explainStory } from "../engine/explain";
 
 /** What the story engine found, each finding linked back to the script line it came from. */
-export function ReadingPanel({ story, onJump, desktop = false, onStory, notify }: { story?: ParsedStory; onJump: (line: number) => void; desktop?: boolean; onStory?: (story: ParsedStory) => void; notify?: (message: string) => void }) {
+export function ReadingPanel({ story, onJump, desktop = false, onStory, notify, onAddProp, onUseAge }: { story?: ParsedStory; onJump: (line: number) => void; desktop?: boolean; onStory?: (story: ParsedStory) => void; notify?: (message: string) => void; onAddProp?: (name: string) => void; onUseAge?: (character: string, value: string) => void }) {
+  const [propName, setPropName] = useState("");
   const local = useLocalAi(desktop);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const why = useMemo(() => (story ? explainStory(story) : null), [story]);
@@ -64,12 +65,13 @@ export function ReadingPanel({ story, onJump, desktop = false, onStory, notify }
       {story.variants.length > 0 && (
         <details>
           <summary>Ages, costumes and conditions ({story.variants.length})</summary>
-          <ul className="po-plain">{story.variants.map((v, i) => <li key={i}><b>{v.character}</b>: {v.value} <small>{v.kind}</small> {jump(v.evidence.line, `line ${v.evidence.line}`)}</li>)}</ul>
+          <ul className="po-plain">{story.variants.map((v, i) => <li key={i}><b>{v.character}</b>: {v.value} <small>{v.kind}</small> {jump(v.evidence.line, `line ${v.evidence.line}`)}{v.kind === "age" && onUseAge && <> <button className="tertiary" onClick={() => onUseAge(v.character, v.value)} title="Saves this as the character's confirmed age; it goes into image prompts">Use as {v.character}'s age</button></>}</li>)}</ul>
         </details>
       )}
-      {story.props.length > 0 && (
+      {(story.props.length > 0 || onAddProp) && (
         <details>
           <summary>Props ({story.props.length})</summary>
+          {onAddProp && <form className="add-prop" onSubmit={(e) => { e.preventDefault(); onAddProp(propName); setPropName(""); }}><label><span>Missed a prop? Add it</span><input value={propName} onChange={(e) => setPropName(e.target.value)} placeholder="e.g. rusty key" /></label><button className="secondary" type="submit" disabled={!propName.trim()}>Add as prop</button></form>}
           <ul className="po-plain">{story.props.map((p) => <li key={p.name}><b>{p.name}</b>{p.condition && <small> · {p.condition}</small>} {jump(p.evidence[0].line, `line ${p.evidence[0].line}`)}</li>)}</ul>
         </details>
       )}

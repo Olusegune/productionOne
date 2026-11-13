@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { ImageJob } from './generationQueue'
 import {
   addSupplied, anchorFor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
   reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
@@ -170,5 +171,30 @@ describe('legacy saved caps', () => {
     const old = { ...emptyQueue(), perImageUsd: 0.5, totalCeilingUsd: 2 } as Partial<QueueState> as QueueState
     delete (old as Partial<QueueState>).guard
     expect(recover(old).guard).toBe(false)
+  })
+})
+
+describe('regenerate and cost preview', () => {
+  const base = { id: 'j', key: 'k', assetId: 'a', variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', prompt: '', aspect: '1:1', fullBody: true, provider: 'kie', model: 'm', references: [], useAnchor: false, outputName: 'o', revision: 1, attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: 0, updatedAt: 0 } as unknown as ImageJob
+  it('adds new views, skips ones with an image or in the queue', async () => {
+    const { wouldEnqueue } = await import('./generationQueue')
+    expect(wouldEnqueue(undefined)).toBe(true)
+    expect(wouldEnqueue({ ...base, status: 'queued' })).toBe(false)
+    expect(wouldEnqueue({ ...base, status: 'needs-review' })).toBe(false)
+    expect(wouldEnqueue({ ...base, status: 'completed' })).toBe(false)
+    expect(wouldEnqueue({ ...base, status: 'completed', rejected: true })).toBe(true)
+  })
+  it('force makes a new version of a finished view but never of one still in the queue', async () => {
+    const { wouldEnqueue } = await import('./generationQueue')
+    expect(wouldEnqueue({ ...base, status: 'needs-review' }, true)).toBe(true)
+    expect(wouldEnqueue({ ...base, status: 'completed' }, true)).toBe(true)
+    expect(wouldEnqueue({ ...base, status: 'generating' }, true)).toBe(false)
+  })
+  it('states cost from the person\'s own price and never invents one', async () => {
+    const { costPreview } = await import('./generationQueue')
+    expect(costPreview(5, 0.04).label).toBe('5 images · about $0.20 at your $0.04 each')
+    expect(costPreview(1, null).usd).toBeNull()
+    expect(costPreview(3, null).label).toContain('cost unknown')
+    expect(costPreview(0, 0.04).label).toBe('Nothing new to generate')
   })
 })

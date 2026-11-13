@@ -1,3 +1,7 @@
+import { toggleTheme } from "./data/theme";
+import { addPropAsset, applyReadAge } from "./domain/readingActions";
+import { FirstRun } from "./components/FirstRun";
+import { SectionNav } from "./components/SectionNav";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { DeliveryCenter } from "./components/DeliveryCenter";
 import { convertScript, type ScriptKind } from "./engine/importers";
@@ -128,6 +132,12 @@ const initialShot: ShotRecord = {
   storyboardStatus: "planned",
 };
 
+const designSections = [
+  { id: "sec-identity", label: "Identity" },
+  { id: "sec-sheets", label: "Reference sheets" },
+  { id: "sec-motion", label: "Motion" },
+  { id: "sec-voice", label: "Voice and sound" },
+];
 const isTauri = "__TAURI_INTERNALS__" in window;
 function downloadJson(name: string, value: unknown) {
   const url = URL.createObjectURL(
@@ -198,7 +208,8 @@ export default function App() {
     [paletteOpen, setPaletteOpen] = useState(false),
     [localOpen, setLocalOpen] = useState(false),
     [clips, setClipsState] = useState<DemoClip[]>([]),
-    [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({});
+    [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({}),
+    [sheetNotes, setSheetNotes] = useState<Record<string, string>>({});
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
@@ -222,8 +233,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -292,6 +303,7 @@ export default function App() {
           setQueueState(recover(studio.queue ?? emptyQueue()));
           setClipsState(studio.clips ?? []);
           setAssetRefsState(studio.assetRefs ?? {});
+          setSheetNotes(studio.sheetNotes ?? {});
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -428,6 +440,18 @@ export default function App() {
       const picked = await invoke<{ name: string; kind: ScriptKind; text: string } | null>("pick_script_file");
       if (picked) takeScript(picked.name, picked.kind, picked.text);
     } catch (e) { setNotice(String(e)); }
+  };
+  const addNamedProp = (name: string) => {
+    const result = addPropAsset(analysis.assets, name, analysis.scenes[0]?.id ?? "SCENE-001");
+    if (!result.added) { setNotice(result.reason ?? "Nothing added."); return; }
+    setAnalysis((current) => ({ ...current, assets: result.assets }));
+    setNotice(`Added ${name.trim()} as a prop. Find it under Design.`);
+  };
+  const useAgeFromReading = (character: string, value: string) => {
+    const result = applyReadAge(analysis.assets, character, value);
+    if (!result.applied) { setNotice(`No character asset named ${character} to apply this to.`); return; }
+    setAnalysis((current) => ({ ...current, assets: result.assets }));
+    setNotice(`${character}'s age is now confirmed and goes into image prompts.`);
   };
   const addManualAsset = () => {
     const sceneId = analysis.scenes[0]?.id ?? "SCENE-001";
@@ -954,6 +978,7 @@ export default function App() {
     setQueueState(recover(s.queue ?? emptyQueue()));
     setClipsState(s.clips ?? []);
     setAssetRefsState(s.assetRefs ?? {});
+    setSheetNotes(s.sheetNotes ?? {});
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1101,6 +1126,7 @@ export default function App() {
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
     ...["Projects", "Story", "Design", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
+    { id: "theme", label: "Switch between dark and light theme", hint: "View", run: () => setNotice(toggleTheme() === "light" ? "Light theme on. It is new, so tell me about anything hard to read." : "Dark theme on.") },
     { id: "new", label: "New project", hint: "File", run: () => actionsRef.current["file-new"]?.() },
     { id: "open", label: "Open a project…", hint: "File", run: () => actionsRef.current["file-open"]?.() },
     { id: "save", label: "Save project", hint: "File", run: () => actionsRef.current["file-save"]?.() },
@@ -1294,6 +1320,7 @@ export default function App() {
                 <button className="secondary" onClick={() => void saveProject()}><Download size={15} /> Save</button>
               </div>
             </div>
+            <FirstRun onKeys={() => setProvidersOpen(true)} onStory={() => setWorkspace("Story")} />
             <GoldenPath input={goldenInput} onGo={setWorkspace} onNext={goNext} />
             {recents.length > 0 && (
               <div className="recent-list">
@@ -1307,7 +1334,7 @@ export default function App() {
                 </ul>
               </div>
             )}
-            <p className="helper">Press Ctrl+K for the command palette: it can open any asset, import a script, save or export without leaving the keyboard.</p>
+            <p className="helper kbd-hint"><kbd>Ctrl</kbd><kbd>K</kbd> Command palette: open any asset, import a script, save or export without leaving the keyboard.</p>
           </section>
         )}
         {workspace === "Story" && (
@@ -1355,7 +1382,7 @@ export default function App() {
                   </h3>
                 </div>
               </div>
-              <ReadingPanel story={analysis.story} onJump={jumpToLine} desktop={isTauri} onStory={(story) => setAnalysis((a) => ({ ...a, story }))} notify={setNotice} />
+              <ReadingPanel story={analysis.story} onJump={jumpToLine} desktop={isTauri} onStory={(story) => setAnalysis((a) => ({ ...a, story }))} notify={setNotice} onAddProp={addNamedProp} onUseAge={useAgeFromReading} />
               <EditableInventory
                 analysis={analysis}
                 onChange={setAnalysis}
@@ -1373,12 +1400,16 @@ export default function App() {
               onChange={setStyleBible}
               sheetCount={plannedSheets.length}
             />
+            <SectionNav sections={designSections} />
+            <div id="sec-identity">
             <AssetLab
               asset={analysis.assets[selectedAsset]}
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
               notify={setNotice}
             />
+            </div>
             <CharacterBible asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
+            <div id="sec-sheets">
             <SheetStudio
               assets={analysis.assets}
               scenes={analysis.scenes}
@@ -1396,8 +1427,12 @@ export default function App() {
               controlRef={studioControl}
               refs={assetRefs}
               setRefs={setAssetRefs}
+              notesByAsset={sheetNotes}
+              setNotesByAsset={setSheetNotes}
               focusSheetType={focusSheetType}
             />
+            </div>
+            <div id="sec-motion">
             <MotionDemo
               asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
               queue={queue}
@@ -1408,6 +1443,8 @@ export default function App() {
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
             />
+            </div>
+            <div id="sec-voice">
             <VoiceAudition
               asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
               story={analysis.story}
@@ -1419,6 +1456,7 @@ export default function App() {
               openProviders={(id) => { if (id) setCredentialProvider(id as ProviderId); setProvidersOpen(true); }}
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
             />
+            </div>
             <details className="po-classic">
             <summary>Prompt Studio, model hub, imports and quality tools</summary>
             <section className="three-column">
