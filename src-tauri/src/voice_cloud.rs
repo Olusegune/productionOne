@@ -62,9 +62,16 @@ pub fn parse_eleven_voices(json: &str) -> Vec<CloudVoice> {
     }).collect()).unwrap_or_default()
 }
 
+/// Live check (2026-11-13): VoiceKiller's voicelist answers with one voice name per line, not JSON. Accept that, but refuse anything that looks like a page or an error (markup, braces, long lines).
+pub fn parse_voice_lines(text: &str) -> Vec<CloudVoice> {
+    let lines: Vec<&str> = text.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+    if lines.is_empty() || lines.iter().any(|l| l.len() > 60 || l.contains(['<', '>', '{', '}', ':'])) { return vec![]; }
+    lines.into_iter().map(|l| CloudVoice { id: l.to_string(), name: l.to_string(), detail: String::new() }).collect()
+}
+
 /// The voice list reply shape is not in the public page, so accept the plausible shapes (a list of names, a list of objects, or an object holding such a list) and say so when none fits.
 pub fn parse_voicekiller_voices(json: &str) -> Vec<CloudVoice> {
-    let v: Value = match serde_json::from_str(json) { Ok(v) => v, Err(_) => return vec![] };
+    let v: Value = match serde_json::from_str(json) { Ok(v) => v, Err(_) => return parse_voice_lines(json) };
     let list = match &v { Value::Array(a) => Some(a), Value::Object(o) => ["voices", "data", "result"].iter().find_map(|k| o.get(*k).and_then(Value::as_array)), _ => None };
     list.map(|a| a.iter().filter_map(|x| {
         let name = match x { Value::String(s) => s.clone(), Value::Object(o) => ["voice_name", "name", "voice"].iter().find_map(|k| o.get(*k).and_then(Value::as_str))?.to_string(), _ => return None };
@@ -230,6 +237,16 @@ mod tests {
         assert_eq!(parse_voicekiller_voices(r#"["Jett","Abby"]"#).len(), 2);
         assert_eq!(parse_voicekiller_voices(r#"{"voices":[{"voice_name":"Jett"}]}"#)[0].name, "Jett");
         assert!(parse_voicekiller_voices(r#"{"ok":true}"#).is_empty());
+        let lines = parse_voicekiller_voices("alloy
+Ashton
+Bella
+
+Coraline
+");
+        assert_eq!(lines.iter().map(|v| v.name.as_str()).collect::<Vec<_>>(), ["alloy", "Ashton", "Bella", "Coraline"]);
+        assert!(parse_voicekiller_voices("<html><body>Error</body></html>").is_empty());
+        assert!(parse_voicekiller_voices("error: not allowed").is_empty());
+        assert!(parse_voicekiller_voices("   \n ").is_empty());
     }
     #[test]
     fn only_speech_models_are_listed() {
