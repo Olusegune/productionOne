@@ -325,3 +325,13 @@ h3.with-icon > svg { flex: none; color: var(--gold-2); }
 .sheet, .provider-modal { animation: rise var(--t-slow) var(--ease) both; }
 @keyframes fade { from { opacity: 0; } }
 .studio-page .panel-heading { flex-wrap: wrap; gap: 10px 14px; }
+.po-local { white-space: nowrap; flex: none; }
+.first-run header { margin: 0; padding: 0; min-height: 0; }
+.first-run h3 { margin: 2px 0 0; }
+.asset-lab h3, .asset-lab-head h3 { font: 560 1.3rem var(--display); letter-spacing: -.01em; }
+.asset-lab h3 small { font: 600 12px var(--ui); letter-spacing: .04em; }
+.po-bible h4 { justify-content: flex-start; text-align: left; }
+.po-bible h4 > span { margin-left: auto; }
+.po-actions .primary { max-width: 260px; }
+.po-local { padding-inline: 10px; }
+@media (max-width: 1500px) { .po-tabs em { display: none; } }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.1 (2026-11-13): fixes from running the packaged app
+- Run for real (WebView2 debugging port): Fraunces and Plus Jakarta Sans load; free Windows voice audition produced a real 3.6 s, 22 kHz mono WAV with Microsoft David and Zira listed; no provider keys were saved so no paid generation was run.
+- Fixes: "Local AI" no longer wraps onto two lines, the first-run card no longer has a gap under its title, Asset Lab titles use the display font, Production Bible group headings are left-aligned, the "optional" tag on Direct hides below 1500px so the next-step button is not cut off.
+
 ## 0.28.0 (2026-11-13): App.tsx split into views; empty project no longer "ready"
 - App.tsx is now about 1,300 lines (from 1,860): the Projects, Story, Design and Direct workspaces live in src/views/ with typed props. Deliver is still inline.
 - New App-level tests walk every workspace and the Alt+number shortcuts, guarding the split.
