@@ -49,3 +49,5 @@ export function downloadText(name: string, value: string, type = "text/plain") {
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+export const isTauri = "__TAURI_INTERNALS__" in window;

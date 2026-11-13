@@ -1,42 +1,26 @@
 import { toggleTheme } from "./data/theme";
 import { addPropAsset, applyReadAge } from "./domain/readingActions";
 import { workspaceShortcut } from "./domain/shortcuts";
-import { initialShot, designSections, downloadJson, downloadText } from "./appHelpers";
+import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers";
 import { Eyebrow } from "./components/Eyebrow";
+import { DesignView } from "./views/DesignView";
+import { DirectView } from "./views/DirectView";
 import { ProjectsView } from "./views/ProjectsView";
 import { StoryView } from "./views/StoryView";
-import { SectionNav } from "./components/SectionNav";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { DeliveryCenter } from "./components/DeliveryCenter";
 import { convertScript, type ScriptKind } from "./engine/importers";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
+import { 
   Check,
-  Clapperboard,
-  Copy,
-  Download,
-  Globe,
-  Library,
-  ListOrdered,
+  Clapperboard, 
+  Globe, 
   KeyRound,
   Settings2,
   FolderKanban,
-  PackageCheck,
-  Pause,
-  PenTool,
-  Play,
-  Plus,
-  Search,
-  Sparkles,
-  Trash2,
-  WandSparkles,
+  PackageCheck, 
+  PenTool, 
+  Sparkles, 
 } from "lucide-react";
-import { BrandMark } from "./components/BrandMark";
-import { ArtDirectionBar } from "./components/ArtDirectionBar";
-import { AssetLab } from "./components/AssetLab";
-import { CharacterBible } from "./components/CharacterBible";
 import { projectStore, studioStore, type StudioState } from "./data/projectStore";
 import { demoGraph } from "./domain/demoGraph";
 import {
@@ -48,15 +32,11 @@ import {
 import {
   advanceQueue,
   analyzeScript,
-  animaticDuration,
-  cancelJob,
+  animaticDuration, 
   compileAssetPrompt,
   compileShotPackage,
   coverageAudit,
-  normalizeShotOrder,
-  pauseQueue,
-  resumeQueue,
-  retryJob,
+  normalizeShotOrder, 
   sceneCoverageAudit,
   shotAtTime,
   type AnalysisResult,
@@ -88,11 +68,6 @@ import "./director.css";
 import "./delivery.css";
 import "./cleanrender.css";
 import { sampleStory } from "./engine/sampleStory";
-import { SheetStudio } from "./components/SheetStudio";
-import { RealImage } from "./components/RealImage";
-import { MotionDemo } from "./components/MotionDemo";
-import { VoiceAudition } from "./components/VoiceAudition";
-import { DirectRoom } from "./components/DirectRoom";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
 import { anyLocal } from "./domain/localAi";
@@ -115,7 +90,6 @@ const workspaces = [
 ];
 const sampleScript = sampleStory;
 
-const isTauri = "__TAURI_INTERNALS__" in window;
 
 export default function App() {
   const [workspace, setWorkspace] = useState("Projects"),
@@ -1270,490 +1244,10 @@ export default function App() {
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} />
         )}
         {workspace === "Design" && (
-          <div className="po-design">
-            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} />
-            <div className="po-canvas design-workspace">
-            <ArtDirectionBar
-              style={styleBible}
-              onChange={setStyleBible}
-              sheetCount={plannedSheets.length}
-            />
-            <SectionNav sections={designSections} />
-            <div id="sec-identity">
-            <AssetLab
-              asset={analysis.assets[selectedAsset]}
-              onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
-              notify={setNotice}
-            />
-            </div>
-            <CharacterBible asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
-            <div id="sec-sheets">
-            <SheetStudio
-              assets={analysis.assets}
-              scenes={analysis.scenes}
-              story={analysis.story}
-              assetIndex={selectedAsset}
-              style={styleBible}
-              queue={queue}
-              setQueue={setQueue}
-              desktop={isTauri}
-              providersVersion={Number(providersOpen)}
-              onApproved={onSheetApproved}
-              notify={setNotice}
-              openProviders={() => setProvidersOpen(true)}
-              openLocal={() => setLocalOpen(true)}
-              controlRef={studioControl}
-              refs={assetRefs}
-              setRefs={setAssetRefs}
-              notesByAsset={sheetNotes}
-              setNotesByAsset={setSheetNotes}
-              focusSheetType={focusSheetType}
-            />
-            </div>
-            <div id="sec-motion">
-            <MotionDemo
-              asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
-              queue={queue}
-              clips={clips}
-              setClips={setClips}
-              style={styleBible}
-              desktop={isTauri}
-              notify={setNotice}
-              openProviders={() => setProvidersOpen(true)}
-            />
-            </div>
-            <div id="sec-voice">
-            <VoiceAudition
-              asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
-              story={analysis.story}
-              clips={clips}
-              setClips={setClips}
-              desktop={isTauri}
-              notify={setNotice}
-              providersVersion={Number(providersOpen)}
-              openProviders={(id) => { if (id) setCredentialProvider(id as ProviderId); setProvidersOpen(true); }}
-              onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
-            />
-            </div>
-            <details className="po-classic">
-            <summary>Prompt Studio, model hub, imports and quality tools</summary>
-            <section className="three-column">
-              <div className="panel asset-browser">
-                <div className="panel-heading">
-                  <div>
-                    <Eyebrow icon={Library}>SHARED ASSET REGISTRY</Eyebrow>
-                    <h3>Production assets</h3>
-                  </div>
-                </div>
-                {analysis.assets.map((asset, index) => (
-                  <button
-                    className={selectedAsset === index ? "selected" : ""}
-                    key={asset.id}
-                    onClick={() => setSelectedAsset(index)}
-                  >
-                    <span className={`kind ${asset.type}`}>
-                      {asset.type.slice(0, 2)}
-                    </span>
-                    <span>
-                      <b>{asset.name}</b>
-                      <small>
-                        {asset.id} ·{" "}
-                        {
-                          plannedSheets.filter(
-                            (sheet) => sheet.assetId === asset.id,
-                          ).length
-                        }{" "}
-                        sheets
-                      </small>
-                    </span>
-                    <i className={asset.status}>{asset.status}</i>
-                  </button>
-                ))}
-              </div>
-              <div className="panel design-preview">
-                {analysis.assets[selectedAsset] && activePromptPackage && (
-                  <>
-                    <div className="panel-heading">
-                      <div>
-                        <span className="eyebrow">
-                          {analysis.assets[selectedAsset].type.toUpperCase()} ·{" "}
-                          {analysis.assets[selectedAsset].id}
-                        </span>
-                        <h3>{analysis.assets[selectedAsset].name}</h3>
-                      </div>
-                      <span
-                        className={`status ${analysis.assets[selectedAsset].status}`}
-                      >
-                        {analysis.assets[selectedAsset].status}
-                      </span>
-                    </div>
-                    <RealImage
-                      path={assetOutputs[analysis.assets[selectedAsset].id]}
-                      label={`Approved reference for ${analysis.assets[selectedAsset].name}`}
-                      empty="No approved reference yet. Generate or add one above."
-                    />
-                    <div className="prompt-tabs">
-                      {(
-                        [
-                          "universal",
-                          "compact",
-                          "technical",
-                          "negative",
-                        ] as Array<keyof PromptPackage>
-                      ).map((mode) => (
-                        <button
-                          className={promptMode === mode ? "active" : ""}
-                          onClick={() => setPromptMode(mode)}
-                          key={mode}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="prompt-box">
-                      <span>{promptMode.toUpperCase()} PROMPT</span>
-                      {promptMode === "universal" ? <textarea className="asset-prompt-editor" aria-label="Editable asset prompt" value={activePromptPackage[promptMode]} onChange={(e) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item, index) => index === selectedAsset ? { ...item, prompt: e.target.value } : item) }))} /> : <p>{activePromptPackage[promptMode]}</p>}
-                    </div>
-                    <div className="prompt-actions">
-                      <button className="secondary" onClick={copyPrompt}>
-                        <Copy size={13} /> Copy
-                      </button>
-                      {(["txt", "md", "json", "csv"] as const).map((format) => (
-                        <button
-                          className="secondary"
-                          key={format}
-                          onClick={() => exportPrompt(format)}
-                        >
-                          {format.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="model-match">
-                      <span>RECOMMENDED MODEL</span>
-                      <b>{modelRecommendations[0]?.name}</b>
-                      <small>
-                        {modelRecommendations[0]?.score}/100 ·{" "}
-                        {modelRecommendations[0]?.reason}
-                      </small>
-                    </div>
-                    <div className="image-generation-gate">
-                      <button
-                        className="primary"
-                        disabled={
-                          !openAiConfigured ||
-                          generatingImage
-                        }
-                        onClick={generateImageDirect}
-                      >
-                        {generatingImage
-                          ? "Generating…"
-                          : "Generate verified image"}
-                      </button>
-                      <small>
-                        {openAiConfigured
-                          ? "OpenAI credential configured."
-                          : "Configure OpenAI in Global production tools."}{" "}
-                        Provider pricing is not assumed; confirm the ceiling
-                        against your account.
-                      </small>
-                    </div>
-                    <div className="button-row">
-                      <button
-                        className="primary"
-                        onClick={() => approveAsset(selectedAsset)}
-                      >
-                        Approve identity
-                      </button>
-                      <label className="secondary file-button">
-                        Import & QA
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void importAsset(file);
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                      <button className="secondary" onClick={queueAsset}>
-                        <Plus size={14} /> Queue prompt package
-                      </button>
-                      <button
-                        className="secondary"
-                        onClick={reviseSelectedAsset}
-                      >
-                        Revise & selectively regenerate
-                      </button>
-                    </div>
-                    {assetOutputs[analysis.assets[selectedAsset].id] && (
-                      <p className="helper">
-                        Verified labeled reference:{" "}
-                        {assetOutputs[analysis.assets[selectedAsset].id]}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="panel">
-                <div className="panel-heading">
-                  <div>
-                    <Eyebrow icon={ListOrdered}>DURABLE QUEUE</Eyebrow>
-                    <h3>Production jobs</h3>
-                  </div>
-                  <div className="queue-controls">
-                    <button
-                      title="Pause queue"
-                      onClick={() => setJobs(pauseQueue)}
-                    >
-                      <Pause size={12} />
-                    </button>
-                    <button
-                      title="Resume queue"
-                      onClick={() => setJobs(resumeQueue)}
-                    >
-                      <Play size={12} />
-                    </button>
-                  </div>
-                </div>
-                <div className="queue-list">
-                  {jobs.length === 0 ? (
-                    <p className="empty">No jobs queued.</p>
-                  ) : (
-                    jobs.map((job) => (
-                      <div key={job.id}>
-                        <span>
-                          <b>{job.id}</b>
-                          <small>
-                            {job.assetId}
-                            {job.outputPath ? ` · ${job.outputPath}` : ""}
-                            {job.error ? ` · ${job.error}` : ""}
-                          </small>
-                        </span>
-                        <i className={job.status}>{job.status}</i>
-                        {job.status !== "complete" &&
-                          job.status !== "cancelled" && (
-                            <button
-                              title={`Cancel ${job.id}`}
-                              onClick={() =>
-                                setJobs((current) => cancelJob(current, job.id))
-                              }
-                            >
-                              ×
-                            </button>
-                          )}
-                        {(job.status === "failed" ||
-                          job.status === "cancelled") && (
-                          <button
-                            title={`Retry ${job.id}`}
-                            onClick={() =>
-                              setJobs((current) => retryJob(current, job.id))
-                            }
-                          >
-                            Retry
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-                <button
-                  className="primary full"
-                  onClick={runQueue}
-                  disabled={!jobs.some((j) => j.status === "queued")}
-                >
-                  <Play size={14} /> Process next job
-                </button>
-                <button className="secondary full" onClick={exportAllPrompts}>
-                  <Download size={14} /> Export all prompts
-                </button>
-                <p className="helper">
-                  A job completes only after its output package is written.
-                  Queue state survives restart.
-                </p>
-              </div>
-            </section>
-            </details>
-            </div>
-            <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} />
-          </div>
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
         {workspace === "Direct" && (
-          <div className="dr-wrap">
-            <DirectRoom
-              analysis={analysis}
-              shots={shots}
-              setShots={(u) => setShots(u)}
-              queue={queue}
-              setQueue={setQueue}
-              style={styleBible}
-              assetRefs={assetRefs}
-              desktop={isTauri}
-              providersVersion={Number(providersOpen)}
-              enabled={storyboardsEnabled}
-              setEnabled={setStoryboardsEnabled}
-              title={title}
-              notify={setNotice}
-              openProviders={() => setProvidersOpen(true)}
-              openLocal={() => setLocalOpen(true)}
-            />
-            {storyboardsEnabled && (
-              <details className="po-classic">
-                <summary>Classic shot editor and video prompt compiler</summary>
-          <section className="studio-page legacy-ui">
-            <div className="optional-banner">
-              <div>
-                <Eyebrow icon={Clapperboard}>OPTIONAL WORKFLOW</Eyebrow>
-                <h2>Director’s Room</h2>
-                <p>Enable shot planning without rebuilding the project.</p>
-              </div>
-              <button
-                className={storyboardsEnabled ? "primary" : "secondary"}
-                onClick={() => setStoryboardsEnabled(!storyboardsEnabled)}
-              >
-                {storyboardsEnabled
-                  ? "Storyboarding enabled"
-                  : "Enable storyboarding"}
-              </button>
-            </div>
-            {storyboardsEnabled ? (
-              <div className="two-column">
-                <div className="panel shot-preview">
-                  <div className="real-empty" role="img" aria-label="No storyboard frame">
-                    Storyboard frames for {activeShot.id} are not generated yet. This preview shows only real frames.
-                  </div>
-                  <div className="timeline">
-                    <span
-                      style={{
-                        width: `${totalAnimaticDuration ? (animaticTime / totalAnimaticDuration) * 100 : 0}%`,
-                      }}
-                    />
-                    <button
-                      className="timeline-play"
-                      onClick={() => setAnimaticPlaying((value) => !value)}
-                    >
-                      {animaticPlaying ? (
-                        <Pause size={14} />
-                      ) : (
-                        <Play size={14} />
-                      )}
-                    </button>
-                    <b>
-                      {animaticTime.toFixed(1)} /{" "}
-                      {totalAnimaticDuration.toFixed(1)}s
-                    </b>
-                    <small>
-                      {activeShot.id} · {activeShot.action}
-                    </small>
-                  </div>
-                  <div className="editor-actions">
-                    <button
-                      className="secondary"
-                      onClick={() => moveShot(-1)}
-                      disabled={selectedShot === 0}
-                    >
-                      <ArrowLeft size={13} /> Earlier
-                    </button>
-                    <button
-                      className="secondary"
-                      onClick={() => moveShot(1)}
-                      disabled={selectedShot === shots.length - 1}
-                    >
-                      Later <ArrowRight size={13} />
-                    </button>
-                    <button className="secondary" onClick={duplicateShot}>
-                      <Copy size={13} /> Duplicate
-                    </button>
-                    <button className="secondary danger" onClick={deleteShot}>
-                      <Trash2 size={13} /> Delete
-                    </button>
-                  </div>
-                  <div className="shot-strip">
-                    {shots.map((shot, index) => (
-                      <button
-                        className={index === selectedShot ? "selected" : ""}
-                        key={shot.id}
-                        onClick={() => {
-                          setSelectedShot(index);
-                          setAnimaticPlaying(false);
-                          setAnimaticTime(
-                            shots
-                              .slice(0, index)
-                              .reduce(
-                                (total, item) => total + item.duration,
-                                0,
-                              ),
-                          );
-                        }}
-                      >
-                        <span>{shot.id}</span>
-                        <b>{shot.cameraFraming}</b>
-                        <small>
-                          {shot.duration.toFixed(1)}s · {shot.storyboardStatus}
-                        </small>
-                      </button>
-                    ))}
-                    <button onClick={addShot}>
-                      <Plus /> Add shot
-                    </button>
-                  </div>
-                </div>
-                <div className="panel shot-form">
-                  <span className="eyebrow">SHOT EDITOR · {activeShot.id}</span>
-                  <h3>Performance & camera direction</h3>
-                  {(
-                    [
-                      ["action", "Action"],
-                      ["dialogue", "Dialogue (source)"],
-                      ["emotionalObjective", "Emotional objective"],
-                      ["facialActing", "Facial acting"],
-                      ["bodyLanguage", "Body language"],
-                      ["microAnimation", "Micro-animation"],
-                      ["cameraFraming", "Camera framing"],
-                      ["cameraMovement", "Camera movement"],
-                      ["soundEffects", "Sound effects"],
-                      ["ambience", "Ambience"],
-                    ] as Array<[keyof ShotRecord, string]>
-                  ).map(([field, label]) => (
-                    <label key={field}>
-                      <span>{label}</span>
-                      <input
-                        value={String(activeShot[field])}
-                        onChange={(e) => patchShot(field, e.target.value)}
-                      />
-                    </label>
-                  ))}
-                  <label>
-                    <span>Duration</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="30"
-                      value={activeShot.duration}
-                      onChange={(e) =>
-                        patchShot("duration", Number(e.target.value))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="primary full"
-                    onClick={() => patchShot("storyboardStatus", "approved")}
-                  >
-                    Approve shot plan
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="empty-state">
-                <Clapperboard size={34} />
-                <h3>Storyboarding is off</h3>
-                <p>Asset production and delivery remain fully available.</p>
-              </div>
-            )}
-          </section>
-              </details>
-            )}
-          </div>
+          <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} />
         )}
         {workspace === "Deliver" && (
           <DeliveryCenter

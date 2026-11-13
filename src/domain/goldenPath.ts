@@ -33,7 +33,7 @@ export function goldenPath(i: GoldenPathInput): { steps: GoldenStep[]; next: Gol
     { id: 'review', label: 'Review', workspace: 'Design', action: 'Review and approve', done: i.assetCount > 0 && i.approvedCount >= i.assetCount, detail: i.assetCount === 0 ? 'Needs analyzed assets' : `${i.approvedCount} of ${i.assetCount} approved` },
   ]
   if (i.storyboards) raw.push({ id: 'direct', label: 'Direct', workspace: 'Direct', action: 'Plan your shots', done: i.shotCount > 0 && i.ready, detail: i.shotCount === 0 ? 'No shots planned yet' : `${plural(i.shotCount, 'shot')} planned` })
-  raw.push({ id: 'deliver', label: 'Deliver', workspace: 'Deliver', action: 'Export the package', done: i.ready, detail: i.ready ? 'Ready to export' : 'Audit passes when every asset is approved with a verified file' })
+  raw.push({ id: 'deliver', label: 'Deliver', workspace: 'Deliver', action: 'Export the package', done: i.assetCount > 0 && i.ready, detail: i.assetCount > 0 && i.ready ? 'Ready to export' : 'Audit passes when every asset is approved with a verified file' })
   let activeAssigned = false
   const steps: GoldenStep[] = raw.map(({ done, ...step }) => {
     if (done) return { ...step, state: 'done' }

@@ -26,4 +26,9 @@ describe('golden path', () => {
     expect(done.next).toBeNull()
     expect(done.progress).toBe(100)
   })
+  it('does not call an empty project ready to deliver', () => {
+    const empty = goldenPath({ ...base, ready: true })
+    expect(empty.steps.find((x) => x.id === 'deliver')?.state).not.toBe('done')
+    expect(empty.progress).toBeLessThan(100)
+  })
 })

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.28.0 (2026-11-13): App.tsx split into views; empty project no longer "ready"
+- App.tsx is now about 1,300 lines (from 1,860): the Projects, Story, Design and Direct workspaces live in src/views/ with typed props. Deliver is still inline.
+- New App-level tests walk every workspace and the Alt+number shortcuts, guarding the split.
+- Fix: a brand-new empty project showed Deliver as complete (and "Deliver complete" in the header) because the audit was vacuously ready with zero assets. Deliver now needs at least one asset.
+- Checked on screen in a browser preview: illustrated empty states (cast, reading) and the Project settings dialog.
+- Tests: 197 JS, 65 Rust.
+
 ## 0.27.0 (2026-11-13): icons on every screen, illustrated empty states, first views split out
 - Icons on the Story, Direct, Deliver and Animatic panel labels, and on the Settings, Providers, Help and Unsaved dialogs.
 - Illustrated empty states (cast, reading, reference sheets) with a soft colour glow and drifting sparkles; still under reduced-motion. Image slots waiting for a picture now show a tinted wash (gold waiting, blue in progress, red failed).
