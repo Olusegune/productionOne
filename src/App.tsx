@@ -1,5 +1,8 @@
 import { toggleTheme } from "./data/theme";
 import { addPropAsset, applyReadAge } from "./domain/readingActions";
+import { workspaceShortcut } from "./domain/shortcuts";
+import { initialShot, designSections, downloadJson, downloadText } from "./appHelpers";
+import { StatTiles } from "./components/StatTiles";
 import { FirstRun } from "./components/FirstRun";
 import { SectionNav } from "./components/SectionNav";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
@@ -13,7 +16,9 @@ import {
   Clapperboard,
   Copy,
   Download,
+  FilePlus2,
   FolderKanban,
+  FolderOpen,
   PackageCheck,
   Pause,
   PenTool,
@@ -109,54 +114,8 @@ const workspaces = [
   { name: "Deliver", icon: PackageCheck },
 ];
 const sampleScript = sampleStory;
-const initialShot: ShotRecord = {
-  id: "SHOT-001",
-  sceneId: "SCENE-001",
-  order: 1,
-  duration: 5,
-  assetIds: [],
-  action: "Amina raises the solar compass and studies its glow.",
-  dialogue: "We are close.",
-  speaker: "AMINA",
-  emotionalObjective: "Quiet resolve beneath exhaustion",
-  facialActing: "Focused eyes, relaxed jaw",
-  bodyLanguage: "Balanced stance, shoulders settling",
-  microAnimation: "One blink, slow breath, slight grip adjustment",
-  cameraFraming: "Medium close-up",
-  cameraMovement: "Slow push in",
-  lighting: "Warm dusk edge light with neutral skin tones",
-  soundEffects: "Cloth movement, compass hum",
-  ambience: "Soft savanna wind",
-  music: "Low restrained strings",
-  transition: "Cut",
-  storyboardStatus: "planned",
-};
 
-const designSections = [
-  { id: "sec-identity", label: "Identity" },
-  { id: "sec-sheets", label: "Reference sheets" },
-  { id: "sec-motion", label: "Motion" },
-  { id: "sec-voice", label: "Voice and sound" },
-];
 const isTauri = "__TAURI_INTERNALS__" in window;
-function downloadJson(name: string, value: unknown) {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
-  );
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-function downloadText(name: string, value: string, type = "text/plain") {
-  const url = URL.createObjectURL(new Blob([value], { type }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function App() {
   const [workspace, setWorkspace] = useState("Projects"),
@@ -1104,6 +1063,8 @@ export default function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((open) => !open); }
+      const jump = workspaceShortcut(event);
+      if (jump) { event.preventDefault(); setWorkspace(jump); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1308,15 +1269,11 @@ export default function App() {
               <div>
                 <span className="eyebrow">{filePath ?? "AUTOSAVED PRODUCTION"}</span>
                 <h2>{title}</h2>
-                <p>
-                  {analysis.scenes.length} scene{analysis.scenes.length === 1 ? "" : "s"} · {analysis.assets.filter((a) => a.type === "character").length} characters ·{" "}
-                  {analysis.assets.filter((a) => a.type === "prop").length} props · {analysis.assets.filter((a) => a.type === "set" || a.type === "environment").length} sets ·{" "}
-                  {goldenInput.approvedCount} of {goldenInput.assetCount} approved
-                </p>
+                <StatTiles scenes={analysis.scenes.length} characters={analysis.assets.filter((a) => a.type === "character").length} props={analysis.assets.filter((a) => a.type === "prop").length} sets={analysis.assets.filter((a) => a.type === "set" || a.type === "environment").length} approved={goldenInput.approvedCount} total={goldenInput.assetCount} />
               </div>
               <div className="hero-actions">
-                <button className="secondary" onClick={() => guard(newProject)}>New</button>
-                <button className="secondary" onClick={() => guard(() => void openProject())}>Open…</button>
+                <button className="secondary" onClick={() => guard(newProject)}><FilePlus2 size={15} /> New</button>
+                <button className="secondary" onClick={() => guard(() => void openProject())}><FolderOpen size={15} /> Open…</button>
                 <button className="secondary" onClick={() => void saveProject()}><Download size={15} /> Save</button>
               </div>
             </div>
@@ -1334,7 +1291,7 @@ export default function App() {
                 </ul>
               </div>
             )}
-            <p className="helper kbd-hint"><kbd>Ctrl</kbd><kbd>K</kbd> Command palette: open any asset, import a script, save or export without leaving the keyboard.</p>
+            <p className="helper kbd-hint"><kbd>Ctrl</kbd><kbd>K</kbd> Command palette: open any asset, import a script, save or export without leaving the keyboard. <span><kbd>Alt</kbd><kbd>1</kbd>–<kbd>5</kbd> switches workspace.</span></p>
           </section>
         )}
         {workspace === "Story" && (

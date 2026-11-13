@@ -1,6 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import '@fontsource-variable/geist'
+import '@fontsource-variable/fraunces'
+import '@fontsource-variable/plus-jakarta-sans'
 import '@fontsource-variable/inter'
 import '@fontsource/courier-prime/400.css'
 import '@fontsource/courier-prime/700.css'

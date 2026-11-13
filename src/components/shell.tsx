@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, Command as CommandIcon, Check, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
+import { ArrowRight, BookText, Clapperboard, FolderOpen, Command as CommandIcon, Check, PackageCheck, Palette, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
 import { BrandMark } from "./BrandMark";
+import { newlyDone } from "../domain/shortcuts";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
 import { spendGate, summarize, type QueueState } from "../domain/generationQueue";
 
+const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Direct: Clapperboard, Deliver: PackageCheck } as const;
 export const workspaceNames = ["Projects", "Story", "Design", "Direct", "Deliver"] as const;
 
 export function TopBar(props: {
@@ -20,19 +22,37 @@ export function TopBar(props: {
   localUp?: boolean;
   onLocal?: () => void;
 }) {
-  const { steps, next } = useMemo(() => goldenPath(props.golden), [props.golden]);
+  const { steps, next, progress } = useMemo(() => goldenPath(props.golden), [props.golden]);
+  // Quietly acknowledge a step when it becomes done (not on first load).
+  const doneIds = steps.filter((s) => s.state === "done").map((s) => s.id);
+  const seen = useRef<string[] | null>(null);
+  const [cheer, setCheer] = useState("");
+  useEffect(() => {
+    const before = seen.current;
+    seen.current = doneIds;
+    if (before === null) return;
+    const fresh = newlyDone(before, doneIds);
+    if (!fresh.length) return;
+    const step = steps.find((s) => s.id === fresh[fresh.length - 1]);
+    setCheer(`${step?.label ?? "Step"} complete`);
+    const timer = window.setTimeout(() => setCheer(""), 3600);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doneIds.join("|")]);
   return (
     <div className="po-top" role="banner">
       <div className="po-bar">
         <div className="po-brand">
-          <BrandMark size={30} />
+          <span className="po-ring" style={{ "--p": `${progress}%` } as React.CSSProperties} title={`Golden Path ${progress}% complete`}><BrandMark size={30} /><span className="visually-hidden">Golden Path {progress}% complete</span></span>
           <button className="po-title" onClick={props.onOpenSettings} title="Project settings">{props.title}</button>
+          {cheer && <span className="po-cheer" role="status"><Check size={12} aria-hidden="true" /> {cheer}</span>}
           <span className={`po-save${props.unsaved ? " unsaved" : ""}`} role="status">{props.saveLabel}</span>
         </div>
         <nav className="po-tabs" aria-label="Workspaces">
           {workspaceNames.map((name) => (
             <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined}>
-              {name}
+              {(() => { const Icon = workspaceIcons[name]; return <Icon size={15} aria-hidden="true" />; })()}
+              <span>{name}</span>
               {name === "Direct" && <em>optional</em>}
             </button>
           ))}

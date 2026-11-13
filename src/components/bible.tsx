@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Box, Mountain, Shirt, Users, type LucideIcon } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import type { QueueState } from "../domain/generationQueue";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
@@ -20,6 +21,7 @@ const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
   if (mine.some((j) => j.status === "needs-review")) return "review";
   return asset.status === "approved" ? "approved" : "planned";
 };
+const typeIcon: Record<string, LucideIcon> = { character: Users, costume: Shirt, prop: Box, set: Mountain, environment: Mountain };
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
@@ -36,7 +38,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect }: { assets
         if (!items.length) return null;
         return (
           <section key={label}>
-            <h4>{label}<span>{items.length}</span></h4>
+            <h4>{(() => { const Icon = typeIcon[types[0]] ?? Box; return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
             <ul>
               {items.map(({ a, i }) => {
                 const dot = dotFor(a, queue);
@@ -46,7 +48,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect }: { assets
                 return (
                   <li key={a.id}>
                     <button className={selected === i ? "on" : ""} onClick={() => onSelect(i)} aria-current={selected === i ? "true" : undefined}>
-                      <span className={`po-dot ${dot}`} title={dotLabel[dot]} role="img" aria-label={dotLabel[dot]} />
+                      <span className={`po-avatar kind-${a.type}`} aria-hidden="true">{(() => { const Icon = typeIcon[a.type] ?? Box; return <Icon size={14} />; })()}<i className={`po-dot ${dot}`} title={dotLabel[dot]} /></span>
                       <span className="po-name">{a.name}</span>
                       {variants > 0 && <small title="Story variants found in the script">{variants} look{variants === 1 ? "" : "s"}</small>}
                       {dominant && dominant.emotion !== "neutral" && <EmotionChip emotion={dominant.emotion} />}

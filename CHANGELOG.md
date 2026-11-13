@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.26.0 (2026-11-13): new type pairing, icons everywhere
+- Fonts: Fraunces (cinematic serif) for titles, Plus Jakarta Sans for everything else; both bundled, work offline. Replaces Geist.
+- Icons: every workspace tab, every Golden Path step (icon medallions), Production Bible groups and assets (coloured avatar with a status badge), New/Open/Save.
+- Projects screen: five icon stat tiles (Scenes, Characters, Props, Sets, Approved) replace the sentence of numbers.
+- Layout fixes for the wider serif: bible names no longer wrap mid-word; style name no longer clipped.
+- Tests: 191 JS, 65 Rust. Checked in a browser preview at 1024px.
+
+## 0.25.0 (2026-11-13): progress ring, step acknowledgement, shortcuts
+- Golden Path progress ring around the logo (with a text equivalent for screen readers).
+- A quiet "<Step> complete" chip appears when a step becomes done (not on load); still under reduced-motion, without animation.
+- Alt+1..5 switches workspace; hint on the Projects screen.
+- App.tsx: constants and download helpers moved to src/appHelpers.ts (App.tsx is still about 1,860 lines; the larger split is not done).
+- Tests: 191 JS, 65 Rust.
+
 ## 0.24.0 (2026-11-13): searchable voice lists
 - New SearchSelect (WAI-ARIA combobox: type to filter, arrow keys, Home/End, Enter, Escape, live match count) used for the Windows voice list and the ElevenLabs/VoiceKiller voice list. Multi-word search matches in any order.
 - Tests: 188 JS, 65 Rust. The component is covered by unit tests only; not yet seen in the packaged app, no screen-reader pass.
