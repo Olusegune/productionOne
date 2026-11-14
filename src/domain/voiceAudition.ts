@@ -1,6 +1,7 @@
 import type { ExtractedAsset } from './productionStudio'
 import type { ParsedStory } from '../engine/story'
 import { isVehicleName } from './demoClips'
+import { rangeTags } from './personality'
 
 export interface InstalledVoice { name: string; gender: string; age: string; culture: string }
 
@@ -35,27 +36,39 @@ export function soundBrief(asset: ExtractedAsset): string {
   return [`Sound brief for ${asset.name}.`, `Sounds to supply: ${asset.soundDirection?.trim() || defaults}.`, 'Deliver each as a separate clean take with room tone, no music.'].join('\n')
 }
 
-export type CastingLineKind = 'pangram' | 'range'
+export type CastingLineKind = 'pangram' | 'pangram-es' | 'pangram-fr' | 'pangram-de' | 'range'
 export const castingLineChoices: ReadonlyArray<{ value: CastingLineKind; label: string }> = [
-  { value: 'pangram', label: 'Pangram: uses every English sound' },
+  { value: 'pangram', label: 'Pangram, English: uses every English sound' },
+  { value: 'pangram-es', label: 'Pangram, Spanish: every letter (have a native speaker check)' },
+  { value: 'pangram-fr', label: 'Pangram, French: every letter (have a native speaker check)' },
+  { value: 'pangram-de', label: 'Pangram, German: every letter (have a native speaker check)' },
   { value: 'range', label: 'Emotional range: curious, playful, whispered, shouted' },
 ]
 
+const letterPangrams: Record<'pangram-es' | 'pangram-fr' | 'pangram-de', string> = {
+  'pangram-es': 'El veloz murciélago hindú comía feliz cardillo y kiwi. La cigüeña tocaba el saxofón detrás del palenque de paja.',
+  'pangram-fr': 'Portez ce vieux whisky au juge blond qui fume.',
+  'pangram-de': 'Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.',
+}
+
 /**
  * The same fixed line for every candidate voice, so casting compares voices and not wording.
- * The pangram is a long-standing public English phonetic pangram. The range line is written here, one clause per delivery.
+ * The English pangram is a long-standing public phonetic one. The Spanish, French and German ones are well-known public sentences that use every letter; a letter pangram is not a
+ * sound pangram, so a native speaker should check what it leaves out. The range line is written here, one delivery per clause, shaped by the character's personality when one is set.
  * Square-bracket tags are added only when the model reads them; any other model would speak them aloud, so it gets the plain text.
  */
-export function castingLine(kind: CastingLineKind, tagged: boolean): string {
+export function castingLine(kind: CastingLineKind, tagged: boolean, personality?: string): string {
   if (kind === 'pangram') return 'The beige hue on the waters of the loch impressed all, including the French queen, before she heard that symphony again, just as young Arthur wanted.'
+  if (kind !== 'range') return letterPangrams[kind]
+  const t = rangeTags(personality)
   const clauses: Array<[string, string]> = [
-    ['curious', 'Is that really what you think?'],
-    ['mischievously', 'Then watch me prove it,'],
-    ['laughs softly', 'it will not take long.'],
-    ['whispers', 'Keep your voice down.'],
-    ['gasps', 'Wait, did you hear that?'],
-    ['shouting', 'Get back here right now!'],
-    ['sighs', 'Fine. We will do it your way.'],
+    [t.curious, 'Is that really what you think?'],
+    [t.playful, 'Then watch me prove it,'],
+    [t.laugh, 'it will not take long.'],
+    [t.whisper, 'Keep your voice down.'],
+    [t.gasp, 'Wait, did you hear that?'],
+    [t.loud, 'Get back here right now!'],
+    [t.release, 'Fine. We will do it your way.'],
   ]
   return clauses.map(([tag, text]) => (tagged ? `[${tag}] ${text}` : text)).join(' ')
 }

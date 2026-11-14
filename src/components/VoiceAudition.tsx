@@ -91,7 +91,7 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
       <section className="vg" aria-labelledby="vg-line"><h4 className="vg-title" id="vg-line"><i>2</i>Line</h4>
       {lines.length > 0 && <div className="sheet-controls">{lines.length > 0 && <label><span>Line from the script</span><select value={picked} onChange={(e) => { setPicked(Number(e.target.value)); setCustom('') }}>{lines.map((l, i) => <option key={l.line} value={i}>Line {l.line}: {l.text.slice(0, 48)}</option>)}</select></label>}</div>}
       <label className="settings-field"><span>Casting line (the same line for every voice)</span>
-        <select value="" onChange={(e) => { if (e.target.value) setCustom(castingLine(e.target.value as CastingLineKind, provider.id === 'elevenlabs' && supportsAudioTags(activeModel))) }} aria-label="Casting line">
+        <select value="" onChange={(e) => { if (e.target.value) setCustom(castingLine(e.target.value as CastingLineKind, provider.id === 'elevenlabs' && supportsAudioTags(activeModel), asset.personality)) }} aria-label="Casting line">
           <option value="">Choose a ready-made line…</option>
           {castingLineChoices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select></label>

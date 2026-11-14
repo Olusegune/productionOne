@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.28.8 (2026-11-14): personality, more pangram languages, costume-front fix checked live
+- Checked live (Kie Nano Banana 2.1, one image): CASSIUS's Wardrobe "Costume front", which earlier showed a different man, now comes out as CASSIUS with his face, plume, armor and sword, on the flat grey backdrop. Before and after are in a Desktop folder.
+- New: "Personality" on a character's identity fields (timid, cool, bratty, aggressive, warm, or not set). It shapes the delivery tags of the emotional-range casting line (a cool character's shout reads as "cold disbelief, still controlled", a bratty one's as "loud, playfully annoyed"), and adds one line about carriage and expression to that character's motion prompts. It never changes how the character looks.
+- New: Spanish, French and German pangrams in the casting-line picker. They are well-known public sentences that use every letter (a test checks all 26); a letter pangram is not a sound pangram, so each is labelled to be checked by a native speaker. Not included: Nigerian Pidgin, Yoruba, Igbo and Hausa, because a pangram for those needs a native speaker to write and check it.
+- Tests: 240 JS, 69 Rust. Personality, tags and pangrams are covered by unit tests; the new select was not clicked in the packaged app.
+
 ## 0.28.7 (2026-11-14): casting lines and a per-character "Never" field
 Both ideas came from the resources you supplied, reworded and fitted to this app.
 - New: "Casting line" in Voice Audition. One click fills the line box with a fixed line, so every candidate voice is compared on the same words: a pangram that uses every English sound, or a short emotional-range line (curious, playful, laugh, whisper, gasp, shout, sigh). Delivery tags such as [whispers] are added only for an ElevenLabs model that reads them (Eleven v3 or later); any other engine gets the plain text, so nothing is read aloud as "bracket whispers". The English pangram is a long-standing public one; the range line is original.

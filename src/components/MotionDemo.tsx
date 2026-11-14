@@ -6,6 +6,7 @@ import type { QueueState } from "../domain/generationQueue";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { mergeVideoModels, type DiscoveredCatalog } from "../domain/imageCatalog";
 import { identityFacts, primaryViewKeys } from "../domain/sheetSpecs";
+import { carriageLine } from "../domain/personality";
 import { useLocalAi } from "../data/localAi";
 import type { StyleBible } from "../domain/visualDevelopment";
 
@@ -46,7 +47,7 @@ export function MotionDemo(props: {
     if (!anchor?.outputPath) return;
     setRunning(true);
     setError("");
-    const prompt = buildMotionPrompt(motion, custom, asset.name, style, identityFacts(asset));
+    const prompt = buildMotionPrompt(motion, custom, asset.name, style, [identityFacts(asset), carriageLine(asset.personality)].filter(Boolean).join(" "));
     try {
       const useLocal = where.startsWith("local:") && local.status.comfyui[0];
       const path = useLocal

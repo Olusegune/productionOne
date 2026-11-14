@@ -17,6 +17,8 @@ export interface ExtractedAsset {
   role?: string
   /** What must never drift, in the person's own words (for example "never pale porcelain skin"). Written into every image and video prompt for the character. */
   never?: string
+  /** How the character comes across (see personality.ts). Shapes voice tags and motion carriage only. */
+  personality?: string
   motionDirection?: string
   interactionDirection?: string
   soundDirection?: string
