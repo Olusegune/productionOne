@@ -30,7 +30,7 @@ The Kling turntable clips have no audio track. The Seedance turntable clip has a
 
 ## Open items (for a person, or for later work)
 - Listen to CASSIUS's ElevenLabs "Harry - Fierce Warrior": its median pitch is 253 Hz, high for a male warrior voice. It may be a shouted line or a pitch-tracker octave error on a 1.3 s clip.
-- Loudness differs by up to 8 LU between clips, which biases voice casting toward the loudest. Normalising audition playback to one level would make comparisons fair.
-- Trim the roughly 0.8 s of trailing silence the Windows voices add.
+- Loudness differs by up to 8 LU between clips, which biases voice casting toward the loudest. Fixed in 0.29.2: audition playback is level-matched.
+- The roughly 0.8 s of trailing silence the Windows voices add. Fixed in 0.29.2: trimmed at playback.
 - A tag placed mid-line can break a line (the ElevenLabs test line). Keep delivery tags at the start of a clause, one per clause.
 - Nothing here checks the Nigerian-language draft lines: a speech model trained mainly on English is not a native speaker.

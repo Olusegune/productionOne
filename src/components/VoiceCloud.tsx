@@ -1,7 +1,8 @@
 import { SearchSelect } from './SearchSelect'
 import { useEffect, useState } from 'react'
 import { cachedVoices, rememberVoices } from '../domain/voiceCache'
-import { convertFileSrc, invoke } from '@tauri-apps/api/core'
+import { LevelledAudio } from './LevelledAudio'
+import { invoke } from '@tauri-apps/api/core'
 import { KeyRound, Sparkles, Volume2 } from 'lucide-react'
 import type { CloudModel } from '../domain/elevenModels'
 import type { VoiceProvider } from '../domain/voiceDirection'
@@ -94,7 +95,7 @@ export function VoiceCloud(props: {
       <button className="secondary" disabled={!desktop || !connected || busy === 'design'} onClick={() => void design()}>{busy === 'design' ? 'Designing…' : 'Make previews'}</button>
       {previews.length > 0 && <>
         <label className="settings-field"><span>Name to save the voice under</span><input value={voiceName} onChange={(e) => setVoiceName(e.target.value)} placeholder="e.g. Amina" /></label>
-        <div className="clip-grid">{previews.map((p, i) => <figure key={p.id}><audio controls src={convertFileSrc(p.path)} aria-label={`Voice preview ${i + 1}`} /><figcaption><b>Preview {i + 1}</b><button className="secondary" disabled={!voiceName.trim() || busy === 'keep'} onClick={() => void keep(p)}>Keep this voice</button></figcaption></figure>)}</div>
+        <div className="clip-grid">{previews.map((p, i) => <figure key={p.id}><LevelledAudio path={p.path} label={`Voice preview ${i + 1}`} /><figcaption><b>Preview {i + 1}</b><button className="secondary" disabled={!voiceName.trim() || busy === 'keep'} onClick={() => void keep(p)}>Keep this voice</button></figcaption></figure>)}</div>
         <p className="helper">Keeping a voice uses one of your ElevenLabs custom voice slots.</p>
       </>}
     </details>}

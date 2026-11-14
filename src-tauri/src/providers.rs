@@ -331,6 +331,24 @@ pub(crate) fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBu
     if canonical.starts_with(&root) { Ok(canonical) } else { Err("Only images in the Production One assets folder can be previewed".into()) }
 }
 
+const MAX_CLIP_BYTES: u64 = 64 * 1024 * 1024;
+const CLIP_EXTENSIONS: [&str; 6] = ["wav", "mp3", "m4a", "ogg", "flac", "aac"];
+
+fn clip_allowed(extension: &str, len: u64) -> Result<(), String> {
+    if !CLIP_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str()) { return Err("Only audio clips can be read here".into()); }
+    if len > MAX_CLIP_BYTES { return Err("That audio file is larger than 64 MB".into()); }
+    Ok(())
+}
+
+/// The raw bytes of an audio clip the app saved, so the page can measure and play it at a matched level. Only files inside the assets folder are readable, only audio, at most 64 MB.
+#[tauri::command]
+pub fn read_audio_clip(app: tauri::AppHandle, path: String) -> Result<tauri::ipc::Response, String> {
+    let file = inside_assets(&app, &path)?;
+    let extension = file.extension().and_then(|e| e.to_str()).unwrap_or_default().to_string();
+    clip_allowed(&extension, fs::metadata(&file).map_err(|e| e.to_string())?.len())?;
+    Ok(tauri::ipc::Response::new(fs::read(&file).map_err(|e| e.to_string())?))
+}
+
 /// Lets the person choose their own images. Returns the chosen paths (empty if they cancel).
 #[tauri::command]
 pub async fn pick_image_files(app: tauri::AppHandle, multiple: bool) -> Result<Vec<String>, String> {
@@ -420,6 +438,14 @@ pub fn qa_image(app: tauri::AppHandle, path: String, full_body: bool) -> Result<
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn only_small_audio_files_may_be_read() {
+        for ok in ["wav", "MP3", "m4a", "ogg", "flac", "aac"] { assert!(super::clip_allowed(ok, 1_000).is_ok(), "{ok}"); }
+        for bad in ["exe", "json", "png", "txt", "", "wav.exe"] { assert!(super::clip_allowed(bad, 1_000).is_err(), "{bad}"); }
+        assert!(super::clip_allowed("wav", 64 * 1024 * 1024).is_ok());
+        assert!(super::clip_allowed("wav", 64 * 1024 * 1024 + 1).is_err());
+    }
+
     use super::*;
 
     #[test]
