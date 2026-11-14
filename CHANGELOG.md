@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.28.4 (2026-11-13): live video and voice test on a character added from an image
+- Test with your keys: MARA, added from her Midjourney image with "Add from image", made a 5 s 1076x1924 24 fps Kling turntable clip (face, hood, robe and jar held), a Windows (Zira) line and an ElevenLabs eleven_v4 "Joy - Soft Spoken" line. Not heard by me; the clip turned only about 180 degrees.
+- Fix: the turntable prompt now asks for one complete 360-degree rotation that ends facing the camera. Not re-run (it would spend a second video), so unverified.
+- Fix: the ElevenLabs and VoiceKiller panels no longer say "Not yet run against the live service"; speech for both was checked live. Voice design, sound effects and VoiceKiller cloning are still untested.
+
 ## 0.28.3 (2026-11-13): no lost work, start from your own images, retries
 Found by running the packaged app with three Midjourney characters (full turnaround, 8 poses and 8 expressions each).
 - Fix (data loss): New and Open replaced the single autosave slot, so an unsaved production could be lost with no warning. When the open production has work that is not safely in a saved file, the app now copies it to Documents\Production One\Backups first (newest 30 kept; only files the app wrote are ever pruned) and names the copy in the message. If the copy cannot be made, nothing is replaced.
