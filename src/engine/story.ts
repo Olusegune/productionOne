@@ -75,7 +75,8 @@ export function detectFormat(lines: string[]): StoryFormat {
   const text = lines.map(clean)
   if (!text.some((l) => l.trim())) return 'empty'
   if (text.some((l) => SLUG.test(l.trim()))) return 'screenplay'
-  if (text.filter((l) => LYRIC_TAG.test(l.trim())).length >= 2) return 'lyrics'
+  const bracketSections = text.filter((l) => /^\[(?:OPENING|ACT\b|ENDING|FADE\s+OUT|EPILOGUE|PROLOGUE)\b/i.test(l.trim())).length
+  if (text.filter((l) => LYRIC_TAG.test(l.trim())).length >= 2 && bracketSections === 0) return 'lyrics'
   if (text.some((l) => SHOT_LINE.test(l.trim())) || text.some((l) => SHOTLIST_SCENE.test(l.trim()))) return 'shotlist'
   return 'prose'
 }
@@ -256,11 +257,34 @@ function readProse(lines: string[], b: Builder) {
   }
   lines.forEach((raw, idx) => {
     const t = clean(raw).trim()
-    if (/^(?:\*{3,}|-{3,}|#{1,3}\s+.+|CHAPTER\s+\w+.*)$/i.test(t)) { flush(); scene = newScene(b, t.replace(/^#+\s*/, ''), t.replace(/^#+\s*/, '').replace(/^[*-]+$/, 'Scene'), 'UNSPECIFIED', 'UNSPECIFIED', idx + 1); return }
-    if (!t) { flush(); return }
+    if (/^(?:\*{3,}|-{3,}|#{1,3}\s+.+|CHAPTER\s+\w+.*|\[[^\]]{2,}\])$/i.test(t)) {
+      // Text before the first explicit section is title/front matter, not an untitled scene.
+      if (scene) flush(); else paragraph = []
+      const heading = t.replace(/^#+\s*/, '').replace(/^\[|\]$/g, '').trim()
+      scene = newScene(b, heading, heading, 'UNSPECIFIED', 'UNSPECIFIED', idx + 1)
+      return
+    }
+    if (!t) { if (scene) flush(); else paragraph = []; return }
     paragraph.push({ line: idx + 1, text: t })
   })
   flush()
+}
+
+/** Narrated scripts often name recurring people without screenplay cue lines. Keep those findings explicit and evidence-backed. */
+function inferFromProse(scenes: StoryScene[], known: string[]): StoryCharacter[] {
+  const proseStopwords = new Set(['BECAUSE', 'ANOTHER', 'THEN', 'MOSTLY', 'AGAIN', 'INSTEAD', 'NOT', 'BUT', 'AND', 'THE', 'GOD', 'BISHOP'])
+  const skip = new Set([...known, ...COMMON, ...proseStopwords].map((name) => name.toUpperCase()))
+  const counts = new Map<string, { count: number; scenes: Set<string>; shown: string }>()
+  const rolePatterns = [/\b(?:his|her|the)\s+(mother|father|wife|husband|pastor|bishop|friend|doctor|son|daughter)\b/gi]
+  for (const scene of scenes) for (const action of scene.action) {
+    const text = action.text
+    const candidates = [...text.matchAll(/\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,2})\b/g)].map((m) => m[1]).filter((name) => !COMMON.has(name.split(/\s+/)[0]) && !skip.has(name.toUpperCase()))
+    for (const rolePattern of rolePatterns) for (const match of text.matchAll(rolePattern)) candidates.push(titleCase(match[1]))
+    for (const name of candidates) { const key = name.toUpperCase(); const item = counts.get(key) ?? { count: 0, scenes: new Set<string>(), shown: name }; item.count++; item.scenes.add(scene.id); counts.set(key, item) }
+  }
+  const candidates = [...counts.values()].filter((item) => item.count >= 2)
+  // Prefer the full name when a shorter match is also found inside it (e.g. BLING vs BISHOP BLING BLING).
+  return candidates.filter((item) => !candidates.some((other) => other !== item && other.shown.length > item.shown.length && other.shown.toUpperCase().includes(item.shown.toUpperCase()))).map((item) => ({ name: item.shown.toUpperCase(), sceneIds: [...item.scenes].sort(), firstSceneId: [...item.scenes].sort()[0], dialogueCount: 0, mentionCount: item.count, fromAction: true }))
 }
 
 const NOT_PROPS = new Set(['hand', 'hands', 'arm', 'arms', 'head', 'eyes', 'eye', 'face', 'hair', 'breath', 'gaze', 'distance', 'horizon', 'moment', 'time', 'way', 'step', 'steps', 'it', 'him', 'her', 'them', 'back', 'side', 'air', 'silence', 'room', 'floor', 'ground', 'place', 'voice', 'mouth', 'lip', 'lips', 'fist', 'fists', 'finger', 'fingers', 'leg', 'legs', 'foot', 'feet', 'shoulder', 'shoulders', 'chest', 'heart', 'door', 'window', 'wall', 'table'])
@@ -379,7 +403,7 @@ export function parseStory(input: string): ParsedStory {
   else if (format === 'lyrics') readLyrics(lines, b)
   else if (format === 'prose') readProse(lines, b)
 
-  if (format === 'prose') b.warnings.push('No scene headings were found, so this was read as prose. Add INT./EXT. headings for the most accurate result.')
+  if (format === 'prose' && b.scenes.length === 1 && !/^\[|^ACT\b/i.test(b.scenes[0].heading)) b.warnings.push('No scene headings were found, so this was read as prose. Add INT./EXT. headings for the most accurate result.')
   if (format === 'screenplay' && lines.some((l, i) => i < lines.findIndex((x) => SLUG.test(clean(x).trim())) && clean(l).trim() && !/^\s*(?:title|credit|author|authors|source|draft date|date|contact|copyright|notes?)\s*:/i.test(clean(l)))) b.warnings.push('Text before the first scene heading (title page or notes) was not treated as story.')
 
   // Characters: dialogue speakers (age-modifier cues folded into the base character), then mentions in action.
@@ -405,11 +429,13 @@ export function parseStory(input: string): ParsedStory {
   }
   const characters = [...base.values()]
   if (format === 'screenplay' || format === 'shotlist') characters.push(...inferFromAction(b.scenes, characters.map((c) => c.name)))
-  if (!characters.length && b.scenes.length) b.warnings.push('No characters were found. Characters are read from speaker lines (CHLOE, or CHLOE: text) and from names that act in the description (Chloe walks…). Check how the script marks who is speaking.')
+  if (format === 'prose') characters.push(...inferFromProse(b.scenes, characters.map((c) => c.name)))
+  const uniqueCharacters = [...new Map(characters.map((character) => [character.name.toUpperCase(), character])).values()]
+  if (!uniqueCharacters.length && b.scenes.length) b.warnings.push('No characters were found. Characters are read from speaker lines, named people in action, and repeated names in prose. Check how the script marks who is present.')
   const props = addProps(b.scenes)
-  const variants = addVariants(b.scenes, characters.map((c) => c.name))
+  const variants = addVariants(b.scenes, uniqueCharacters.map((c) => c.name))
   if (!b.scenes.length && input.trim()) b.warnings.push('No scenes could be read from this text.')
-  return { format, title: titleOf(lines), scenes: b.scenes, characters, props, variants, warnings: b.warnings }
+  return { format, title: titleOf(lines), scenes: b.scenes, characters: uniqueCharacters, props, variants, warnings: b.warnings }
 }
 
 function titleOf(lines: string[]): string | undefined {

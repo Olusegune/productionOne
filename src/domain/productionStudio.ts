@@ -9,6 +9,19 @@ export interface ExtractedAsset {
   type: AssetType
   sceneIds: string[]
   status: 'planned' | 'approved'
+  /** Optional, user-confirmed character identity fields. Empty means unknown, never guessed. */
+  age?: string
+  gender?: string
+  race?: string
+  ethnicity?: string
+  role?: string
+  /** What must never drift, in the person's own words (for example "never pale porcelain skin"). Written into every image and video prompt for the character. */
+  never?: string
+  /** How the character comes across (see personality.ts). Shapes voice tags and motion carriage only. */
+  personality?: string
+  motionDirection?: string
+  interactionDirection?: string
+  soundDirection?: string
   prompt?: string
 }
 
@@ -56,8 +69,13 @@ export interface PromptPackage {
 
 export function compileAssetPrompt(asset: ExtractedAsset, style: string): PromptPackage {
   const identity = `${asset.type} ${asset.name}`
+  const identityNotes = asset.type === 'character'
+    ? [asset.age && `age ${asset.age}`, asset.gender, asset.race, asset.ethnicity, asset.role].filter(Boolean).join(', ')
+    : ''
+  const identityLine = identityNotes ? `Character identity notes: ${identityNotes}.` : ''
+  const universal = asset.prompt?.trim() || `Create a production-ready ${identity}. Preserve canonical identity across every view. ${style}. Neutral reference lighting, clean background, accurate materials, complete silhouette, no embedded text.`
   return {
-    universal: `Create a production-ready ${identity}. Preserve canonical identity across every view. ${style}. Neutral reference lighting, clean background, accurate materials, complete silhouette, no embedded text.`,
+    universal: `${universal}${identityLine ? ` ${identityLine}` : ''}`,
     compact: `${identity}, ${style}, production reference, neutral lighting, consistent identity, clean background`,
     technical: `${identity}. Orthographic reference presentation; front, three-quarter, side, and rear views; consistent scale and proportions; neutral 5500K lighting; uncluttered graphite-gray background; artwork only.`,
     negative: 'embedded labels, watermark, cropped subject, duplicate limbs, inconsistent costume, dramatic color cast, heavy bloom, illegible details',
@@ -143,13 +161,18 @@ export function normalizeShotOrder(shots: ShotRecord[]): ShotRecord[] {
   return shots.map((shot, index) => ({ ...shot, order: index + 1 }))
 }
 
-export type VideoModel = 'Seedance 2.0' | 'Kling 3.0' | 'Veo 3.1'
-export interface VideoPreset { model: VideoModel; apiModel: string; aspectRatios: string[]; maxReferences: number; supportsAudio: boolean; supportsFirstLastFrame: boolean; verified: boolean; verifiedAt: string; documentationUrl: string; note: string }
+export type VideoModel = 'Seedance 2.0' | 'Kling 3.0' | 'Veo 3.1' | 'Gemini Omni Flash' | 'Hailuo 2.3' | 'Wan 2.6' | 'Kling 4.0 Flash' | 'fal.ai video catalog'
+export interface VideoPreset { model: VideoModel; provider: 'Kie.ai' | 'Gemini' | 'fal.ai'; apiModel: string; tasks: string[]; aspectRatios: string[]; maxReferences: number; supportsAudio: boolean; supportsFirstLastFrame: boolean; verified: boolean; verifiedAt: string; documentationUrl: string; note: string }
 
 export const videoPresets: Record<VideoModel, VideoPreset> = {
-  'Seedance 2.0': { model:'Seedance 2.0',apiModel:'bytedance/seedance-2',aspectRatios:['16:9','9:16','1:1'],maxReferences:9,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/bytedance/seedance-2',note:'First/last-frame and multimodal-reference modes are mutually exclusive.' },
-  'Kling 3.0': { model:'Kling 3.0',apiModel:'kling-3.0',aspectRatios:['16:9','9:16','1:1'],maxReferences:4,supportsAudio:true,supportsFirstLastFrame:true,verified:false,verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/kling/kling-3-0',note:'Preset remains export-only until exact endpoint limits pass a credentialed acceptance test.' },
-  'Veo 3.1': { model:'Veo 3.1',apiModel:'veo-3.1-generate-preview',aspectRatios:['16:9','9:16'],maxReferences:3,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-10-20',documentationUrl:'https://ai.google.dev/gemini-api/docs/video',note:'Preview API is scheduled for shutdown on 2026-10-22; migrate direct generation to Gemini Omni Flash.' },
+  'Seedance 2.0': { model:'Seedance 2.0',provider:'Kie.ai',apiModel:'bytedance/seedance-2',tasks:['turnaround','acting','pose','expression'],aspectRatios:['21:9','2.39:1','16:9','9:16','1:1'],maxReferences:9,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/bytedance/seedance-2',note:'First/last-frame and multimodal-reference modes are mutually exclusive.' },
+  'Kling 3.0': { model:'Kling 3.0',provider:'Kie.ai',apiModel:'kling-3.0',tasks:['acting','pose','expression','vehicle'],aspectRatios:['21:9','2.39:1','16:9','9:16','1:1'],maxReferences:4,supportsAudio:true,supportsFirstLastFrame:true,verified:false,verifiedAt:'2026-10-20',documentationUrl:'https://docs.kie.ai/market/kling/kling-3-0',note:'Export-only until exact endpoint limits pass a credentialed acceptance test.' },
+  'Veo 3.1': { model:'Veo 3.1',provider:'Gemini',apiModel:'veo-3.1-generate-preview',tasks:['acting','expression','extension','dialogue'],aspectRatios:['16:9','9:16'],maxReferences:3,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-10-20',documentationUrl:'https://ai.google.dev/gemini-api/docs/video',note:'Google Veo with native audio and image-based direction.' },
+  'Gemini Omni Flash': { model:'Gemini Omni Flash',provider:'Gemini',apiModel:'gemini-omni-flash',tasks:['acting','expression','editing','extension'],aspectRatios:['16:9','9:16'],maxReferences:3,supportsAudio:true,supportsFirstLastFrame:true,verified:true,verifiedAt:'2026-11-11',documentationUrl:'https://ai.google.dev/gemini-api/docs/video',note:'Fast multimodal video generation and conversational editing; direct adapter is pending.' },
+  'Hailuo 2.3': { model:'Hailuo 2.3',provider:'Kie.ai',apiModel:'hailuo/2-3-image-to-video-standard',tasks:['acting','pose','expression'],aspectRatios:['16:9','9:16'],maxReferences:1,supportsAudio:false,supportsFirstLastFrame:false,verified:false,verifiedAt:'2026-11-11',documentationUrl:'https://docs.kie.ai/market',note:'Image-to-video catalog entry; export-only until acceptance-tested.' },
+  'Wan 2.6': { model:'Wan 2.6',provider:'Kie.ai',apiModel:'wan/2-6-image-to-video',tasks:['acting','pose','vehicle','prop'],aspectRatios:['16:9','9:16'],maxReferences:1,supportsAudio:true,supportsFirstLastFrame:false,verified:false,verifiedAt:'2026-11-11',documentationUrl:'https://docs.kie.ai/market/wan/2-6-image-to-video',note:'Image-to-video with generated audio; export-only until acceptance-tested.' },
+  'Kling 4.0 Flash': { model:'Kling 4.0 Flash',provider:'Kie.ai',apiModel:'kling/v4-flash-keyframe-to-video',tasks:['turnaround','acting','pose','expression'],aspectRatios:['16:9','9:16'],maxReferences:2,supportsAudio:false,supportsFirstLastFrame:true,verified:false,verifiedAt:'2026-11-11',documentationUrl:'https://docs.kie.ai/market/kling/v4-flash-keyframe-to-video',note:'Keyframe-to-video catalog entry; export-only until acceptance-tested.' },
+  'fal.ai video catalog': { model:'fal.ai video catalog',provider:'fal.ai',apiModel:'catalog-discovery',tasks:['turnaround','acting','pose','expression','vehicle','cloth'],aspectRatios:['provider-defined'],maxReferences:0,supportsAudio:false,supportsFirstLastFrame:false,verified:false,verifiedAt:'2026-11-11',documentationUrl:'https://fal.ai/models',note:'Live fal.ai discovery is required; choose an exact model before direct generation.' },
 }
 
 export interface CompiledShotPackage { shotId: string; model: VideoModel; prompt: string; references: string[]; warnings: string[]; manifest: Record<string, unknown> }

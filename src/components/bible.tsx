@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { EmptyState } from "./EmptyState";
+import { Box, ImagePlus, Mountain, Shirt, Users, type LucideIcon } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
-import type { QueueState } from "../domain/generationQueue";
+import { isSuperseded, type QueueState } from "../domain/generationQueue";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 
@@ -15,28 +17,38 @@ export function EmotionChip({ emotion, intensity, ai }: { emotion: Emotion; inte
 type Dot = "approved" | "review" | "busy" | "failed" | "planned";
 const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
   const mine = queue.jobs.filter((j) => j.assetId === asset.id);
-  if (mine.some((j) => j.status === "failed")) return "failed";
+  if (mine.some((j) => j.status === "failed" && !isSuperseded(queue, j))) return "failed";
   if (mine.some((j) => j.status === "generating" || j.status === "validating" || j.status === "queued")) return "busy";
   if (mine.some((j) => j.status === "needs-review")) return "review";
   return asset.status === "approved" ? "approved" : "planned";
 };
+const typeIcon: Record<string, LucideIcon> = { character: Users, costume: Shirt, prop: Box, set: Mountain, environment: Mountain };
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
-export function BibleTree({ assets, story, queue, selected, onSelect }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void }) {
+export function BibleTree({ assets, story, queue, selected, onSelect, onAddCharacter }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; onAddCharacter?: (name: string, gender: string) => void }) {
+  const [newName, setNewName] = useState("");
+  const [newGender, setNewGender] = useState("");
   const arcs = useMemo(() => new Map<string, CharacterArc>((story ? characterArcs(story) : []).map((a) => [a.character.toUpperCase(), a])), [story]);
   const groups: Array<[string, ExtractedAsset["type"][]]> = [["Characters", ["character"]], ["Costumes", ["costume"]], ["Props", ["prop"]], ["Sets", ["set", "environment"]]];
   const approved = assets.filter((a) => a.status === "approved").length;
   return (
     <aside className="po-bible" aria-label="Production bible">
       <div className="po-bible-head"><span className="eyebrow">PRODUCTION BIBLE</span><small>{approved} of {assets.length} approved</small></div>
-      {assets.length === 0 && <p className="helper">Analyze a script in Story and the people, props and places it needs appear here.</p>}
+      {onAddCharacter && (
+        <form className="add-character" onSubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; onAddCharacter(newName, newGender); setNewName(""); setNewGender(""); }}>
+          <label><span>Have a character image? Start from it</span><input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Character name" aria-label="Name for the new character" /></label>
+          <label><span>Gender (optional, helps pick a voice)</span><select value={newGender} onChange={(e) => setNewGender(e.target.value)} aria-label="Gender for the new character"><option value="">Not set</option><option value="female">Female</option><option value="male">Male</option></select></label>
+          <button className="secondary" type="submit" disabled={!newName.trim()} title="Choose an image (for example from Midjourney). It becomes the approved front view; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
+        </form>
+      )}
+      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here. Or start a character from an image you already have.</EmptyState>}
       {groups.map(([label, types]) => {
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         if (!items.length) return null;
         return (
           <section key={label}>
-            <h4>{label}<span>{items.length}</span></h4>
+            <h4>{(() => { const Icon = typeIcon[types[0]] ?? Box; return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
             <ul>
               {items.map(({ a, i }) => {
                 const dot = dotFor(a, queue);
@@ -46,7 +58,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect }: { assets
                 return (
                   <li key={a.id}>
                     <button className={selected === i ? "on" : ""} onClick={() => onSelect(i)} aria-current={selected === i ? "true" : undefined}>
-                      <span className={`po-dot ${dot}`} title={dotLabel[dot]} role="img" aria-label={dotLabel[dot]} />
+                      <span className={`po-avatar kind-${a.type}`} aria-hidden="true">{(() => { const Icon = typeIcon[a.type] ?? Box; return <Icon size={14} />; })()}<i className={`po-dot ${dot}`} title={dotLabel[dot]} /></span>
                       <span className="po-name">{a.name}</span>
                       {variants > 0 && <small title="Story variants found in the script">{variants} look{variants === 1 ? "" : "s"}</small>}
                       {dominant && dominant.emotion !== "neutral" && <EmotionChip emotion={dominant.emotion} />}

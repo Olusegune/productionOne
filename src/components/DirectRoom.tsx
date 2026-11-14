@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Wand2, X } from "lucide-react";
 import {
   angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
@@ -17,7 +18,7 @@ import { Fold } from "./Fold";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { ModelPicker } from "./ModelPicker";
 
-const ASPECT = "16:9";
+import { aspectRatios } from "../domain/sheetSpecs";
 
 /** The Director's room: plan the coverage of each scene, edit every shot like a director would, make storyboard frames from your approved references, check continuity and play the animatic. */
 export function DirectRoom(props: {
@@ -45,6 +46,7 @@ export function DirectRoom(props: {
   const [view, setView] = useState<"grid" | "list" | "large">("grid");
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [aspect, setAspect] = useState<string>("16:9");
   const [inspW, setInspW] = useState<number>(() => { try { return Number(localStorage.getItem("po.inspW")) || 380; } catch { return 380; } });
   useEffect(() => { try { localStorage.setItem("po.inspW", String(inspW)); } catch { /* storage may be unavailable */ } }, [inspW]);
   const scene = analysis.scenes.find((s) => s.id === sceneId) ?? analysis.scenes[0];
@@ -57,7 +59,7 @@ export function DirectRoom(props: {
   if (!enabled) {
     return (
       <section className="panel dr-off">
-        <span className="eyebrow">Optional</span>
+        <Eyebrow icon={Sparkles}>Optional</Eyebrow>
         <h3>Director's room</h3>
         <p className="helper">Plan shots from your script, make storyboard frames with your approved characters and sets, check continuity and play an animatic. Nothing here is needed to make character sheets or a delivery package.</p>
         <button className="primary" onClick={() => setEnabled(true)}><Clapperboard size={15} /> Turn on the Director's room</button>
@@ -101,8 +103,8 @@ export function DirectRoom(props: {
     const requests = chosen.map((s) => {
       const refs = takesRefs ? shotReferences(s, analysis, queue, assetRefs) : [];
       return {
-        assetId: s.id, variant: "Storyboard", sheetType: "Storyboard", viewKey: "frame", label: s.title ?? s.id, aspect: ASPECT, fullBody: false, provider: choice.provider, model: choice.modelId,
-        prompt: buildShotPrompt(s, analysis, style, refs, ASPECT, choice.modelId), references: refs.map((r) => r.path), outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, "0")}`,
+        assetId: s.id, variant: "Storyboard", sheetType: "Storyboard", viewKey: "frame", label: s.title ?? s.id, aspect, fullBody: false, provider: choice.provider, model: choice.modelId,
+        prompt: buildShotPrompt(s, analysis, style, refs, aspect, choice.modelId), references: refs.map((r) => r.path), outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, "0")}`,
       };
     });
     const result = enqueue(queue, requests, Date.now(), force);
@@ -120,7 +122,7 @@ export function DirectRoom(props: {
       const picked = await invoke<string[]>("pick_image_files", { multiple: false });
       if (!picked.length) return;
       const [file] = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: picked });
-      const out = addSupplied(queue, { assetId: s.id, variant: "Storyboard", sheetType: "Storyboard", viewKey: "frame", label: s.title ?? s.id, aspect: ASPECT, fullBody: false, path: file.path, width: file.inspection.width, height: file.inspection.height });
+      const out = addSupplied(queue, { assetId: s.id, variant: "Storyboard", sheetType: "Storyboard", viewKey: "frame", label: s.title ?? s.id, aspect, fullBody: false, path: file.path, width: file.inspection.width, height: file.inspection.height });
       setQueue(() => out.state);
       update(s.id, { storyboardStatus: "approved" });
       notify(`Using your image as the frame for ${s.id}.`);
@@ -145,7 +147,7 @@ export function DirectRoom(props: {
     <div className="dr">
       <div className="dr-top">
         <div>
-          <span className="eyebrow">Director's room</span>
+          <Eyebrow icon={Clapperboard}>Director's room</Eyebrow>
           <h2>{shots.length} shots · {frameCount} with frames</h2>
         </div>
         <div className="dr-top-actions">
@@ -154,6 +156,7 @@ export function DirectRoom(props: {
           <button className="secondary" onClick={() => void exportList("csv")} disabled={!shots.length}><Download size={14} /> CSV</button>
           <button className="secondary" onClick={() => void exportList("md")} disabled={!shots.length}><Download size={14} /> Markdown</button>
           <button className="secondary" onClick={() => setEnabled(false)} title="Hide the Director's room. Your shots are kept.">Turn off</button>
+          <label className="dr-aspect"><span>Canvas</span><select aria-label="Storyboard aspect ratio" value={aspect} onChange={(e) => setAspect(e.target.value)}>{aspectRatios.map((ratio) => <option key={ratio}>{ratio}</option>)}</select></label>
         </div>
       </div>
 
@@ -204,7 +207,7 @@ export function DirectRoom(props: {
               return (
                 <article key={s.id} className={`dr-card${s.id === shot?.id ? " on" : ""}${dragOver === s.id ? " drop" : ""}`} data-shot={s.id} draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", s.id); e.dataTransfer.effectAllowed = "move"; }} onDragOver={(e) => { e.preventDefault(); if (dragOver !== s.id) setDragOver(s.id); }} onDragLeave={() => setDragOver((d) => (d === s.id ? null : d))} onDrop={(e) => { e.preventDefault(); setDragOver(null); reorderTo(e.dataTransfer.getData("text/plain"), s.id); }}>
                   <button className="dr-thumb" onClick={() => setSelected(s.id)} onDoubleClick={() => at >= 0 && setLightbox(at)} aria-label={`Select ${s.title ?? s.id}`}>
-                    {frame?.outputPath ? <img src={convertFileSrc(frame.outputPath)} alt={`Frame for ${s.title ?? s.id}`} /> : <FramePreview shot={s} aspect={ASPECT} />}
+                    {frame?.outputPath ? <img src={convertFileSrc(frame.outputPath)} alt={`Frame for ${s.title ?? s.id}`} /> : <FramePreview shot={s} aspect={aspect} />}
                     <span className="dr-num">{i + 1}</span>
                     <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.status === "needs-review" ? "Needs review" : "Frame") : "No frame"}</span>
                     {warns > 0 && <span className="dr-warn" title="Continuity warnings"><AlertTriangle size={13} /> {warns}</span>}
@@ -251,7 +254,7 @@ export function DirectRoom(props: {
             onKeyDown={(e) => { if (e.key === "ArrowLeft") setInspW((w) => Math.min(640, w + 24)); if (e.key === "ArrowRight") setInspW((w) => Math.max(300, w - 24)); }} />
           {!shot ? <p className="helper">Select a shot to edit it.</p> : (
             <>
-              <FramePreview shot={shot} aspect={ASPECT} />
+              <FramePreview shot={shot} aspect={aspect} />
               <label><span>Title</span><input value={shot.title ?? ""} onChange={(e) => update(shot.id, { title: e.target.value })} /></label>
               <Fold title="Camera" hint={`${shot.size ?? "MS"} · ${shot.lens ?? 40}mm`} defaultOpen id="camera">
                 <div className="dr-two">

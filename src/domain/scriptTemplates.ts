@@ -1,0 +1,9 @@
+export type ScriptTemplateKind = 'screenplay' | 'fountain' | 'narrated' | 'shotlist'
+export interface ScriptTemplate { kind: ScriptTemplateKind; label: string; bestFor: string; guidance: string; example: string }
+
+export const scriptTemplates: ScriptTemplate[] = [
+  { kind: 'screenplay', label: 'Screenplay — strongest extraction', bestFor: 'Narrative film, shorts, and scene-based scripts', guidance: 'Use INT./EXT. headings, blank lines, uppercase character cues, dialogue, and action paragraphs.', example: `Title: Your Project\n\nINT. ROOM - NIGHT\n\nMARA enters wearing a blue coat. She studies the lantern.\n\nMARA\nWe have to leave before dawn.` },
+  { kind: 'fountain', label: 'Fountain screenplay', bestFor: 'Plain-text writing and version control', guidance: 'Use standard Fountain headings and cues. Production One preserves source text while adding evidence.', example: `Title: Your Project\n\nINT. ROOM - NIGHT\n\nMARA enters wearing a blue coat.\n\nMARA\nWe have to leave before dawn.` },
+  { kind: 'narrated', label: 'Narrated treatment / PDF prose', bestFor: 'Voiceover scripts, treatments, sermons, essays, and narrated videos', guidance: 'Use bracketed sections such as [OPENING], [ACT ONE], [ENDING]. Name recurring people consistently in the prose.', example: `[OPENING]\nBeau enters the church. His mother watches from the back row.\n\n[ACT ONE - THE PREACHER]\nBeau becomes Bishop Beaumont. His wife warns him.` },
+  { kind: 'shotlist', label: 'Shot list / visual plan', bestFor: 'Director coverage, boards, and visual reference planning', guidance: 'Use Scene 1 / Shot 1 labels with subjects, action, framing, location, and sound notes.', example: `Scene 1 - INT. CHURCH - NIGHT\nShot 1 | Wide | Beau enters the sanctuary | Sound: distant choir\nShot 2 | Close | Lantern on the pulpit | Insert` },
+]

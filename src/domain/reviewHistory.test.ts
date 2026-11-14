@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest'
+import { latestReview, recordReview } from './reviewHistory'
+describe('review history', () => { it('appends immutable named revision snapshots', () => { const history = recordReview([], { assetId: 'A1', revision: 2, reviewer: 'Director', decision: 'approved', dependencyRevision: 'style-4', notes: [] }, '2026-01-01T00:00:00Z'); expect(history).toHaveLength(1); expect(latestReview(history, 'A1', 2)?.reviewer).toBe('Director'); expect(recordReview(history, { ...history[0], id: undefined as never, createdAt: undefined as never, decision: 'annotated' }, '2026-01-02T00:00:00Z')).toHaveLength(2) }) })

@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Check, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
-import { retry, type QueueState } from "../domain/generationQueue";
+import { Eyebrow } from "./Eyebrow";
+import { AlertTriangle, ArrowRight, Check, Compass, ShieldCheck, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
+import { committedUsd, retry, type QueueState } from "../domain/generationQueue";
 import { videoPresets, type AnalysisResult, type CompiledShotPackage, type SceneCoverage, type ShotRecord, type VideoModel } from "../domain/productionStudio";
 import { Fold } from "./Fold";
+
+const videoPurposes = {
+  turnaround: "Character turnaround · preserve identity across front, side and back views",
+  acting: "Acting performance · generate believable facial and body performance",
+  posing: "Pose study · explore readable body language and silhouette",
+  expression: "Expression test · explore facial emotion and micro-performance",
+} as const;
+type VideoPurpose = keyof typeof videoPurposes;
+import { AgentDepartmentBoard } from "./AgentDepartmentBoard";
 
 type Audit = { ready: boolean; missingAssets: string[]; incompleteShots: string[] };
 
@@ -27,20 +37,24 @@ export function DeliveryCenter(props: {
   openAsset: (assetId: string) => void;
   openShot: (shotId: string) => void;
   notify: (message: string) => void;
+  styleLocked: boolean;
 }) {
-  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify } = props;
+  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked } = props;
+  const [videoPurpose, setVideoPurpose] = useState<VideoPurpose>("acting");
+  const [videoAspect, setVideoAspect] = useState("16:9");
   const preset = videoPresets[model];
   const name = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id;
   const kind = (id: string) => analysis.assets.find((a) => a.id === id)?.type ?? "asset";
   const sceneName = (id: string) => analysis.scenes.find((s) => s.id === id)?.heading ?? id;
   const shotName = (id: string) => { const s = shots.find((x) => x.id === id); return s ? `${s.title ?? s.id}` : id; };
   const failed = queue.jobs.filter((j) => j.status === "failed");
+  const needsReview = queue.jobs.filter((j) => j.status === "needs-review").length;
   const active = queue.jobs.filter((j) => ["queued", "generating", "validating", "pending"].includes(j.status)).length;
   const total = Math.max(1, analysis.assets.length);
   const percent = audit.ready ? 100 : Math.round(((analysis.assets.length - audit.missingAssets.length) / total) * 100);
   const [prompt, setPrompt] = useState(compiled.prompt);
   const [edited, setEdited] = useState(false);
-  useEffect(() => { setPrompt(compiled.prompt); setEdited(false); }, [compiled.prompt, compiled.shotId, model]);
+  useEffect(() => { setPrompt(`${videoPurposes[videoPurpose]}\n\n${compiled.prompt}`); setEdited(false); }, [compiled.prompt, compiled.shotId, model, videoPurpose]);
   const refsOver = (shots[selectedShot]?.assetIds.length ?? 0) > preset.maxReferences;
 
   const issues = useMemo(() => sceneCoverage.filter((s) => s.missingAssets.length || s.incompleteShots.length || s.warnings.length), [sceneCoverage]);
@@ -55,7 +69,7 @@ export function DeliveryCenter(props: {
     <section className="dc" aria-label="Delivery">
       <div className="dc-summary">
         <div className={`dc-ready ${audit.ready ? "ok" : "todo"}`}>
-          <span className="eyebrow">Production readiness</span>
+          <Eyebrow icon={ShieldCheck}>Production readiness</Eyebrow>
           <b>{percent}%</b>
           <small>{audit.ready ? "Ready to package" : "Action required"}</small>
           <i className="dc-bar"><u style={{ width: `${percent}%` }} /></i>
@@ -65,13 +79,17 @@ export function DeliveryCenter(props: {
           <div><dt>Incomplete shots</dt><dd>{audit.incompleteShots.length}</dd></div>
           <div><dt>Active jobs</dt><dd>{active}</dd></div>
           <div><dt>Failed jobs</dt><dd className={failed.length ? "bad" : ""}>{failed.length}</dd></div>
+          <div><dt>Needs review</dt><dd className={needsReview ? "warn" : ""}>{needsReview}</dd></div>
+          <div><dt>Recorded spend</dt><dd>{queue.perImageUsd === null ? "Unknown" : `$${committedUsd(queue).toFixed(2)}`}</dd></div>
         </dl>
         <div className="dc-next">
-          <span className="eyebrow">Next recommended action</span>
+          <Eyebrow icon={Compass}>Next recommended action</Eyebrow>
           <p>{next.label}</p>
           {next.go && <button className="primary" onClick={next.go}>{audit.ready ? <PackageCheck size={15} /> : <ArrowRight size={15} />} {audit.ready ? "Build the package" : "Take me there"}</button>}
         </div>
       </div>
+
+      <AgentDepartmentBoard analysis={analysis} queue={queue} audit={audit} styleLocked={styleLocked} notify={notify} />
 
       <div className="dc-cols">
         <div className="panel dc-issues">
@@ -109,9 +127,13 @@ export function DeliveryCenter(props: {
                 {shots.length === 0 && <option value={0}>No shots planned</option>}
                 {shots.map((s, i) => <option key={s.id} value={i}>{i + 1}. {s.title ?? s.id}</option>)}
               </select></label>
-            <label><span>Target video model</span>
+            <label><span>Video model · motion tests and shot delivery</span>
               <select value={model} onChange={(e) => setModel(e.target.value as VideoModel)}>{Object.keys(videoPresets).map((m) => <option key={m}>{m}</option>)}</select></label>
+            <label><span>Video purpose</span>
+              <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+            <label><span>Video aspect ratio</span><select aria-label="Choose video aspect ratio" value={videoAspect} onChange={(e) => setVideoAspect(e.target.value)}>{preset.aspectRatios.map(ratio => <option key={ratio}>{ratio}</option>)}</select></label>
           </div>
+          <div className="video-model-card"><b>{preset.provider} · {preset.model} · {videoAspect}</b><span>{preset.tasks.join(' · ')}</span><small>{preset.note}</small></div>
           <ul className="dc-caps">
             <li className={refsOver ? "bad" : "ok"}>{refsOver ? <AlertTriangle size={14} /> : <Check size={14} />} {compiled.references.length} of {preset.maxReferences} references</li>
             <li className="ok"><Check size={14} /> {preset.supportsAudio ? "Model audio" : "Audio added in post"}</li>

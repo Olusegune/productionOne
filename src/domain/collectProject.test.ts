@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest'
+import { collectPlan, relinkById } from './collectProject'
+describe('collect project portability', () => { it('maps media to relative paths and relinks by immutable ID', () => { expect(collectPlan('C:/Films/P1', [{ id: 'A1', absolutePath: 'C:/Films/P1/refs/a.png' }])[0].targetPath).toBe('media/refs/a.png'); expect(relinkById([{ id: 'A1', absolutePath: 'old/a.png' }], { A1: 'new/a.png' })[0].absolutePath).toBe('new/a.png') }); it('rejects path traversal', () => expect(() => collectPlan('C:/P', [{ id: 'A', absolutePath: 'C:/P/a', relativePath: '../secret' }])).toThrow(/portable/)) })

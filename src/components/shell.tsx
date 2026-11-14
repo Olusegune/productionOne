@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, Command as CommandIcon, Check, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
+import { ArrowRight, BookText, Clapperboard, FolderOpen, Command as CommandIcon, Check, PackageCheck, Palette, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
 import { BrandMark } from "./BrandMark";
+import { newlyDone } from "../domain/shortcuts";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
-import { spendGate, summarize, type QueueState } from "../domain/generationQueue";
+import { spendGate, summarize, waitingForAnchor, type QueueState } from "../domain/generationQueue";
 
+const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Direct: Clapperboard, Deliver: PackageCheck } as const;
 export const workspaceNames = ["Projects", "Story", "Design", "Direct", "Deliver"] as const;
 
 export function TopBar(props: {
@@ -20,19 +22,37 @@ export function TopBar(props: {
   localUp?: boolean;
   onLocal?: () => void;
 }) {
-  const { steps, next } = useMemo(() => goldenPath(props.golden), [props.golden]);
+  const { steps, next, progress } = useMemo(() => goldenPath(props.golden), [props.golden]);
+  // Quietly acknowledge a step when it becomes done (not on first load).
+  const doneIds = steps.filter((s) => s.state === "done").map((s) => s.id);
+  const seen = useRef<string[] | null>(null);
+  const [cheer, setCheer] = useState("");
+  useEffect(() => {
+    const before = seen.current;
+    seen.current = doneIds;
+    if (before === null) return;
+    const fresh = newlyDone(before, doneIds);
+    if (!fresh.length) return;
+    const step = steps.find((s) => s.id === fresh[fresh.length - 1]);
+    setCheer(`${step?.label ?? "Step"} complete`);
+    const timer = window.setTimeout(() => setCheer(""), 3600);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doneIds.join("|")]);
   return (
     <div className="po-top" role="banner">
       <div className="po-bar">
         <div className="po-brand">
-          <BrandMark size={30} />
+          <span className="po-ring" style={{ "--p": `${progress}%` } as React.CSSProperties} title={`Golden Path ${progress}% complete`}><BrandMark size={30} /><span className="visually-hidden">Golden Path {progress}% complete</span></span>
           <button className="po-title" onClick={props.onOpenSettings} title="Project settings">{props.title}</button>
+          {cheer && <span className="po-cheer" role="status"><Check size={12} aria-hidden="true" /> {cheer}</span>}
           <span className={`po-save${props.unsaved ? " unsaved" : ""}`} role="status">{props.saveLabel}</span>
         </div>
         <nav className="po-tabs" aria-label="Workspaces">
           {workspaceNames.map((name) => (
             <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined}>
-              {name}
+              {(() => { const Icon = workspaceIcons[name]; return <Icon size={15} aria-hidden="true" />; })()}
+              <span>{name}</span>
               {name === "Direct" && <em>optional</em>}
             </button>
           ))}
@@ -40,7 +60,7 @@ export function TopBar(props: {
         <div className="po-actions">
           {next && (
             <button className="primary" onClick={() => props.onNext(next)} title={next.detail}>
-              {next.action} <ArrowRight size={14} />
+              <span className="btn-label">{next.action}</span> <ArrowRight size={14} aria-hidden="true" />
             </button>
           )}
           {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}
@@ -129,6 +149,8 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
   const busy = s.generating + s.validating;
   const waiting = s.queued + s.pending;
   const capBlocked = queue.guard && waiting > 0 && !spendGate(queue).ok;
+  // Views that match a front view wait until a person approves it. Say so, or a quiet queue looks stuck.
+  const anchorWaiting = queue.jobs.filter((j) => j.status === "queued" && waitingForAnchor(queue, j)).length;
   const line = s.total === 0 ? "Queue is empty" : `${s.queued} queued · ${busy} running · ${s.needsReview} to review · ${s.completed} done${s.failed ? ` · ${s.failed} failed` : ""}${queue.paused ? " · paused" : ""}`;
   return (
     <div className={`po-dock${open ? " open" : ""}`}>
@@ -138,6 +160,7 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
           <span>{line}</span>
           {open ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
+        {!capBlocked && anchorWaiting > 0 && busy === 0 && <span className="po-cap-note" role="status">{anchorWaiting} waiting for you to approve a front view, so they can match it. <button onClick={onOpen}>Open sheets</button></span>}
         {capBlocked && <span className="po-cap-note" role="alert">Waiting: your spending cap is reached. <button onClick={() => setQueue((q) => ({ ...q, guard: false }))}>Turn the cap off</button></span>}
         <CostChip queue={queue} setQueue={setQueue} />
       </div>

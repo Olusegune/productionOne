@@ -1,6 +1,7 @@
 import { primaryViewKeys } from './sheetSpecs'
 
 export type ImageJobStatus = 'pending' | 'queued' | 'generating' | 'validating' | 'completed' | 'needs-review' | 'failed' | 'cancelled'
+export type SubmissionState = 'not-submitted' | 'intent-persisted' | 'accepted' | 'completed' | 'ambiguous' | 'failed'
 
 export interface ImageJob {
   id: string
@@ -37,6 +38,12 @@ export interface ImageJob {
   source?: 'generated' | 'supplied' | 'cleaned'
   createdAt: number
   updatedAt: number
+  /** Durable submission provenance. Optional for legacy .pone/.pguy files. */
+  attemptId?: string
+  submissionState?: SubmissionState
+  providerTaskId?: string
+  receiptAt?: number
+  recoveryNote?: string
 }
 
 export interface QueueState {
@@ -76,6 +83,23 @@ const live: ImageJobStatus[] = ['pending', 'queued', 'generating', 'validating']
  * Adds jobs. A view that already has a live job or an approved/unrejected result is skipped (idempotent). A view whose last result was rejected or failed gets
  * a NEW revision, so earlier files and approvals are never replaced.
  */
+/** Would pressing Generate add a new revision for a view whose latest job is `latest`? Shared by enqueue and the cost preview so they can never disagree. */
+export function wouldEnqueue(latest: ImageJob | undefined, force = false): boolean {
+  if (!latest) return true
+  if (live.includes(latest.status)) return false
+  if (!force && (latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))) return false
+  return true
+}
+
+/** What a paid click will cost at the person's own price per request. Catalog prices are never invented: with no price set, the count is still shown and the cost says so. */
+export function costPreview(count: number, perImageUsd: number | null): { count: number; usd: number | null; label: string } {
+  const noun = `${count} image${count === 1 ? '' : 's'}`
+  if (count === 0) return { count, usd: 0, label: 'Nothing new to generate' }
+  if (perImageUsd === null) return { count, usd: null, label: `${noun} · cost unknown: set a price in the spending limit` }
+  const usd = count * perImageUsd
+  return { count, usd, label: `${noun} · about $${usd.toFixed(2)} at your $${perImageUsd.toFixed(2)} each` }
+}
+
 export function enqueue(state: QueueState, requests: JobRequest[], now = Date.now(), force = false): { state: QueueState; added: number; skipped: number } {
   let jobs = state.jobs
   let added = 0
@@ -83,15 +107,21 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
   for (const request of requests) {
     const same = jobs.filter((j) => j.assetId === request.assetId && j.variant === request.variant && j.sheetType === request.sheetType && j.viewKey === request.viewKey)
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
-    if (latest && (live.includes(latest.status) || (!force && (latest.status === 'needs-review' || (latest.status === 'completed' && !latest.rejected))))) { skipped++; continue }
+    if (!wouldEnqueue(latest, force)) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
-    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, createdAt: now, updatedAt: now }]
+    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
     added++
   }
   return { state: { ...state, jobs }, added, skipped }
 }
 
 /** Every attempt that was sent counts toward the ceiling, because a failed attempt may still be billed. */
+/** A failed job that a newer revision of the same view has replaced is history, not a problem: it stays in the record and the attempt count, but is not reported as failed. */
+export function isSuperseded(state: QueueState, job: ImageJob): boolean {
+  return state.jobs.some((o) => o.assetId === job.assetId && o.variant === job.variant && o.sheetType === job.sheetType && o.viewKey === job.viewKey && o.revision > job.revision)
+}
+export const unresolvedFailures = (state: QueueState) => state.jobs.filter((j) => j.status === 'failed' && !isSuperseded(state, j))
+
 export const attemptsSent = (state: QueueState) => state.jobs.reduce((n, j) => n + j.attempts, 0)
 export const committedUsd = (state: QueueState) => (state.perImageUsd ?? 0) * attemptsSent(state)
 
@@ -133,6 +163,16 @@ export function anchorFor(state: QueueState, job: ImageJob): string | undefined 
   const approved = state.jobs.filter((j) => sameSubject(j, job) && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey))
   // The newest approved revision is the anchor; older approved files stay in the history untouched.
   return approved.sort((a, b) => b.revision - a.revision || b.updatedAt - a.updatedAt)[0]?.outputPath
+}
+
+/**
+ * Should this view be generated with the character's approved image as a reference? Non-primary views always are. A primary view (front, costume front, ...) is the one that
+ * normally *makes* the identity, so it goes without a reference only when nothing is approved yet. If another approved primary view of the same asset and look exists (the
+ * Turnaround front, say, when the Wardrobe sheet's costume front is generated), it is used, so the Wardrobe sheet cannot invent a different person.
+ */
+export function shouldAnchor(state: QueueState, subject: { assetId: string; variant: string; sheetType: string; viewKey: string }): boolean {
+  if (!primaryViewKeys.includes(subject.viewKey)) return true
+  return state.jobs.some((j) => j.assetId === subject.assetId && j.variant === subject.variant && j.approved && !!j.outputPath && primaryViewKeys.includes(j.viewKey) && !(j.sheetType === subject.sheetType && j.viewKey === subject.viewKey))
 }
 
 export interface SuppliedRequest {
@@ -183,10 +223,10 @@ export function waitingForAnchor(state: QueueState, job: ImageJob): boolean {
 const patchJob = (state: QueueState, id: string, fn: (j: ImageJob) => ImageJob): QueueState => ({ ...state, jobs: state.jobs.map((j) => (j.id === id ? fn(j) : j)) })
 
 export const markGenerating = (state: QueueState, id: string, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'queued' ? touch(j, { status: 'generating', attempts: j.attempts + 1, error: undefined, notBefore: undefined }, now) : j))
+  patchJob(state, id, (j) => (j.status === 'queued' ? touch(j, { status: 'generating', attempts: j.attempts + 1, attemptId: `${j.id}-attempt-${j.attempts + 1}`, submissionState: 'intent-persisted', error: undefined, notBefore: undefined }, now) : j))
 
 export const markValidating = (state: QueueState, id: string, file: { path: string; width: number; height: number }, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'generating' ? touch(j, { status: 'validating', outputPath: file.path, width: file.width, height: file.height }, now) : j))
+  patchJob(state, id, (j) => (j.status === 'generating' ? touch(j, { status: 'validating', submissionState: 'completed', receiptAt: now, outputPath: file.path, width: file.width, height: file.height }, now) : j))
 
 /** Validation done: any note sends the image to a person (needs-review); a clean pass still waits for approval, never auto-approves. */
 export const markValidated = (state: QueueState, id: string, notes: string[], now = Date.now()) =>
@@ -199,6 +239,8 @@ export function classifyError(message: string): FailureKind {
   if (code === '429') return { retryable: true, delayMs: 30_000, advice: 'The provider is rate limiting requests; retrying shortly.' }
   if (code && Number(code) >= 500) return { retryable: true, delayMs: 10_000, advice: 'The provider had a server error; retrying shortly.' }
   if (/timed out|timeout|could not be reached/i.test(message)) return { retryable: true, delayMs: 10_000, advice: 'The connection failed; retrying shortly.' }
+  // Kie sometimes answers "no model page" for a model it served minutes earlier. It is not billed, so one more try after a pause is safe, and the attempt limit still applies.
+  if (/no model page/i.test(message)) return { retryable: true, delayMs: 15_000, advice: 'Kie did not find the model page just now; retrying shortly. If it keeps failing, press Refresh models.' }
   if (code === '401' || code === '403' || /No .* key is saved/i.test(message)) return { retryable: false, delayMs: 0, advice: 'The key is missing or was rejected. Check Provider Settings.' }
   return { retryable: false, delayMs: 0, advice: 'The request was not accepted. Check the model, the prompt and the provider message.' }
 }
@@ -226,12 +268,14 @@ export const cancel = (state: QueueState, id: string, now = Date.now()) =>
 export const cancelAllWaiting = (state: QueueState, now = Date.now()) => ({ ...state, jobs: state.jobs.map((j) => (j.status === 'queued' || j.status === 'pending' ? touch(j, { status: 'cancelled' }, now) : j)) })
 
 export const retry = (state: QueueState, id: string, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'failed' || j.status === 'cancelled' ? touch(j, { status: 'queued', attempts: 0, error: undefined, notBefore: undefined }, now) : j))
+  // Attempts are immutable submission history. A manual retry starts a new
+  // retry cycle, but must never erase a request that may already be billable.
+  patchJob(state, id, (j) => (j.status === 'failed' || j.status === 'cancelled' ? touch(j, { status: 'queued', error: undefined, notBefore: undefined }, now) : j))
 
 /** Moves jobs that have not produced a file to another provider/model. Completed work is never reassigned. */
 export const reassignModel = (state: QueueState, ids: string[], provider: string, model: string, now = Date.now()): QueueState => ({
   ...state,
-  jobs: state.jobs.map((j) => (ids.includes(j.id) && (j.status === 'queued' || j.status === 'failed' || j.status === 'cancelled') ? touch(j, { provider, model, status: j.status === 'queued' ? 'queued' : 'queued', attempts: j.status === 'queued' ? j.attempts : 0, error: undefined }, now) : j)),
+  jobs: state.jobs.map((j) => (ids.includes(j.id) && (j.status === 'queued' || j.status === 'failed' || j.status === 'cancelled') ? touch(j, { provider, model, status: 'queued', error: undefined }, now) : j)),
 })
 
 /**
@@ -246,7 +290,7 @@ export function recover(state: QueueState, now = Date.now()): QueueState {
     paused: state.jobs.some((j) => j.status === 'generating' || j.status === 'validating') ? true : state.paused,
     jobs: state.jobs.map((j) => {
       if (j.status === 'validating') return touch(j, { status: j.outputPath ? 'needs-review' : 'queued', qaNotes: [...j.qaNotes, 'Recovered after the app closed: re-check this image.'] }, now)
-      if (j.status === 'generating') return touch(j, { status: 'queued', error: 'The app closed while this was generating. It will run again when you resume.' }, now)
+      if (j.status === 'generating') return touch(j, { status: 'failed', submissionState: 'ambiguous', recoveryNote: 'The app closed after submission intent was persisted. Reconcile the provider task before retrying; it may already be billable.', error: 'Ambiguous provider outcome after restart; reconciliation is required before retrying.' }, now)
       return j
     }),
   }
@@ -254,7 +298,7 @@ export function recover(state: QueueState, now = Date.now()): QueueState {
 
 export function summarize(state: QueueState) {
   const count = (s: ImageJobStatus) => state.jobs.filter((j) => j.status === s).length
-  return { requests: attemptsSent(state), pending: count('pending'), queued: count('queued'), generating: count('generating'), validating: count('validating'), completed: count('completed'), needsReview: count('needs-review'), failed: count('failed'), cancelled: count('cancelled'), total: state.jobs.length, committedUsd: committedUsd(state) }
+  return { requests: attemptsSent(state), pending: count('pending'), queued: count('queued'), generating: count('generating'), validating: count('validating'), completed: count('completed'), needsReview: count('needs-review'), failed: unresolvedFailures(state).length, cancelled: count('cancelled'), total: state.jobs.length, committedUsd: committedUsd(state) }
 }
 
 /** Upper bound for what the waiting jobs could still cost at the person's own price. Not a provider quote. */

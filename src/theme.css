@@ -85,6 +85,65 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 *::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .28); background-clip: padding-box; border: 3px solid transparent; }
 *::-webkit-scrollbar-corner, *::-webkit-scrollbar-button { display: none; background: transparent; }
 
+/* Calm studio pass: keep the production surface quiet so the selected asset and next action lead. */
+body { min-width: 0; }
+.po-shell { grid-template-rows: auto minmax(0, 1fr) auto; }
+.po-bar { grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr); gap: 12px; padding: 9px 20px 7px; }
+.po-brand { gap: 9px; }
+.po-title { font-size: 17px; max-width: 220px; }
+.po-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.po-tabs::-webkit-scrollbar { display: none; }
+.po-tabs button { padding: 7px 13px; font-size: 13px; }
+.po-actions { gap: 6px; }
+.po-actions .primary { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.po-steps { padding: 2px 20px 7px; gap: 2px; }
+.po-steps li button { padding: 3px 8px; font-size: 12px; }
+.po-hint { max-width: 34%; font-size: 12px; }
+.po-main { padding: 18px 22px 26px; }
+.panel { padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.22); }
+.panel-heading { margin-bottom: 14px; }
+.panel h3 { font-size: 20px; }
+.po-design { grid-template-columns: minmax(245px, 260px) minmax(0, 1fr) minmax(260px, 290px); gap: 12px; }
+.po-bible, .po-inspector { padding: 13px; border-radius: 10px; max-height: calc(100vh - 166px); }
+.po-bible li button { padding: 8px 9px; font-size: 14px; }
+.po-inspector h3 { font-size: 21px; }
+.design-workspace { padding-top: 8px !important; }
+.design-workspace > .three-column { padding-top: 8px !important; }
+.character-bible { margin: 8px 0 12px; padding: 14px; border-radius: 10px; background: rgba(255,255,255,.035); box-shadow: none; }
+.character-bible-head p { max-width: 620px; }
+.character-bible-tabs { margin: 12px 0 10px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.character-bible-tabs button { flex: 0 0 auto; padding: 7px 9px; }
+.character-bible-next { padding-top: 9px; }
+.sheet-studio { padding: 18px; }
+.ss-head { margin-bottom: 13px; }
+.ss-head h3 { font-size: 24px; }
+.sheet-actions-row { gap: 7px; margin: 10px 0; }
+.view-grid { gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.view-meta { padding: 9px 10px; }
+.view-actions { padding: 0 10px 10px; }
+.golden-path { padding: 20px 22px 18px; }
+.golden-head { margin-bottom: 17px; }
+.golden-head h3 { font-size: 23px; }
+.golden-steps b { font-size: 13px; }
+.golden-steps small { font-size: 12px; }
+.po-dock-bar { padding: 7px 20px; }
+.po-dock-body { padding: 4px 20px 12px; }
+@media (max-width: 1280px) {
+  .po-design { grid-template-columns: minmax(220px, 25vw) minmax(0, 1fr); }
+  .po-inspector { display: none; }
+}
+@media (max-width: 900px) {
+  .po-bar { grid-template-columns: 1fr auto; }
+  .po-tabs { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; justify-content: center; }
+  .po-actions { grid-column: 2; grid-row: 1; }
+  .po-hint { display: none; }
+  .po-steps { overflow-x: auto; white-space: nowrap; }
+  .po-design { grid-template-columns: 1fr; }
+  .po-bible { position: static; max-height: none; }
+  .po-bible ul { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 4px; }
+  .po-bible li { flex: 0 0 190px; }
+}
+
 /* Top bar: a segmented control, not underlined tabs */
 .po-top { background: rgba(10, 12, 15, .72); backdrop-filter: blur(18px); border-bottom: 1px solid var(--stroke); }
 .po-bar { padding: 12px 24px 8px; }
@@ -94,7 +153,7 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 .po-tabs button { padding: 8px 18px; font-size: 14px; font-weight: 500; border-radius: 6px; border-bottom: 0; color: var(--text-3); transition: background .2s, color .2s; }
 .po-tabs button:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
 .po-tabs button.active { background: linear-gradient(180deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .07)); color: var(--text); box-shadow: 0 1px 0 rgba(255, 255, 255, .12) inset, 0 4px 14px rgba(0, 0, 0, .3); }
-.po-tabs em { font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--text-3); }
+.po-tabs em { font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--text-3); }
 .po-steps { padding: 2px 26px 10px; font-size: 13px; gap: 6px; }
 .po-steps li button { padding: 4px 11px; color: var(--text-3); }
 .po-steps .done { color: var(--text-2); }
@@ -190,7 +249,7 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 .mp-item-name { font-size: 15px; color: var(--text); }
 .mp-item small { grid-column: 1; font-size: 12px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mp-tags { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 5px; align-items: center; }
-.mp-tags i { font-style: normal; font-size: 11px; padding: 2px 8px; border-radius: 5px; background: rgba(106, 166, 207, .16); color: #9cc6e4; }
+.mp-tags i { font-style: normal; font-size: 12px; padding: 2px 8px; border-radius: 5px; background: rgba(106, 166, 207, .16); color: #9cc6e4; }
 .mp-tags i.new { background: rgba(135, 191, 166, .16); color: #a9d0bd; }
 .mp-empty { padding: 20px; text-align: center; color: var(--text-3); }
 .mp-custom { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--stroke); font-size: 13px; color: var(--text-3); }
@@ -225,7 +284,7 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
 .lb-info { flex: 1; display: grid; gap: 3px; min-width: 0; }
 .lb-info small { font-size: 13px; color: var(--text-3); }
 .lb-actions { display: flex; gap: 10px; }
-.lb-actions kbd, .view-actions kbd { font-size: 11px; opacity: .7; border: 1px solid currentColor; border-radius: 5px; padding: 0 5px; margin-left: 6px; }
+.lb-actions kbd, .view-actions kbd { font-size: 12px; opacity: .7; border: 1px solid currentColor; border-radius: 5px; padding: 0 5px; margin-left: 6px; }
 .lb-state { font-size: 14px; color: var(--gold); }
 
 /* Dock and cost chip */

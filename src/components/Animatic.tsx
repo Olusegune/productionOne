@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { Music2, Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { Eyebrow } from "./Eyebrow";
+import { Timer, Music2, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { QueueState } from "../domain/generationQueue";
 import type { ScriptScene, ShotRecord } from "../domain/productionStudio";
 import { frameForShot } from "../domain/direct";
@@ -63,7 +64,7 @@ export function Animatic({ shots, queue, scenes }: { shots: ShotRecord[]; queue:
   return (
     <section className="panel animatic" aria-label="Animatic">
       <div className="panel-heading">
-        <div><span className="eyebrow">Animatic</span><h3>{total.toFixed(1)} seconds · {shots.length} shots</h3></div>
+        <div><Eyebrow icon={Timer}>Animatic</Eyebrow><h3>{total.toFixed(1)} seconds · {shots.length} shots</h3></div>
         <label className="secondary file-button"><Music2 size={14} /> {audioName || "Add a temp track"}
           <input type="file" accept="audio/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setAudioUrl(URL.createObjectURL(f)); setAudioName(f.name); } e.target.value = ""; }} />
         </label>

@@ -1,28 +1,27 @@
+import { toggleTheme } from "./data/theme";
+import { addCharacterAsset, addPropAsset, applyReadAge } from "./domain/readingActions";
+import { hasWork, needsBackup } from "./domain/projectSafety";
+import { workspaceShortcut } from "./domain/shortcuts";
+import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers";
+import { Eyebrow } from "./components/Eyebrow";
+import { DesignView } from "./views/DesignView";
+import { DirectView } from "./views/DirectView";
+import { ProjectsView } from "./views/ProjectsView";
+import { StoryView } from "./views/StoryView";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { DeliveryCenter } from "./components/DeliveryCenter";
 import { convertScript, type ScriptKind } from "./engine/importers";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUpRight,
+import { 
   Check,
-  Clapperboard,
-  Copy,
-  Download,
+  Clapperboard, 
+  Globe, 
+  KeyRound,
+  Settings2,
   FolderKanban,
-  PackageCheck,
-  Pause,
-  PenTool,
-  Play,
-  Plus,
-  Search,
-  Sparkles,
-  Trash2,
-  WandSparkles,
+  PackageCheck, 
+  PenTool, 
+  Sparkles, 
 } from "lucide-react";
-import { BrandMark } from "./components/BrandMark";
-import { ArtDirectionBar } from "./components/ArtDirectionBar";
-import { EditableInventory } from "./components/EditableInventory";
 import { projectStore, studioStore, type StudioState } from "./data/projectStore";
 import { demoGraph } from "./domain/demoGraph";
 import {
@@ -34,15 +33,11 @@ import {
 import {
   advanceQueue,
   analyzeScript,
-  animaticDuration,
-  cancelJob,
+  animaticDuration, 
   compileAssetPrompt,
   compileShotPackage,
   coverageAudit,
-  normalizeShotOrder,
-  pauseQueue,
-  resumeQueue,
-  retryJob,
+  normalizeShotOrder, 
   sceneCoverageAudit,
   shotAtTime,
   type AnalysisResult,
@@ -58,6 +53,7 @@ import {
   defaultStyleBible,
   planAssetSheets,
   recommendModels,
+  type SheetType,
   type StyleBible,
 } from "./domain/visualDevelopment";
 import "./styles.css";
@@ -73,20 +69,14 @@ import "./director.css";
 import "./delivery.css";
 import "./cleanrender.css";
 import { sampleStory } from "./engine/sampleStory";
-import { SheetStudio } from "./components/SheetStudio";
-import { RealImage } from "./components/RealImage";
-import { MotionDemo } from "./components/MotionDemo";
-import { DirectRoom } from "./components/DirectRoom";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
 import { anyLocal } from "./domain/localAi";
 import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
-import { ReadingPanel } from "./components/ReadingPanel";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
-import { emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
-import { GoldenPath } from "./components/GoldenPath";
+import { addSupplied, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -100,48 +90,7 @@ const workspaces = [
   { name: "Deliver", icon: PackageCheck },
 ];
 const sampleScript = sampleStory;
-const initialShot: ShotRecord = {
-  id: "SHOT-001",
-  sceneId: "SCENE-001",
-  order: 1,
-  duration: 5,
-  assetIds: [],
-  action: "Amina raises the solar compass and studies its glow.",
-  dialogue: "We are close.",
-  speaker: "AMINA",
-  emotionalObjective: "Quiet resolve beneath exhaustion",
-  facialActing: "Focused eyes, relaxed jaw",
-  bodyLanguage: "Balanced stance, shoulders settling",
-  microAnimation: "One blink, slow breath, slight grip adjustment",
-  cameraFraming: "Medium close-up",
-  cameraMovement: "Slow push in",
-  lighting: "Warm dusk edge light with neutral skin tones",
-  soundEffects: "Cloth movement, compass hum",
-  ambience: "Soft savanna wind",
-  music: "Low restrained strings",
-  transition: "Cut",
-  storyboardStatus: "planned",
-};
 
-const isTauri = "__TAURI_INTERNALS__" in window;
-function downloadJson(name: string, value: unknown) {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
-  );
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-function downloadText(name: string, value: string, type = "text/plain") {
-  const url = URL.createObjectURL(new Blob([value], { type }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function App() {
   const [workspace, setWorkspace] = useState("Projects"),
@@ -173,6 +122,7 @@ export default function App() {
     [animaticPlaying, setAnimaticPlaying] = useState(false),
     [animaticTime, setAnimaticTime] = useState(0);
   const [styleBible, setStyleBible] = useState<StyleBible>(defaultStyleBible);
+  const [focusSheetType, setFocusSheetType] = useState<SheetType | undefined>();
   const [promptMode, setPromptMode] =
     useState<keyof PromptPackage>("universal");
   const [openAiConfigured, setOpenAiConfigured] = useState(false),
@@ -192,7 +142,9 @@ export default function App() {
     [paletteOpen, setPaletteOpen] = useState(false),
     [localOpen, setLocalOpen] = useState(false),
     [clips, setClipsState] = useState<DemoClip[]>([]),
-    [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({});
+    [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({}),
+    [sheetNotes, setSheetNotes] = useState<Record<string, string>>({}),
+    [sheetSettings, setSheetSettings] = useState<Record<string, string>>({});
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
@@ -216,8 +168,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -286,6 +238,8 @@ export default function App() {
           setQueueState(recover(studio.queue ?? emptyQueue()));
           setClipsState(studio.clips ?? []);
           setAssetRefsState(studio.assetRefs ?? {});
+          setSheetNotes(studio.sheetNotes ?? {});
+          setSheetSettings(studio.sheetSettings ?? {});
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -423,6 +377,18 @@ export default function App() {
       if (picked) takeScript(picked.name, picked.kind, picked.text);
     } catch (e) { setNotice(String(e)); }
   };
+  const addNamedProp = (name: string) => {
+    const result = addPropAsset(analysis.assets, name, analysis.scenes[0]?.id ?? "SCENE-001");
+    if (!result.added) { setNotice(result.reason ?? "Nothing added."); return; }
+    setAnalysis((current) => ({ ...current, assets: result.assets }));
+    setNotice(`Added ${name.trim()} as a prop. Find it under Design.`);
+  };
+  const useAgeFromReading = (character: string, value: string) => {
+    const result = applyReadAge(analysis.assets, character, value);
+    if (!result.applied) { setNotice(`No character asset named ${character} to apply this to.`); return; }
+    setAnalysis((current) => ({ ...current, assets: result.assets }));
+    setNotice(`${character}'s age is now confirmed and goes into image prompts.`);
+  };
   const addManualAsset = () => {
     const sceneId = analysis.scenes[0]?.id ?? "SCENE-001";
     const sequence = analysis.assets.length + 1;
@@ -439,6 +405,26 @@ export default function App() {
         },
       ],
     }));
+  };
+  /** Start a character from an image the person already has (for example a Midjourney render): it becomes the approved front view and every other sheet is built from it. */
+  const addCharacterFromImage = async (name: string, gender = "") => {
+    if (!isTauri) { setNotice("Adding a character from an image needs the desktop app."); return; }
+    const result = addCharacterAsset(analysis.assets, name, analysis.scenes[0]?.id ?? "SCENE-001", Date.now(), gender);
+    if (!result.added || !result.asset) { setNotice(result.reason ?? "Nothing added."); return; }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const chosen = await invoke<string[]>("pick_image_files", { multiple: false });
+      if (!chosen.length) return;
+      const [file] = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen });
+      if (!file) return;
+      const asset = result.asset;
+      const out = addSupplied(queue, { assetId: asset.id, variant: "Canonical", sheetType: "Turnaround", viewKey: "front", label: "Front", aspect: "3:4", fullBody: true, path: file.path, width: file.inspection.width, height: file.inspection.height });
+      setAnalysis((current) => ({ ...current, assets: result.assets }));
+      setQueue(() => out.state);
+      onSheetApproved(out.job, true);
+      setSelectedAsset(result.assets.length - 1);
+      setNotice(`${asset.name} added with your image as the approved front view. Open Reference sheets to build the turnaround, poses and expressions from it.`);
+    } catch (error) { setNotice(String(error)); }
   };
   const approveAsset = (index: number) =>
     setAnalysis((current) => ({
@@ -895,7 +881,7 @@ export default function App() {
     ].join("\n");
     const { invoke } = await import("@tauri-apps/api/core");
     const path = await invoke<string>("export_production_package", {
-      packageName: `The-Last-Horizon-${activeShot.id}`,
+      packageName: `${title || "production-one"}-${activeShot.id}`,
       manifest: JSON.stringify(packageManifest, null, 2),
       assetLedgerCsv: ledger,
       styleBible: JSON.stringify(styleBible, null, 2),
@@ -915,6 +901,7 @@ export default function App() {
       ),
       prompt: compiled.prompt,
       referencePaths: Object.values(assetOutputs),
+      exportMode: audit.ready ? "verified" : "draft",
     });
     setNotice(
       `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
@@ -947,12 +934,30 @@ export default function App() {
     setQueueState(recover(s.queue ?? emptyQueue()));
     setClipsState(s.clips ?? []);
     setAssetRefsState(s.assetRefs ?? {});
+    setSheetNotes(s.sheetNotes ?? {});
+    setSheetSettings(s.sheetSettings ?? {});
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
     setDirty(false);
   };
-  const newProject = () => {
+  /**
+   * New and Open replace the single autosave slot. If the open production has work that is not safely in a saved file, copy it to Documents\Production One\Backups first.
+   * Returns the backup path, null when none was needed, or false when the backup failed (the caller then stops and nothing is replaced).
+   */
+  const keepCopy = async (): Promise<string | null | false> => {
+    if (!isTauri || !needsBackup({ hasWork: hasWork({ script, analysis, queue }), filePath, dirty })) return null;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      return await invoke<string>("backup_project", { title, contents: JSON.stringify(buildProjectFile(title, graph, studioNow), null, 2) });
+    } catch (error) {
+      setNotice(`Could not keep a copy of "${title}", so nothing was replaced: ${String(error)}. Save it first, then try again.`);
+      return false;
+    }
+  };
+  const newProject = async () => {
+    const kept = await keepCopy();
+    if (kept === false) return;
     applyProject(
       buildProjectFile("Untitled production", { schemaVersion: 1, nodes: [], edges: [] }, {
         script: "", analysis: { scenes: [], assets: [] }, shots: [], jobs: [], storyboardsEnabled: false,
@@ -961,17 +966,19 @@ export default function App() {
       null,
     );
     setWorkspace("Story");
-    setNotice("New production created. Paste or import your script to begin.");
+    setNotice(`New production created. Paste or import your script to begin.${kept ? ` Your previous production was kept as a copy: ${kept}` : ""}`);
   };
-  const openText = (text: string, path: string | null) => {
+  const openText = async (text: string, path: string | null) => {
     const parsed = parseProjectFile(text);
     if (!parsed.ok) { setNotice(parsed.error); return; }
+    const kept = await keepCopy();
+    if (kept === false) return;
     applyProject(parsed.file, parsed.legacy ? null : path);
     setWorkspace("Projects");
     setNotice(
-      parsed.legacy
+      (parsed.legacy
         ? `Opened legacy Production Guy project "${parsed.file.title}". The original file is untouched; Save writes a new .pone.`
-        : `Opened ${path ?? parsed.file.title}`,
+        : `Opened ${path ?? parsed.file.title}`) + (kept ? ` Your previous production was kept as a copy: ${kept}` : ""),
     );
   };
   const openProject = async () => {
@@ -979,14 +986,14 @@ export default function App() {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const opened = await invoke<{ path: string; contents: string } | null>("open_project_dialog");
-      if (opened) { openText(opened.contents, opened.path); void refreshRecents(); }
+      if (opened) { await openText(opened.contents, opened.path); void refreshRecents(); }
     } catch (error) { setNotice(`Could not open the project: ${String(error)}`); }
   };
   const openPath = async (path: string) => {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const opened = await invoke<{ path: string; contents: string }>("open_project_path", { path });
-      openText(opened.contents, opened.path);
+      await openText(opened.contents, opened.path);
       void refreshRecents();
     } catch (error) { setNotice(`Could not open the project: ${String(error)}`); }
   };
@@ -1023,13 +1030,13 @@ export default function App() {
   guardRef.current = guard;
   openPathRef.current = (path) => void openPath(path);
   actionsRef.current = {
-    "file-new": () => guard(newProject),
+    "file-new": () => guard(() => void newProject()),
     "file-open": () => guard(() => void openProject()),
     "file-save": () => void saveProject(),
     "file-save-as": () => void saveProject(true),
     "file-import": () => { setWorkspace("Story"); void importScriptNative(); },
     "file-export": () => { setWorkspace("Deliver"); void buildProductionZip(); },
-    "file-close": () => guard(newProject),
+    "file-close": () => guard(() => void newProject()),
     "file-exit": () => guard(() => void quit()),
     "view-zoom-in": () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2))),
     "view-zoom-out": () => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2))),
@@ -1072,6 +1079,8 @@ export default function App() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((open) => !open); }
+      const jump = workspaceShortcut(event);
+      if (jump) { event.preventDefault(); setWorkspace(jump); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1094,6 +1103,7 @@ export default function App() {
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
     ...["Projects", "Story", "Design", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
+    { id: "theme", label: "Switch between dark and light theme", hint: "View", run: () => setNotice(toggleTheme() === "light" ? "Light theme on. It is new, so tell me about anything hard to read." : "Dark theme on.") },
     { id: "new", label: "New project", hint: "File", run: () => actionsRef.current["file-new"]?.() },
     { id: "open", label: "Open a project…", hint: "File", run: () => actionsRef.current["file-open"]?.() },
     { id: "save", label: "Save project", hint: "File", run: () => actionsRef.current["file-save"]?.() },
@@ -1137,7 +1147,7 @@ export default function App() {
   return (
     <div className={`po-shell${sidebarHidden ? " rails-hidden" : ""}`} style={{ zoom } as CSSProperties}>
       <input ref={scriptInput} type="file" hidden accept=".txt,.md,.fountain,.screenplay,.fdx,text/plain,text/markdown" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importScript(file); e.target.value = ""; }} />
-      <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) openText(await file.text(), null); e.target.value = ""; }} />
+      <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) await openText(await file.text(), null); e.target.value = ""; }} />
       <TopBar
         title={title}
         saveLabel={dirty ? "Unsaved changes" : filePath ? "Saved" : "Autosaved"}
@@ -1167,7 +1177,7 @@ export default function App() {
           <div className="modal-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}>
             <section className="sheet" role="dialog" aria-modal="true" aria-label="Project settings" onClick={(e) => e.stopPropagation()}>
               <div className="panel-heading">
-                <h3>Project settings</h3>
+                <h3 className="with-icon"><Settings2 size={20} aria-hidden="true" />Project settings</h3>
                 <button className="secondary" onClick={() => setSettingsOpen(false)}>Done</button>
               </div>
               <label className="settings-field">
@@ -1195,8 +1205,8 @@ export default function App() {
             >
               <div className="panel-heading">
                 <div>
-                  <span className="eyebrow">GLOBAL SERVICE</span>
-                  <h3>AI Provider Registry</h3>
+                  <Eyebrow icon={Globe}>GLOBAL SERVICE</Eyebrow>
+                  <h3 className="with-icon"><KeyRound size={20} aria-hidden="true" />AI Provider Registry</h3>
                 </div>
                 <button
                   className="secondary"
@@ -1254,7 +1264,7 @@ export default function App() {
                 </label>
                 <button
                   className="primary"
-                  disabled={apiKey.length < 8}
+                  disabled={apiKey.length < (credentialProvider === "voicekiller-user" ? 1 : 8)}
                   onClick={saveCredential}
                 >
                   Save securely
@@ -1270,542 +1280,16 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <section className="po-launch">
-            <div className="po-launch-head">
-              <div>
-                <span className="eyebrow">{filePath ?? "AUTOSAVED PRODUCTION"}</span>
-                <h2>{title}</h2>
-                <p>
-                  {analysis.scenes.length} scene{analysis.scenes.length === 1 ? "" : "s"} · {analysis.assets.filter((a) => a.type === "character").length} characters ·{" "}
-                  {analysis.assets.filter((a) => a.type === "prop").length} props · {analysis.assets.filter((a) => a.type === "set" || a.type === "environment").length} sets ·{" "}
-                  {goldenInput.approvedCount} of {goldenInput.assetCount} approved
-                </p>
-              </div>
-              <div className="hero-actions">
-                <button className="secondary" onClick={() => guard(newProject)}>New</button>
-                <button className="secondary" onClick={() => guard(() => void openProject())}>Open…</button>
-                <button className="secondary" onClick={() => void saveProject()}><Download size={15} /> Save</button>
-              </div>
-            </div>
-            <GoldenPath input={goldenInput} onGo={setWorkspace} onNext={goNext} />
-            {recents.length > 0 && (
-              <div className="recent-list">
-                <span className="eyebrow">RECENT PROJECTS</span>
-                <ul>
-                  {recents.slice(0, 5).map((path) => (
-                    <li key={path}>
-                      <button onClick={() => guard(() => void openPath(path))} title={path}>{path.split(/[\\/]/).pop()}</button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <p className="helper">Press Ctrl+K for the command palette: it can open any asset, import a script, save or export without leaving the keyboard.</p>
-          </section>
+          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
         )}
         {workspace === "Story" && (
-          <section className="two-column studio-page">
-            <div className="panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">SCRIPT INTELLIGENCE</span>
-                  <h3>Source material</h3>
-                </div>
-                <div className="button-row">
-                  <button className="secondary" onClick={() => void importScriptNative()}>Import script</button>
-                  <button className="primary" onClick={analyze}>
-                    Analyze script
-                  </button>
-                </div>
-              </div>
-              <textarea
-                ref={scriptArea}
-                className="script-editor"
-                value={script}
-                onChange={(e) => setScript(e.target.value)}
-                aria-label="Script source"
-              />
-              <p className="helper">
-                Scene headings, source dialogue, characters, sets, and used
-                props are extracted locally. Suggested dialogue is never mixed
-                with source dialogue.
-              </p>
-            </div>
-            <div className="panel">
-              <div className="panel-heading">
-                <div>
-                  <span className="eyebrow">EDITABLE INVENTORY</span>
-                  <h3>
-                    {analysis.scenes.length} scenes · {analysis.assets.length}{" "}
-                    assets
-                  </h3>
-                </div>
-              </div>
-              <ReadingPanel story={analysis.story} onJump={jumpToLine} desktop={isTauri} onStory={(story) => setAnalysis((a) => ({ ...a, story }))} notify={setNotice} />
-              <EditableInventory
-                analysis={analysis}
-                onChange={setAnalysis}
-                onAdd={addManualAsset}
-              />
-            </div>
-          </section>
+          <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} />
         )}
         {workspace === "Design" && (
-          <div className="po-design">
-            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} />
-            <div className="po-canvas design-workspace">
-            <ArtDirectionBar
-              style={styleBible}
-              onChange={setStyleBible}
-              sheetCount={plannedSheets.length}
-            />
-            <SheetStudio
-              assets={analysis.assets}
-              scenes={analysis.scenes}
-              story={analysis.story}
-              assetIndex={selectedAsset}
-              style={styleBible}
-              queue={queue}
-              setQueue={setQueue}
-              desktop={isTauri}
-              providersVersion={Number(providersOpen)}
-              onApproved={onSheetApproved}
-              notify={setNotice}
-              openProviders={() => setProvidersOpen(true)}
-              openLocal={() => setLocalOpen(true)}
-              controlRef={studioControl}
-              refs={assetRefs}
-              setRefs={setAssetRefs}
-            />
-            <MotionDemo
-              asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
-              queue={queue}
-              clips={clips}
-              setClips={setClips}
-              style={styleBible}
-              desktop={isTauri}
-              notify={setNotice}
-              openProviders={() => setProvidersOpen(true)}
-            />
-            <details className="po-classic">
-            <summary>Prompt Studio, model hub, imports and quality tools</summary>
-            <section className="three-column">
-              <div className="panel asset-browser">
-                <div className="panel-heading">
-                  <div>
-                    <span className="eyebrow">SHARED ASSET REGISTRY</span>
-                    <h3>Production assets</h3>
-                  </div>
-                </div>
-                {analysis.assets.map((asset, index) => (
-                  <button
-                    className={selectedAsset === index ? "selected" : ""}
-                    key={asset.id}
-                    onClick={() => setSelectedAsset(index)}
-                  >
-                    <span className={`kind ${asset.type}`}>
-                      {asset.type.slice(0, 2)}
-                    </span>
-                    <span>
-                      <b>{asset.name}</b>
-                      <small>
-                        {asset.id} ·{" "}
-                        {
-                          plannedSheets.filter(
-                            (sheet) => sheet.assetId === asset.id,
-                          ).length
-                        }{" "}
-                        sheets
-                      </small>
-                    </span>
-                    <i className={asset.status}>{asset.status}</i>
-                  </button>
-                ))}
-              </div>
-              <div className="panel design-preview">
-                {analysis.assets[selectedAsset] && activePromptPackage && (
-                  <>
-                    <div className="panel-heading">
-                      <div>
-                        <span className="eyebrow">
-                          {analysis.assets[selectedAsset].type.toUpperCase()} ·{" "}
-                          {analysis.assets[selectedAsset].id}
-                        </span>
-                        <h3>{analysis.assets[selectedAsset].name}</h3>
-                      </div>
-                      <span
-                        className={`status ${analysis.assets[selectedAsset].status}`}
-                      >
-                        {analysis.assets[selectedAsset].status}
-                      </span>
-                    </div>
-                    <RealImage
-                      path={assetOutputs[analysis.assets[selectedAsset].id]}
-                      label={`Approved reference for ${analysis.assets[selectedAsset].name}`}
-                      empty="No approved reference yet. Generate or add one above."
-                    />
-                    <div className="prompt-tabs">
-                      {(
-                        [
-                          "universal",
-                          "compact",
-                          "technical",
-                          "negative",
-                        ] as Array<keyof PromptPackage>
-                      ).map((mode) => (
-                        <button
-                          className={promptMode === mode ? "active" : ""}
-                          onClick={() => setPromptMode(mode)}
-                          key={mode}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="prompt-box">
-                      <span>{promptMode.toUpperCase()} PROMPT</span>
-                      <p>{activePromptPackage[promptMode]}</p>
-                    </div>
-                    <div className="prompt-actions">
-                      <button className="secondary" onClick={copyPrompt}>
-                        <Copy size={13} /> Copy
-                      </button>
-                      {(["txt", "md", "json", "csv"] as const).map((format) => (
-                        <button
-                          className="secondary"
-                          key={format}
-                          onClick={() => exportPrompt(format)}
-                        >
-                          {format.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="model-match">
-                      <span>RECOMMENDED MODEL</span>
-                      <b>{modelRecommendations[0]?.name}</b>
-                      <small>
-                        {modelRecommendations[0]?.score}/100 ·{" "}
-                        {modelRecommendations[0]?.reason}
-                      </small>
-                    </div>
-                    <div className="image-generation-gate">
-                      <button
-                        className="primary"
-                        disabled={
-                          !openAiConfigured ||
-                          generatingImage
-                        }
-                        onClick={generateImageDirect}
-                      >
-                        {generatingImage
-                          ? "Generating…"
-                          : "Generate verified image"}
-                      </button>
-                      <small>
-                        {openAiConfigured
-                          ? "OpenAI credential configured."
-                          : "Configure OpenAI in Global production tools."}{" "}
-                        Provider pricing is not assumed; confirm the ceiling
-                        against your account.
-                      </small>
-                    </div>
-                    <div className="button-row">
-                      <button
-                        className="primary"
-                        onClick={() => approveAsset(selectedAsset)}
-                      >
-                        Approve identity
-                      </button>
-                      <label className="secondary file-button">
-                        Import & QA
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void importAsset(file);
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                      <button className="secondary" onClick={queueAsset}>
-                        <Plus size={14} /> Queue prompt package
-                      </button>
-                      <button
-                        className="secondary"
-                        onClick={reviseSelectedAsset}
-                      >
-                        Revise & selectively regenerate
-                      </button>
-                    </div>
-                    {assetOutputs[analysis.assets[selectedAsset].id] && (
-                      <p className="helper">
-                        Verified labeled reference:{" "}
-                        {assetOutputs[analysis.assets[selectedAsset].id]}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-              <div className="panel">
-                <div className="panel-heading">
-                  <div>
-                    <span className="eyebrow">DURABLE QUEUE</span>
-                    <h3>Production jobs</h3>
-                  </div>
-                  <div className="queue-controls">
-                    <button
-                      title="Pause queue"
-                      onClick={() => setJobs(pauseQueue)}
-                    >
-                      <Pause size={12} />
-                    </button>
-                    <button
-                      title="Resume queue"
-                      onClick={() => setJobs(resumeQueue)}
-                    >
-                      <Play size={12} />
-                    </button>
-                  </div>
-                </div>
-                <div className="queue-list">
-                  {jobs.length === 0 ? (
-                    <p className="empty">No jobs queued.</p>
-                  ) : (
-                    jobs.map((job) => (
-                      <div key={job.id}>
-                        <span>
-                          <b>{job.id}</b>
-                          <small>
-                            {job.assetId}
-                            {job.outputPath ? ` · ${job.outputPath}` : ""}
-                            {job.error ? ` · ${job.error}` : ""}
-                          </small>
-                        </span>
-                        <i className={job.status}>{job.status}</i>
-                        {job.status !== "complete" &&
-                          job.status !== "cancelled" && (
-                            <button
-                              title={`Cancel ${job.id}`}
-                              onClick={() =>
-                                setJobs((current) => cancelJob(current, job.id))
-                              }
-                            >
-                              ×
-                            </button>
-                          )}
-                        {(job.status === "failed" ||
-                          job.status === "cancelled") && (
-                          <button
-                            title={`Retry ${job.id}`}
-                            onClick={() =>
-                              setJobs((current) => retryJob(current, job.id))
-                            }
-                          >
-                            Retry
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-                <button
-                  className="primary full"
-                  onClick={runQueue}
-                  disabled={!jobs.some((j) => j.status === "queued")}
-                >
-                  <Play size={14} /> Process next job
-                </button>
-                <button className="secondary full" onClick={exportAllPrompts}>
-                  <Download size={14} /> Export all prompts
-                </button>
-                <p className="helper">
-                  A job completes only after its output package is written.
-                  Queue state survives restart.
-                </p>
-              </div>
-            </section>
-            </details>
-            </div>
-            <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} />
-          </div>
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddCharacter={(name, gender) => void addCharacterFromImage(name, gender)} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
         {workspace === "Direct" && (
-          <div className="dr-wrap">
-            <DirectRoom
-              analysis={analysis}
-              shots={shots}
-              setShots={(u) => setShots(u)}
-              queue={queue}
-              setQueue={setQueue}
-              style={styleBible}
-              assetRefs={assetRefs}
-              desktop={isTauri}
-              providersVersion={Number(providersOpen)}
-              enabled={storyboardsEnabled}
-              setEnabled={setStoryboardsEnabled}
-              title={title}
-              notify={setNotice}
-              openProviders={() => setProvidersOpen(true)}
-              openLocal={() => setLocalOpen(true)}
-            />
-            {storyboardsEnabled && (
-              <details className="po-classic">
-                <summary>Classic shot editor and video prompt compiler</summary>
-          <section className="studio-page legacy-ui">
-            <div className="optional-banner">
-              <div>
-                <span className="eyebrow">OPTIONAL WORKFLOW</span>
-                <h2>Director’s Room</h2>
-                <p>Enable shot planning without rebuilding the project.</p>
-              </div>
-              <button
-                className={storyboardsEnabled ? "primary" : "secondary"}
-                onClick={() => setStoryboardsEnabled(!storyboardsEnabled)}
-              >
-                {storyboardsEnabled
-                  ? "Storyboarding enabled"
-                  : "Enable storyboarding"}
-              </button>
-            </div>
-            {storyboardsEnabled ? (
-              <div className="two-column">
-                <div className="panel shot-preview">
-                  <div className="real-empty" role="img" aria-label="No storyboard frame">
-                    Storyboard frames for {activeShot.id} are not generated yet. This preview shows only real frames.
-                  </div>
-                  <div className="timeline">
-                    <span
-                      style={{
-                        width: `${totalAnimaticDuration ? (animaticTime / totalAnimaticDuration) * 100 : 0}%`,
-                      }}
-                    />
-                    <button
-                      className="timeline-play"
-                      onClick={() => setAnimaticPlaying((value) => !value)}
-                    >
-                      {animaticPlaying ? (
-                        <Pause size={14} />
-                      ) : (
-                        <Play size={14} />
-                      )}
-                    </button>
-                    <b>
-                      {animaticTime.toFixed(1)} /{" "}
-                      {totalAnimaticDuration.toFixed(1)}s
-                    </b>
-                    <small>
-                      {activeShot.id} · {activeShot.action}
-                    </small>
-                  </div>
-                  <div className="editor-actions">
-                    <button
-                      className="secondary"
-                      onClick={() => moveShot(-1)}
-                      disabled={selectedShot === 0}
-                    >
-                      <ArrowLeft size={13} /> Earlier
-                    </button>
-                    <button
-                      className="secondary"
-                      onClick={() => moveShot(1)}
-                      disabled={selectedShot === shots.length - 1}
-                    >
-                      Later <ArrowRight size={13} />
-                    </button>
-                    <button className="secondary" onClick={duplicateShot}>
-                      <Copy size={13} /> Duplicate
-                    </button>
-                    <button className="secondary danger" onClick={deleteShot}>
-                      <Trash2 size={13} /> Delete
-                    </button>
-                  </div>
-                  <div className="shot-strip">
-                    {shots.map((shot, index) => (
-                      <button
-                        className={index === selectedShot ? "selected" : ""}
-                        key={shot.id}
-                        onClick={() => {
-                          setSelectedShot(index);
-                          setAnimaticPlaying(false);
-                          setAnimaticTime(
-                            shots
-                              .slice(0, index)
-                              .reduce(
-                                (total, item) => total + item.duration,
-                                0,
-                              ),
-                          );
-                        }}
-                      >
-                        <span>{shot.id}</span>
-                        <b>{shot.cameraFraming}</b>
-                        <small>
-                          {shot.duration.toFixed(1)}s · {shot.storyboardStatus}
-                        </small>
-                      </button>
-                    ))}
-                    <button onClick={addShot}>
-                      <Plus /> Add shot
-                    </button>
-                  </div>
-                </div>
-                <div className="panel shot-form">
-                  <span className="eyebrow">SHOT EDITOR · {activeShot.id}</span>
-                  <h3>Performance & camera direction</h3>
-                  {(
-                    [
-                      ["action", "Action"],
-                      ["dialogue", "Dialogue (source)"],
-                      ["emotionalObjective", "Emotional objective"],
-                      ["facialActing", "Facial acting"],
-                      ["bodyLanguage", "Body language"],
-                      ["microAnimation", "Micro-animation"],
-                      ["cameraFraming", "Camera framing"],
-                      ["cameraMovement", "Camera movement"],
-                      ["soundEffects", "Sound effects"],
-                      ["ambience", "Ambience"],
-                    ] as Array<[keyof ShotRecord, string]>
-                  ).map(([field, label]) => (
-                    <label key={field}>
-                      <span>{label}</span>
-                      <input
-                        value={String(activeShot[field])}
-                        onChange={(e) => patchShot(field, e.target.value)}
-                      />
-                    </label>
-                  ))}
-                  <label>
-                    <span>Duration</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="30"
-                      value={activeShot.duration}
-                      onChange={(e) =>
-                        patchShot("duration", Number(e.target.value))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="primary full"
-                    onClick={() => patchShot("storyboardStatus", "approved")}
-                  >
-                    Approve shot plan
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="empty-state">
-                <Clapperboard size={34} />
-                <h3>Storyboarding is off</h3>
-                <p>Asset production and delivery remain fully available.</p>
-              </div>
-            )}
-          </section>
-              </details>
-            )}
-          </div>
+          <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} />
         )}
         {workspace === "Deliver" && (
           <DeliveryCenter
@@ -1828,6 +1312,7 @@ export default function App() {
             openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }}
             openShot={(id) => { const i = shots.findIndex((x) => x.id === id); if (i >= 0) setSelectedShot(i); setWorkspace(storyboardsEnabled ? "Direct" : "Design"); }}
             notify={setNotice}
+            styleLocked={styleBible.locked}
           />
         )}
       </main>

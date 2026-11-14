@@ -26,4 +26,15 @@ describe('golden path', () => {
     expect(done.next).toBeNull()
     expect(done.progress).toBe(100)
   })
+  it('does not call an empty project ready to deliver', () => {
+    const empty = goldenPath({ ...base, ready: true })
+    expect(empty.steps.find((x) => x.id === 'deliver')?.state).not.toBe('done')
+    expect(empty.progress).toBeLessThan(100)
+  })
+  it('treats a project started from your own images as already created and analyzed', () => {
+    const { steps, next } = goldenPath({ ...base, assetCount: 1, outputsCount: 1, approvedCount: 1 })
+    expect(steps.find((s) => s.id === 'create')).toMatchObject({ state: 'done', detail: 'Started from your own images' })
+    expect(steps.find((s) => s.id === 'analyze')?.detail).toBe('1 asset added')
+    expect(next?.id).toBe('design')
+  })
 })

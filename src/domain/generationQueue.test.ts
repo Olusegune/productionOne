@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import type { ImageJob } from './generationQueue'
 import {
-  addSupplied, anchorFor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
+  addSupplied, anchorFor, shouldAnchor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
   reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
 } from './generationQueue'
 
@@ -90,7 +91,9 @@ describe('failures', () => {
     expect(s.jobs[0].attempts).toBe(3)
     s = retry(s, id)
     expect(s.jobs[0].status).toBe('queued')
-    expect(s.jobs[0].attempts).toBe(0)
+    expect(s.jobs[0].attempts).toBe(3)
+    s = markGenerating(s, id)
+    expect(attemptsSent(s)).toBe(4)
   })
 })
 
@@ -112,7 +115,8 @@ describe('control and recovery', () => {
     s = markValidating(s, s.jobs[1].id, { path: 'b.png', width: 1024, height: 1024 })
     const r = recover(s, 9)
     expect(r.paused).toBe(true)
-    expect(r.jobs[0].status).toBe('queued')
+    expect(r.jobs[0].status).toBe('failed')
+    expect(r.jobs[0].submissionState).toBe('ambiguous')
     expect(r.jobs[0].attempts).toBe(1)
     expect(r.jobs[1].status).toBe('needs-review')
     expect(r.jobs[1].outputPath).toBe('b.png')
@@ -167,5 +171,81 @@ describe('legacy saved caps', () => {
     const old = { ...emptyQueue(), perImageUsd: 0.5, totalCeilingUsd: 2 } as Partial<QueueState> as QueueState
     delete (old as Partial<QueueState>).guard
     expect(recover(old).guard).toBe(false)
+  })
+})
+
+describe('regenerate and cost preview', () => {
+  const base = { id: 'j', key: 'k', assetId: 'a', variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', prompt: '', aspect: '1:1', fullBody: true, provider: 'kie', model: 'm', references: [], useAnchor: false, outputName: 'o', revision: 1, attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: 0, updatedAt: 0 } as unknown as ImageJob
+  it('adds new views, skips ones with an image or in the queue', async () => {
+    const { wouldEnqueue } = await import('./generationQueue')
+    expect(wouldEnqueue(undefined)).toBe(true)
+    expect(wouldEnqueue({ ...base, status: 'queued' })).toBe(false)
+    expect(wouldEnqueue({ ...base, status: 'needs-review' })).toBe(false)
+    expect(wouldEnqueue({ ...base, status: 'completed' })).toBe(false)
+    expect(wouldEnqueue({ ...base, status: 'completed', rejected: true })).toBe(true)
+  })
+  it('force makes a new version of a finished view but never of one still in the queue', async () => {
+    const { wouldEnqueue } = await import('./generationQueue')
+    expect(wouldEnqueue({ ...base, status: 'needs-review' }, true)).toBe(true)
+    expect(wouldEnqueue({ ...base, status: 'completed' }, true)).toBe(true)
+    expect(wouldEnqueue({ ...base, status: 'generating' }, true)).toBe(false)
+  })
+  it('states cost from the person\'s own price and never invents one', async () => {
+    const { costPreview } = await import('./generationQueue')
+    expect(costPreview(5, 0.04).label).toBe('5 images · about $0.20 at your $0.04 each')
+    expect(costPreview(1, null).usd).toBeNull()
+    expect(costPreview(3, null).label).toContain('cost unknown')
+    expect(costPreview(0, 0.04).label).toBe('Nothing new to generate')
+  })
+})
+
+describe('Kie "no model page" refusals and stale failures', () => {
+  const message = 'Kie has no model page called google/nanobanana-2-1 (it may have been renamed). Press Refresh models.'
+  it('treats a no-model-page refusal as retryable, with a pause', () => {
+    const kind = classifyError(message)
+    expect(kind.retryable).toBe(true)
+    expect(kind.delayMs).toBeGreaterThan(0)
+  })
+  it('requeues it once, and fails it for good after the attempt limit', () => {
+    let q = enqueue(emptyQueue(), [req('front')], 1).state
+    const id = q.jobs[0].id
+    q = markGenerating(q, id, 2)
+    q = markFailed(q, id, message, 3)
+    expect(q.jobs[0].status).toBe('queued')
+    expect(q.jobs[0].notBefore).toBeGreaterThan(3)
+    const exhausted = { ...q, jobs: q.jobs.map((j) => ({ ...j, status: 'generating' as const, attempts: j.maxAttempts })) }
+    expect(markFailed(exhausted, id, message, 4).jobs[0].status).toBe('failed')
+  })
+  it('does not report a failed view as failed once a newer revision exists', () => {
+    let q = enqueue(emptyQueue(), [req('front'), req('side')], 1).state
+    q = { ...q, jobs: q.jobs.map((j) => ({ ...j, status: 'failed' as const, attempts: 1 })) }
+    expect(summarize(q).failed).toBe(2)
+    q = enqueue(q, [req('front')], 5).state
+    expect(summarize(q).failed).toBe(1)
+    expect(attemptsSent(q)).toBe(2)
+  })
+})
+
+describe('which views are made from the approved image', () => {
+  const approvedFront = (assetId: string, sheetType: string, viewKey: string, variant = 'Canonical'): QueueState => {
+    const q = addSupplied(emptyQueue(), { assetId, variant, sheetType, viewKey, label: viewKey, aspect: '3:4', fullBody: true, path: 'C:/a/front.png', width: 800, height: 1200 }, 1)
+    return q.state
+  }
+  const subject = (viewKey: string, sheetType = 'Turnaround', assetId = 'CHAR-001') => ({ assetId, variant: 'Canonical', sheetType, viewKey })
+  it('always anchors a non-primary view', () => expect(shouldAnchor(emptyQueue(), subject('side'))).toBe(true))
+  it('does not anchor the very first primary view, which makes the identity', () => expect(shouldAnchor(emptyQueue(), subject('front'))).toBe(false))
+  it('anchors the Wardrobe costume front to the approved Turnaround front, so it cannot invent another person', () => {
+    const q = approvedFront('CHAR-001', 'Turnaround', 'front')
+    expect(shouldAnchor(q, subject('costume-front', 'Wardrobe'))).toBe(true)
+  })
+  it('does not anchor a view to itself when it is regenerated', () => {
+    const q = approvedFront('CHAR-001', 'Turnaround', 'front')
+    expect(shouldAnchor(q, subject('front', 'Turnaround'))).toBe(false)
+  })
+  it('never borrows the image of another character or another look', () => {
+    const q = approvedFront('CHAR-002', 'Turnaround', 'front')
+    expect(shouldAnchor(q, subject('costume-front', 'Wardrobe', 'CHAR-001'))).toBe(false)
+    const other = approvedFront('CHAR-001', 'Turnaround', 'front', 'Dust-worn jacket')
+    expect(shouldAnchor(other, subject('costume-front', 'Wardrobe'))).toBe(false)
   })
 })

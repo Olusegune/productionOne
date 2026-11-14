@@ -1,5 +1,7 @@
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, Clapperboard, FileText, PackageCheck, Palette, ScanSearch, Sparkles, type LucideIcon } from "lucide-react";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
+
+const stepIcons: Record<string, LucideIcon> = { create: FileText, analyze: ScanSearch, design: Palette, generate: Sparkles, review: BadgeCheck, direct: Clapperboard, deliver: PackageCheck };
 
 export function GoldenPath({
   input,
@@ -32,11 +34,11 @@ export function GoldenPath({
         )}
       </div>
       <ol className="golden-steps" style={{ "--progress": `${progress}%` } as React.CSSProperties}>
-        {steps.map((step, index) => (
+        {steps.map((step) => (
           <li key={step.id} className={step.state} aria-current={step.state === "active" ? "step" : undefined}>
             <button onClick={() => onGo(step.workspace)} aria-label={`${step.label}: ${step.detail}`}>
               <span className="golden-dot">
-                {step.state === "done" ? <Check size={14} /> : index + 1}
+                {step.state === "done" ? <Check size={15} aria-hidden="true" /> : (() => { const Icon = stepIcons[step.id] ?? Sparkles; return <Icon size={15} aria-hidden="true" />; })()}
               </span>
               <b>{step.label}</b>
               <small>{step.detail}</small>
