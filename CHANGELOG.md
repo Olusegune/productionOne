@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.28.9 (2026-11-14): full systems check, stress tests, and the fixes they found
+Run on the packaged app with your keys: every sheet of every asset type, sets, props, wardrobe and detail sheets (23 images), pause and resume, a hard kill in the middle of generation, 300 rapid workspace switches, local AI, voices, providers.
+Found and fixed:
+- The queue bar said "11 queued, 0 running" while views waited for you to approve a front view (they match it), which looked stuck. The bar now says how many are waiting and offers "Open sheets". (The cards already explained it.)
+- A new character's Windows voice kept the previous character's voice (a female character showed David). Each character now gets its own suggestion from its stated gender and age.
+- Long captions on exported sheets were cut off ("FABRIC AND CONSTRUCTI") or ran into the next caption. Captions now shrink to fit their cell and are cut with "..." only as a last resort. Checked on a real 32-view export.
+- Locations whose sheets hold one view each could not be exported. New "Export every sheet as one image" puts the pictures of all of an asset's sheets into one labelled image (up to 40).
+Also new: DRAFT casting lines for Nigerian Pidgin, Yoruba, Igbo and Hausa in the casting-line picker. They were written here, not by a native speaker, and are labelled so; they are not proven to cover every sound.
+Checked and fine: crash recovery (the two images that were generating become "failed, may already be billed", the 16 waiting jobs are kept and the queue starts paused), pause drains running work and holds the rest, 300 workspace switches with no errors, personality and Never field in the app, Add from image with a gender through the real file dialog, local text and vision AI (Ollama).
+Tests: 268 JS (including a 3,000-job queue, a 3,000-job project round-trip, a 5,000-voice list, a seeded fuzz of 4,000 random queue operations, and a check of every view of every asset type), 70 Rust.
+Not tested: fal.ai and OpenRouter (no keys saved), LM Studio and ComfyUI (not running), the installers on a clean machine (only checked as packages), audio quality (unheard).
+
 ## 0.28.8 (2026-11-14): personality, more pangram languages, costume-front fix checked live
 - Checked live (Kie Nano Banana 2.1, one image): CASSIUS's Wardrobe "Costume front", which earlier showed a different man, now comes out as CASSIUS with his face, plume, armor and sword, on the flat grey backdrop. Before and after are in a Desktop folder.
 - New: "Personality" on a character's identity fields (timid, cool, bratty, aggressive, warm, or not set). It shapes the delivery tags of the emotional-range casting line (a cool character's shout reads as "cold disbelief, still controlled", a bratty one's as "loud, playfully annoyed"), and adds one line about carriage and expression to that character's motion prompts. It never changes how the character looks.

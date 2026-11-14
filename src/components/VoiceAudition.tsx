@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { Copy, Volume2 } from 'lucide-react'
 import type { ExtractedAsset } from '../domain/productionStudio'
@@ -47,7 +47,9 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
     return () => { live = false }
   }, [desktop, providerId, providersVersion])
   const lines = useMemo(() => (asset ? sampleLines(story, asset.name) : []), [story, asset])
-  useEffect(() => { if (asset && !voice) setVoice(suggestVoice(voices, asset)?.name ?? '') }, [voices, asset, voice])
+  // Each character gets its own suggested voice from its stated gender and age; one character's pick is never carried to the next.
+  const suggestedFor = useRef('')
+  useEffect(() => { if (asset && voices.length && suggestedFor.current !== asset.id) { suggestedFor.current = asset.id; setVoice(suggestVoice(voices, asset)?.name ?? '') } }, [voices, asset])
   if (!asset || asset.type === 'set' || asset.type === 'environment' || asset.type === 'costume') return null
   const isCharacter = asset.type === 'character'
   const line = custom.trim() || lines[picked]?.text || ''

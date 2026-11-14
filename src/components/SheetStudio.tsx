@@ -269,6 +269,19 @@ export function SheetStudio(props: {
       notify(`Saved one image of this sheet: ${path}`);
     } catch (error) { notify(String(error)); }
   };
+  /** Every sheet of this asset (this look) with at least one picture, newest picture per view. Locations whose sheets hold a single view each have nothing to combine until they are put together like this. */
+  const everyItem = asset ? sheetTypes.flatMap((type) => viewsFor(asset.type, type, intensity, usePlan ? plan : undefined).flatMap((v) => {
+    const mine = queue.jobs.filter((j) => j.assetId === asset.id && j.variant === activeVariant && j.sheetType === type && j.viewKey === v.key && j.outputPath);
+    const job = mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
+    return job ? [{ job, label: `${type}: ${v.label}` }] : [];
+  })) : [];
+  const exportEverything = async () => {
+    if (!asset || everyItem.length < 1) return;
+    try {
+      const path = await invoke<string>("export_contact_sheet", { title: `${asset.name} all sheets`, cells: everyItem.slice(0, 40).map((it) => ({ path: it.job.outputPath, label: it.label })), columns: everyItem.length <= 8 ? 4 : 5 });
+      notify(`Saved one image of every sheet: ${path}`);
+    } catch (error) { notify(String(error)); }
+  };
   const toggleCompare = (key: string) => setCompare((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key].slice(-2)));
   const compareItems = compare.map((k) => ({ key: k, view: views.find((v) => v.key === k), job: jobFor(k) })).filter((x): x is { key: string; view: (typeof views)[number]; job: ImageJob } => !!x.view && !!x.job?.outputPath);
 
@@ -349,6 +362,9 @@ export function SheetStudio(props: {
           )}
           {desktop && viewItems.length >= 2 && (
             <div className="ss-export"><button className="secondary" onClick={() => void exportSheet()} title="Combine the views on this sheet into one labelled image"><LayoutGrid size={14} aria-hidden="true" /> Export sheet as one image</button><small>{viewItems.length} of {views.length} views have a picture</small></div>
+          )}
+          {desktop && everyItem.length >= 2 && everyItem.length > viewItems.length && (
+            <div className="ss-export"><button className="secondary" onClick={() => void exportEverything()} title="Put the pictures from every sheet of this asset into one labelled image"><LayoutGrid size={14} aria-hidden="true" /> Export every sheet as one image</button><small>{everyItem.length} pictures across {sheetTypes.length} sheets{everyItem.length > 40 ? " (the first 40 are used)" : ""}</small></div>
           )}
           <div className={`view-grid ${size}`}>
             {views.map((view) => {

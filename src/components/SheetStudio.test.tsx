@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { useImageQueue } from '../data/useImageQueue'
-import { emptyQueue, type QueueState } from '../domain/generationQueue'
+import { addSupplied, emptyQueue, type QueueState } from '../domain/generationQueue'
 import { analyzeScript } from '../domain/productionStudio'
 import { defaultStyleBible } from '../domain/visualDevelopment'
 import { sampleStory } from '../engine/sampleStory'
@@ -105,6 +105,22 @@ describe('SheetStudio generate flow', () => {
     expect((call.args.cells as unknown[]).length).toBe(2)
     expect(call.args.columns).toBe(2)
     expect(String(call.args.title)).toMatch(/AMINA Turnaround/)
+  })
+  it('puts the pictures of every sheet of the asset into one image, when other sheets have some', async () => {
+    calls.length = 0
+    const jonah = analysis.assets.find((a) => a.name === 'AMINA')!
+    const supply = (q: QueueState, sheetType: string, viewKey: string, label: string) => addSupplied(q, { assetId: jonah.id, variant: 'Canonical', sheetType, viewKey, label, aspect: '3:4', fullBody: true, path: `C:/assets/${viewKey}.png`, width: 800, height: 1200 }, Date.now() + Math.random()).state
+    let initial = supply(emptyQueue(), 'Turnaround', 'front', 'Front')
+    initial = supply(initial, 'Identity', 'full-front', 'Full body front')
+    render(<Harness initial={initial} />)
+    // the Turnaround sheet has one picture, so there is no sheet to export yet, but the whole asset has two
+    expect(screen.queryByRole('button', { name: /export sheet as one image/i })).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: /export every sheet as one image/i }))
+    await waitFor(() => expect(calls.some((c) => c.name === 'export_contact_sheet')).toBe(true))
+    const call = calls.find((c) => c.name === 'export_contact_sheet')!
+    const cells = call.args.cells as Array<{ path: string; label: string }>
+    expect(cells.map((c) => c.label).sort()).toEqual(['Identity: Full body front', 'Turnaround: Front'])
+    expect(String(call.args.title)).toMatch(/AMINA all sheets/)
   })
   it('attaches reference photos to the asset and sends them with generation requests', async () => {
     calls.length = 0

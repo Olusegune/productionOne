@@ -3,7 +3,7 @@ import { ArrowRight, BookText, Clapperboard, FolderOpen, Command as CommandIcon,
 import { BrandMark } from "./BrandMark";
 import { newlyDone } from "../domain/shortcuts";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
-import { spendGate, summarize, type QueueState } from "../domain/generationQueue";
+import { spendGate, summarize, waitingForAnchor, type QueueState } from "../domain/generationQueue";
 
 const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Direct: Clapperboard, Deliver: PackageCheck } as const;
 export const workspaceNames = ["Projects", "Story", "Design", "Direct", "Deliver"] as const;
@@ -149,6 +149,8 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
   const busy = s.generating + s.validating;
   const waiting = s.queued + s.pending;
   const capBlocked = queue.guard && waiting > 0 && !spendGate(queue).ok;
+  // Views that match a front view wait until a person approves it. Say so, or a quiet queue looks stuck.
+  const anchorWaiting = queue.jobs.filter((j) => j.status === "queued" && waitingForAnchor(queue, j)).length;
   const line = s.total === 0 ? "Queue is empty" : `${s.queued} queued · ${busy} running · ${s.needsReview} to review · ${s.completed} done${s.failed ? ` · ${s.failed} failed` : ""}${queue.paused ? " · paused" : ""}`;
   return (
     <div className={`po-dock${open ? " open" : ""}`}>
@@ -158,6 +160,7 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
           <span>{line}</span>
           {open ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
+        {!capBlocked && anchorWaiting > 0 && busy === 0 && <span className="po-cap-note" role="status">{anchorWaiting} waiting for you to approve a front view, so they can match it. <button onClick={onOpen}>Open sheets</button></span>}
         {capBlocked && <span className="po-cap-note" role="alert">Waiting: your spending cap is reached. <button onClick={() => setQueue((q) => ({ ...q, guard: false }))}>Turn the cap off</button></span>}
         <CostChip queue={queue} setQueue={setQueue} />
       </div>

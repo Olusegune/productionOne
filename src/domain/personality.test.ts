@@ -48,3 +48,24 @@ describe('casting lines shaped by personality and language', () => {
     for (const k of ['pangram-es', 'pangram-fr', 'pangram-de'] as const) expect(letters(castingLine(k, false)).size, k).toBe(26)
   })
 })
+
+describe('draft casting lines for Nigerian languages', () => {
+  const drafts = ['draft-pcm', 'draft-yo', 'draft-ig', 'draft-ha'] as const
+  it('exist for Pidgin, Yoruba, Igbo and Hausa, are plain text, and carry closed-lip sounds', () => {
+    for (const k of drafts) {
+      const line = castingLine(k, true)
+      expect(line.length, k).toBeGreaterThan(60)
+      expect(line, k).not.toMatch(/[\[\]]/)
+      expect(line.toLowerCase(), k).toMatch(/[bmp]/)
+    }
+  })
+  it('keep the special letters and tone marks of their languages', () => {
+    expect(castingLine('draft-yo', false)).toMatch(/ọ|ẹ|ṣ/)
+    expect(castingLine('draft-ig', false)).toMatch(/ị|ụ|ọ/)
+    expect(castingLine('draft-ha', false)).toMatch(/ƙ/)
+  })
+  it('are labelled as drafts that a native speaker must check, never as verified pangrams', async () => {
+    const { castingLineChoices } = await import('./voiceAudition')
+    for (const k of drafts) expect(castingLineChoices.find((c) => c.value === k)!.label).toMatch(/^DRAFT .*native speaker must check/)
+  })
+})

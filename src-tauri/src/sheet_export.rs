@@ -11,13 +11,25 @@ const CELL_W: u32 = 360;
 const CAPTION_H: u32 = 34;
 const TITLE_H: u32 = 64;
 const GAP: u32 = 10;
-const MAX_CELLS: usize = 24;
+const MAX_CELLS: usize = 40;
 const BACKGROUND: Rgba<u8> = Rgba([17, 20, 24, 255]);
 
 /// Height of the picture area for a cell, from the first image's shape: portrait stays tall, landscape stays short, nothing extreme.
 pub fn picture_height(width: u32, height: u32) -> u32 {
     if width == 0 { return CELL_W; }
     ((height as u64 * CELL_W as u64 / width as u64) as u32).clamp(220, 560)
+}
+
+/// A caption in the app's 8-pixel font at the biggest scale (2, else 1) that fits the cell; a caption too long even at scale 1 is cut with "...".
+pub fn caption_fit(text: &str) -> (String, u32) {
+    let upper = text.to_uppercase();
+    // Each character advances 9 pixels at scale 1 (8 for the glyph, 1 of spacing), as the label drawing does.
+    let max_chars = |scale: u32| ((CELL_W - 8) / (9 * scale)) as usize;
+    let n = upper.chars().count();
+    if n <= max_chars(2) { return (upper, 2); }
+    if n <= max_chars(1) { return (upper, 1); }
+    let cut: String = upper.chars().take(max_chars(1).saturating_sub(3)).collect();
+    (format!("{}...", cut.trim_end()), 1)
 }
 
 /// (columns, rows, total width, total height) for `count` cells.
@@ -31,7 +43,7 @@ pub fn grid(count: usize, columns: u32, picture_h: u32) -> (u32, u32, u32, u32) 
 #[tauri::command]
 pub fn export_contact_sheet(app: tauri::AppHandle, title: String, cells: Vec<SheetCell>, columns: u32) -> Result<String, String> {
     if cells.is_empty() { return Err("There are no images on this sheet yet.".into()); }
-    if cells.len() > MAX_CELLS { return Err(format!("A sheet image holds up to {MAX_CELLS} views.")); }
+    if cells.len() > MAX_CELLS { return Err(format!("An image holds up to {MAX_CELLS} views.")); }
     // Only images this app saved are read, so a path from the page cannot pull in any other file.
     let mut images = Vec::new();
     for cell in &cells {
@@ -49,7 +61,8 @@ pub fn export_contact_sheet(app: tauri::AppHandle, title: String, cells: Vec<She
         let y = TITLE_H + GAP + row * (picture_h + CAPTION_H + GAP);
         let fitted = img.resize(CELL_W, picture_h, FilterType::Lanczos3).to_rgba8();
         image::imageops::overlay(&mut sheet, &fitted, (x + (CELL_W - fitted.width()) / 2) as i64, (y + (picture_h - fitted.height()) / 2) as i64);
-        crate::draw_label_text(&mut sheet, &cell.label.to_uppercase(), x + 4, y + picture_h + 10, 2);
+        let (caption, scale) = caption_fit(&cell.label);
+        crate::draw_label_text(&mut sheet, &caption, x + 4, y + picture_h + if scale == 2 { 10 } else { 14 }, scale);
     }
     let dir = app.path().document_dir().map_err(|e| e.to_string())?.join("Production One").join("Sheets");
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -71,6 +84,22 @@ mod tests {
         assert_eq!(picture_height(1024, 1024), 360);
         assert_eq!(picture_height(2000, 500), 220);
         assert_eq!(picture_height(0, 100), CELL_W);
+    }
+
+    #[test]
+    fn captions_shrink_to_fit_and_are_cut_only_as_a_last_resort() {
+        assert_eq!(caption_fit("Front"), ("FRONT".to_string(), 2));
+        assert_eq!(caption_fit("Fabric and construction").1, 1, "23 characters do not fit at scale 2");
+        assert_eq!(caption_fit("Fabric and construction").0, "FABRIC AND CONSTRUCTION");
+        assert_eq!(caption_fit("Poses: neutral A-pose").1, 1, "21 characters at scale 2 would run into the next cell");
+        for text in ["Poses: neutral A-pose", "Wardrobe: costume side", "Turnaround: three-quarter front", "Front", "Establishing: reverse view"] {
+            let (shown, scale) = caption_fit(text);
+            assert!(shown.chars().count() as u32 * 9 * scale <= CELL_W - 8, "{shown} must fit its cell");
+        }
+        let long = "Turnaround: three-quarter rear view of the whole figure";
+        let (cut, scale) = caption_fit(long);
+        assert_eq!(scale, 1);
+        assert!(cut.ends_with("...") && cut.chars().count() <= 39, "{cut}");
     }
 
     #[test]

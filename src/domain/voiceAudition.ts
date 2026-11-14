@@ -36,19 +36,32 @@ export function soundBrief(asset: ExtractedAsset): string {
   return [`Sound brief for ${asset.name}.`, `Sounds to supply: ${asset.soundDirection?.trim() || defaults}.`, 'Deliver each as a separate clean take with room tone, no music.'].join('\n')
 }
 
-export type CastingLineKind = 'pangram' | 'pangram-es' | 'pangram-fr' | 'pangram-de' | 'range'
+export type CastingLineKind = 'pangram' | 'pangram-es' | 'pangram-fr' | 'pangram-de' | 'draft-pcm' | 'draft-yo' | 'draft-ig' | 'draft-ha' | 'range'
 export const castingLineChoices: ReadonlyArray<{ value: CastingLineKind; label: string }> = [
   { value: 'pangram', label: 'Pangram, English: uses every English sound' },
   { value: 'pangram-es', label: 'Pangram, Spanish: every letter (have a native speaker check)' },
   { value: 'pangram-fr', label: 'Pangram, French: every letter (have a native speaker check)' },
   { value: 'pangram-de', label: 'Pangram, German: every letter (have a native speaker check)' },
+  { value: 'draft-pcm', label: 'DRAFT casting line, Nigerian Pidgin (a native speaker must check it)' },
+  { value: 'draft-yo', label: 'DRAFT casting line, Yoruba (a native speaker must check it)' },
+  { value: 'draft-ig', label: 'DRAFT casting line, Igbo (a native speaker must check it)' },
+  { value: 'draft-ha', label: 'DRAFT casting line, Hausa (a native speaker must check it)' },
   { value: 'range', label: 'Emotional range: curious, playful, whispered, shouted' },
 ]
 
-const letterPangrams: Record<'pangram-es' | 'pangram-fr' | 'pangram-de', string> = {
+/**
+ * The first three are public letter pangrams. The four DRAFT lines are everyday sentences written here with a market greeting, a question and a request, so they carry plenty of closed-lip
+ * sounds (b, m, p) and the tones and special letters of each language. They are NOT proven to cover every sound of the language and were not written or checked by a native speaker, so they
+ * are offered only as a starting point: have one read them before the voice is chosen on them.
+ */
+const fixedLines: Record<'pangram-es' | 'pangram-fr' | 'pangram-de' | 'draft-pcm' | 'draft-yo' | 'draft-ig' | 'draft-ha', string> = {
   'pangram-es': 'El veloz murciélago hindú comía feliz cardillo y kiwi. La cigüeña tocaba el saxofón detrás del palenque de paja.',
   'pangram-fr': 'Portez ce vieux whisky au juge blond qui fume.',
   'pangram-de': 'Zwölf Boxkämpfer jagen Viktor quer über den großen Sylter Deich.',
+  'draft-pcm': 'Abeg, wetin dey happen for market today? Make we go quick before di rain start, because I no wan wet. Oga, bring di bag come, make I pay you well well.',
+  'draft-yo': 'Ẹ kú àárọ̀, báwo ni ẹ ṣe wà? Mo fẹ́ ra ẹja, ẹyin àti ọbẹ̀ ní ọjà lónìí. Jọ̀wọ́, ẹ bá mi gbé àpò yìí wá, kí n sanwó fún yín dáadáa.',
+  'draft-ig': 'Ụtụtụ ọma, kedu ka ị mere? Achọrọ m ịzụta azụ̀, akwa na ose n\'ahịa taa. Biko, bubata akpa a, ka m kwụọ gị ụgwọ nke ọma.',
+  'draft-ha': 'Ina kwana, yaya aiki? Ina so in sayi kifi, ƙwai da barkono a kasuwa yau. Don Allah, kawo mini wannan jaka, in biya ka sosai.',
 }
 
 /**
@@ -59,7 +72,7 @@ const letterPangrams: Record<'pangram-es' | 'pangram-fr' | 'pangram-de', string>
  */
 export function castingLine(kind: CastingLineKind, tagged: boolean, personality?: string): string {
   if (kind === 'pangram') return 'The beige hue on the waters of the loch impressed all, including the French queen, before she heard that symphony again, just as young Arthur wanted.'
-  if (kind !== 'range') return letterPangrams[kind]
+  if (kind !== 'range') return fixedLines[kind]
   const t = rangeTags(personality)
   const clauses: Array<[string, string]> = [
     [t.curious, 'Is that really what you think?'],
