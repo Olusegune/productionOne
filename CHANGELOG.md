@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- Recent projects: each entry has a close button and the list has "Clear list" (the project file is never deleted). Entries show the file name only; Windows paths showed in full before because the name was split on a malformed pattern.
+- Voice design: under a character's voice engine, "Fill from the script" builds a voice description from the character's confirmed fields (age, gender, role, personality, sound direction) and their own dialogue, and shows what it was built from; nothing is guessed. "Ask the AI helper" has the local model (Ollama or LM Studio) write the description from a rough idea, and only confirmed fields and the character's lines are sent to it. Works with ElevenLabs Voice Design and with Qwen TTS (description as the voice). Chatterbox clones from a recording, so it shows a note instead.
+- Not done: Suno music (only reachable through the Kie.ai reseller; awaiting a go-ahead); the ElevenLabs design call has not been run live yet.
+
 ## 0.29.2 (2026-11-14): level-matched, trimmed audition playback
 From the audio check (docs/AUDIO_CHECK_2026-11-14.md): clips differed by up to 8 LU in loudness, so voice casting favoured the loudest, and the Windows voices ended with about 0.8 s of dead air.
 - Audition clips (voice auditions and cloud voice previews) now play level-matched to -20 LUFS and with silence trimmed at the two ends only (never inside a line), with a little air kept at each end. Loudness is measured the broadcast way (ITU-R BS.1770 K-weighting with EBU R128 gating) and matches ffmpeg's measurement; boost is capped at 12 dB and never pushes a peak past -1 dBFS. The clip line says what was done ("+5.3 dB to -20 LUFS, 0.8 s of silence trimmed").

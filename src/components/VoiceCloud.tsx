@@ -6,6 +6,9 @@ import { invoke } from '@tauri-apps/api/core'
 import { KeyRound, Sparkles, Volume2 } from 'lucide-react'
 import type { CloudModel } from '../domain/elevenModels'
 import type { VoiceProvider } from '../domain/voiceDirection'
+import type { ExtractedAsset } from '../domain/productionStudio'
+import type { ParsedStory } from '../engine/story'
+import { VoiceBriefTools } from './VoiceBriefTools'
 
 interface CloudVoice { id: string; name: string; detail: string }
 interface Preview { id: string; path: string }
@@ -31,8 +34,11 @@ export function VoiceCloud(props: {
   /** Props and vehicles: only the sound-effect maker, no voices. */
   soundOnly?: boolean
   soundHint?: string
+  /** The character being cast, so the description can be built from the script or written by the AI helper. */
+  asset?: ExtractedAsset
+  story?: ParsedStory
 }) {
-  const { provider, desktop, assetId, voice, setVoice, model, setModel, models, latestModel, providersVersion, openProviders, onClip, notify, setError, soundOnly, soundHint } = props
+  const { provider, desktop, assetId, voice, setVoice, model, setModel, models, latestModel, providersVersion, openProviders, onClip, notify, setError, soundOnly, soundHint, asset, story } = props
   const [saved, setSaved] = useState<Record<string, boolean>>({})
   const [voices, setVoices] = useState<CloudVoice[]>(() => cachedVoices<CloudVoice>(provider.id))
   const [busy, setBusy] = useState('')
@@ -90,6 +96,7 @@ export function VoiceCloud(props: {
     </div>}
     {provider.designsVoices && !soundOnly && <details>
       <summary><Sparkles size={14} /> Design a new voice from a description</summary>
+      {asset && <VoiceBriefTools asset={asset} story={story} desktop={desktop} notify={notify} setError={setError} onBrief={(b) => { if (b.description) setDescription(b.description); if (b.sample && !sample.trim()) setSample(b.sample) }} />}
       <label className="settings-field"><span>Describe the voice (20 to 1000 characters)</span><textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. woman in her forties, Lagos accent, low and weathered, dry humour, unhurried" /></label>
       <label className="settings-field"><span>Sample text it will read ({sample.trim().length}/100 to 1000 characters)</span><textarea rows={3} value={sample} onChange={(e) => setSample(e.target.value)} placeholder="Paste a few lines of her dialogue so you can judge the voice." /></label>
       <button className="secondary" disabled={!desktop || !connected || busy === 'design'} onClick={() => void design()}>{busy === 'design' ? 'Designing…' : 'Make previews'}</button>
