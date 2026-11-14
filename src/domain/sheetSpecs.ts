@@ -15,6 +15,35 @@ export interface ViewSpec {
 }
 
 /** Common delivery and reference-sheet canvases, including cinema, broadcast, print and social formats. */
+export type Backdrop = 'gray' | 'white' | 'match'
+export const backdropChoices: ReadonlyArray<{ value: Backdrop; label: string }> = [
+  { value: 'gray', label: 'Flat grey (default)' },
+  { value: 'white', label: 'Flat white' },
+  { value: 'match', label: 'Match the reference image' },
+]
+
+/** One backdrop rule for every view of a sheet, so the views agree with each other. A flat field, not a room: nothing to stand on, no cast shadow, nothing spilling onto it. */
+export function backdropLine(backdrop: Backdrop = 'gray', anchored = false): string {
+  const tail = 'no gradient, no vignette, no floor, no wall, no horizon, and no cast or contact shadow, glow or colour spill anywhere on it. Even, shadowless lighting on the subject, no text, no labels, no borders, no watermark.'
+  if (backdrop === 'white') return `The background is one flat, uniform pure-white field from corner to corner: ${tail}`
+  if (backdrop === 'match' && anchored) return `The background is the same single flat, plain tone as the attached reference image, uniform from corner to corner: ${tail}`
+  return `The background is one flat, uniform neutral mid-grey field (about 18% grey) from corner to corner: ${tail}`
+}
+
+/** Shapes every image provider here accepts. The per-sheet shape control offers only these. */
+export const shapeChoices = [
+  { value: '3:4', label: 'Portrait 3:4' },
+  { value: '9:16', label: 'Tall 9:16' },
+  { value: '1:1', label: 'Square 1:1' },
+  { value: '4:3', label: 'Landscape 4:3' },
+  { value: '16:9', label: 'Wide 16:9' },
+] as const
+
+/** The shape a view is made in: the person's choice for the sheet when there is one, otherwise the view's own default. */
+export function shapeFor(view: { aspect: string }, override?: string): string {
+  return override && shapeChoices.some((s) => s.value === override) ? override : view.aspect
+}
+
 export const aspectRatios = ['21:9', '2.39:1', '2:1', '16:9', '3:2', '4:3', '5:4', '1:1', '4:5', '3:4', '2:3', '9:16'] as const
 
 export type Intensity = 'subtle' | 'moderate' | 'exaggerated'
@@ -36,11 +65,11 @@ const characterViews: Partial<Record<SheetType, ViewSpec[]>> = {
     full('full-front', 'Full body front', 'Full body standing front view, relaxed arms slightly away from the body, whole figure from head to feet inside the frame.'),
   ],
   Turnaround: [
-    full('front', 'Front', 'Full body standing FRONT view, arms slightly away from the body, feet apart, head to feet fully inside the frame.'),
+    full('front', 'Front', 'Full body standing FRONT view, dead-on to the camera: shoulders and hips square and level, weight even on both feet, no twist and no hip tilt, arms slightly away from the body, feet apart, head to feet fully inside the frame.'),
     full('three-quarter-front', 'Three-quarter front', 'Full body standing THREE-QUARTER FRONT view (about 45 degrees), same pose and scale as the front view.'),
-    full('side', 'Side', 'Full body standing SIDE profile view (90 degrees), same pose and scale as the front view.'),
+    full('side', 'Side', 'Full body standing SIDE profile view, a true 90 degrees, the whole body in clean profile with no turn of the shoulders toward the camera, same pose and scale as the front view.'),
     full('three-quarter-rear', 'Three-quarter rear', 'Full body standing THREE-QUARTER REAR view (about 135 degrees), same pose and scale as the front view.'),
-    full('rear', 'Rear', 'Full body standing REAR view, same pose and scale as the front view.'),
+    full('rear', 'Rear', 'Full body standing REAR view, dead-on from directly behind: shoulders and hips square and level, spine centred, no glance back over the shoulder, same pose and scale as the front view.'),
   ],
   Poses: [
     full('a-pose', 'Neutral A-pose', 'Full body neutral A-pose for rigging and proportion review, fingers separated, feet visible.'),
@@ -113,6 +142,8 @@ export interface PromptInput {
   notes?: string
   /** True when the approved front view is sent along as a reference image. */
   anchored?: boolean
+  /** The flat background for the whole sheet. Defaults to flat grey. */
+  backdrop?: Backdrop
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -122,7 +153,7 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
   return facts ? `Confirmed character identity: ${facts}.` : ''
 }
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
@@ -131,9 +162,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     anchored ? anchoredPromptLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,
-    anchored
-      ? 'Plain seamless studio background in the same neutral tone as the reference image, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.'
-      : 'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',
+    backdropLine(backdrop, anchored),
     asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
     'Exactly ONE single image of ONE subject in ONE view. Do not make a grid, contact sheet, collage, split-screen, triptych or several views side by side; no repeated copies of the subject.',
     view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',

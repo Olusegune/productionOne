@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ImageJob } from './generationQueue'
 import {
-  addSupplied, anchorFor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
+  addSupplied, anchorFor, shouldAnchor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
   reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
 } from './generationQueue'
 
@@ -223,5 +223,29 @@ describe('Kie "no model page" refusals and stale failures', () => {
     q = enqueue(q, [req('front')], 5).state
     expect(summarize(q).failed).toBe(1)
     expect(attemptsSent(q)).toBe(2)
+  })
+})
+
+describe('which views are made from the approved image', () => {
+  const approvedFront = (assetId: string, sheetType: string, viewKey: string, variant = 'Canonical'): QueueState => {
+    const q = addSupplied(emptyQueue(), { assetId, variant, sheetType, viewKey, label: viewKey, aspect: '3:4', fullBody: true, path: 'C:/a/front.png', width: 800, height: 1200 }, 1)
+    return q.state
+  }
+  const subject = (viewKey: string, sheetType = 'Turnaround', assetId = 'CHAR-001') => ({ assetId, variant: 'Canonical', sheetType, viewKey })
+  it('always anchors a non-primary view', () => expect(shouldAnchor(emptyQueue(), subject('side'))).toBe(true))
+  it('does not anchor the very first primary view, which makes the identity', () => expect(shouldAnchor(emptyQueue(), subject('front'))).toBe(false))
+  it('anchors the Wardrobe costume front to the approved Turnaround front, so it cannot invent another person', () => {
+    const q = approvedFront('CHAR-001', 'Turnaround', 'front')
+    expect(shouldAnchor(q, subject('costume-front', 'Wardrobe'))).toBe(true)
+  })
+  it('does not anchor a view to itself when it is regenerated', () => {
+    const q = approvedFront('CHAR-001', 'Turnaround', 'front')
+    expect(shouldAnchor(q, subject('front', 'Turnaround'))).toBe(false)
+  })
+  it('never borrows the image of another character or another look', () => {
+    const q = approvedFront('CHAR-002', 'Turnaround', 'front')
+    expect(shouldAnchor(q, subject('costume-front', 'Wardrobe', 'CHAR-001'))).toBe(false)
+    const other = approvedFront('CHAR-001', 'Turnaround', 'front', 'Dust-worn jacket')
+    expect(shouldAnchor(other, subject('costume-front', 'Wardrobe'))).toBe(false)
   })
 })

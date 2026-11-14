@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.28.6 (2026-11-14): wardrobe identity fix, shape and backdrop controls
+- Fix (wrong person): a Wardrobe sheet's "Costume front" was made from the text alone, so it could show a different person from the character's approved front (seen with CASSIUS). A front-type view now uses the character's approved front from another sheet as its reference, as every other view already did. It still goes without a reference when nothing is approved yet, and never uses another character's or another look's image. Covered by unit tests; the live re-make was not done in the packaged app (see notes).
+- New: "Shape" control per sheet (portrait 3:4, tall 9:16, square 1:1, landscape 4:3, wide 16:9). The default still follows the asset: characters portrait, props landscape 4:3, locations wide 16:9. The choice is saved with the project and applies to new images; existing images keep their shape.
+- New: "Backdrop" control per sheet: flat grey (default), flat white, or match the reference image. One flat-field rule is written into every prompt on the sheet (no floor, wall, horizon, cast shadow or colour spill), so the views agree with each other instead of each model choosing its own background.
+- Turnaround front, side and rear prompts now ask for a dead-on view (square shoulders and hips, even weight, a true 90 degree profile, spine centred from behind).
+- Turntable and other motion prompts now ask for a flat uniform grey field, real-time speed and no slow motion.
+- Layout: the sheet controls sit in one tidy grid.
+- Ideas taken from the Castkit, Shotcaller, Voicesheet and Motiondojo files you supplied were reworded, not copied; see the notes in the conversation for what was and was not adopted.
+- Tests: 227 JS, 69 Rust. Checked in the browser preview; not exercised in the packaged app, because your installed app was open and a second copy cannot run beside it.
+
 ## 0.28.5 (2026-11-13): sheet export, steadier turntables, voice picker fixes
 Fixes for everything the three-character run found and left open.
 - New: "Export sheet as one image" on every sheet. Combines the views that have a picture (turnaround, poses, expressions, wardrobe, detail) into one labelled PNG in Documents\Production One\Sheets. Only images in the app's own assets folder are read; at most 24 views per image. Checked in the packaged app: nine sheets exported and looked right.

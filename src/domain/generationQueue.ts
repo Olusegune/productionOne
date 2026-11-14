@@ -165,6 +165,16 @@ export function anchorFor(state: QueueState, job: ImageJob): string | undefined 
   return approved.sort((a, b) => b.revision - a.revision || b.updatedAt - a.updatedAt)[0]?.outputPath
 }
 
+/**
+ * Should this view be generated with the character's approved image as a reference? Non-primary views always are. A primary view (front, costume front, ...) is the one that
+ * normally *makes* the identity, so it goes without a reference only when nothing is approved yet. If another approved primary view of the same asset and look exists (the
+ * Turnaround front, say, when the Wardrobe sheet's costume front is generated), it is used, so the Wardrobe sheet cannot invent a different person.
+ */
+export function shouldAnchor(state: QueueState, subject: { assetId: string; variant: string; sheetType: string; viewKey: string }): boolean {
+  if (!primaryViewKeys.includes(subject.viewKey)) return true
+  return state.jobs.some((j) => j.assetId === subject.assetId && j.variant === subject.variant && j.approved && !!j.outputPath && primaryViewKeys.includes(j.viewKey) && !(j.sheetType === subject.sheetType && j.viewKey === subject.viewKey))
+}
+
 export interface SuppliedRequest {
   assetId: string
   variant: string

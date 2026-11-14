@@ -12,6 +12,7 @@ import {
   reassignModel,
   reject,
   anchorFor,
+  shouldAnchor,
   retry,
   summarize,
   wouldEnqueue,
@@ -34,9 +35,13 @@ import {
   buildViewPrompt,
   intensities,
   outputName,
+  backdropChoices,
   primaryViewKeys,
+  shapeChoices,
+  shapeFor,
   sheetTypesFor,
   viewsFor,
+  type Backdrop,
   type Intensity,
 } from "../domain/sheetSpecs";
 import type { ExtractedAsset, ScriptScene } from "../domain/productionStudio";
@@ -102,6 +107,9 @@ export function SheetStudio(props: {
   /** When given, notes are held by the project and saved with it; otherwise they live only in this panel. */
   notesByAsset?: Record<string, string>;
   setNotesByAsset?: (update: (m: Record<string, string>) => Record<string, string>) => void;
+  /** Per-sheet choices saved with the project: shape (asset|sheet) and backdrop (asset|sheet|backdrop). Empty means the defaults. */
+  settings?: Record<string, string>;
+  setSettings?: (update: (m: Record<string, string>) => Record<string, string>) => void;
 }) {
   const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, refs, setRefs, focusSheetType } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
@@ -116,6 +124,9 @@ export function SheetStudio(props: {
   const setNotesByAsset = props.setNotesByAsset ?? setLocalNotes;
   const notes = asset ? notesByAsset[asset.id] ?? "" : "";
   const setNotes = (value: string) => { if (asset) setNotesByAsset((m) => ({ ...m, [asset.id]: value })); };
+  const [localSettings, setLocalSettings] = useState<Record<string, string>>({});
+  const settings = props.settings ?? localSettings;
+  const setSettings = props.setSettings ?? setLocalSettings;
   const choice = useModelChoice(desktop, providersVersion);
   const { provider, modelId, configured, catalog, refreshing } = choice;
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -143,6 +154,13 @@ export function SheetStudio(props: {
     return mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
   };
 
+  const shapeKey = asset ? `${asset.id}|${activeType}` : "";
+  const shapeOverride = settings[shapeKey] ?? "";
+  const backdropKey = `${shapeKey}|backdrop`;
+  const backdrop: Backdrop = backdropChoices.some((b) => b.value === settings[backdropKey]) ? (settings[backdropKey] as Backdrop) : "gray";
+  const setSetting = (key: string, value: string) => setSettings((m) => { const next = { ...m }; if (value) next[key] = value; else delete next[key]; return next; });
+  const setShape = (value: string) => setSetting(shapeKey, value);
+  const setBackdrop = (value: string) => setSetting(backdropKey, value === "gray" ? "" : value);
   /** `only` limits the run to those view keys; `force` makes a new revision even where an image already exists (never for views still in the queue). */
   const generate = (testOneFirst = false, only?: string[], force = false) => {
     if (!asset) return;
@@ -150,10 +168,10 @@ export function SheetStudio(props: {
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, anchored: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key) }),
-      aspect: view.aspect, fullBody: view.fullBody, provider, model: modelId,
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, anchored: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) }),
+      aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
       references: modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []) : [],
-      useAnchor: modelTakesReferences(provider, modelId) && !primaryViewKeys.includes(view.key),
+      useAnchor: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));
     const result = enqueue(queue, requests, Date.now(), force);
@@ -284,6 +302,15 @@ export function SheetStudio(props: {
           <select value={activeVariant} onChange={(e) => setVariant(e.target.value)}>{variants.map((v) => <option key={v}>{v}</option>)}</select></label>
         <label><span>Sheet</span>
           <select value={activeType} onChange={(e) => setSheetType(e.target.value as SheetType)}>{sheetTypes.map((t) => <option key={t}>{t}</option>)}</select></label>
+        <label><span>Shape</span>
+          <select value={shapeOverride} onChange={(e) => setShape(e.target.value)} aria-label="Image shape for this sheet" title="The shape of new images on this sheet. Images already made keep their shape.">
+            <option value="">Default ({shapeChoices.find((s) => s.value === views[0]?.aspect)?.label ?? views[0]?.aspect ?? "by view"})</option>
+            {shapeChoices.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select></label>
+        <label><span>Backdrop</span>
+          <select value={backdrop} onChange={(e) => setBackdrop(e.target.value)} aria-label="Backdrop for this sheet" title="One flat background for every new image on this sheet, so the views agree. Images already made keep theirs.">
+            {backdropChoices.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+          </select></label>
         {asset.type === "character" && activeType === "Expressions" && plan && plan.length > 1 && (
           <label><span>Expressions</span>
             <select value={fromStory ? "story" : "full"} onChange={(e) => setFromStory(e.target.value === "story")}>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildViewPrompt, outputName, viewsFor } from './sheetSpecs'
+import { buildViewPrompt, outputName, shapeFor, viewsFor } from './sheetSpecs'
 import { defaultStyleBible } from './visualDevelopment'
 
 const amina = { id: 'CHAR-001', name: 'Amina', type: 'character' as const }
@@ -54,11 +54,25 @@ describe('sheet specs', () => {
     expect(outputName(amina, 'Dust-worn / jacket', 'Turnaround', view, 2)).toBe('CHAR-001_Amina_Dust-worn-jacket_Turnaround_three-quarter-front_v02')
   })
 
-  it('matches the reference background when a reference is attached, and uses grey otherwise', () => {
+  it('uses one flat backdrop rule, by default flat grey, and honours white or match-the-reference', () => {
     const view = viewsFor('character', 'Turnaround')[1]
     const base = { style: defaultStyleBible, asset: amina, variant: 'Canonical', sheetType: 'Turnaround' as const, view }
-    expect(buildViewPrompt({ ...base, anchored: true })).toMatch(/same neutral tone as the reference image/)
-    expect(buildViewPrompt({ ...base, anchored: true })).not.toMatch(/light-grey/)
-    expect(buildViewPrompt(base)).toMatch(/light-grey/)
+    expect(buildViewPrompt(base)).toMatch(/flat, uniform neutral mid-grey field \(about 18% grey\)/)
+    expect(buildViewPrompt({ ...base, anchored: true })).toMatch(/mid-grey/)
+    expect(buildViewPrompt({ ...base, backdrop: 'white' })).toMatch(/pure-white field/)
+    expect(buildViewPrompt({ ...base, anchored: true, backdrop: 'match' })).toMatch(/same single flat, plain tone as the attached reference image/)
+    expect(buildViewPrompt({ ...base, anchored: false, backdrop: 'match' }), 'nothing to match without a reference').toMatch(/mid-grey/)
+    expect(buildViewPrompt(base)).toMatch(/no floor, no wall, no horizon, and no cast or contact shadow/)
+  })
+
+  it('uses a chosen shape for a sheet and falls back to the default of each view', () => {
+    const view = viewsFor('character', 'Turnaround')[0]
+    expect(view.aspect).toBe('3:4')
+    expect(shapeFor(view)).toBe('3:4')
+    expect(shapeFor(view, '16:9')).toBe('16:9')
+    expect(shapeFor(view, '')).toBe('3:4')
+    expect(shapeFor(view, '7:5'), 'a shape no provider here accepts is ignored').toBe('3:4')
+    expect(shapeFor(viewsFor('prop', 'Multi-view')[0])).toBe('4:3')
+    expect(shapeFor(viewsFor('set', 'Establishing')[0])).toBe('16:9')
   })
 })

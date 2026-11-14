@@ -65,6 +65,30 @@ describe('SheetStudio generate flow', () => {
     expect(calls.some((c) => c.name === 'generate_image')).toBe(false)
   })
 
+  it('makes new images in the shape chosen for the sheet', async () => {
+    calls.length = 0
+    render(<Harness />)
+    await waitFor(() => expect(calls.some((c) => c.name === 'credential_status')).toBe(true))
+    const shape = await screen.findByLabelText('Image shape for this sheet')
+    expect((shape as HTMLSelectElement).value).toBe('')
+    fireEvent.change(shape, { target: { value: '16:9' } })
+    fireEvent.click(await screen.findByRole('button', { name: /generate 5 views/i }))
+    await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image')).toHaveLength(1))
+    expect(calls.find((c) => c.name === 'generate_image')!.args.aspect).toBe('16:9')
+    expect(latestQueue.jobs.every((j) => j.aspect === '16:9')).toBe(true)
+  })
+  it('puts the chosen backdrop into every new prompt on the sheet', async () => {
+    calls.length = 0
+    render(<Harness />)
+    await waitFor(() => expect(calls.some((c) => c.name === 'credential_status')).toBe(true))
+    const backdrop = (await screen.findByLabelText('Backdrop for this sheet')) as HTMLSelectElement
+    expect(backdrop.value).toBe('gray')
+    fireEvent.change(backdrop, { target: { value: 'white' } })
+    fireEvent.click(await screen.findByRole('button', { name: /generate 5 views/i }))
+    await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image')).toHaveLength(1))
+    expect(String(calls.find((c) => c.name === 'generate_image')!.args.prompt)).toMatch(/pure-white field/)
+    expect(latestQueue.jobs.every((j) => /pure-white field/.test(j.prompt))).toBe(true)
+  })
   it('exports the views that have a picture as one labelled sheet image', async () => {
     calls.length = 0
     render(<Harness />)

@@ -60,6 +60,8 @@ export interface DesignViewProps {
   setQueue: (update: (q: QueueState) => QueueState) => void;
   setSelectedAsset: Dispatch<SetStateAction<number>>;
   setSheetNotes: Dispatch<SetStateAction<Record<string, string>>>;
+  setSheetSettings: Dispatch<SetStateAction<Record<string, string>>>;
+  sheetSettings: Record<string, string>;
   setStyleBible: Dispatch<SetStateAction<StyleBible>>;
   sheetNotes: Record<string, string>;
   studioControl: RefObject<{ generateFirst: () => void; } | null>;
@@ -67,7 +69,7 @@ export interface DesignViewProps {
 }
 
 export function DesignView(p: DesignViewProps) {
-  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddCharacter, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setStyleBible, sheetNotes, studioControl, styleBible } = p;
+  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddCharacter, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible } = p;
   return (
 <div className="po-design">
             <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddCharacter={onAddCharacter} />
@@ -106,6 +108,8 @@ export function DesignView(p: DesignViewProps) {
               setRefs={setAssetRefs}
               notesByAsset={sheetNotes}
               setNotesByAsset={setSheetNotes}
+              settings={sheetSettings}
+              setSettings={setSheetSettings}
               focusSheetType={focusSheetType}
             />
             </div>
