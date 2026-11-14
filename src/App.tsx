@@ -918,6 +918,14 @@ export default function App() {
       setRecents(await invoke<string[]>("recent_projects"));
     } catch { /* The list is a convenience; the app works without it. */ }
   };
+  const forgetRecent = async (path: string) => {
+    if (!isTauri) return;
+    try { const { invoke } = await import("@tauri-apps/api/core"); setRecents(await invoke<string[]>("forget_recent_project", { path })); } catch { /* the list is a convenience */ }
+  };
+  const clearRecents = async () => {
+    if (!isTauri) return;
+    try { const { invoke } = await import("@tauri-apps/api/core"); setRecents(await invoke<string[]>("clear_recent_projects")); } catch { /* the list is a convenience */ }
+  };
   const applyProject = (file: ProjectFile, path: string | null) => {
     const s = file.studio;
     snapshot.current = null;
@@ -1280,7 +1288,7 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
+          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
         )}
         {workspace === "Story" && (
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} />

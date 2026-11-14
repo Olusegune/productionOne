@@ -1,4 +1,5 @@
-import { Download, FilePlus2, FolderOpen, History } from "lucide-react";
+import { Download, FilePlus2, FolderOpen, History, X } from "lucide-react";
+import { recentName } from "../appHelpers";
 import { Eyebrow } from "../components/Eyebrow";
 import { FirstRun } from "../components/FirstRun";
 import { GoldenPath } from "../components/GoldenPath";
@@ -17,6 +18,9 @@ export function ProjectsView(props: {
   onOpen: () => void;
   onSave: () => void;
   onOpenRecent: (path: string) => void;
+  /** Takes one project off the list. The file is not deleted. */
+  onForgetRecent: (path: string) => void;
+  onClearRecents: () => void;
   onKeys: () => void;
   onWorkspace: (name: string) => void;
   onNext: (step: GoldenStep) => void;
@@ -41,11 +45,12 @@ export function ProjectsView(props: {
       <GoldenPath input={golden} onGo={props.onWorkspace} onNext={props.onNext} />
       {recents.length > 0 && (
         <div className="recent-list">
-          <Eyebrow icon={History}>RECENT PROJECTS</Eyebrow>
+          <div className="recent-head"><Eyebrow icon={History}>RECENT PROJECTS</Eyebrow><button className="tertiary recent-clear" onClick={props.onClearRecents} title="Empty this list. No project file is deleted.">Clear list</button></div>
           <ul>
             {recents.slice(0, 5).map((path) => (
               <li key={path}>
-                <button onClick={() => props.onOpenRecent(path)} title={path}>{path.split(/[\/]/).pop()}</button>
+                <button className="recent-open" onClick={() => props.onOpenRecent(path)} title={path}>{recentName(path)}</button>
+                <button className="icon-button recent-close" onClick={() => props.onForgetRecent(path)} aria-label={`Remove ${recentName(path)} from recent projects`} title="Remove from this list. The file is not deleted."><X size={13} aria-hidden="true" /></button>
               </li>
             ))}
           </ul>

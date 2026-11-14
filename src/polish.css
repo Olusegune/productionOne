@@ -455,3 +455,12 @@ body, input, select, textarea, button { font-feature-settings: "calt", "kern", "
 .levelled-audio .la-time { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
 .levelled-audio .la-toggle { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
 .levelled-audio .la-note { grid-column: 1 / -1; color: var(--text-3); font-size: 12px; }
+
+/* Recent projects: each entry has a close button, and the list can be cleared */
+.recent-list .recent-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recent-list .recent-clear { font-size: 12px; color: var(--text-3); }
+.recent-list ul { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+.recent-list li { display: flex; align-items: center; gap: 6px; }
+.recent-list .recent-open { flex: 0 1 auto; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-list .recent-close { flex: none; width: 28px; height: 28px; min-height: 28px; padding: 0; display: grid; place-items: center; opacity: .55; }
+.recent-list li:hover .recent-close, .recent-list .recent-close:focus-visible { opacity: 1; }

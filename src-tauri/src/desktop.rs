@@ -45,15 +45,23 @@ pub fn merge_recents(existing: &[String], path: &str) -> Vec<String> {
     list
 }
 
-fn remember(app: &tauri::AppHandle, path: &str) {
-    let list = merge_recents(&read_recents(app), path);
+/// The list without `path` (compared the way Windows compares paths). The project file itself is never touched.
+pub fn without_recent(existing: &[String], path: &str) -> Vec<String> {
+    existing.iter().filter(|item| !item.eq_ignore_ascii_case(path)).cloned().collect()
+}
+
+fn write_recents(app: &tauri::AppHandle, list: &[String]) {
     if let Ok(file) = recent_file(app) {
         if let Some(parent) = file.parent() {
             let _ = fs::create_dir_all(parent);
         }
-        let _ = fs::write(file, serde_json::to_string(&list).unwrap_or_default());
+        let _ = fs::write(file, serde_json::to_string(list).unwrap_or_default());
     }
     refresh_menu(app);
+}
+
+fn remember(app: &tauri::AppHandle, path: &str) {
+    write_recents(app, &merge_recents(&read_recents(app), path));
 }
 
 /// Native projects are always written as .pone. Anything else gets the extension appended, so a legacy .pguy file is never overwritten by Save.
@@ -148,6 +156,20 @@ pub async fn save_text_dialog(app: tauri::AppHandle, suggested: String, contents
 #[tauri::command]
 pub fn recent_projects(app: tauri::AppHandle) -> Vec<String> {
     read_recents(&app).into_iter().filter(|path| Path::new(path).exists()).collect()
+}
+
+/// Takes one project off the recent list (and the Open Recent menu). The file on disk is not deleted. Returns the list that is left.
+#[tauri::command]
+pub fn forget_recent_project(app: tauri::AppHandle, path: String) -> Vec<String> {
+    write_recents(&app, &without_recent(&read_recents(&app), &path));
+    recent_projects(app)
+}
+
+/// Empties the recent list and the Open Recent menu. No project file is deleted.
+#[tauri::command]
+pub fn clear_recent_projects(app: tauri::AppHandle) -> Vec<String> {
+    write_recents(&app, &[]);
+    Vec::new()
 }
 
 #[tauri::command]
@@ -293,6 +315,14 @@ mod tests {
         assert_eq!(merged[0], "C:\\P\\3.PONE");
         assert_eq!(merged.len(), MAX_RECENT);
         assert_eq!(merged.iter().filter(|p| p.eq_ignore_ascii_case("C:\\p\\3.pone")).count(), 1);
+    }
+
+    #[test]
+    fn forgetting_a_recent_project_removes_only_that_entry() {
+        let existing = vec![r"C:\p\a.pone".to_string(), r"C:\p\B.pone".to_string(), r"C:\p\c.pone".to_string()];
+        assert_eq!(without_recent(&existing, r"c:\P\b.PONE"), vec![r"C:\p\a.pone".to_string(), r"C:\p\c.pone".to_string()]);
+        assert_eq!(without_recent(&existing, r"C:\p\missing.pone"), existing);
+        assert!(without_recent(&[], "x").is_empty());
     }
 
     #[test]
