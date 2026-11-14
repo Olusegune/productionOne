@@ -331,6 +331,21 @@ pub(crate) fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBu
     if canonical.starts_with(&root) { Ok(canonical) } else { Err("Only images in the Production One assets folder can be previewed".into()) }
 }
 
+/// A new PNG the app may write: directly inside `root`, a plain file name, a .png extension, so a request from the page can never write elsewhere or overwrite something that is not an image.
+pub(crate) fn new_png_inside(root: &Path, path: &str) -> Result<PathBuf, String> {
+    let wanted = Path::new(path);
+    let name = wanted.file_name().and_then(|n| n.to_str()).ok_or("The output file name is not valid")?;
+    if !name.to_ascii_lowercase().ends_with(".png") || name.starts_with('.') || name.contains(['/', '\\', ':']) { return Err("The output must be a plain .png file name".into()); }
+    let parent = fs::canonicalize(wanted.parent().ok_or("The output has no folder")?).map_err(|e| format!("Could not use the output folder: {e}"))?;
+    let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
+    if parent != root { return Err("Labelled images are saved only in the Production One assets folder".into()); }
+    Ok(root.join(name))
+}
+
+pub(crate) fn assets_root(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    Ok(app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets"))
+}
+
 const MAX_CLIP_BYTES: u64 = 64 * 1024 * 1024;
 const CLIP_EXTENSIONS: [&str; 6] = ["wav", "mp3", "m4a", "ogg", "flac", "aac"];
 
@@ -438,6 +453,21 @@ pub fn qa_image(app: tauri::AppHandle, path: String, full_body: bool) -> Result<
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_labelled_image_can_only_be_a_new_png_directly_inside_the_assets_folder() {
+        let root = std::env::temp_dir().join(format!("po-assets-{}", std::process::id()));
+        let other = std::env::temp_dir().join(format!("po-other-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(&other).unwrap();
+        let ok = root.join("hero-labeled.png");
+        assert_eq!(super::new_png_inside(&root, ok.to_str().unwrap()).unwrap().file_name().unwrap(), "hero-labeled.png");
+        for bad in [other.join("x.png"), root.join("x.exe"), root.join("x.json"), root.join(".hidden.png"), root.join("sub").join("x.png"), root.join("..").join("x.png")] {
+            assert!(super::new_png_inside(&root, bad.to_str().unwrap()).is_err(), "{}", bad.display());
+        }
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&other);
+    }
+
     #[test]
     fn only_small_audio_files_may_be_read() {
         for ok in ["wav", "MP3", "m4a", "ogg", "flac", "aac"] { assert!(super::clip_allowed(ok, 1_000).is_ok(), "{ok}"); }
