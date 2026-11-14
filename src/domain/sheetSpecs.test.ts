@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildViewPrompt, outputName, shapeFor, viewsFor } from './sheetSpecs'
+import { buildViewPrompt, identityFacts, outputName, shapeFor, viewsFor } from './sheetSpecs'
 import { defaultStyleBible } from './visualDevelopment'
 
 const amina = { id: 'CHAR-001', name: 'Amina', type: 'character' as const }
@@ -74,5 +74,20 @@ describe('sheet specs', () => {
     expect(shapeFor(view, '7:5'), 'a shape no provider here accepts is ignored').toBe('3:4')
     expect(shapeFor(viewsFor('prop', 'Multi-view')[0])).toBe('4:3')
     expect(shapeFor(viewsFor('set', 'Establishing')[0])).toBe('16:9')
+  })
+})
+
+describe('the never clause', () => {
+  it('is written into the identity facts as the person wrote it, alone or with the other facts', () => {
+    expect(identityFacts({ type: 'character', never: 'never pale porcelain skin.  ' })).toBe('Must never drift: never pale porcelain skin.')
+    expect(identityFacts({ type: 'character', age: '40', gender: 'male', never: 'a teeth-showing smile' })).toBe('Confirmed character identity: age 40, male. Must never drift: a teeth-showing smile.')
+    expect(identityFacts({ type: 'character', age: '40' })).toBe('Confirmed character identity: age 40.')
+    expect(identityFacts({ type: 'character', never: '   ' })).toBe('')
+  })
+  it('is ignored for props and sets, and reaches every character prompt', () => {
+    expect(identityFacts({ type: 'prop', never: 'rust' })).toBe('')
+    const view = viewsFor('character', 'Turnaround')[0]
+    const prompt = buildViewPrompt({ style: defaultStyleBible, asset: { ...amina, never: 'never a smile showing teeth' }, variant: 'Canonical', sheetType: 'Turnaround', view })
+    expect(prompt).toMatch(/Must never drift: never a smile showing teeth\./)
   })
 })

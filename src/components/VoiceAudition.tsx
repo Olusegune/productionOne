@@ -7,8 +7,8 @@ import type { DemoClip } from '../domain/demoClips'
 import { buildPerformance, emptyDirection, performanceBrief, providerById, providers, voiceEvents, voiceStates, type EventCue, type ProviderId, type VoiceEvent, type VoiceState } from '../domain/voiceDirection'
 import { SearchSelect } from './SearchSelect'
 import { VoiceCloud } from './VoiceCloud'
-import { latestElevenModel, rankElevenModels, type CloudModel } from '../domain/elevenModels'
-import { sampleLines, soundBrief, suggestVoice, voiceBrief, type InstalledVoice } from '../domain/voiceAudition'
+import { latestElevenModel, rankElevenModels, supportsAudioTags, type CloudModel } from '../domain/elevenModels'
+import { castingLine, castingLineChoices, sampleLines, soundBrief, suggestVoice, voiceBrief, type CastingLineKind, type InstalledVoice } from '../domain/voiceAudition'
 
 /** Hear a character speak (installed Windows voices, free and offline) or get a sound brief for a prop. Auditions are saved with the project like motion clips. */
 export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedStory; clips: DemoClip[]; setClips: (update: (clips: DemoClip[]) => DemoClip[]) => void; desktop: boolean; notify: (message: string) => void; providersVersion: number; openProviders: (providerId?: string) => void; onChange: (asset: ExtractedAsset) => void }) {
@@ -90,6 +90,12 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
       </section>
       <section className="vg" aria-labelledby="vg-line"><h4 className="vg-title" id="vg-line"><i>2</i>Line</h4>
       {lines.length > 0 && <div className="sheet-controls">{lines.length > 0 && <label><span>Line from the script</span><select value={picked} onChange={(e) => { setPicked(Number(e.target.value)); setCustom('') }}>{lines.map((l, i) => <option key={l.line} value={i}>Line {l.line}: {l.text.slice(0, 48)}</option>)}</select></label>}</div>}
+      <label className="settings-field"><span>Casting line (the same line for every voice)</span>
+        <select value="" onChange={(e) => { if (e.target.value) setCustom(castingLine(e.target.value as CastingLineKind, provider.id === 'elevenlabs' && supportsAudioTags(activeModel))) }} aria-label="Casting line">
+          <option value="">Choose a ready-made line…</option>
+          {castingLineChoices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select></label>
+      <p className="helper">The emotional-range line carries delivery tags only on an ElevenLabs model that reads them (Eleven v3 or later). Pick it again after changing the model.</p>
       <label className="settings-field"><span>{lines.length ? 'Or type your own line' : 'Line to speak (no dialogue for this character in the script)'}</span><input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Type a line to hear" /></label>
       </section>
       <section className="vg" aria-labelledby="vg-dir"><h4 className="vg-title" id="vg-dir"><i>3</i>Direction</h4>

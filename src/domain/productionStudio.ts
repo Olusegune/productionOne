@@ -15,6 +15,8 @@ export interface ExtractedAsset {
   race?: string
   ethnicity?: string
   role?: string
+  /** What must never drift, in the person's own words (for example "never pale porcelain skin"). Written into every image and video prompt for the character. */
+  never?: string
   motionDirection?: string
   interactionDirection?: string
   soundDirection?: string

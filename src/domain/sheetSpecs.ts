@@ -135,7 +135,7 @@ export interface PromptInput {
   /** The model id the prompt is for. Used only to tailor artifact guidance. */
   model?: string
   style: StyleBible
-  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role'>>
+  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role' | 'never'>>
   variant: string
   sheetType: SheetType
   view: ViewSpec
@@ -147,10 +147,12 @@ export interface PromptInput {
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
-export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age' | 'gender' | 'race' | 'ethnicity' | 'role'>>): string {
+export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age' | 'gender' | 'race' | 'ethnicity' | 'role' | 'never'>>): string {
   if (asset.type && asset.type !== 'character') return ''
   const facts = [asset.age && `age ${asset.age}`, asset.gender, asset.race, asset.ethnicity, asset.role].filter(Boolean).join(', ')
-  return facts ? `Confirmed character identity: ${facts}.` : ''
+  // The "never" clause is the person's own list of drifts to prevent. It is repeated as written, never rephrased or extended.
+  const never = (asset.never ?? '').replace(/\s+/g, ' ').trim().replace(/[.\s]+$/, '')
+  return [facts ? `Confirmed character identity: ${facts}.` : '', never ? `Must never drift: ${never}.` : ''].filter(Boolean).join(' ')
 }
 
 export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop }: PromptInput): string {

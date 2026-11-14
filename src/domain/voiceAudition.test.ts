@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseStory } from '../engine/story'
-import { sampleLines, soundBrief, suggestVoice, voiceBrief } from './voiceAudition'
+import { castingLine, sampleLines, soundBrief, suggestVoice, voiceBrief } from './voiceAudition'
 import { motionKeysFor, presetFor, buildMotionPrompt } from './demoClips'
 import type { ExtractedAsset } from './productionStudio'
 
@@ -52,4 +52,20 @@ describe('identity runs through every output', () => {
     expect(buildMotionPrompt('speak', '', 'MARA', style, identityFacts({ type: 'character', age: '34' }))).toContain('age 34')
   })
   it('still offers cinema aspect ratios', () => { expect(aspectRatios).toContain('21:9'); expect(aspectRatios).toContain('2.39:1') })
+})
+
+describe('casting lines', () => {
+  it('gives the same pangram whatever the model, with no tags', () => {
+    expect(castingLine('pangram', true)).toBe(castingLine('pangram', false))
+    expect(castingLine('pangram', true)).not.toMatch(/\[/)
+    expect(castingLine('pangram', false)).toMatch(/beige hue/)
+  })
+  it('tags the emotional-range line only when the model reads tags, one tag per clause', () => {
+    const tagged = castingLine('range', true)
+    expect(tagged.match(/\[[^\]]+\]/g)).toHaveLength(7)
+    expect(tagged).toMatch(/^\[curious\]/)
+    const plain = castingLine('range', false)
+    expect(plain).not.toMatch(/[\[\]]/)
+    expect(plain.replace(/\s+/g, ' ')).toBe(tagged.replace(/\[[^\]]+\]\s*/g, '').replace(/\s+/g, ' '))
+  })
 })

@@ -34,3 +34,28 @@ export function soundBrief(asset: ExtractedAsset): string {
   const defaults = isVehicleName(asset.name) ? 'engine start, idle, pass-by at speed, tyre noise, door close, horn' : 'handling, set-down, any moving parts, material sound (metal, wood, plastic, fabric)'
   return [`Sound brief for ${asset.name}.`, `Sounds to supply: ${asset.soundDirection?.trim() || defaults}.`, 'Deliver each as a separate clean take with room tone, no music.'].join('\n')
 }
+
+export type CastingLineKind = 'pangram' | 'range'
+export const castingLineChoices: ReadonlyArray<{ value: CastingLineKind; label: string }> = [
+  { value: 'pangram', label: 'Pangram: uses every English sound' },
+  { value: 'range', label: 'Emotional range: curious, playful, whispered, shouted' },
+]
+
+/**
+ * The same fixed line for every candidate voice, so casting compares voices and not wording.
+ * The pangram is a long-standing public English phonetic pangram. The range line is written here, one clause per delivery.
+ * Square-bracket tags are added only when the model reads them; any other model would speak them aloud, so it gets the plain text.
+ */
+export function castingLine(kind: CastingLineKind, tagged: boolean): string {
+  if (kind === 'pangram') return 'The beige hue on the waters of the loch impressed all, including the French queen, before she heard that symphony again, just as young Arthur wanted.'
+  const clauses: Array<[string, string]> = [
+    ['curious', 'Is that really what you think?'],
+    ['mischievously', 'Then watch me prove it,'],
+    ['laughs softly', 'it will not take long.'],
+    ['whispers', 'Keep your voice down.'],
+    ['gasps', 'Wait, did you hear that?'],
+    ['shouting', 'Get back here right now!'],
+    ['sighs', 'Fine. We will do it your way.'],
+  ]
+  return clauses.map(([tag, text]) => (tagged ? `[${tag}] ${text}` : text)).join(' ')
+}

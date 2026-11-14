@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.28.7 (2026-11-14): casting lines and a per-character "Never" field
+Both ideas came from the resources you supplied, reworded and fitted to this app.
+- New: "Casting line" in Voice Audition. One click fills the line box with a fixed line, so every candidate voice is compared on the same words: a pangram that uses every English sound, or a short emotional-range line (curious, playful, laugh, whisper, gasp, shout, sigh). Delivery tags such as [whispers] are added only for an ElevenLabs model that reads them (Eleven v3 or later); any other engine gets the plain text, so nothing is read aloud as "bracket whispers". The English pangram is a long-standing public one; the range line is original.
+- New: "Never (what must not drift)" on each character's identity fields, in the person's own words (for example "never pale porcelain skin"). It is written into every image and video prompt for that character as "Must never drift: ...", repeated as written. Saved with the project.
+- Tests: 233 JS, 69 Rust. Local secrets scan clean. Not run in the packaged app: your installed app was open, and a second copy cannot run beside it. The pickers and field are covered by component and unit tests only.
+- Not done: other languages for the pangram (a self-written pangram for another language should be read by a native speaker before it is used), and the tags are not yet shaped to a character's personality.
+
 ## 0.28.6 (2026-11-14): wardrobe identity fix, shape and backdrop controls
 - Fix (wrong person): a Wardrobe sheet's "Costume front" was made from the text alone, so it could show a different person from the character's approved front (seen with CASSIUS). A front-type view now uses the character's approved front from another sheet as its reference, as every other view already did. It still goes without a reference when nothing is approved yet, and never uses another character's or another look's image. Covered by unit tests; the live re-make was not done in the packaged app (see notes).
 - New: "Shape" control per sheet (portrait 3:4, tall 9:16, square 1:1, landscape 4:3, wide 16:9). The default still follows the asset: characters portrait, props landscape 4:3, locations wide 16:9. The choice is saved with the project and applies to new images; existing images keep their shape.
