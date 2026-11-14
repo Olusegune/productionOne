@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.29.1 (2026-11-14): motion clips are silent; audio check
+- Found by measuring and transcribing every audio clip made in testing (see `docs/AUDIO_CHECK_2026-11-14.md`): a Seedance turntable clip carried an unrequested, very quiet soundtrack (the recogniser labelled it "[MUSIC PLAYING]"). The app left the model's optional audio switch at the provider's default, which is on. It now turns a model's soundtrack switch (`generate_audio`, `sound`, `audio` and similar) off for every Kie request, so reference clips are silent. Covered by a Rust test.
+- Audio check: all nine voice clips are clean (no clipping, no dead lead-in); seven were transcribed word for word by a local speech model, one ElevenLabs line had a mid-phrase pause that garbled the second half, and one VoiceKiller clip ended with a breath-like extra sound. Loudness differs by up to 8 LU between clips and the Windows voices end with about 0.8 s of silence; both are recorded as improvements, not yet made.
+- Tests: 273 JS, 71 Rust.
+
 ## 0.29.0 (2026-11-14): design refresh, light theme, documentation with screenshots
 - Typography: Inter (with its optical-size axis, so large titles tighten like a display face and small text opens up like a text face) replaces Fraunces, Plus Jakarta Sans and Geist. One family everywhere, tabular numbers for readings (counters, costs, queue), and the lowercase l with a tail so a capital I and an l can be told apart in names ("Ione" is not "lone"). The three removed font packages shrink the installer by about 90 KB.
 - Surfaces: neutral charcoal, thin separators, calmer shadows, 12 px panels and 8 px controls, compact 13 px controls and a 14 px base size, in the spirit of Apple's and DaVinci Resolve's interfaces. One consistent keyboard focus ring.

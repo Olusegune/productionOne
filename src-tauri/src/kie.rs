@@ -13,6 +13,8 @@ use super::providers::{aspect_ratio_value, DiscoveredModel};
 
 const IMAGE_KEYS: [&str; 7] = ["image_input", "image_urls", "input_urls", "image_url", "first_frame_url", "reference_image_urls", "image"];
 const ASPECT_KEYS: [&str; 2] = ["aspect_ratio", "image_size"];
+/// Optional on/off switches for a generated soundtrack. Reference clips and sheets are silent, so the app always turns one of these off; it does not leave it at the provider's default (often on).
+const AUDIO_KEYS: [&str; 6] = ["generate_audio", "sound", "audio", "with_audio", "enable_audio", "generateAudio"];
 
 #[derive(Debug, Clone)]
 pub struct ImageField { pub key: String, pub array: bool, pub max: usize, pub required: bool }
@@ -29,6 +31,8 @@ pub struct KieSchema {
     pub duration_is_number: bool,
     /// Required settings other than the prompt, aspect, images and duration, filled from the model's own default (or first listed value).
     pub fixed: Vec<(String, Value)>,
+    /// The model's own soundtrack switch, if it has one (a boolean named in AUDIO_KEYS).
+    pub audio_key: Option<String>,
 }
 
 pub fn valid_doc_id(id: &str) -> bool {
@@ -68,6 +72,7 @@ pub fn parse_kie_doc(md: &str) -> Result<KieSchema, String> {
     let image = IMAGE_KEYS.iter().find_map(|k| get(k).map(|f| ImageField { key: k.to_string(), array: f["type"].as_str() == Some("array"), max: f["maxItems"].as_u64().unwrap_or(1) as usize, required: required.iter().any(|r| r == k) }));
     let duration_key = get("duration").map(|_| "duration".to_string());
     let (duration_values, duration_is_number) = duration_key.as_ref().and_then(|k| get(k)).map(|f| (enum_strings(f), matches!(f["type"].as_str(), Some("integer") | Some("number")))).unwrap_or_default();
+    let audio_key = AUDIO_KEYS.iter().find(|k| get(k).map_or(false, |f| f["type"].as_str() == Some("boolean"))).map(|k| k.to_string());
     let handled: Vec<&str> = vec!["prompt", "duration"];
     let mut fixed = Vec::new();
     for key in &required {
@@ -76,7 +81,7 @@ pub fn parse_kie_doc(md: &str) -> Result<KieSchema, String> {
         let value = if !f["default"].is_null() { yaml_to_json(&f["default"]) } else if let Some(first) = f["enum"][0].as_str().map(|s| json!(s)).or_else(|| f["enum"][0].as_i64().map(|n| json!(n))) { first } else if f["type"].as_str() == Some("boolean") { json!(false) } else if let Some(min) = f["minimum"].as_i64() { json!(min) } else { return Err(format!("Kie requires a setting called {key} that this app does not know how to fill")) };
         fixed.push((key.clone(), value));
     }
-    Ok(KieSchema { model, prompt_max, aspect_key, aspect_values, image, duration_key, duration_values, duration_is_number, fixed })
+    Ok(KieSchema { model, prompt_max, aspect_key, aspect_values, image, duration_key, duration_values, duration_is_number, fixed, audio_key })
 }
 
 fn ratio(value: &str) -> Option<f64> {
@@ -116,6 +121,7 @@ pub fn build_input(schema: &KieSchema, prompt: &str, aspect: &str, image_urls: &
         if let Some(v) = nearest_duration(d, &schema.duration_values) { input.insert(key.clone(), if schema.duration_is_number { json!(v.trim_end_matches('s').parse::<f64>().unwrap_or(d as f64) as i64) } else { json!(v) }); }
         else if schema.duration_values.is_empty() { input.insert(key.clone(), if schema.duration_is_number { json!(d) } else { json!(d.to_string()) }); }
     }
+    if let Some(key) = &schema.audio_key { input.insert(key.clone(), json!(false)); }
     for (k, v) in &schema.fixed { input.entry(k.clone()).or_insert(v.clone()); }
     Ok(Value::Object(input))
 }
@@ -255,6 +261,23 @@ mod tests {
         let input = build_input(&s, "p", "1:1", &[], Some(8)).unwrap();
         assert_eq!(input["sound"], false);
         assert_eq!(input["duration"], "10");
+    }
+
+    #[test]
+    fn turns_an_optional_soundtrack_switch_off_instead_of_leaving_the_providers_default() {
+        let doc = DOC.replace("                    resolution:
+", "                    generate_audio:
+                      type: boolean
+                      default: true
+                    resolution:
+");
+        let s = parse_kie_doc(&doc).unwrap();
+        assert_eq!(s.audio_key.as_deref(), Some("generate_audio"));
+        let input = build_input(&s, "p", "1:1", &[], None).unwrap();
+        assert_eq!(input["generate_audio"], false);
+        let plain = parse_kie_doc(DOC).unwrap();
+        assert_eq!(plain.audio_key, None);
+        assert!(build_input(&plain, "p", "1:1", &[], None).unwrap().get("generate_audio").is_none());
     }
 
     #[test]
