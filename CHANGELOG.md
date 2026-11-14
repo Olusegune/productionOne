@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.30.0 (2026-11-14): close recent projects, design voices from the script
 - Recent projects: each entry has a close button and the list has "Clear list" (the project file is never deleted). Entries show the file name only; Windows paths showed in full before because the name was split on a malformed pattern.
 - Voice design: under a character's voice engine, "Fill from the script" builds a voice description from the character's confirmed fields (age, gender, role, personality, sound direction) and their own dialogue, and shows what it was built from; nothing is guessed. "Ask the AI helper" has the local model (Ollama or LM Studio) write the description from a rough idea, and only confirmed fields and the character's lines are sent to it. Works with ElevenLabs Voice Design and with Qwen TTS (description as the voice). Chatterbox clones from a recording, so it shows a note instead.
 - Not done: Suno music (only reachable through the Kie.ai reseller; awaiting a go-ahead); the Qwen description-as-voice path is untested against a real server.
