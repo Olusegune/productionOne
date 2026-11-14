@@ -37,6 +37,7 @@ import {
   outputName,
   backdropChoices,
   primaryViewKeys,
+  aspectCss,
   shapeChoices,
   shapeFor,
   sheetTypesFor,
@@ -366,7 +367,7 @@ export function SheetStudio(props: {
           {desktop && everyItem.length >= 2 && everyItem.length > viewItems.length && (
             <div className="ss-export"><button className="secondary" onClick={() => void exportEverything()} title="Put the pictures from every sheet of this asset into one labelled image"><LayoutGrid size={14} aria-hidden="true" /> Export every sheet as one image</button><small>{everyItem.length} pictures across {sheetTypes.length} sheets{everyItem.length > 40 ? " (the first 40 are used)" : ""}</small></div>
           )}
-          <div className={`view-grid ${size}`}>
+          <div className={`view-grid ${size}`} style={{ "--thumb-aspect": aspectCss(shapeFor(views[0] ?? { aspect: "3:4" }, shapeOverride)) } as React.CSSProperties}>
             {views.map((view) => {
               const job = jobFor(view.key);
               const at = viewItems.findIndex((it) => it.job.id === job?.id);

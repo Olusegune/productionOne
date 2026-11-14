@@ -352,3 +352,98 @@ h3.with-icon > svg { flex: none; color: var(--gold-2); }
 .ss-bar select { width: 100%; text-overflow: ellipsis; }
 .ss-bar .seg { justify-self: start; }
 @media (max-width: 900px) { .ss-bar .ss-model { grid-column: 1 / -1; } }
+
+/* ======================= 0.29: Apple and DaVinci Resolve inspired refinement =======================
+   One typeface (Inter, with its optical-size axis so large titles tighten like a display face and small text opens up like a text face), neutral charcoal
+   surfaces, thin separators, compact controls, tabular numbers wherever a number is a reading. Light theme keeps its own tokens. */
+:root {
+  --ui: "Inter Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --display: "Inter Variable", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --bg: #131315;
+  --surface: rgba(255, 255, 255, .042);
+  --surface-2: rgba(255, 255, 255, .072);
+  --stroke: rgba(255, 255, 255, .075);
+  --stroke-strong: rgba(255, 255, 255, .16);
+  --text: #f4f4f6;
+  --text-2: #babcc4;
+  --text-3: #8e919b;
+  --radius: 10px;
+  --radius-sm: 7px;
+  font-optical-sizing: auto;
+  font-feature-settings: "calt", "kern";
+  text-rendering: optimizeLegibility;
+}
+body { font-size: 14px; line-height: 1.5; letter-spacing: -.003em; background: var(--bg); }
+body::before { opacity: .0; }
+h1, h2, h3, h4, .po-title, .golden-head h3, .stat-tiles b, .empty-state h4, .asset-lab h3, .asset-lab-head h3, .po-launch h2 { font-family: var(--display); font-optical-sizing: auto; }
+h1, h2 { font-size: clamp(1.8rem, 1.4rem + 1.3vw, 2.4rem); font-weight: 700; letter-spacing: -.032em; line-height: 1.08; }
+h3, .panel h3, .golden-head h3, .ss-head h3, .asset-lab h3, .asset-lab-head h3 { font-weight: 650; letter-spacing: -.024em; line-height: 1.15; }
+.panel h3, .golden-head h3, .ss-head h3 { font-size: clamp(1.2rem, 1.05rem + .45vw, 1.45rem); }
+.asset-lab h3, .asset-lab-head h3 { font-size: 1.35rem; }
+h4 { font-size: 14px; font-weight: 620; letter-spacing: -.01em; }
+.po-title { font-size: 15px; font-weight: 620; letter-spacing: -.014em; }
+.po-launch h2 { font-size: clamp(2rem, 1.5rem + 2vw, 2.8rem); letter-spacing: -.035em; }
+.stat-tiles b { font-weight: 650; letter-spacing: -.03em; font-size: 1.4rem; }
+.empty-state h4 { font-size: 1.1rem; font-weight: 640; letter-spacing: -.02em; }
+.eyebrow { font: 600 11px/1.2 var(--ui); letter-spacing: .075em; text-transform: uppercase; color: var(--text-3); }
+label span, .helper, small { letter-spacing: 0; }
+label span { font-size: 12px; font-weight: 500; color: var(--text-3); }
+button, .primary, .secondary, .tertiary, .po-tabs button { font-family: var(--ui); font-size: 13px; font-weight: 520; letter-spacing: -.006em; }
+input, select, textarea { font-family: var(--ui); font-size: 13.5px; letter-spacing: -.004em; }
+/* Numbers that are readings line up like a timecode */
+.stat-tiles b, .po-cost-chip, .po-dock-bar, .po-save, .po-cheer, .po-steps, .po-hint, kbd, .view-meta small, .ss-export small, .po-ring { font-variant-numeric: tabular-nums; }
+/* Calmer, flatter surfaces */
+.panel, .po-bible, .po-inspector, .golden-path, .po-classic, .sheet, .po-palette, .mp-pop, .po-cost-pop { border-radius: 12px; border-color: var(--stroke); }
+.panel { box-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 6px 22px rgba(0, 0, 0, .18); }
+input, select, textarea { border-radius: 8px; }
+button, .primary, .secondary, .icon-button { border-radius: 8px; }
+.po-top { backdrop-filter: saturate(160%) blur(18px); }
+/* One consistent keyboard focus ring (Apple style: a soft ring outside the control) */
+:where(button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid color-mix(in srgb, var(--gold-2) 80%, #fff 10%); outline-offset: 2px; border-radius: 8px; }
+:root[data-theme="light"] { --text: #15181c; }
+:root[data-theme="light"] body { background: var(--bg); }
+@media (prefers-contrast: more) { :root { --text-3: #b3b6bf; --stroke: rgba(255, 255, 255, .22); } }
+
+/* Action rows wrap instead of squeezing the first button until its label is cut off */
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.button-row > * { flex: 0 0 auto; max-width: 100%; }
+.primary.full { padding-inline: 12px; }
+.po-title { min-height: 30px; }
+.po-line { min-height: 24px; }
+.po-tabs em { color: var(--text-2); }
+
+/* ======================= Light theme: readable text everywhere =======================
+   Older stylesheets hard-code pale greys meant for the dark theme. In the light theme every muted line uses the muted token and every strong line the main one. */
+:root[data-theme="light"] {
+  --gold-2: #7a5712;
+}
+:root[data-theme="light"] .po-plain small, :root[data-theme="light"] .po-plain li small, :root[data-theme="light"] .inventory-row span, :root[data-theme="light"] .inventory-row small,
+:root[data-theme="light"] .inventory-header span, :root[data-theme="light"] .po-bible-head small, :root[data-theme="light"] .po-bible small, :root[data-theme="light"] .planned, :root[data-theme="light"] .status,
+:root[data-theme="light"] .golden-note, :root[data-theme="light"] .golden-head p, :root[data-theme="light"] .ad-coherence, :root[data-theme="light"] .queue-list .empty, :root[data-theme="light"] .prompt-tabs button,
+:root[data-theme="light"] .real-empty, :root[data-theme="light"] .script-template p, :root[data-theme="light"] .model-match small, :root[data-theme="light"] .image-generation-gate small,
+:root[data-theme="light"] .po-steps li.upcoming b, :root[data-theme="light"] .po-steps li.upcoming button, :root[data-theme="light"] .panel-heading .status, :root[data-theme="light"] .asset-lab-head .status,
+:root[data-theme="light"] .button-row small, :root[data-theme="light"] .helper { color: var(--text-3); }
+:root[data-theme="light"] .po-plain b, :root[data-theme="light"] .po-plain li, :root[data-theme="light"] .po-plain li b, :root[data-theme="light"] .po-bible li b, :root[data-theme="light"] button b,
+:root[data-theme="light"] .script-template p b, :root[data-theme="light"] .po-plain li span { color: var(--text); }
+:root[data-theme="light"] .po-plain li small { color: var(--text-3); }
+:root[data-theme="light"] .po-emotion { filter: brightness(.58) saturate(1.3); }
+:root[data-theme="light"] .agent-row { background: rgba(255, 255, 255, .72); }
+:root[data-theme="light"] .agent-row strong, :root[data-theme="light"] .agent-detail p { color: var(--text); }
+:root[data-theme="light"] .agent-board-mode, :root[data-theme="light"] .ss-type, :root[data-theme="light"] .po-tabs button.active b, :root[data-theme="light"] .prompt-box > span:first-child, :root[data-theme="light"] .model-match > span:first-child { color: var(--gold-deep); }
+:root[data-theme="light"] .script-editor, :root[data-theme="light"] .script-editor textarea { color: var(--text); background: rgba(255, 255, 255, .86); }
+:root[data-theme="light"] .po-tabs button.active span { color: var(--gold-2); }
+:root[data-theme="light"] .agent-detail small, :root[data-theme="light"] .agent-detail b, :root[data-theme="light"] .agent-detail span { color: var(--text-2); }
+:root[data-theme="light"] .agent-status { color: #1f6b3a; }
+:root[data-theme="light"] .agent-row.blocked .agent-status, :root[data-theme="light"] .agent-status.blocked { color: #9a2f1f; }
+:root[data-theme="light"] .script-editor, :root[data-theme="light"] textarea.script-editor { color: var(--text) !important; background: rgba(255, 255, 255, .9) !important; }
+:root[data-theme="light"] .agent-status { color: #14502a; }
+:root[data-theme="light"] .agent-row.blocked .agent-status, :root[data-theme="light"] .agent-status.blocked { color: #8a2819; }
+
+/* Sticky tab bars are opaque enough that the heading scrolling beneath never ghosts through */
+.section-nav { background: color-mix(in srgb, var(--bg) 98%, transparent); backdrop-filter: blur(16px) saturate(150%); }
+/* Inter draws a capital I and a lowercase l the same. Names matter here ("Ione" is not "lone"), so use the lowercase l with a tail. */
+:root { font-feature-settings: "calt", "kern", "cv05"; }
+body, input, select, textarea, button { font-feature-settings: "calt", "kern", "cv05"; }
+
+/* Thumbnails take the shape of their sheet (portrait for characters, 4:3 for props, 16:9 for locations) instead of one fixed portrait frame */
+.view-thumb { aspect-ratio: var(--thumb-aspect, 3 / 4); }

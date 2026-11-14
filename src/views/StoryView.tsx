@@ -44,7 +44,7 @@ export function StoryView(props: {
         <div className="panel-heading">
           <div>
             <Eyebrow icon={ListChecks}>EDITABLE INVENTORY</Eyebrow>
-            <h3>{analysis.scenes.length} scenes · {analysis.assets.length} assets</h3>
+            <h3>{analysis.scenes.length} {analysis.scenes.length === 1 ? "scene" : "scenes"} · {analysis.assets.length} {analysis.assets.length === 1 ? "asset" : "assets"}</h3>
           </div>
         </div>
         <ReadingPanel story={analysis.story} onJump={props.onJump} desktop={props.desktop} onStory={(story) => props.setAnalysis((a) => ({ ...a, story }))} notify={notify} onAddProp={props.onAddProp} onUseAge={props.onUseAge} />

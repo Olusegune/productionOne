@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.29.0 (2026-11-14): design refresh, light theme, documentation with screenshots
+- Typography: Inter (with its optical-size axis, so large titles tighten like a display face and small text opens up like a text face) replaces Fraunces, Plus Jakarta Sans and Geist. One family everywhere, tabular numbers for readings (counters, costs, queue), and the lowercase l with a tail so a capital I and an l can be told apart in names ("Ione" is not "lone"). The three removed font packages shrink the installer by about 90 KB.
+- Surfaces: neutral charcoal, thin separators, calmer shadows, 12 px panels and 8 px controls, compact 13 px controls and a 14 px base size, in the spirit of Apple's and DaVinci Resolve's interfaces. One consistent keyboard focus ring.
+- Sheet thumbnails take the shape of their sheet (portrait characters, 4:3 props, 16:9 locations) instead of one fixed portrait frame, so landscape images no longer sit in tall empty frames.
+- Fix: action rows in the asset panel wrapped badly and squeezed "Approve identity" to a 36 px sliver with its label cut off; they now wrap.
+- Fix: the sticky tab bar let the panel heading show through it; it is now opaque.
+- Light theme: readable text on every screen (a checked audit replaced dozens of pale greys carried over from the dark theme). The only items still flagged are the emotion chips, whose contrast comes from a colour filter the audit cannot measure.
+- Fix: "1 scenes" and "1 canonical assets" now read "1 scene" and "1 canonical asset".
+- Fix: the splash screen showed "VERSION 0.20.0" for many releases; it now shows the real version, and a test fails whenever the version differs between package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock, the splash screen, the changelog and the release notes.
+- Documentation: new user guide, design notes, QA report and testing notes, with screenshots of the Projects, Story, Design, sheet, voice, queue, Direct, Deliver, command-palette and light-theme screens (taken from the packaged app; paths and user names are masked). The screenshots use a location and a prop; character art is not in the repository.
+- Audited at 1024, 1280, 1440 and 1920 pixels wide across all five workspaces: no horizontal overflow, no contrast failures in the dark theme, no clipped buttons.
+- Tests: 273 JS (including a version-consistency test), 70 Rust.
+
 ## 0.28.9 (2026-11-14): full systems check, stress tests, and the fixes they found
 Run on the packaged app with your keys: every sheet of every asset type, sets, props, wardrobe and detail sheets (23 images), pause and resume, a hard kill in the middle of generation, 300 rapid workspace switches, local AI, voices, providers.
 Found and fixed:

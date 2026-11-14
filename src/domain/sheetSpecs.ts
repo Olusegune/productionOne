@@ -39,6 +39,11 @@ export const shapeChoices = [
   { value: '16:9', label: 'Wide 16:9' },
 ] as const
 
+/** A shape such as "16:9" as a CSS aspect-ratio ("16 / 9"). Anything that is not a plain ratio falls back to portrait, so a bad value can never break a layout. */
+export function aspectCss(shape: string): string {
+  return /^\d{1,2}:\d{1,2}$/.test(shape) ? shape.replace(':', ' / ') : '3 / 4'
+}
+
 /** The shape a view is made in: the person's choice for the sheet when there is one, otherwise the view's own default. */
 export function shapeFor(view: { aspect: string }, override?: string): string {
   return override && shapeChoices.some((s) => s.value === override) ? override : view.aspect

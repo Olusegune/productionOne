@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildViewPrompt, identityFacts, outputName, shapeFor, viewsFor } from './sheetSpecs'
+import { aspectCss, buildViewPrompt, identityFacts, outputName, shapeFor, viewsFor } from './sheetSpecs'
 import { defaultStyleBible } from './visualDevelopment'
 
 const amina = { id: 'CHAR-001', name: 'Amina', type: 'character' as const }
@@ -89,5 +89,16 @@ describe('the never clause', () => {
     const view = viewsFor('character', 'Turnaround')[0]
     const prompt = buildViewPrompt({ style: defaultStyleBible, asset: { ...amina, never: 'never a smile showing teeth' }, variant: 'Canonical', sheetType: 'Turnaround', view })
     expect(prompt).toMatch(/Must never drift: never a smile showing teeth\./)
+  })
+})
+
+describe('thumbnail shape', () => {
+  it('turns a shape into a CSS aspect-ratio and falls back to portrait for anything odd', () => {
+    expect(aspectCss('16:9')).toBe('16 / 9')
+    expect(aspectCss('3:4')).toBe('3 / 4')
+    expect(aspectCss('1:1')).toBe('1 / 1')
+    expect(aspectCss('banana')).toBe('3 / 4')
+    expect(aspectCss('16:9; background:red')).toBe('3 / 4')
+    expect(aspectCss('')).toBe('3 / 4')
   })
 })
