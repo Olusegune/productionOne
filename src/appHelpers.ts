@@ -50,4 +50,10 @@ export function downloadText(name: string, value: string, type = "text/plain") {
   URL.revokeObjectURL(url);
 }
 
+/** The file name of a project path on any platform: Windows paths use backslashes, others use slashes. */
+export function recentName(path: string): string {
+  const parts = path.split(/[\\/]/).filter(Boolean)
+  return parts[parts.length - 1] ?? path
+}
+
 export const isTauri = "__TAURI_INTERNALS__" in window;
