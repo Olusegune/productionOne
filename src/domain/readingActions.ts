@@ -12,12 +12,12 @@ export function addPropAsset(assets: ExtractedAsset[], name: string, sceneId: st
 }
 
 /** Add a character that comes from an image the person already has (for example a Midjourney render) rather than from the script. Never duplicates a name. */
-export function addCharacterAsset(assets: ExtractedAsset[], name: string, sceneId: string, now = Date.now()): { assets: ExtractedAsset[]; added: boolean; asset?: ExtractedAsset; reason?: string } {
+export function addCharacterAsset(assets: ExtractedAsset[], name: string, sceneId: string, now = Date.now(), gender = ''): { assets: ExtractedAsset[]; added: boolean; asset?: ExtractedAsset; reason?: string } {
   const label = clean(name)
   if (!label) return { assets, added: false, reason: 'Type the character\'s name first.' }
   if (assets.some((a) => a.name.trim().toLowerCase() === label.toLowerCase())) return { assets, added: false, reason: `${label} is already in the asset list.` }
   const id = `MANU-CHAR-${String(assets.length + 1).padStart(3, '0')}-${now.toString(36).slice(-4).toUpperCase()}`
-  const asset: ExtractedAsset = { id, name: label, type: 'character', sceneIds: [sceneId], status: 'planned' }
+  const asset: ExtractedAsset = { id, name: label, type: 'character', sceneIds: [sceneId], status: 'planned', ...(clean(gender) ? { gender: clean(gender) } : {}) }
   return { assets: [...assets, asset], added: true, asset }
 }
 

@@ -9,6 +9,7 @@ mod comfy_install;
 mod ledger;
 mod voice;
 mod voice_cloud;
+mod sheet_export;
 use std::{fs, path::PathBuf};
 use tauri::{Emitter, Manager};
 use serde_json::{json, Value};
@@ -81,7 +82,7 @@ fn save_prompt_package(app: tauri::AppHandle, asset_id: String, contents: String
 }
 
 /// "YYYYMMDD-HHMMSS" in UTC for a Unix time. Sorts in time order, so the newest backups are the last names.
-fn utc_stamp(secs: u64) -> String {
+pub(crate) fn utc_stamp(secs: u64) -> String {
     let days = (secs / 86_400) as i64;
     let rem = secs % 86_400;
     // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm).
@@ -245,7 +246,7 @@ fn inspect_image_file(path: &std::path::Path) -> Result<ImageInspection, String>
 #[tauri::command]
 fn inspect_image(path: String) -> Result<ImageInspection, String> { inspect_image_file(std::path::Path::new(&path)) }
 
-fn draw_label_text(canvas: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, text: &str, x: u32, y: u32, scale: u32) {
+pub(crate) fn draw_label_text(canvas: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, text: &str, x: u32, y: u32, scale: u32) {
     let mut cursor = x;
     for character in text.chars().take(100) {
         if let Some(glyph) = font8x8::BASIC_FONTS.get(character) {
@@ -297,7 +298,7 @@ fn import_labeled_asset(app: tauri::AppHandle, image_data: Vec<u8>, file_name: S
     Ok(ImportedAsset { path: output_path.to_string_lossy().to_string(), inspection })
 }
 
-fn safe_package_name(value: &str) -> String {
+pub(crate) fn safe_package_name(value: &str) -> String {
     let cleaned: String = value.chars().map(|character| if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') { character } else { '_' }).collect();
     cleaned.trim_matches('_').to_string()
 }
@@ -441,7 +442,7 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::elevenlabs_models, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, backup_project, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::elevenlabs_models, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, backup_project, sheet_export::export_contact_sheet, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }

@@ -37,6 +37,11 @@ describe('adding a character from an image', () => {
     expect(again.added).toBe(false)
     expect(again.assets).toBe(r.assets)
   })
+  it('records a gender only when one is given, so the voice picker can match it', () => {
+    expect(addCharacterAsset(base, 'Mara', 'S1', 1, 'female').asset?.gender).toBe('female')
+    expect(addCharacterAsset(base, 'Mara', 'S1', 1).asset).not.toHaveProperty('gender')
+    expect(addCharacterAsset(base, 'Mara', 'S1', 1, '  ').asset).not.toHaveProperty('gender')
+  })
   it('asks for a name', () => {
     expect(addCharacterAsset(base, '   ', 'S1').added).toBe(false)
     expect(addCharacterAsset(base, '   ', 'S1').reason).toMatch(/name/i)

@@ -65,6 +65,23 @@ describe('SheetStudio generate flow', () => {
     expect(calls.some((c) => c.name === 'generate_image')).toBe(false)
   })
 
+  it('exports the views that have a picture as one labelled sheet image', async () => {
+    calls.length = 0
+    render(<Harness />)
+    expect(screen.queryByRole('button', { name: /export sheet as one image/i })).toBeNull()
+    const mine = await screen.findAllByRole('button', { name: /use my image/i })
+    fireEvent.click(mine[0])
+    await waitFor(() => expect(latestQueue.jobs).toHaveLength(1))
+    expect(screen.queryByRole('button', { name: /export sheet as one image/i })).toBeNull() // one view is not a sheet yet
+    fireEvent.click((await screen.findAllByRole('button', { name: /use my image/i }))[1])
+    await waitFor(() => expect(latestQueue.jobs).toHaveLength(2))
+    fireEvent.click(await screen.findByRole('button', { name: /export sheet as one image/i }))
+    await waitFor(() => expect(calls.some((c) => c.name === 'export_contact_sheet')).toBe(true))
+    const call = calls.find((c) => c.name === 'export_contact_sheet')!
+    expect((call.args.cells as unknown[]).length).toBe(2)
+    expect(call.args.columns).toBe(2)
+    expect(String(call.args.title)).toMatch(/AMINA Turnaround/)
+  })
   it('attaches reference photos to the asset and sends them with generation requests', async () => {
     calls.length = 0
     render(<Harness />)

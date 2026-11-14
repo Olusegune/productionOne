@@ -1,5 +1,6 @@
 import { SearchSelect } from './SearchSelect'
 import { useEffect, useState } from 'react'
+import { cachedVoices, rememberVoices } from '../domain/voiceCache'
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { KeyRound, Sparkles, Volume2 } from 'lucide-react'
 import type { CloudModel } from '../domain/elevenModels'
@@ -32,7 +33,7 @@ export function VoiceCloud(props: {
 }) {
   const { provider, desktop, assetId, voice, setVoice, model, setModel, models, latestModel, providersVersion, openProviders, onClip, notify, setError, soundOnly, soundHint } = props
   const [saved, setSaved] = useState<Record<string, boolean>>({})
-  const [voices, setVoices] = useState<CloudVoice[]>([])
+  const [voices, setVoices] = useState<CloudVoice[]>(() => cachedVoices<CloudVoice>(provider.id))
   const [busy, setBusy] = useState('')
   const [description, setDescription] = useState('')
   const [sample, setSample] = useState('')
@@ -48,13 +49,14 @@ export function VoiceCloud(props: {
     setSaved(next)
   }
   useEffect(() => { void refreshStatus() }, [provider.id, desktop, providersVersion])
-  useEffect(() => { setVoices([]); setPreviews([]) }, [provider.id])
+  useEffect(() => { setVoices(cachedVoices<CloudVoice>(provider.id)); setPreviews([]) }, [provider.id])
   const connected = (provider.keys ?? []).every((k) => saved[k.id])
   const run = async (what: string, job: () => Promise<void>) => { setBusy(what); setError(''); try { await job() } catch (e) { setError(String(e)) } finally { setBusy('') } }
 
   const loadVoices = () => run('voices', async () => {
     const list = await invoke<CloudVoice[]>(provider.id === 'elevenlabs' ? 'elevenlabs_voices' : 'voicekiller_voices')
     setVoices(list)
+    rememberVoices(provider.id, list)
     if (!voice && list[0]) setVoice(list[0].id)
     notify(`${list.length} voices loaded.`)
   })

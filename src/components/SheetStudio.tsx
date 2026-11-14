@@ -243,6 +243,14 @@ export function SheetStudio(props: {
   const anchorPath = anchorFor(queue, { assetId: asset.id, variant: activeVariant } as ImageJob);
   const lock = anchorStatus({ takesReferences: anchorOn, anchorPath, anchorLabel: "front view" });
   const suggestion = anchorOn ? undefined : suggestReferenceModel(catalog, { provider, modelId }, configured);
+  /** One labelled image of every view that has a picture, saved to Documents\Production One\Sheets. */
+  const exportSheet = async () => {
+    if (!asset || viewItems.length < 1) return;
+    try {
+      const path = await invoke<string>("export_contact_sheet", { title: `${asset.name} ${activeType}`, cells: viewItems.map((it) => ({ path: it.job.outputPath, label: it.label })), columns: viewItems.length <= 5 ? viewItems.length : 4 });
+      notify(`Saved one image of this sheet: ${path}`);
+    } catch (error) { notify(String(error)); }
+  };
   const toggleCompare = (key: string) => setCompare((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key].slice(-2)));
   const compareItems = compare.map((k) => ({ key: k, view: views.find((v) => v.key === k), job: jobFor(k) })).filter((x): x is { key: string; view: (typeof views)[number]; job: ImageJob } => !!x.view && !!x.job?.outputPath);
 
@@ -311,6 +319,9 @@ export function SheetStudio(props: {
                 <figure key={key}><img src={convertFileSrc(job.outputPath!)} alt={`${view.label} at full size`} /><figcaption>{view.label}{job.approved ? " · Approved" : ""}</figcaption></figure>
               ))}
             </div>
+          )}
+          {desktop && viewItems.length >= 2 && (
+            <div className="ss-export"><button className="secondary" onClick={() => void exportSheet()} title="Combine the views on this sheet into one labelled image"><LayoutGrid size={14} aria-hidden="true" /> Export sheet as one image</button><small>{viewItems.length} of {views.length} views have a picture</small></div>
           )}
           <div className={`view-grid ${size}`}>
             {views.map((view) => {

@@ -36,7 +36,7 @@ export interface DesignViewProps {
   importAsset: (file: File) => Promise<void>;
   jobs: GenerationJob[];
   modelRecommendations: (ImageModelRecord & { score: number; reason: string; })[];
-  onAddCharacter: (name: string) => void;
+  onAddCharacter: (name: string, gender: string) => void;
   onSheetApproved: (job: ImageJob, primary: boolean) => void;
   openAiConfigured: boolean;
   plannedSheets: SheetPlan[];

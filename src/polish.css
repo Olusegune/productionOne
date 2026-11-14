@@ -341,3 +341,6 @@ h3.with-icon > svg { flex: none; color: var(--gold-2); }
 .add-character label { display: grid; gap: 6px; font-size: 12px; opacity: .85; }
 .add-character input { min-width: 0; }
 .add-character button { justify-content: center; }
+
+.ss-export { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.ss-export small { opacity: .7; }

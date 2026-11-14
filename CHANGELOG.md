@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.28.5 (2026-11-13): sheet export, steadier turntables, voice picker fixes
+Fixes for everything the three-character run found and left open.
+- New: "Export sheet as one image" on every sheet. Combines the views that have a picture (turnaround, poses, expressions, wardrobe, detail) into one labelled PNG in Documents\Production One\Sheets. Only images in the app's own assets folder are read; at most 24 views per image. Checked in the packaged app: nine sheets exported and looked right.
+- Fix: the cloud voice list (ElevenLabs, VoiceKiller) is remembered for the session; switching engine or character no longer empties it and forces "Load my voices" again. Checked in the packaged app.
+- Fix: a character added from an image can be given a gender (optional, never guessed), so the voice picker chooses a matching Windows voice instead of defaulting to a male one.
+- Fix: the turntable prompt also asks the model to keep the face, expression and costume as in the reference. Re-run: CASSIUS and MARA now turn a full 360 degrees and CASSIUS keeps his stern face to the end; MARA's eyes opened in the clip although they are closed in her image, so expression is only partly held.
+- Tests: 219 JS, 69 Rust. Local secrets scan clean. The remote Rafter scan was not run (plan quota used up); the new export command was reviewed by hand (path containment, size limits, filename sanitising).
+- Not verified: the gender field was checked for rendering and by unit test, not by completing a real image pick; audio quality unheard.
+
 ## 0.28.4 (2026-11-13): live video and voice test on a character added from an image
 - Test with your keys: MARA, added from her Midjourney image with "Add from image", made a 5 s 1076x1924 24 fps Kling turntable clip (face, hood, robe and jar held), a Windows (Zira) line and an ElevenLabs eleven_v4 "Joy - Soft Spoken" line. Not heard by me; the clip turned only about 180 degrees.
 - Fix: the turntable prompt now asks for one complete 360-degree rotation that ends facing the camera. Not re-run (it would spend a second video), so unverified.

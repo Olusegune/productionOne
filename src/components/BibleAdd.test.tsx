@@ -16,8 +16,15 @@ describe('Add a character from an image', () => {
     fireEvent.change(screen.getByLabelText('Name for the new character'), { target: { value: 'Dominic' } })
     expect(button.disabled).toBe(false)
     fireEvent.click(button)
-    expect(add).toHaveBeenCalledWith('Dominic')
+    expect(add).toHaveBeenCalledWith('Dominic', '')
     expect((screen.getByLabelText('Name for the new character') as HTMLInputElement).value).toBe('')
+  })
+  it('passes the chosen gender along', () => {
+    const add = setup()
+    fireEvent.change(screen.getByLabelText('Name for the new character'), { target: { value: 'Mara' } })
+    fireEvent.change(screen.getByLabelText('Gender for the new character'), { target: { value: 'female' } })
+    fireEvent.click(screen.getByRole('button', { name: /Add from image/ }))
+    expect(add).toHaveBeenCalledWith('Mara', 'female')
   })
   it('is absent when the host cannot import images', () => {
     render(<BibleTree assets={[]} queue={emptyQueue()} selected={0} onSelect={() => {}} />)
