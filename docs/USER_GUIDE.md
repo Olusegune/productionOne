@@ -63,6 +63,10 @@ On an asset's **Motion** tab, choose a clip (turntable, idle, walk, run, speaks 
 
 On the **Voice and sound** tab, pick an engine (free Windows voices, ElevenLabs, VoiceKiller, or a local speech server), a voice, and a line. Each character gets its own suggested Windows voice from its stated gender and age.
 
+Each clip plays **level-matched** (to -20 LUFS, never boosted past 12 dB or into clipping) with the silence at its two ends trimmed, so voices are compared fairly; the line under the player says what was done. Untick **Level-matched** to hear the original as recorded. Your saved files are never changed.
+
+![Audition clips, level-matched and trimmed](screenshots/audition-player.png)
+
 **Casting line** gives every candidate voice the same words so you compare voices, not wording: a pangram (English; Spanish, French and German letter pangrams), draft lines for Nigerian Pidgin, Yoruba, Igbo and Hausa, or an emotional-range line shaped by the character's personality. The Spanish, French, German and Nigerian-language lines are labelled for a native speaker to check, and the Nigerian-language lines are drafts that were not written by a native speaker. Delivery tags such as `[whispers]` are added only on an ElevenLabs model that reads them (Eleven v3 or later); other engines get plain text.
 
 ## The queue

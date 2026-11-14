@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { convertFileSrc, invoke } from '@tauri-apps/api/core'
+import { invoke } from '@tauri-apps/api/core'
 import { Copy, Volume2 } from 'lucide-react'
 import type { ExtractedAsset } from '../domain/productionStudio'
 import type { ParsedStory } from '../engine/story'
 import type { DemoClip } from '../domain/demoClips'
 import { buildPerformance, emptyDirection, performanceBrief, providerById, providers, voiceEvents, voiceStates, type EventCue, type ProviderId, type VoiceEvent, type VoiceState } from '../domain/voiceDirection'
 import { SearchSelect } from './SearchSelect'
+import { LevelledAudio } from './LevelledAudio'
 import { VoiceCloud } from './VoiceCloud'
 import { latestElevenModel, rankElevenModels, supportsAudioTags, type CloudModel } from '../domain/elevenModels'
 import { castingLine, castingLineChoices, sampleLines, soundBrief, suggestVoice, voiceBrief, type CastingLineKind, type InstalledVoice } from '../domain/voiceAudition'
@@ -132,6 +133,6 @@ ${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</b
       <div className="sheet-actions-row"><button className="secondary" onClick={() => copy(soundBrief(asset))}><Copy size={14} /> Copy sound brief</button></div>
     </>}
     {error && <p className="helper warn" role="alert">{error}</p>}
-    {mine.length > 0 && <div className="clip-grid">{mine.slice().reverse().map((c) => <figure key={c.id}><audio controls src={convertFileSrc(c.path)} aria-label={`${c.assetName} voice audition`} /><figcaption><b>“{(c.line ?? '').slice(0, 60)}”</b><small>{c.model}</small></figcaption></figure>)}</div>}
+    {mine.length > 0 && <div className="clip-grid">{mine.slice().reverse().map((c) => <figure key={c.id}><LevelledAudio path={c.path} label={`${c.assetName} voice audition`} /><figcaption><b>“{(c.line ?? '').slice(0, 60)}”</b><small>{c.model}</small></figcaption></figure>)}</div>}
   </section>
 }

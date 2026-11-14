@@ -447,3 +447,11 @@ body, input, select, textarea, button { font-feature-settings: "calt", "kern", "
 
 /* Thumbnails take the shape of their sheet (portrait for characters, 4:3 for props, 16:9 for locations) instead of one fixed portrait frame */
 .view-thumb { aspect-ratio: var(--thumb-aspect, 3 / 4); }
+
+/* Level-matched audition player */
+.levelled-audio { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 10px; width: 100%; }
+.levelled-audio .la-bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.levelled-audio .la-bar i { display: block; height: 100%; background: var(--gold-2); border-radius: inherit; }
+.levelled-audio .la-time { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
+.levelled-audio .la-toggle { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+.levelled-audio .la-note { grid-column: 1 / -1; color: var(--text-3); font-size: 12px; }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.29.2 (2026-11-14): level-matched, trimmed audition playback
+From the audio check (docs/AUDIO_CHECK_2026-11-14.md): clips differed by up to 8 LU in loudness, so voice casting favoured the loudest, and the Windows voices ended with about 0.8 s of dead air.
+- Audition clips (voice auditions and cloud voice previews) now play level-matched to -20 LUFS and with silence trimmed at the two ends only (never inside a line), with a little air kept at each end. Loudness is measured the broadcast way (ITU-R BS.1770 K-weighting with EBU R128 gating) and matches ffmpeg's measurement; boost is capped at 12 dB and never pushes a peak past -1 dBFS. The clip line says what was done ("+5.3 dB to -20 LUFS, 0.8 s of silence trimmed").
+- A "Level-matched" switch plays the original instead, for comparison; one switch covers every clip on screen and is remembered. Playing one clip stops the one before it, so clips can be compared by ear.
+- Nothing is written to disk: the saved files are exactly as the voice engine returned them. Where a clip cannot be decoded, the plain browser player is used.
+- New Rust command `read_audio_clip` reads a saved clip for the player: only files inside the app's assets folder, only audio extensions, at most 64 MB.
+- Tests: 296 JS (loudness against ffmpeg's value for a tone at three sample rates, gating, safety limits, silence trimming that never cuts inside a line, and the player with a fake audio engine), 72 Rust.
+- Not done: levelling is for listening only; exported or delivered audio files are still unprocessed, and there is no "save a levelled copy" button yet.
+
 ## 0.29.1 (2026-11-14): motion clips are silent; audio check
 - Found by measuring and transcribing every audio clip made in testing (see `docs/AUDIO_CHECK_2026-11-14.md`): a Seedance turntable clip carried an unrequested, very quiet soundtrack (the recogniser labelled it "[MUSIC PLAYING]"). The app left the model's optional audio switch at the provider's default, which is on. It now turns a model's soundtrack switch (`generate_audio`, `sound`, `audio` and similar) off for every Kie request, so reference clips are silent. Covered by a Rust test.
 - Audio check: all nine voice clips are clean (no clipping, no dead lead-in); seven were transcribed word for word by a local speech model, one ElevenLabs line had a mid-phrase pause that garbled the second half, and one VoiceKiller clip ended with a breath-like extra sound. Loudness differs by up to 8 LU between clips and the Windows voices end with about 0.8 s of silence; both are recorded as improvements, not yet made.
