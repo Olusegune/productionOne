@@ -1,3 +1,4 @@
+#![allow(unknown_lints)] // the next lint only exists in newer clippy releases
 #![allow(clippy::chunks_exact_to_as_chunks)]
 //! CleanRender: measures common AI-image artifacts and applies gentle, adjustable corrections without touching the original file.
 //!

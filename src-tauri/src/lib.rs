@@ -244,7 +244,7 @@ fn inspect_image_file(path: &std::path::Path) -> Result<ImageInspection, String>
 }
 
 #[tauri::command]
-fn inspect_image(path: String) -> Result<ImageInspection, String> { inspect_image_file(std::path::Path::new(&path)) }
+fn inspect_image(app: tauri::AppHandle, path: String) -> Result<ImageInspection, String> { inspect_image_file(&providers::inside_assets(&app, &path)?) }
 
 pub(crate) fn draw_label_text(canvas: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, text: &str, x: u32, y: u32, scale: u32) {
     let mut cursor = x;
@@ -267,8 +267,11 @@ pub(crate) fn draw_label_text(canvas: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, text:
 }
 
 #[tauri::command]
-fn label_image(input_path: String, output_path: String, title: String, metadata: Vec<String>) -> Result<ImageInspection, String> {
-    let source = image::open(&input_path).map_err(|error| error.to_string())?.to_rgba8();
+fn label_image(app: tauri::AppHandle, input_path: String, output_path: String, title: String, metadata: Vec<String>) -> Result<ImageInspection, String> {
+    // Both ends stay inside the app's assets folder: an image it saved, and a new .png beside it.
+    let input = providers::inside_assets(&app, &input_path)?;
+    let output_path = providers::new_png_inside(&providers::assets_root(&app)?, &output_path)?.to_string_lossy().into_owned();
+    let source = image::open(&input).map_err(|error| error.to_string())?.to_rgba8();
     let panel_height = 132u32;
     let mut output = ImageBuffer::from_pixel(source.width(), source.height() + panel_height, Rgba([17, 20, 24, 255]));
     image::imageops::overlay(&mut output, &source, 0, 0);

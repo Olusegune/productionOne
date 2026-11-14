@@ -3,10 +3,11 @@
 ## Commands
 ```powershell
 npx tsc --noEmit -p .                               # types
-npx vitest run                                      # unit and component tests (273 at 0.29.0)
-cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (70 at 0.29.0; set CARGO_TARGET_DIR if the app is running)
+npx vitest run                                      # unit and component tests (296 at 0.29.2)
+cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (73 at 0.29.2; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 npm audit
+cargo audit                                         # in src-tauri; needs `cargo install cargo-audit`
 npm run build
 rafter secrets .                                    # before every push
 ```
@@ -24,6 +25,7 @@ rafter secrets .                                    # before every push
 | Sheet Studio (generate, own images, reference photos, shape, backdrop, export one sheet, export every sheet), queue bar, voice picker, casting lines, voice suggestion, Add from image | `src/components/*.test.tsx` | `invoke` is mocked |
 | Director's room, Lightbox, CleanRender | `src/components/*.test.tsx` | |
 | Every workspace and Alt+number | `src/App.test.tsx` | Guards the split of App.tsx |
+| Audition loudness and trimming, the level-matched player | `src/domain/audioLevel.test.ts`, `LevelledAudio.test.tsx` | Loudness is checked against ffmpeg's ebur128 value for a tone at three sample rates |
 | Versions agree everywhere | `src/versionSync.test.ts` | package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock, splash, changelog, release notes |
 | Providers, Kie parser, VoiceKiller list, local AI, script files, CleanRender maths, launch arguments, backups, sheet export layout | Rust `#[cfg(test)]` modules | |
 
@@ -31,6 +33,13 @@ rafter secrets .                                    # before every push
 Driven through the app's own window with WebView2's debug port (`--remote-debugging-port`) and `window.__TAURI_INTERNALS__.invoke`. The full run for 0.28.9 to 0.29.0, with results, is in [QA_REPORT_0.29.0.md](QA_REPORT_0.29.0.md). Earlier runs: 0.12.3 and 0.13.1 (Kie, Gemini, OpenAI, a Kling video, own-image drop, lightbox, animatic, Ollama, ComfyUI install), 0.28.x (image-first characters, turntable videos, ElevenLabs and VoiceKiller speech).
 
 A second copy of the app cannot run beside an installed one (single-instance), and the app shares one data folder, so a live test replaces the autosave. The app backs the previous production up first (Backups folder); reopen it afterwards.
+
+## Release gate (run before every release)
+1. `npx tsc --noEmit -p .`, `npx vitest run`, `cargo test`, `cargo clippy --all-targets -- -D warnings`.
+2. `npm audit` and `cargo audit` (0 vulnerabilities).
+3. `rafter secrets .`, and `rafter run` when the plan's quota allows.
+4. Build, then in the packaged app: a fresh load with console and security-policy violations recorded (none expected), a walk of every workspace and sheet, thumbnails, audio and video playback, an export, PDF and Word import, a ledger write, and the path-confinement checks (commands given a path outside the assets folder must refuse it). The 0.29.2 run is in [QA_REPORT_0.29.2.md](QA_REPORT_0.29.2.md).
+5. Version guard (`versionSync.test.ts`), changelog, release notes, documentation.
 
 ## Interface audit
 An in-page script (see QA report) checks, per workspace and per width (1024, 1280, 1440, 1920) and per theme: horizontal overflow, clipped text, tiny text, small click targets and WCAG contrast. Re-run it after any CSS change.

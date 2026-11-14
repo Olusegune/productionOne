@@ -72,7 +72,7 @@ pub fn parse_kie_doc(md: &str) -> Result<KieSchema, String> {
     let image = IMAGE_KEYS.iter().find_map(|k| get(k).map(|f| ImageField { key: k.to_string(), array: f["type"].as_str() == Some("array"), max: f["maxItems"].as_u64().unwrap_or(1) as usize, required: required.iter().any(|r| r == k) }));
     let duration_key = get("duration").map(|_| "duration".to_string());
     let (duration_values, duration_is_number) = duration_key.as_ref().and_then(|k| get(k)).map(|f| (enum_strings(f), matches!(f["type"].as_str(), Some("integer") | Some("number")))).unwrap_or_default();
-    let audio_key = AUDIO_KEYS.iter().find(|k| get(k).map_or(false, |f| f["type"].as_str() == Some("boolean"))).map(|k| k.to_string());
+    let audio_key = AUDIO_KEYS.iter().find(|k| get(k).is_some_and(|f| f["type"].as_str() == Some("boolean"))).map(|k| k.to_string());
     let handled: Vec<&str> = vec!["prompt", "duration"];
     let mut fixed = Vec::new();
     for key in &required {

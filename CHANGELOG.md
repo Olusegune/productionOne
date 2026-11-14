@@ -6,8 +6,15 @@ From the audio check (docs/AUDIO_CHECK_2026-11-14.md): clips differed by up to 8
 - A "Level-matched" switch plays the original instead, for comparison; one switch covers every clip on screen and is remembered. Playing one clip stops the one before it, so clips can be compared by ear.
 - Nothing is written to disk: the saved files are exactly as the voice engine returned them. Where a clip cannot be decoded, the plain browser player is used.
 - New Rust command `read_audio_clip` reads a saved clip for the player: only files inside the app's assets folder, only audio extensions, at most 64 MB.
-- Tests: 296 JS (loudness against ffmpeg's value for a tone at three sample rates, gating, safety limits, silence trimming that never cuts inside a line, and the player with a fake audio engine), 72 Rust.
+- Tests (audio work): 296 JS (loudness against ffmpeg's value for a tone at three sample rates, gating, safety limits, silence trimming that never cuts inside a line, and the player with a fake audio engine), 72 Rust.
 - Not done: levelling is for listening only; exported or delivered audio files are still unprocessed, and there is no "save a levelled copy" button yet.
+
+Release gate for 0.29.2 (everything below was found and fixed before release; details in docs/QA_REPORT_0.29.2.md):
+- Security, dependencies: `cargo audit` reported 7 vulnerabilities. `tokio` 1.54.0 to 1.54.1 (a timer race), `zip` 4 to 9 (four advisories about extracting archives; the app writes and reads zip files but never calls extract), `rusqlite` 0.32 to 0.42 (a newer bundled SQLite), `pdf-extract` 0.9 to 0.12 (brings `lopdf` 0.42, which fixes a stack overflow on deeply nested PDFs). `cargo audit` now reports 0 vulnerabilities. PDF import, Word import and the SQLite ledger were re-checked in the packaged app.
+- Security, hardening: the app had no content-security policy (`csp: null`); a strict one is now set and was tested in the packaged app (zero violations during a full walk; a remote script, an inline script and a remote image are all blocked; fonts, inline styles, thumbnails, video through the asset protocol, audio and export all still work). `label_image` and `inspect_image` accepted any path from the page; both are now confined to the assets folder, and a labelled image can only be a new `.png` directly in it. New unit tests for both.
+- Lint: `cargo clippy --all-targets -D warnings` was failing (an old allow for a lint this toolchain does not know, and a `map_or` from 0.29.1); both fixed, clippy is clean.
+- Tests: 296 JS, 73 Rust. `npm audit`: 0 vulnerabilities. Local secrets scan clean. The remote Rafter scan could not run (plan quota used up).
+- Still listed, not fixed: maintenance warnings (not vulnerabilities) for `unsafe-libyaml` and `ttf-parser` in the Windows build.
 
 ## 0.29.1 (2026-11-14): motion clips are silent; audio check
 - Found by measuring and transcribing every audio clip made in testing (see `docs/AUDIO_CHECK_2026-11-14.md`): a Seedance turntable clip carried an unrequested, very quiet soundtrack (the recogniser labelled it "[MUSIC PLAYING]"). The app left the model's optional audio switch at the provider's default, which is on. It now turns a model's soundtrack switch (`generate_audio`, `sound`, `audio` and similar) off for every Kie request, so reference clips are silent. Covered by a Rust test.
