@@ -131,7 +131,9 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     anchored ? anchoredPromptLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,
-    'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',
+    anchored
+      ? 'Plain seamless studio background in the same neutral tone as the reference image, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.'
+      : 'Plain neutral light-grey background, even neutral lighting, no cast shadows on the background, no text, no labels, no borders, no watermark.',
     asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
     'Exactly ONE single image of ONE subject in ONE view. Do not make a grid, contact sheet, collage, split-screen, triptych or several views side by side; no repeated copies of the subject.',
     view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',

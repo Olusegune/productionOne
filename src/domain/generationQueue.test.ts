@@ -198,3 +198,30 @@ describe('regenerate and cost preview', () => {
     expect(costPreview(0, 0.04).label).toBe('Nothing new to generate')
   })
 })
+
+describe('Kie "no model page" refusals and stale failures', () => {
+  const message = 'Kie has no model page called google/nanobanana-2-1 (it may have been renamed). Press Refresh models.'
+  it('treats a no-model-page refusal as retryable, with a pause', () => {
+    const kind = classifyError(message)
+    expect(kind.retryable).toBe(true)
+    expect(kind.delayMs).toBeGreaterThan(0)
+  })
+  it('requeues it once, and fails it for good after the attempt limit', () => {
+    let q = enqueue(emptyQueue(), [req('front')], 1).state
+    const id = q.jobs[0].id
+    q = markGenerating(q, id, 2)
+    q = markFailed(q, id, message, 3)
+    expect(q.jobs[0].status).toBe('queued')
+    expect(q.jobs[0].notBefore).toBeGreaterThan(3)
+    const exhausted = { ...q, jobs: q.jobs.map((j) => ({ ...j, status: 'generating' as const, attempts: j.maxAttempts })) }
+    expect(markFailed(exhausted, id, message, 4).jobs[0].status).toBe('failed')
+  })
+  it('does not report a failed view as failed once a newer revision exists', () => {
+    let q = enqueue(emptyQueue(), [req('front'), req('side')], 1).state
+    q = { ...q, jobs: q.jobs.map((j) => ({ ...j, status: 'failed' as const, attempts: 1 })) }
+    expect(summarize(q).failed).toBe(2)
+    q = enqueue(q, [req('front')], 5).state
+    expect(summarize(q).failed).toBe(1)
+    expect(attemptsSent(q)).toBe(2)
+  })
+})

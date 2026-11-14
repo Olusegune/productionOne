@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addPropAsset, applyReadAge } from './readingActions'
+import { addCharacterAsset, addPropAsset, applyReadAge } from './readingActions'
 import type { ExtractedAsset } from './productionStudio'
 
 const base: ExtractedAsset[] = [
@@ -24,5 +24,21 @@ describe('reading actions', () => {
     expect(r.assets.find((a) => a.id === 'A1')?.age).toBe('34')
     expect(r.assets.find((a) => a.id === 'P1')?.age).toBeUndefined()
     expect(applyReadAge(base, 'NOBODY', 'Age 9').applied).toBe(false)
+  })
+})
+
+describe('adding a character from an image', () => {
+  it('adds a character once and never duplicates a name', () => {
+    const r = addCharacterAsset(base, '  Dominic ', 'S1', 5)
+    expect(r.added).toBe(true)
+    expect(r.asset).toMatchObject({ name: 'Dominic', type: 'character', status: 'planned', sceneIds: ['S1'] })
+    expect(r.assets).toHaveLength(3)
+    const again = addCharacterAsset(r.assets, 'dominic', 'S1', 6)
+    expect(again.added).toBe(false)
+    expect(again.assets).toBe(r.assets)
+  })
+  it('asks for a name', () => {
+    expect(addCharacterAsset(base, '   ', 'S1').added).toBe(false)
+    expect(addCharacterAsset(base, '   ', 'S1').reason).toMatch(/name/i)
   })
 })

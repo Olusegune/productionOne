@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { EmptyState } from "./EmptyState";
-import { Box, Mountain, Shirt, Users, type LucideIcon } from "lucide-react";
+import { Box, ImagePlus, Mountain, Shirt, Users, type LucideIcon } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
-import type { QueueState } from "../domain/generationQueue";
+import { isSuperseded, type QueueState } from "../domain/generationQueue";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 
@@ -17,7 +17,7 @@ export function EmotionChip({ emotion, intensity, ai }: { emotion: Emotion; inte
 type Dot = "approved" | "review" | "busy" | "failed" | "planned";
 const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
   const mine = queue.jobs.filter((j) => j.assetId === asset.id);
-  if (mine.some((j) => j.status === "failed")) return "failed";
+  if (mine.some((j) => j.status === "failed" && !isSuperseded(queue, j))) return "failed";
   if (mine.some((j) => j.status === "generating" || j.status === "validating" || j.status === "queued")) return "busy";
   if (mine.some((j) => j.status === "needs-review")) return "review";
   return asset.status === "approved" ? "approved" : "planned";
@@ -26,14 +26,21 @@ const typeIcon: Record<string, LucideIcon> = { character: Users, costume: Shirt,
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
-export function BibleTree({ assets, story, queue, selected, onSelect }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void }) {
+export function BibleTree({ assets, story, queue, selected, onSelect, onAddCharacter }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; onAddCharacter?: (name: string) => void }) {
+  const [newName, setNewName] = useState("");
   const arcs = useMemo(() => new Map<string, CharacterArc>((story ? characterArcs(story) : []).map((a) => [a.character.toUpperCase(), a])), [story]);
   const groups: Array<[string, ExtractedAsset["type"][]]> = [["Characters", ["character"]], ["Costumes", ["costume"]], ["Props", ["prop"]], ["Sets", ["set", "environment"]]];
   const approved = assets.filter((a) => a.status === "approved").length;
   return (
     <aside className="po-bible" aria-label="Production bible">
       <div className="po-bible-head"><span className="eyebrow">PRODUCTION BIBLE</span><small>{approved} of {assets.length} approved</small></div>
-      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here.</EmptyState>}
+      {onAddCharacter && (
+        <form className="add-character" onSubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; onAddCharacter(newName); setNewName(""); }}>
+          <label><span>Have a character image? Start from it</span><input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Character name" aria-label="Name for the new character" /></label>
+          <button className="secondary" type="submit" disabled={!newName.trim()} title="Choose an image (for example from Midjourney). It becomes the approved front view; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
+        </form>
+      )}
+      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here. Or start a character from an image you already have.</EmptyState>}
       {groups.map(([label, types]) => {
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         if (!items.length) return null;

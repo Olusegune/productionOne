@@ -116,6 +116,12 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
 }
 
 /** Every attempt that was sent counts toward the ceiling, because a failed attempt may still be billed. */
+/** A failed job that a newer revision of the same view has replaced is history, not a problem: it stays in the record and the attempt count, but is not reported as failed. */
+export function isSuperseded(state: QueueState, job: ImageJob): boolean {
+  return state.jobs.some((o) => o.assetId === job.assetId && o.variant === job.variant && o.sheetType === job.sheetType && o.viewKey === job.viewKey && o.revision > job.revision)
+}
+export const unresolvedFailures = (state: QueueState) => state.jobs.filter((j) => j.status === 'failed' && !isSuperseded(state, j))
+
 export const attemptsSent = (state: QueueState) => state.jobs.reduce((n, j) => n + j.attempts, 0)
 export const committedUsd = (state: QueueState) => (state.perImageUsd ?? 0) * attemptsSent(state)
 
@@ -223,6 +229,8 @@ export function classifyError(message: string): FailureKind {
   if (code === '429') return { retryable: true, delayMs: 30_000, advice: 'The provider is rate limiting requests; retrying shortly.' }
   if (code && Number(code) >= 500) return { retryable: true, delayMs: 10_000, advice: 'The provider had a server error; retrying shortly.' }
   if (/timed out|timeout|could not be reached/i.test(message)) return { retryable: true, delayMs: 10_000, advice: 'The connection failed; retrying shortly.' }
+  // Kie sometimes answers "no model page" for a model it served minutes earlier. It is not billed, so one more try after a pause is safe, and the attempt limit still applies.
+  if (/no model page/i.test(message)) return { retryable: true, delayMs: 15_000, advice: 'Kie did not find the model page just now; retrying shortly. If it keeps failing, press Refresh models.' }
   if (code === '401' || code === '403' || /No .* key is saved/i.test(message)) return { retryable: false, delayMs: 0, advice: 'The key is missing or was rejected. Check Provider Settings.' }
   return { retryable: false, delayMs: 0, advice: 'The request was not accepted. Check the model, the prompt and the provider message.' }
 }
@@ -280,7 +288,7 @@ export function recover(state: QueueState, now = Date.now()): QueueState {
 
 export function summarize(state: QueueState) {
   const count = (s: ImageJobStatus) => state.jobs.filter((j) => j.status === s).length
-  return { requests: attemptsSent(state), pending: count('pending'), queued: count('queued'), generating: count('generating'), validating: count('validating'), completed: count('completed'), needsReview: count('needs-review'), failed: count('failed'), cancelled: count('cancelled'), total: state.jobs.length, committedUsd: committedUsd(state) }
+  return { requests: attemptsSent(state), pending: count('pending'), queued: count('queued'), generating: count('generating'), validating: count('validating'), completed: count('completed'), needsReview: count('needs-review'), failed: unresolvedFailures(state).length, cancelled: count('cancelled'), total: state.jobs.length, committedUsd: committedUsd(state) }
 }
 
 /** Upper bound for what the waiting jobs could still cost at the person's own price. Not a provider quote. */

@@ -1,5 +1,6 @@
 import { toggleTheme } from "./data/theme";
-import { addPropAsset, applyReadAge } from "./domain/readingActions";
+import { addCharacterAsset, addPropAsset, applyReadAge } from "./domain/readingActions";
+import { hasWork, needsBackup } from "./domain/projectSafety";
 import { workspaceShortcut } from "./domain/shortcuts";
 import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers";
 import { Eyebrow } from "./components/Eyebrow";
@@ -75,7 +76,7 @@ import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
-import { emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
+import { addSupplied, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -402,6 +403,26 @@ export default function App() {
         },
       ],
     }));
+  };
+  /** Start a character from an image the person already has (for example a Midjourney render): it becomes the approved front view and every other sheet is built from it. */
+  const addCharacterFromImage = async (name: string) => {
+    if (!isTauri) { setNotice("Adding a character from an image needs the desktop app."); return; }
+    const result = addCharacterAsset(analysis.assets, name, analysis.scenes[0]?.id ?? "SCENE-001");
+    if (!result.added || !result.asset) { setNotice(result.reason ?? "Nothing added."); return; }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const chosen = await invoke<string[]>("pick_image_files", { multiple: false });
+      if (!chosen.length) return;
+      const [file] = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen });
+      if (!file) return;
+      const asset = result.asset;
+      const out = addSupplied(queue, { assetId: asset.id, variant: "Canonical", sheetType: "Turnaround", viewKey: "front", label: "Front", aspect: "3:4", fullBody: true, path: file.path, width: file.inspection.width, height: file.inspection.height });
+      setAnalysis((current) => ({ ...current, assets: result.assets }));
+      setQueue(() => out.state);
+      onSheetApproved(out.job, true);
+      setSelectedAsset(result.assets.length - 1);
+      setNotice(`${asset.name} added with your image as the approved front view. Open Reference sheets to build the turnaround, poses and expressions from it.`);
+    } catch (error) { setNotice(String(error)); }
   };
   const approveAsset = (index: number) =>
     setAnalysis((current) => ({
@@ -917,7 +938,23 @@ export default function App() {
     setSelectedShot(0);
     setDirty(false);
   };
-  const newProject = () => {
+  /**
+   * New and Open replace the single autosave slot. If the open production has work that is not safely in a saved file, copy it to Documents\Production One\Backups first.
+   * Returns the backup path, null when none was needed, or false when the backup failed (the caller then stops and nothing is replaced).
+   */
+  const keepCopy = async (): Promise<string | null | false> => {
+    if (!isTauri || !needsBackup({ hasWork: hasWork({ script, analysis, queue }), filePath, dirty })) return null;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      return await invoke<string>("backup_project", { title, contents: JSON.stringify(buildProjectFile(title, graph, studioNow), null, 2) });
+    } catch (error) {
+      setNotice(`Could not keep a copy of "${title}", so nothing was replaced: ${String(error)}. Save it first, then try again.`);
+      return false;
+    }
+  };
+  const newProject = async () => {
+    const kept = await keepCopy();
+    if (kept === false) return;
     applyProject(
       buildProjectFile("Untitled production", { schemaVersion: 1, nodes: [], edges: [] }, {
         script: "", analysis: { scenes: [], assets: [] }, shots: [], jobs: [], storyboardsEnabled: false,
@@ -926,17 +963,19 @@ export default function App() {
       null,
     );
     setWorkspace("Story");
-    setNotice("New production created. Paste or import your script to begin.");
+    setNotice(`New production created. Paste or import your script to begin.${kept ? ` Your previous production was kept as a copy: ${kept}` : ""}`);
   };
-  const openText = (text: string, path: string | null) => {
+  const openText = async (text: string, path: string | null) => {
     const parsed = parseProjectFile(text);
     if (!parsed.ok) { setNotice(parsed.error); return; }
+    const kept = await keepCopy();
+    if (kept === false) return;
     applyProject(parsed.file, parsed.legacy ? null : path);
     setWorkspace("Projects");
     setNotice(
-      parsed.legacy
+      (parsed.legacy
         ? `Opened legacy Production Guy project "${parsed.file.title}". The original file is untouched; Save writes a new .pone.`
-        : `Opened ${path ?? parsed.file.title}`,
+        : `Opened ${path ?? parsed.file.title}`) + (kept ? ` Your previous production was kept as a copy: ${kept}` : ""),
     );
   };
   const openProject = async () => {
@@ -944,14 +983,14 @@ export default function App() {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const opened = await invoke<{ path: string; contents: string } | null>("open_project_dialog");
-      if (opened) { openText(opened.contents, opened.path); void refreshRecents(); }
+      if (opened) { await openText(opened.contents, opened.path); void refreshRecents(); }
     } catch (error) { setNotice(`Could not open the project: ${String(error)}`); }
   };
   const openPath = async (path: string) => {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const opened = await invoke<{ path: string; contents: string }>("open_project_path", { path });
-      openText(opened.contents, opened.path);
+      await openText(opened.contents, opened.path);
       void refreshRecents();
     } catch (error) { setNotice(`Could not open the project: ${String(error)}`); }
   };
@@ -988,13 +1027,13 @@ export default function App() {
   guardRef.current = guard;
   openPathRef.current = (path) => void openPath(path);
   actionsRef.current = {
-    "file-new": () => guard(newProject),
+    "file-new": () => guard(() => void newProject()),
     "file-open": () => guard(() => void openProject()),
     "file-save": () => void saveProject(),
     "file-save-as": () => void saveProject(true),
     "file-import": () => { setWorkspace("Story"); void importScriptNative(); },
     "file-export": () => { setWorkspace("Deliver"); void buildProductionZip(); },
-    "file-close": () => guard(newProject),
+    "file-close": () => guard(() => void newProject()),
     "file-exit": () => guard(() => void quit()),
     "view-zoom-in": () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2))),
     "view-zoom-out": () => setZoom((z) => Math.max(0.7, +(z - 0.1).toFixed(2))),
@@ -1105,7 +1144,7 @@ export default function App() {
   return (
     <div className={`po-shell${sidebarHidden ? " rails-hidden" : ""}`} style={{ zoom } as CSSProperties}>
       <input ref={scriptInput} type="file" hidden accept=".txt,.md,.fountain,.screenplay,.fdx,text/plain,text/markdown" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importScript(file); e.target.value = ""; }} />
-      <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) openText(await file.text(), null); e.target.value = ""; }} />
+      <input ref={projectInput} type="file" hidden accept=".pone,.pguy,.json" onChange={async (e) => { const file = e.target.files?.[0]; if (file) await openText(await file.text(), null); e.target.value = ""; }} />
       <TopBar
         title={title}
         saveLabel={dirty ? "Unsaved changes" : filePath ? "Saved" : "Autosaved"}
@@ -1238,13 +1277,13 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(newProject)} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
+          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
         )}
         {workspace === "Story" && (
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} />
         )}
         {workspace === "Design" && (
-          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddCharacter={(name) => void addCharacterFromImage(name)} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
         {workspace === "Direct" && (
           <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} />

@@ -36,6 +36,7 @@ export interface DesignViewProps {
   importAsset: (file: File) => Promise<void>;
   jobs: GenerationJob[];
   modelRecommendations: (ImageModelRecord & { score: number; reason: string; })[];
+  onAddCharacter: (name: string) => void;
   onSheetApproved: (job: ImageJob, primary: boolean) => void;
   openAiConfigured: boolean;
   plannedSheets: SheetPlan[];
@@ -66,10 +67,10 @@ export interface DesignViewProps {
 }
 
 export function DesignView(p: DesignViewProps) {
-  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setStyleBible, sheetNotes, studioControl, styleBible } = p;
+  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddCharacter, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setStyleBible, sheetNotes, studioControl, styleBible } = p;
   return (
 <div className="po-design">
-            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} />
+            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddCharacter={onAddCharacter} />
             <div className="po-canvas design-workspace">
             <ArtDirectionBar
               style={styleBible}

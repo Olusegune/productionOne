@@ -53,4 +53,12 @@ describe('sheet specs', () => {
     const view = viewsFor('character', 'Turnaround')[1]
     expect(outputName(amina, 'Dust-worn / jacket', 'Turnaround', view, 2)).toBe('CHAR-001_Amina_Dust-worn-jacket_Turnaround_three-quarter-front_v02')
   })
+
+  it('matches the reference background when a reference is attached, and uses grey otherwise', () => {
+    const view = viewsFor('character', 'Turnaround')[1]
+    const base = { style: defaultStyleBible, asset: amina, variant: 'Canonical', sheetType: 'Turnaround' as const, view }
+    expect(buildViewPrompt({ ...base, anchored: true })).toMatch(/same neutral tone as the reference image/)
+    expect(buildViewPrompt({ ...base, anchored: true })).not.toMatch(/light-grey/)
+    expect(buildViewPrompt(base)).toMatch(/light-grey/)
+  })
 })

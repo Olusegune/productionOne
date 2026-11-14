@@ -335,3 +335,9 @@ h3.with-icon > svg { flex: none; color: var(--gold-2); }
 .po-actions .primary { max-width: 260px; }
 .po-local { padding-inline: 10px; }
 @media (max-width: 1500px) { .po-tabs em { display: none; } }
+
+/* Add a character from an image the person already has */
+.add-character { display: grid; gap: 8px; margin: 10px 0 12px; padding: 10px; border: 1px dashed var(--line, rgba(255,255,255,.14)); border-radius: 12px; }
+.add-character label { display: grid; gap: 6px; font-size: 12px; opacity: .85; }
+.add-character input { min-width: 0; }
+.add-character button { justify-content: center; }

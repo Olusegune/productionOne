@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.28.3 (2026-11-13): no lost work, start from your own images, retries
+Found by running the packaged app with three Midjourney characters (full turnaround, 8 poses and 8 expressions each).
+- Fix (data loss): New and Open replaced the single autosave slot, so an unsaved production could be lost with no warning. When the open production has work that is not safely in a saved file, the app now copies it to Documents\Production One\Backups first (newest 30 kept; only files the app wrote are ever pruned) and names the copy in the message. If the copy cannot be made, nothing is replaced.
+- New: "Add from image" in the Production Bible. Type a name, choose an image (for example from Midjourney); it becomes the approved front view and the turnaround, poses, expressions and the rest are built from it with the identity lock on. No script needed.
+- Fix: a Golden Path for a project started from images no longer says "Add your script"; Create and Analyze count as done.
+- Fix: Kie sometimes refuses a model it served minutes earlier ("no model page"). It is now retried automatically after a pause, within the normal three-attempt limit, instead of failing until you press Retry.
+- Fix: the queue bar and the Bible dot kept counting "failed" for a view that a later retry had already produced. Superseded failures stay in the record and the request count but are no longer reported as failed.
+- Change: when a reference image is attached, prompts ask for a background matching it (your white Midjourney backdrops) instead of always light grey.
+- Tests: 213 JS, 67 Rust. Rafter: local secrets scan clean; the remote scan could not run (plan quota used for this period), so the diff was reviewed by hand against the CWE list (path traversal, deletion, JSON parsing).
+- Not verified: the Kie retry cannot be triggered on demand, so it is covered by unit tests only.
+
 ## 0.28.2 (2026-11-13): VoiceKiller verified live; voice list fixed
 - Live test with your keys (one short line each): ElevenLabs eleven_v4 produced a valid 3 s MP3; VoiceKiller (voice "Bella") produced a valid 4 s 128 kbps MP3; Google Gemini 3.1 Flash Lite Image produced a five-view AMINA turnaround with the identity lock holding.
 - Fix: VoiceKiller's voice list is one name per line, not JSON, so the picker said "not in a shape this app knows". It now reads that shape and still refuses markup, braces, colons or long lines. Tests extended.

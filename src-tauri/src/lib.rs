@@ -80,6 +80,50 @@ fn save_prompt_package(app: tauri::AppHandle, asset_id: String, contents: String
     Ok(path.to_string_lossy().to_string())
 }
 
+/// "YYYYMMDD-HHMMSS" in UTC for a Unix time. Sorts in time order, so the newest backups are the last names.
+fn utc_stamp(secs: u64) -> String {
+    let days = (secs / 86_400) as i64;
+    let rem = secs % 86_400;
+    // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm).
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + if month <= 2 { 1 } else { 0 };
+    format!("{year:04}{month:02}{day:02}-{:02}{:02}{:02}", rem / 3_600, rem % 3_600 / 60, rem % 60)
+}
+
+const BACKUPS_KEPT: usize = 30;
+
+/// True only for names this command writes ("<name>-YYYYMMDD-HHMMSS.pone"), so pruning never touches a file a person put in the folder themselves.
+fn is_backup_name(file_name: &str) -> bool {
+    let Some(stem) = file_name.strip_suffix(".pone") else { return false };
+    let Some((_, stamp)) = stem.rsplit_once('-').and_then(|(rest, time)| rest.rsplit_once('-').map(|(name, date)| (name, format!("{date}-{time}")))) else { return false };
+    let b = stamp.as_bytes();
+    b.len() == 15 && b[8] == b'-' && b.iter().enumerate().all(|(i, c)| i == 8 || c.is_ascii_digit())
+}
+
+/// Keeps a copy of a production before New or Open replaces it. Returns the file written. Older backups beyond the newest 30 are removed; nothing else is touched.
+#[tauri::command]
+fn backup_project(app: tauri::AppHandle, title: String, contents: String) -> Result<String, String> {
+    serde_json::from_str::<Value>(&contents).map_err(|error| format!("The project is not valid JSON, so it was not backed up: {error}"))?;
+    let dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Backups");
+    fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+    let name = safe_package_name(&title);
+    let name = if name.is_empty() { "production".to_string() } else { name.chars().take(60).collect() };
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let path = dir.join(format!("{name}-{}.pone", utc_stamp(secs)));
+    write_atomic(path.clone(), contents)?;
+    let mut all: Vec<PathBuf> = fs::read_dir(&dir).map_err(|error| error.to_string())?.filter_map(|e| e.ok()).map(|e| e.path()).filter(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(is_backup_name)).collect();
+    all.sort_by_key(|p| fs::metadata(p).and_then(|m| m.modified()).ok());
+    while all.len() > BACKUPS_KEPT { let oldest = all.remove(0); let _ = fs::remove_file(oldest); }
+    Ok(path.to_string_lossy().into_owned())
+}
+
 fn credential(provider: &str) -> Result<keyring::Entry, String> {
     if !matches!(provider, "kie" | "fal" | "openai" | "google" | "openrouter" | "elevenlabs" | "voicekiller" | "voicekiller-user") {
         return Err("Unsupported provider".to_string());
@@ -397,13 +441,34 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::elevenlabs_models, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::elevenlabs_models, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::qa_image, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, backup_project, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn only_files_this_app_wrote_count_as_backups() {
+        assert!(super::is_backup_name("The_Last_Horizon-20261113-201500.pone"));
+        assert!(super::is_backup_name("production-19700101-000000.pone"));
+        assert!(!super::is_backup_name("My film.pone"));
+        assert!(!super::is_backup_name("film-final.pone"));
+        assert!(!super::is_backup_name("film-20261113-201500.txt"));
+        assert!(!super::is_backup_name("film-2026111-2015000.pone"));
+        let name = format!("x-{}.pone", super::utc_stamp(1_700_000_000));
+        assert!(super::is_backup_name(&name));
+    }
+
+    #[test]
+    fn backup_names_use_a_sortable_utc_stamp() {
+        assert_eq!(super::utc_stamp(0), "19700101-000000");
+        assert_eq!(super::utc_stamp(951_782_400), "20000229-000000", "leap day");
+        let (a, b) = (super::utc_stamp(1_700_000_000), super::utc_stamp(1_700_000_001));
+        assert!(a < b);
+        assert_eq!(super::utc_stamp(1_700_000_000), "20231114-221320");
+    }
+
     #[test]
     fn project_arg_picks_only_project_files_after_the_program_name() {
         let v = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
