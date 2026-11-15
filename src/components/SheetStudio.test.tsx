@@ -30,13 +30,13 @@ const analysis = analyzeScript(sampleStory)
 
 let latestQueue: QueueState = emptyQueue()
 const approvals: string[] = []
-function Harness({ initial = emptyQueue() }: { initial?: QueueState }) {
+function Harness({ initial = emptyQueue(), slot }: { initial?: QueueState; slot?: HTMLElement | null }) {
   const [queue, setQueue] = useState(initial)
   const [refs, setRefs] = useState<Record<string, string[]>>({})
   latestQueue = queue
   useImageQueue(queue, (u) => setQueue(u), true)
   const jonah = analysis.assets.findIndex((a) => a.name === 'AMINA')
-  return <SheetStudio assets={analysis.assets} scenes={analysis.scenes} story={analysis.story} assetIndex={jonah} style={defaultStyleBible} queue={queue} setQueue={(u) => setQueue(u)} desktop providersVersion={0} onApproved={(job) => approvals.push(job.outputPath ?? '')} notify={() => {}} openProviders={() => {}} refs={refs} setRefs={(u2) => setRefs(u2)} />
+  return <SheetStudio assets={analysis.assets} scenes={analysis.scenes} story={analysis.story} assetIndex={jonah} style={defaultStyleBible} queue={queue} setQueue={(u) => setQueue(u)} desktop providersVersion={0} onApproved={(job) => approvals.push(job.outputPath ?? '')} notify={() => {}} openProviders={() => {}} refs={refs} setRefs={(u2) => setRefs(u2)} controlsSlot={slot} />
 }
 
 describe('SheetStudio generate flow', () => {
@@ -130,5 +130,30 @@ describe('SheetStudio generate flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /generate 5 views/i }))
     await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image')).toHaveLength(1))
     expect(calls.find((c) => c.name === 'generate_image')!.args.references).toEqual(['C:/assets/actor_yours.png'])
+  })
+})
+
+describe('SheetStudio controls can live in the side inspector', () => {
+  it('draws look, sheet, generate and notes in the slot and keeps only the pictures in the panel', async () => {
+    calls.length = 0
+    const slot = document.createElement('div')
+    document.body.appendChild(slot)
+    render(<Harness slot={slot} />)
+    const generate = await screen.findByRole('button', { name: /generate 5 views/i })
+    expect(slot.contains(generate)).toBe(true)
+    const panel = document.querySelector('.sheet-studio')!
+    expect(panel.contains(generate)).toBe(false)
+    expect(slot.querySelector('.ss-bar')).toBeTruthy()
+    expect(panel.querySelector(':scope > .ss-bar')).toBeNull()
+    expect(panel.querySelector('.ss-work.solo')).toBeTruthy()
+    // still works from there
+    fireEvent.click(generate)
+    await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image')).toHaveLength(1))
+    slot.remove()
+  })
+  it('keeps the controls in the panel when there is no slot (a narrow window)', async () => {
+    render(<Harness slot={null} />)
+    const generate = await screen.findByRole('button', { name: /generate 5 views/i })
+    expect(document.querySelector('.sheet-studio')!.contains(generate)).toBe(true)
   })
 })

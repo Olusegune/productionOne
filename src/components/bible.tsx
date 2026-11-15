@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
-import { Box, ImagePlus, Mountain, Shirt, Users, type LucideIcon } from "lucide-react";
+import { Box, ImagePlus, Mountain, Shirt, Users, X, type LucideIcon } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { isSuperseded, type QueueState } from "../domain/generationQueue";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
@@ -27,6 +28,7 @@ const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs you
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
 export function BibleTree({ assets, story, queue, selected, onSelect, onAddCharacter }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; onAddCharacter?: (name: string, gender: string) => void }) {
+  const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState("");
   const arcs = useMemo(() => new Map<string, CharacterArc>((story ? characterArcs(story) : []).map((a) => [a.character.toUpperCase(), a])), [story]);
@@ -35,12 +37,20 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddChara
   return (
     <aside className="po-bible" aria-label="Production bible">
       <div className="po-bible-head"><span className="eyebrow">PRODUCTION BIBLE</span><small>{approved} of {assets.length} approved</small></div>
-      {onAddCharacter && (
-        <form className="add-character" onSubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; onAddCharacter(newName, newGender); setNewName(""); setNewGender(""); }}>
+      {onAddCharacter && <button className="secondary add-asset-open" onClick={() => setAdding(true)} title="Start a character from an image you already have"><ImagePlus size={14} aria-hidden="true" /> Add character from image</button>}
+      {adding && onAddCharacter && createPortal(
+        <div className="modal-backdrop" role="presentation" onClick={() => setAdding(false)}>
+          <section className="sheet add-dialog" role="dialog" aria-modal="true" aria-label="Add a character from an image" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === "Escape") setAdding(false); }}>
+            <div className="panel-heading"><h3>Add a character from an image</h3><button className="icon-button" aria-label="Close" onClick={() => setAdding(false)}><X size={16} /></button></div>
+            <p className="helper">Choose an image you already have (for example from Midjourney). It becomes the approved front view, and every other sheet is built from it.</p>
+        <form className="add-character" onSubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; onAddCharacter(newName, newGender); setNewName(""); setNewGender(""); setAdding(false); }}>
           <label><span>Have a character image? Start from it</span><input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Character name" aria-label="Name for the new character" /></label>
           <label><span>Gender (optional, helps pick a voice)</span><select value={newGender} onChange={(e) => setNewGender(e.target.value)} aria-label="Gender for the new character"><option value="">Not set</option><option value="female">Female</option><option value="male">Male</option></select></label>
           <button className="secondary" type="submit" disabled={!newName.trim()} title="Choose an image (for example from Midjourney). It becomes the approved front view; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
         </form>
+          </section>
+        </div>,
+        document.body,
       )}
       {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here. Or start a character from an image you already have.</EmptyState>}
       {groups.map(([label, types]) => {
@@ -75,7 +85,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddChara
 }
 
 /** What the engine knows about the selected asset, with the script lines it came from. */
-export function AssetInspector({ asset, story }: { asset?: ExtractedAsset; story?: ParsedStory }) {
+export function AssetInspector({ asset, story, slotRef }: { asset?: ExtractedAsset; story?: ParsedStory; /** Called with the element that holds the sheet controls, or null when they are not shown here. */ slotRef?: (el: HTMLElement | null) => void }) {
   const arc = useMemo(() => (story && asset ? characterArcs(story).find((a) => a.character.toUpperCase() === asset.name.toUpperCase()) : undefined), [story, asset]);
   if (!asset) return <aside className="po-inspector"><span className="eyebrow">INSPECTOR</span><p className="helper">Select something in the bible to see what the script says about it.</p></aside>;
   const scenes = story?.scenes.filter((s) => asset.sceneIds.includes(s.id)) ?? [];
@@ -84,6 +94,7 @@ export function AssetInspector({ asset, story }: { asset?: ExtractedAsset; story
   const plan = arc ? expressionPlan(arc) : [];
   return (
     <aside className="po-inspector" aria-label="Inspector">
+      {slotRef && <div className="ss-slot" ref={slotRef} />}
       <span className="eyebrow">{asset.type.toUpperCase()} · {asset.id}</span>
       <h3>{asset.name}</h3>
       <section>

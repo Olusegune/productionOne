@@ -56,3 +56,9 @@
 .po-shell .eyebrow, .po-shell .agent-status, .po-shell small, .po-shell .agent-board b { font-size: 12px; }
 @media (max-width: 1280px) { .po-shell .po-tabs { width: 100%; } .po-shell .po-tabs button { min-height: 44px; } .po-shell .po-actions .icon-button { min-width: 36px; min-height: 36px; } }
 :root[data-theme="light"] .po-shell small { color: var(--text-3); }
+
+/* Light theme values for the surface tokens, so every screen that uses them is readable in both themes */
+:root[data-theme="light"] { --panel-1: #fbf9f4; --panel-2: #efeae0; --line-1: rgba(20, 24, 30, .16); }
+/* In the light theme the champagne accent is a dark gold, so text on it is white */
+:root[data-theme="light"] .po-shell .po-next .primary, :root[data-theme="light"] .po-shell .po-tabs em.po-badge, :root[data-theme="light"] .rv-actions .primary, :root[data-theme="light"] .sg-fav-toggle.on, :root[data-theme="light"] .sg-families button.on, :root[data-theme="light"] .sg-detail .primary, :root[data-theme="light"] .sv-toolbar .primary, :root[data-theme="light"] .sv-count.warn, :root[data-theme="light"] .po-sub span, :root[data-theme="light"] .sg-current { color: #fff; }
+:root[data-theme="light"] .sg-fav-toggle.on, :root[data-theme="light"] .sg-families button.on, :root[data-theme="light"] .rv-filter button.on { background: var(--gold-2); color: #fff; }

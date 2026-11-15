@@ -55,14 +55,14 @@ No key? Open **Local AI** (sidebar, bottom) and let it find or install ComfyUI.
 npm install
 npm run dev            # browser preview (plans only; generation needs the desktop app)
 npm run desktop:dev    # desktop app with hot reload
-npm test               # 350+ unit, component and stress tests
+npm test               # 360+ unit, component and stress tests
 npx tsc -b             # the real type check (tsc --noEmit -p . checks nothing here)
 cargo test --manifest-path src-tauri/Cargo.toml
 npm run desktop:build  # installers under src-tauri/target/release/bundle/
 python scripts/make-icons.py   # rebuild icons from branding/
 ```
 
-Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.32.0.md](docs/QA_REPORT_0.32.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.33.0.md](docs/QA_REPORT_0.33.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Honest limits
 

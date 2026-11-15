@@ -71,6 +71,7 @@ import "./cleanrender.css";
 import "./shell-v2.css";
 import "./review.css";
 import "./gallery.css";
+import "./script.css";
 import { sampleStory } from "./engine/sampleStory";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
@@ -1296,7 +1297,7 @@ export default function App() {
           <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
         )}
         {workspace === "Story" && (
-          <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} />
+          <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} outputs={assetOutputs} />
         )}
         {workspace === "Design" && (
           <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddCharacter={(name, gender) => void addCharacterFromImage(name, gender)} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />

@@ -3,7 +3,7 @@
 ## Commands
 ```powershell
 npx tsc -b                                          # types (plain `tsc --noEmit -p .` checks nothing here)
-npx vitest run                                      # unit and component tests (350 at 0.32.0)
+npx vitest run                                      # unit and component tests (364 at 0.33.0)
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (78 at 0.32.0; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 npm audit
@@ -31,8 +31,12 @@ rafter secrets .                                    # before every push
 | Suno request limits and result reading | Rust `suno.rs` tests | Model allow-list, title, style and lyrics lengths, length range, waiting, finished and failed task records; the network call is not unit-tested (run live) |
 | Review queue, approved reference choice, Deliver checklist and draft or verified rule | `src/domain/review.test.ts`, `src/views/ReviewView.test.tsx` | Approve, Request changes (opens the sheet, generates nothing), Reject, Turned down, no reference, empty |
 | Style gallery: search, families, favourites, details, focus, the locked state, and a picture on disk for every one of the 117 styles | `src/domain/styleGallery.test.ts`, `src/components/StyleGallery.test.tsx` | The list of pictures must equal the folder exactly; each file must be a real image under 120 KB |
+| Script workspace: toolbar, templates only when empty or on request, questions apart from confirmed findings, Evidence jumps, Facts toggle, tabs keep the script | `src/views/StoryView.test.tsx` | |
+| Sheet controls drawn in a slot (the side inspector) and inline when there is none | `src/components/SheetStudio.test.tsx` | |
+| Asset Studio tabs (Sheets first, other sections one tab away and still mounted), the one-line look bar, the Add character dialog | `src/App.test.tsx`, `src/components/BibleAdd.test.tsx` | |
 | Identity fields by asset kind (a set or prop shows no age or gender; older saved facts are kept) | `src/components/AssetLab.test.tsx` | |
 | Recent projects (file names on Windows and posix paths; removing one entry) | `src/appHelpers.test.ts`, Rust `desktop.rs` test | |
+| Fonts bundled and first in their stacks; the security policy allows only the app's own fonts | `src/fonts.test.ts` | |
 | Alt+1 to Alt+6 | `src/domain/shortcuts.test.ts`, `src/App.test.tsx` | Alt+1 to Alt+5 keep their old meaning; Review is Alt+6 |
 | Providers, Kie parser, VoiceKiller list, local AI, script files, CleanRender maths, launch arguments, backups, sheet export layout | Rust `#[cfg(test)]` modules | |
 
@@ -45,7 +49,7 @@ A second copy of the app cannot run beside an installed one (single-instance), a
 1. `npx tsc -b`, `npx vitest run`, `cargo test`, `cargo clippy --all-targets -- -D warnings`.
 2. `npm audit` and `cargo audit` (0 vulnerabilities).
 3. `rafter secrets .`, and `rafter run` when the plan's quota allows.
-4. Build, then in the packaged app: a fresh load with console and security-policy violations recorded (none expected), a walk of every workspace and sheet, thumbnails, audio and video playback, an export, PDF and Word import, a ledger write, and the path-confinement checks (commands given a path outside the assets folder must refuse it). The 0.31.0 run is in [QA_REPORT_0.31.0.md](QA_REPORT_0.31.0.md); the 0.30.0 run is in [QA_REPORT_0.30.0.md](QA_REPORT_0.30.0.md); the 0.29.2 run is in [QA_REPORT_0.29.2.md](QA_REPORT_0.29.2.md).
+4. Build, then in the packaged app: a fresh load with console and security-policy violations recorded (none expected), a walk of every workspace and sheet, thumbnails, audio and video playback, an export, PDF and Word import, a ledger write, and the path-confinement checks (commands given a path outside the assets folder must refuse it). The 0.33.0 run is in [QA_REPORT_0.33.0.md](QA_REPORT_0.33.0.md); the 0.32.0 run is in [QA_REPORT_0.32.0.md](QA_REPORT_0.32.0.md); the 0.31.0 run is in [QA_REPORT_0.31.0.md](QA_REPORT_0.31.0.md); the 0.30.0 run is in [QA_REPORT_0.30.0.md](QA_REPORT_0.30.0.md); the 0.29.2 run is in [QA_REPORT_0.29.2.md](QA_REPORT_0.29.2.md).
 5. Version guard (`versionSync.test.ts`), changelog, release notes, documentation.
 
 ## Interface audit

@@ -3,7 +3,7 @@
    readable disabled states; tidier voice and sound panels; honours reduced-motion and high-contrast settings. */
 :root {
   --ui: "Geist Variable", "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  --display: "Geist Variable", "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --display: "Space Grotesk Variable", "Inter Variable", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   font-feature-settings: normal;
   font-optical-sizing: auto;
   text-rendering: optimizeLegibility;

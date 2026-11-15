@@ -21,7 +21,7 @@
   --radius-sm: 6px;
   --shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 18px 50px rgba(0, 0, 0, .38);
   --ui: "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  --display: "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --display: "Space Grotesk Variable", "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   font-family: var(--ui);
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
