@@ -17,7 +17,7 @@ Built with Tauri 2 (Rust), React and TypeScript. Projects are saved as `.pone` f
 | **Direct** (optional) | The Director's room: coverage planned per scene, a shot editor (camera, composition, blocking, cast and wardrobe, lighting, performance, audio), storyboard frames from your approved references, continuity checks and an animatic. |
 | **Deliver** | A package checklist where every open line has a button to its fix, verified or draft packages, failed views grouped by cause with the fixes that can help, a Tasks list by role, and an optional shot compiler with an editable prompt for Seedance, Kling and Veo. |
 
-**Look.** A gallery of 117 visual styles, each with its own picture of the same scene, searchable, filterable by family, with favourites. **Navigation.** One sidebar; Alt+1 to Alt+6 switch workspace.
+**Appearance.** Three looks (Studio, Cinematic, Futurist), each in dark and light, chosen from the palette icon in the sidebar. **Look.** A gallery of 117 visual styles, each with its own picture of the same scene, searchable, filterable by family, with favourites. **Navigation.** One sidebar; Alt+1 to Alt+6 switch workspace.
 
 **Models.** Kie.ai (59 image and 47 video models read live), Google Gemini, OpenAI, OpenRouter, fal.ai, and local ComfyUI, Ollama and LM Studio. One searchable picker; any model id can be typed. Cost never interrupts you: an optional spending cap lives in the queue dock.
 
@@ -62,7 +62,7 @@ npm run desktop:build  # installers under src-tauri/target/release/bundle/
 python scripts/make-icons.py   # rebuild icons from branding/
 ```
 
-Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.34.0.md](docs/QA_REPORT_0.34.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.35.0.md](docs/QA_REPORT_0.35.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Honest limits
 

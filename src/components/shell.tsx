@@ -24,6 +24,7 @@ export function TopBar(props: {
   onLocal?: () => void;
   /** Pictures waiting for a decision; shown as a badge on Review. */
   reviewCount?: number;
+  onAppearance?: () => void;
 }) {
   const { steps, next, progress } = useMemo(() => goldenPath(props.golden), [props.golden]);
   // Quietly acknowledge a step when it becomes done (not on first load).
@@ -76,6 +77,7 @@ export function TopBar(props: {
         {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}
         <button className="icon-button" onClick={props.onPalette} title="Command palette (Ctrl+K)" aria-label="Open command palette"><CommandIcon size={16} /></button>
         <button className="icon-button" onClick={props.onProviders} title="Providers and keys" aria-label="Providers and keys"><WandSparkles size={16} /></button>
+        {props.onAppearance && <button className="icon-button" onClick={props.onAppearance} title="Appearance" aria-label="Appearance"><Palette size={16} /></button>}
       </div>
     </div>
   );

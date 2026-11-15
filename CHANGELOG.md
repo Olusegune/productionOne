@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.35.0 (2026-11-14): Appearance, three looks
+- **Appearance: three looks.** The palette icon at the bottom of the sidebar (or Ctrl+K, then "Appearance") opens a dialog to try a look on your own project, at once, with a preview of each. **Studio** is the default. **Cinematic** has warmer surfaces, serif page titles (Fraunces), rounder panels, and an accent taken from your visual style's palette (the most colourful entry, lifted until it reads at 4.5:1; a palette with no colour keeps the gold). **Futurist** has near-black blue surfaces, a cyan accent with a soft glow, tighter corners, uppercase tracked labels and a sharper body font (Geist). Each look has a dark and a light form; the dialog also switches dark and light. The choice is remembered on this computer. A look changes colours, fonts and shapes only, never what a control does. Palette commands: Appearance: Studio, Cinematic, Futurist.
+- Two bundled fonts added (SIL Open Font Licence): Fraunces and Geist, about 66 KB. Nothing is fetched from the network.
+- Light theme, all looks: the selected chips and the active sidebar item had unreadable text on some screens (white on a pale background, 1.2:1); fixed.
+- Checked: Studio, Cinematic and Futurist, dark and light, all six workspaces at 1440 px; the two new looks in the dark theme also at 1024 and 1920 px: no overflow, no text under 12 px, no contrast failures (the older emotion-chip, "universal" and Deliver-note labels in the light theme are unchanged).
+- Tests: 405 JS (the looks, the accent from a palette, the dialog, remembering the choice, the fonts).
 - Fixed: on the Story screen the asset list was cut off after about three rows and scrolled inside a short box, leaving the rest of the pane empty (an older style capped it at 375 px). The list now fills the pane, and the pane scrolls.
 
 ## 0.34.0 (2026-11-14): failed views by cause, a Tasks list

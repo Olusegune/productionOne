@@ -1,0 +1,86 @@
+/* ===== Looks (0.35): Studio is the default and needs no rules. Cinematic and Futurist change tokens and a few shapes; nothing here changes what a control does. ===== */
+
+/* ---------- Cinematic: warm surfaces, serif titles, the accent from the project's palette ---------- */
+:root[data-look="cinematic"] {
+  --bg: #12100e; --panel-1: #1b1815; --panel-2: #262019; --line-1: #382f25;
+  --text: #f4efe6; --text-2: #c7bdad; --text-3: #a09585;
+  --gold: var(--accent-project, #d6a95f); --gold-2: var(--accent-project, #e0b878); --gold-deep: #9a7336;
+  --blue: var(--accent-project, #e8c88a);
+  --display: "Fraunces Variable", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --radius: 14px; --radius-sm: 10px;
+}
+:root[data-look="cinematic"] h1, :root[data-look="cinematic"] h2, :root[data-look="cinematic"] h3, :root[data-look="cinematic"] h4,
+:root[data-look="cinematic"] .po-wordmark, :root[data-look="cinematic"] .stat-tiles b, :root[data-look="cinematic"] .as-title b, :root[data-look="cinematic"] .po-title { font-weight: 500; letter-spacing: -.005em; font-optical-sizing: auto; }
+:root[data-look="cinematic"] .sv-head h2, :root[data-look="cinematic"] .rv-head h2, :root[data-look="cinematic"] .sg-head h2 { font-size: 34px; line-height: 1.1; }
+:root[data-look="cinematic"] .po-wordmark { font-size: 18px; white-space: nowrap; }
+:root[data-look="cinematic"] .panel, :root[data-look="cinematic"] .sv-source, :root[data-look="cinematic"] .sv-breakdown, :root[data-look="cinematic"] .sg, :root[data-look="cinematic"] .rv-side, :root[data-look="cinematic"] .fg-group, :root[data-look="cinematic"] .ei-row { border-radius: 16px; }
+:root[data-look="cinematic"] .po-shell > .po-top { background: linear-gradient(180deg, #1d1915, #14110f); }
+:root[data-look="cinematic"] .script-editor { font-size: 16px; line-height: 1.8; }
+
+:root[data-look="cinematic"][data-theme="light"] {
+  --bg: #f6f0e6; --panel-1: #fffaf1; --panel-2: #f0e7d8; --line-1: rgba(70, 45, 20, .2);
+  --text: #2a2118; --text-2: #5a4c3b; --text-3: #6c5d4b;
+  --gold: #a06a22; --gold-2: #8a5a1c; --gold-deep: #6f4510; --blue: #8a5a1c;
+}
+:root[data-look="cinematic"][data-theme="light"] .primary { color: #fff; }
+
+/* ---------- Futurist: near-black blue, a cyan accent with a soft glow, tighter corners ---------- */
+:root[data-look="futurist"] {
+  --bg: #070a10; --panel-1: #0e131d; --panel-2: #151c2a; --line-1: #222f45;
+  --text: #ecf3ff; --text-2: #a4b6d2; --text-3: #8a9dbd;
+  --gold: #4cc9e4; --gold-2: #5fd8f2; --gold-deep: #2a9fbb;
+  --blue: #9ef3ff;
+  --ui: "Geist Variable", "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --radius: 6px; --radius-sm: 4px;
+}
+:root[data-look="futurist"] h1, :root[data-look="futurist"] h2, :root[data-look="futurist"] h3 { letter-spacing: -.02em; }
+:root[data-look="futurist"] .eyebrow, :root[data-look="futurist"] .po-next small, :root[data-look="futurist"] .po-bible-head .eyebrow { text-transform: uppercase; letter-spacing: .12em; }
+:root[data-look="futurist"] .panel, :root[data-look="futurist"] .sv-source, :root[data-look="futurist"] .sv-breakdown, :root[data-look="futurist"] .sg, :root[data-look="futurist"] .rv-side, :root[data-look="futurist"] .fg-group, :root[data-look="futurist"] .ei-row, :root[data-look="futurist"] .am-card { border-radius: 8px; }
+:root[data-look="futurist"] .primary { box-shadow: 0 0 0 1px rgba(95, 216, 242, .55), 0 0 22px rgba(95, 216, 242, .28); }
+:root[data-look="futurist"] .primary:hover { box-shadow: 0 0 0 1px rgba(158, 243, 255, .8), 0 0 28px rgba(95, 216, 242, .42); }
+:root[data-look="futurist"] .po-shell > .po-top { background: #090d15; border-right-color: #1b2740; }
+:root[data-look="futurist"] .po-shell .po-tabs button.active { box-shadow: inset 3px 0 var(--gold-2), 0 0 18px rgba(95, 216, 242, .12); }
+:root[data-look="futurist"] .sv-tabs button.on, :root[data-look="futurist"] .as-tabs button.on { box-shadow: 0 0 14px rgba(95, 216, 242, .18); }
+
+:root[data-look="futurist"][data-theme="light"] {
+  --bg: #eef3fa; --panel-1: #ffffff; --panel-2: #e3ebf6; --line-1: rgba(10, 30, 60, .18);
+  --text: #0b1626; --text-2: #3a4a63; --text-3: #4d5f7a;
+  --gold: #0b7f99; --gold-2: #0a7a93; --gold-deep: #066178; --blue: #0a7a93;
+}
+:root[data-look="futurist"][data-theme="light"] .primary { color: #fff; box-shadow: 0 0 0 1px rgba(10, 122, 147, .4); }
+:root[data-look="futurist"][data-theme="light"] .po-shell > .po-top { background: #ffffff; }
+
+/* ---------- Appearance dialog: each card previews its own look whatever look is on ---------- */
+.am { width: min(760px, calc(100vw - 48px)); }
+.am-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.am-card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; align-content: start; padding: 10px; border-radius: 14px; border: 2px solid var(--line-1); background: var(--panel-2); }
+.am-card:hover { border-color: var(--text-3); }
+.am-card.on { border-color: var(--gold-2); }
+.am-card:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.am-name { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600; color: var(--text); }
+.am-card small { color: var(--text-2); font-size: 13px; line-height: 1.4; }
+.am-desc { color: var(--text-3) !important; }
+.am-preview { display: block; }
+.am-bg { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; gap: 4px 10px; align-items: center; padding: 12px; border-radius: 10px; font-style: normal; }
+.am-heading { grid-row: 1 / 4; font-size: 30px; line-height: 1; font-weight: 600; }
+.am-bar { display: block; height: 6px; border-radius: 3px; text-decoration: none; opacity: .55; }
+.am-bar.short { width: 60%; }
+.am-accent { display: block; height: 10px; width: 46%; border-radius: 5px; }
+.am-card[data-look-preview="studio"] .am-bg { background: #0d1017; border: 1px solid #293241; }
+.am-card[data-look-preview="studio"] .am-heading { color: #eef2f8; font-family: "Space Grotesk Variable", sans-serif; }
+.am-card[data-look-preview="studio"] .am-bar { background: #a6b1c3; }
+.am-card[data-look-preview="studio"] .am-accent { background: #d8b779; }
+.am-card[data-look-preview="cinematic"] .am-bg { background: #12100e; border: 1px solid #382f25; border-radius: 14px; }
+.am-card[data-look-preview="cinematic"] .am-heading { color: #f4efe6; font-family: "Fraunces Variable", Georgia, serif; font-weight: 500; }
+.am-card[data-look-preview="cinematic"] .am-bar { background: #c7bdad; }
+.am-card[data-look-preview="cinematic"] .am-accent { background: var(--accent-project, #e0b878); }
+.am-card[data-look-preview="futurist"] .am-bg { background: #070a10; border: 1px solid #222f45; border-radius: 6px; }
+.am-card[data-look-preview="futurist"] .am-heading { color: #ecf3ff; font-family: "Space Grotesk Variable", sans-serif; }
+.am-card[data-look-preview="futurist"] .am-bar { background: #a4b6d2; }
+.am-card[data-look-preview="futurist"] .am-accent { background: #5fd8f2; box-shadow: 0 0 12px rgba(95, 216, 242, .55); }
+.am-theme { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--line-1); font-size: 14px; color: var(--text-2); }
+@media (max-width: 760px) { .am-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Light theme: selected states that must stay readable in every look (loaded last, so these win) ---------- */
+:root[data-theme="light"] .rv-filter button.on, :root[data-theme="light"] .sg-fav-toggle.on, :root[data-theme="light"] .sg-families button.on { background: var(--gold-2); color: #fff; }
+:root[data-theme="light"] .po-shell .po-tabs button.active span, :root[data-theme="light"] .po-shell .po-tabs button.active b { color: var(--text); }
