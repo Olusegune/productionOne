@@ -7,12 +7,18 @@ import { isSuperseded, type QueueState } from "../domain/generationQueue";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 
+/** Chip colours for the dark theme, lifted where needed so the text reads at 4.5:1 on the chip's own tint (a test checks every surface). */
 export const emotionColor: Record<Emotion, string> = {
-  neutral: "#77828c", joy: "#d1b47b", sadness: "#5c93b8", anger: "#c0705f", fear: "#9a86c4", surprise: "#8ec0b0", disgust: "#8fa06a", contempt: "#a08e7a", love: "#cf8fa0", determination: "#e9edf0",
+  neutral: "#9ca4ac", joy: "#d1b47b", sadness: "#7da9c6", anger: "#d09487", fear: "#ac9bce", surprise: "#8ec0b0", disgust: "#97a775", contempt: "#ae9f8e", love: "#cf8fa0", determination: "#e9edf0",
+};
+
+/** The same colours, darkened until the chip text reads at 4.5:1 or better on every light surface (the chip has a 16 percent tint of its own colour behind it). */
+export const emotionColorLight: Record<Emotion, string> = {
+  neutral: "#50585e", joy: "#63563a", sadness: "#3a5c73", anger: "#7d493e", fear: "#5c5076", surprise: "#435b54", disgust: "#525c3d", contempt: "#605549", love: "#724f58", determination: "#57595a",
 };
 
 export function EmotionChip({ emotion, intensity, ai }: { emotion: Emotion; intensity?: number; ai?: boolean }) {
-  return <span className="po-emotion" title={ai ? "Read by an AI model; its evidence quote was checked against the script" : undefined} style={{ borderColor: emotionColor[emotion], color: emotionColor[emotion] }}>{ai ? "✦ " : ""}{emotion}{intensity ? ` ${intensity}` : ""}</span>;
+  return <span className="po-emotion" title={ai ? "Read by an AI model; its evidence quote was checked against the script" : undefined} style={{ ["--emo" as string]: emotionColor[emotion], ["--emo-l" as string]: emotionColorLight[emotion] }}>{ai ? "✦ " : ""}{emotion}{intensity ? ` ${intensity}` : ""}</span>;
 }
 
 type Dot = "approved" | "review" | "busy" | "failed" | "planned";

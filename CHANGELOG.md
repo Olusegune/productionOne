@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- **Cast board on small windows.** The row of cards now comes first in the Assets tab and stays pinned at the top while you scroll the selected asset (a single scrolling row of narrow cards); selecting a card scrolls it into view. On windows narrower than 1280 px the script source takes a height that follows the window (180–360 px) so the cards start on the first screen.
+- **Light theme contrast.** The emotion chips have their own darkened colours in the light theme (and lifted ones in the dark theme), the "universal" prompt tabs and the Deliver video-model notes read at 4.5:1; the in-page audit now also understands `color-mix()` backgrounds and switches off colour transitions while it measures. The six workspaces pass in all three looks, dark and light.
+- **Guide screenshots retaken** for the sidebar layout (Projects, Story, Design, Direct, Deliver, palette, light theme), from the art-free demo project.
+- Tests: 428 JS (4 new: emotion chip colours on every surface).
+
 ## 0.37.0 (2026-11-14): the cast board
 - **Cast board.** The Assets tab on the Story screen now shows a card for every character, costume, prop and set (its approved picture, name, type and status; a coloured top edge for each kind), and for the one you select, a large picture beside what the script says about it: the first description line that names a character (or their first line of dialogue), the line a prop was found on, or a set's first scene heading, each with **Show in the script**; the scenes it is in as chips that jump to them; and, folded under a disclosure, the ages and costumes the script gives a character and the facts that go into image prompts. Name, type and facts stay editable; **Remove** removes the selected asset; **Make its sheets** or **Open in Design** takes you to its sheets. Arrow keys, Home and End move between cards. **List** switches to the compact list (remembered). Nothing is written for you: every quote is from the script.
 - Tests: 424 JS (the evidence and scene logic, the board, the list switch).
