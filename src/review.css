@@ -1,0 +1,83 @@
+/* ===== Review workspace and the Deliver checklist (0.32) ===== */
+.rv { display: grid; gap: 16px; }
+.rv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.rv-head h2 { margin: 0; font: 600 28px/1.15 var(--display); letter-spacing: -.01em; }
+.rv-head p { margin: 4px 0 0; color: var(--text-2); font-size: 15px; }
+.rv-filter { display: inline-flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel-1); border: 1px solid var(--line-1); }
+.rv-filter button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--text-2); }
+.rv-filter button.on { background: var(--panel-2); color: var(--text); }
+.rv-filter button:focus-visible, .rv-list button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.rv-empty { display: grid; place-items: center; gap: 12px; text-align: center; min-height: 260px; border: 1px dashed var(--line-1); border-radius: 12px; color: var(--text-2); }
+.rv-body { display: grid; grid-template-columns: 240px minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.rv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: calc(100vh - 220px); overflow-y: auto; }
+.rv-list button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; border: 1px solid transparent; background: var(--panel-1); }
+.rv-list button:hover { background: var(--panel-2); }
+.rv-list button.on { background: var(--panel-2); border-color: var(--blue); }
+.rv-thumb { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: #0d1017; display: block; }
+.rv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rv-thumb .real-empty { min-height: 0; height: 100%; padding: 0; font-size: 12px; border: 0; }
+.rv-meta { display: grid; gap: 2px; min-width: 0; }
+.rv-meta b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-meta small { color: var(--text-3); }
+.rv-compare { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.rv-compare figure { margin: 0; display: grid; gap: 8px; }
+.rv-compare figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.rv-tag { padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line-1); font-size: 13px; font-weight: 600; }
+.rv-tag.ok { border-color: #4f9d7d; }
+.rv-image { background: #0d1017; border: 1px solid var(--line-1); border-radius: 12px; overflow: hidden; display: grid; place-items: center; min-height: 320px; }
+.rv-image img { width: 100%; max-height: calc(100vh - 260px); object-fit: contain; display: block; }
+.rv-note { grid-column: 1 / -1; margin: 0; color: var(--text-2); font-size: 14px; }
+.rv-side { background: var(--panel-1); border: 1px solid var(--line-1); border-radius: 12px; padding: 16px; display: grid; gap: 10px; position: sticky; top: 0; }
+.rv-side h3 { margin: 0; font-size: 20px; }
+.rv-side h4 { margin: 8px 0 0; font-size: 14px; color: var(--text-2); font-weight: 600; }
+.rv-status { margin: 0; font-size: 14px; color: var(--gold-2); font-weight: 600; }
+.rv-ok { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-2); }
+.rv-findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.rv-findings li { display: flex; gap: 8px; align-items: flex-start; color: var(--text); }
+.rv-findings svg { flex: none; margin-top: 2px; color: var(--gold-2); }
+.rv-hint { margin: 0; font-size: 13px; color: var(--text-3); line-height: 1.45; }
+.rv-actions { display: grid; gap: 8px; margin-top: 4px; }
+.rv-actions button { justify-content: center; }
+.rv-actions .primary { color: #15120d; background: var(--gold-2); }
+.rv-more { border-top: 1px solid var(--line-1); padding-top: 8px; }
+.rv-more summary { cursor: pointer; font-size: 14px; color: var(--text-2); }
+.rv-more dl { margin: 8px 0; display: grid; gap: 4px; font-size: 13px; }
+.rv-more dl div { display: flex; justify-content: space-between; gap: 8px; }
+.rv-more dt { color: var(--text-3); }
+.rv-more dd { margin: 0; text-align: right; word-break: break-word; }
+.rv-prompt { display: grid; gap: 4px; font-size: 13px; color: var(--text-3); }
+.rv-prompt textarea { width: 100%; box-sizing: border-box; font-size: 13px; }
+@media (max-width: 1280px) { .rv-body { grid-template-columns: 200px minmax(0, 1fr); } .rv-side { grid-column: 1 / -1; position: static; } }
+
+.po-shell .po-tabs em.po-badge { font-style: normal; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--gold-2); color: #15120d; font-size: 12px; font-weight: 700; text-align: center; }
+
+/* Deliver checklist */
+.dc-checklist { margin: 16px 0; }
+.dc-checklist h3 { display: flex; align-items: baseline; gap: 12px; margin: 0 0 8px; }
+.dc-checklist h3 small { font-size: 13px; font-weight: 400; color: var(--text-2); }
+.dc-checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.dc-checklist li { display: grid; grid-template-columns: 24px 1fr auto auto; gap: 12px; align-items: center; padding: 10px 4px; border-top: 1px solid var(--line-1); }
+.dc-checklist li:first-child { border-top: 0; }
+.dc-checklist li > span:nth-child(2) { display: grid; gap: 2px; }
+.dc-checklist li small { color: var(--text-2); }
+.dc-checklist .dc-mark { display: grid; place-items: center; color: #6fcf97; }
+.dc-checklist li.todo .dc-mark { color: var(--gold-2); }
+.dc-checklist .dc-state { font-size: 13px; color: var(--text-2); }
+.dc-optional > summary { cursor: pointer; font-size: 15px; display: flex; gap: 10px; align-items: baseline; }
+.dc-optional > summary small { color: var(--text-2); font-size: 13px; }
+.dc-optional[open] > summary { margin-bottom: 12px; }
+:root[data-theme="light"] .rv-side, :root[data-theme="light"] .rv-list button, :root[data-theme="light"] .rv-filter { background: rgba(255, 255, 255, .7); }
+:root[data-theme="light"] .rv-list button.on, :root[data-theme="light"] .rv-filter button.on { background: rgba(20, 24, 30, .08); }
+
+/* Deliver columns, now in the order: still to do | hand it on | shot compiler */
+.po-shell .dc-cols { grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr) minmax(0, 1.15fr); }
+@media (max-width: 1280px) {
+  .po-shell .dc-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .po-shell .dc-export { grid-column: auto; }
+  .po-shell .dc-compiler { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) { .po-shell .dc-cols { grid-template-columns: 1fr; } }
+.po-shell .dc-two { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.po-shell .dc-two > label { min-width: 0; }
+.po-shell .dc-two select { width: 100%; max-width: 100%; text-overflow: ellipsis; }
+.po-shell .dc-cols > .panel { min-width: 0; }

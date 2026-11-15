@@ -69,6 +69,7 @@ import "./director.css";
 import "./delivery.css";
 import "./cleanrender.css";
 import "./shell-v2.css";
+import "./review.css";
 import { sampleStory } from "./engine/sampleStory";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
@@ -81,6 +82,7 @@ import { addSupplied, emptyQueue, recover, type ImageJob, type QueueState } from
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
+import { ReviewView } from "./views/ReviewView";
 import { buildProjectFile, parseProjectFile, suggestedFileName, type ProjectFile } from "./data/projectFile";
 
 const workspaces = [
@@ -1110,7 +1112,7 @@ export default function App() {
   };
   const paletteCommands: PaletteCommand[] = [
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
-    ...["Projects", "Story", "Design", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
+    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
     { id: "theme", label: "Switch between dark and light theme", hint: "View", run: () => setNotice(toggleTheme() === "light" ? "Light theme on. It is new, so tell me about anything hard to read." : "Dark theme on.") },
     { id: "new", label: "New project", hint: "File", run: () => actionsRef.current["file-new"]?.() },
@@ -1163,6 +1165,7 @@ export default function App() {
         unsaved={dirty}
         workspace={workspace}
         onWorkspace={setWorkspace}
+        reviewCount={queue.jobs.filter((j) => j.status === "needs-review").length}
         onNext={goNext}
         golden={goldenInput}
         onOpenSettings={() => setSettingsOpen(true)}
@@ -1297,6 +1300,9 @@ export default function App() {
         {workspace === "Design" && (
           <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddCharacter={(name, gender) => void addCharacterFromImage(name, gender)} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
+        {workspace === "Review" && (
+          <ReviewView analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
+        )}
         {workspace === "Direct" && (
           <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} />
         )}
@@ -1322,6 +1328,7 @@ export default function App() {
             openShot={(id) => { const i = shots.findIndex((x) => x.id === id); if (i >= 0) setSelectedShot(i); setWorkspace(storyboardsEnabled ? "Direct" : "Design"); }}
             notify={setNotice}
             styleLocked={styleBible.locked}
+            onFix={(fix) => { if (fix.kind === "review") setWorkspace("Review"); else if (fix.kind === "script") setWorkspace("Story"); else if (fix.kind === "asset" && fix.assetId) { const i = analysis.assets.findIndex((x) => x.id === fix.assetId); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); } else setWorkspace("Design"); }}
           />
         )}
       </main>
