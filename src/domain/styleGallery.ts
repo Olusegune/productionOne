@@ -1,4 +1,5 @@
 import type { StyleBible } from './visualDevelopment'
+import { styleThumbSlugs } from './styleThumbs'
 
 /** Where a style family's picture lives. One picture per family, all made from the same subject so only the look changes. */
 const thumbFiles: Record<string, string> = {
@@ -12,8 +13,19 @@ const thumbFiles: Record<string, string> = {
   'Experimental 3D': 'experimental-3d',
 }
 
-/** The picture for a style, or null for a project preset, which is shown with its palette instead. Never a stand-in for a style that has no picture. */
-export function thumbFor(style: Pick<StyleBible, 'family'>): string | null {
+/** The file-name form of a style's name, shared by the picture files and the list of which pictures exist. */
+/** Two library styles differ from a project preset only by letter case, which a file name cannot tell apart; this one is kept apart by hand. */
+const slugOverrides: Record<string, string> = { 'Architectural visualization': 'architectural-visualization-realistic-3d' }
+export const styleSlug = (name: string) => slugOverrides[name] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+const own = new Set<string>(styleThumbSlugs)
+
+/** True when this style has a picture made for it (not just its family's). */
+export const hasOwnThumb = (style: Pick<StyleBible, 'name'>) => own.has(styleSlug(style.name))
+
+/** The picture for a style: its own, else its family's, else null (the palette is shown instead). Never a stand-in from another family. */
+export function thumbFor(style: Pick<StyleBible, 'name' | 'family'>): string | null {
+  if (hasOwnThumb(style)) return `/style-thumbs/styles/${styleSlug(style.name)}.webp`
   const file = style.family ? thumbFiles[style.family] : undefined
   return file ? `/style-thumbs/${file}.webp` : null
 }

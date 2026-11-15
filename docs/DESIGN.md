@@ -1,4 +1,4 @@
-# Design notes (0.29.0)
+# Design notes (0.32.0)
 
 Production One is a tool people sit in for hours, next to footage and reference art. The interface is therefore quiet: it gets out of the way of the images, and the things that matter (the next step, what needs review, what is running) are the only things that glow.
 
@@ -6,15 +6,18 @@ The look borrows two ideas on purpose. From **Apple**: one typeface used with ca
 
 ![Design workspace](screenshots/design-style.png)
 
+## Layout (0.32.0)
+One **sidebar** (216 px; 76 px, icons only, below 1280 px wide) replaces the old top bar and step bar. It holds the brand, the project name with its real save state, the workspaces (Projects, Story, Design, Review, Direct, Deliver; Alt+1 to Alt+5 keep their old meaning and Review is Alt+6), the next step as one button with its reason, and Local AI, the command palette and Providers. Everything is in `src/shell-v2.css`, written with `.po-shell` in front so it wins over the older files. Review (`src/views/ReviewView.tsx`, `src/review.css`) is a list, a comparison with the approved reference, and a decision panel. The style gallery (`src/components/StyleGallery.tsx`, `src/gallery.css`) is a dialog rendered in a portal so it centres on screen whatever contains its opener.
+
 ## Typography
 - **One family: Inter**, loaded with its optical-size axis (`@fontsource-variable/inter/opsz.css`). Large titles use tighter tracking and heavier weight (display cut); small text opens up (text cut). It is bundled, so the app looks the same offline. Courier Prime is kept only for the script editor, where screenplay format needs a monospaced face.
 - The stack falls back to the system fonts (`-apple-system`, `SF Pro`, `Segoe UI Variable`), so on a Mac or a modern Windows machine a missing font degrades to the platform's own design face.
-- **Scale:** 14 px base, 13 px controls, 12 px field labels, 11 px uppercase micro-labels (`.eyebrow`, tracking 0.075em). Titles are 1.2 to 2.4 rem, weight 650 to 700, tracking -0.022em to -0.032em.
+- **Scale:** 14 px base, 13 px controls, 12 px field labels and micro-labels (nothing essential under 12 px since 0.32.0). Titles are 1.2 to 2.4 rem, weight 650 to 700, tracking -0.022em to -0.032em.
 - **Tabular numbers** on anything that is a reading (counters, costs, the queue, stat tiles), so digits do not jitter as values change, like a timecode.
 - **The lowercase l has a tail** (`cv05`). In Inter a capital I and a lowercase l are identical, and this app is full of names ("Ione" must not read "lone").
 
 ## Colour
-- Tokens live on `:root` in `src/polish.css` (the last layer): `--bg`, `--surface`, `--surface-2`, `--stroke`, `--stroke-strong`, `--text`, `--text-2`, `--text-3`, plus the gold accent. Components use the tokens; the light theme only redefines them (`:root[data-theme="light"]`).
+- Since 0.32.0 the dark base is graphite (`--bg` #0d1017), surfaces are `--panel-1` #151a24 and `--panel-2` #1c2330 with `--line-1` #293241 borders, the primary action is champagne (`--gold-2` #d8b779, dark text), and selection and focus are cyan (`--blue` #79d8e8). Tokens live on `:root` in `src/theme.css` (and the light overrides in `src/polish.css`): `--bg`, `--surface`, `--surface-2`, `--stroke`, `--stroke-strong`, `--text`, `--text-2`, `--text-3`, plus the gold accent. Components use the tokens; the light theme only redefines them (`:root[data-theme="light"]`).
 - Gold is the single accent and always means "the next thing" or "selected". Status colours (green approved, amber needs review, blue running, red failed) are used only on state.
 - Muted text (`--text-3`) is kept at 4.5:1 or better against its surface in both themes; `prefers-contrast: more` raises it further.
 
@@ -36,7 +39,7 @@ The light theme is opt-in (palette: *Switch between dark and light theme*). It i
 ![Light theme](screenshots/light-theme.png)
 
 ## How the UI is checked
-An automated audit (run in the browser pane against the live app, kept in the QA report) walks all five workspaces at 1024, 1280, 1440 and 1920 pixels wide, in both themes, and reports: horizontal overflow, clipped text, text under 11.5 px that is not an uppercase micro-label, click targets under 26 px, and text contrast below WCAG AA (4.5:1, or 3:1 for large text). 0.29.0 passes in the dark theme. The light theme's only flagged items are the emotion chips, whose contrast comes from a colour filter the audit cannot measure.
+An automated audit (`scripts/qa/in-page-audit.js`, run in the browser pane against the live app or the packaged app's debug port) walks all six workspaces at 1024, 1280, 1440 and 1920 pixels wide, in both themes, and reports: horizontal overflow, clipped text, text under 11.5 px that is not an uppercase micro-label, click targets under 26 px, and text contrast below WCAG AA (4.5:1, or 3:1 for large text). 0.29.0 passes in the dark theme. The light theme's only flagged items are the emotion chips, whose contrast comes from a colour filter the audit cannot measure.
 
 ## What is deliberately not done
 - No custom window chrome and no Mica or acrylic: the Windows title bar and menus are left to the system.

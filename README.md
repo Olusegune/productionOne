@@ -12,9 +12,12 @@ Built with Tauri 2 (Rust), React and TypeScript. Projects are saved as `.pone` f
 |---|---|
 | **Create / Story** | Paste or import a script (`.txt`, `.md`, Fountain, Final Draft `.fdx`, Word `.docx`, PDF). The reader finds scenes, characters, props, story variants (wardrobe, injury, age) and emotions, and shows the line each finding came from. |
 | **Design** | A production bible, a style bible, and reference sheets per character, prop and set (turnarounds, expressions from the story's feelings, poses, wardrobe, details; multi-view, functional and detail sheets for props; establishing, interior, exterior, plan and lighting for locations). **Start a character from an image you already have** (for example a Midjourney render) and build every sheet from it. Per-sheet **Shape** and **Backdrop**, one-image **sheet export**, a personality and a "never drift" list per character. Approved front views become the anchor that keeps later views consistent, including the Wardrobe sheet. Image quality (CleanRender) checks colour casts, clipping, noise, bloom and sharpness and corrects them as separate revisions. |
-| **Motion and voice** | Turntable, walk, run and speaking clips from a character's approved front view; voice auditions with Windows voices, ElevenLabs, VoiceKiller or a local server, and a fixed **casting line** so voices are compared on the same words. |
+| **Motion, voice and music** | Turntable, walk, run and speaking clips from a character's approved front view; voice auditions with Windows voices, ElevenLabs, VoiceKiller or a local server, and a fixed **casting line** so voices are compared on the same words. **Design a voice** from a description written from the script or by your local AI helper (ElevenLabs Voice Design, Qwen TTS). **Make music with Suno** (through Kie.ai) for a character theme or a scene score. |
+| **Review** | Every picture waiting for a decision, large, beside the approved reference it has to match; technical checks kept apart from Approve, Request changes and Reject. |
 | **Direct** (optional) | The Director's room: coverage planned per scene, a shot editor (camera, composition, blocking, cast and wardrobe, lighting, performance, audio), storyboard frames from your approved references, continuity checks and an animatic. |
-| **Deliver** | A readiness summary with the next thing to fix, a shot compiler with an editable prompt for Seedance, Kling and Veo, and verified or draft packages. |
+| **Deliver** | A package checklist where every open line has a button to its fix, verified or draft packages, and an optional shot compiler with an editable prompt for Seedance, Kling and Veo. |
+
+**Look.** A gallery of 117 visual styles, each with its own picture of the same scene, searchable, filterable by family, with favourites. **Navigation.** One sidebar; Alt+1 to Alt+6 switch workspace.
 
 **Models.** Kie.ai (59 image and 47 video models read live), Google Gemini, OpenAI, OpenRouter, fal.ai, and local ComfyUI, Ollama and LM Studio. One searchable picker; any model id can be typed. Cost never interrupts you: an optional spending cap lives in the queue dock.
 
@@ -52,13 +55,14 @@ No key? Open **Local AI** (sidebar, bottom) and let it find or install ComfyUI.
 npm install
 npm run dev            # browser preview (plans only; generation needs the desktop app)
 npm run desktop:dev    # desktop app with hot reload
-npm test               # 270+ unit, component and stress tests
+npm test               # 350+ unit, component and stress tests
+npx tsc -b             # the real type check (tsc --noEmit -p . checks nothing here)
 cargo test --manifest-path src-tauri/Cargo.toml
 npm run desktop:build  # installers under src-tauri/target/release/bundle/
 python scripts/make-icons.py   # rebuild icons from branding/
 ```
 
-Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.29.0.md](docs/QA_REPORT_0.29.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.32.0.md](docs/QA_REPORT_0.32.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Honest limits
 

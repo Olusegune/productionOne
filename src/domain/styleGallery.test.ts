@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { stylePresets, type StyleBible } from './visualDevelopment'
-import { PROJECT_FAMILY, familyCounts, filterStyles, loadFavorites, saveFavorites, thumbFor } from './styleGallery'
-import { existsSync } from 'node:fs'
+import { PROJECT_FAMILY, familyCounts, filterStyles, hasOwnThumb, loadFavorites, saveFavorites, styleSlug, thumbFor } from './styleGallery'
+import { styleThumbSlugs } from './styleThumbs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const none = new Set<string>()
@@ -12,11 +13,28 @@ describe('style gallery data', () => {
     const families = new Set(stylePresets.map((s) => s.family).filter(Boolean))
     expect(families.size).toBeGreaterThanOrEqual(8)
     for (const family of families) {
-      const url = thumbFor({ family })
+      const url = thumbFor({ name: 'no own picture', family })
       expect(url, `${family} has a picture`).toBeTruthy()
       expect(existsSync(resolve(process.cwd(), 'public', url!.slice(1))), `${url} exists`).toBe(true)
     }
-    expect(thumbFor({})).toBeNull()
+    expect(thumbFor({ name: 'no own picture' })).toBeNull()
+  })
+  it('has a picture of its own for every one of the styles, on disk, and the list matches the folder exactly', () => {
+    const dir = resolve(process.cwd(), 'public/style-thumbs/styles')
+    const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.webp')).map((f) => f.replace(/\.webp$/, '')).sort() : []
+    expect([...styleThumbSlugs].sort()).toEqual(files)
+    const missing = stylePresets.filter((s) => !hasOwnThumb(s)).map((s) => s.name)
+    expect(missing, `styles without their own picture: ${missing.join(', ')}`).toEqual([])
+    for (const s of stylePresets) {
+      const url = thumbFor(s)!
+      expect(url).toBe(`/style-thumbs/styles/${styleSlug(s.name)}.webp`)
+      const size = statSync(resolve(process.cwd(), 'public', url.slice(1))).size
+      expect(size, `${s.name} picture is a real image`).toBeGreaterThan(5_000)
+      expect(size, `${s.name} picture is small enough to bundle`).toBeLessThan(120_000)
+    }
+  })
+  it('slugs are unique, so two styles never share a file', () => {
+    expect(new Set(stylePresets.map((s) => styleSlug(s.name))).size).toBe(stylePresets.length)
   })
   it('counts every style exactly once, with project presets in their own group', () => {
     const counts = familyCounts(stylePresets)

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Search, Star, X } from 'lucide-react'
 import type { StyleBible } from '../domain/visualDevelopment'
-import { PROJECT_FAMILY, familyCounts, familyOf, filterStyles, loadFavorites, saveFavorites, thumbFor } from '../domain/styleGallery'
+import { PROJECT_FAMILY, familyCounts, familyOf, filterStyles, hasOwnThumb, loadFavorites, saveFavorites, thumbFor } from '../domain/styleGallery'
 
 /** A visual gallery for choosing the film's look: search, families, favourites, and a detail panel. Choosing a style never locks it. */
 export function StyleGallery(props: { styles: StyleBible[]; current: string; onChoose: (style: StyleBible) => void; onClose: () => void }) {
@@ -25,7 +25,7 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
     <div className="modal-backdrop sg-backdrop" role="presentation" onClick={onClose}>
       <section className="sg" role="dialog" aria-modal="true" aria-label="Choose a visual style" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}>
         <header className="sg-head">
-          <div><h2>Choose a look</h2><p>{styles.length} styles. All the pictures show the same scene, so only the style changes.</p></div>
+          <div><h2>Choose a look</h2><p>{styles.length} styles. Every picture shows the same scene, so only the style changes.</p></div>
           <button className="icon-button" onClick={onClose} aria-label="Close the style gallery"><X size={18} /></button>
         </header>
         <div className="sg-tools">
@@ -55,9 +55,9 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
           {shown.length === 0 && <p className="sg-none">No styles match. {onlyFavorites && favorites.size === 0 ? 'Star a style to keep it here.' : 'Try fewer words or another family.'}</p>}
           {detail && (
             <aside className="sg-detail" aria-label="Selected style">
-              {thumbFor(detail) ? <img src={thumbFor(detail)!} alt={`The ${familyOf(detail)} look`} /> : <div className="sg-swatch big" style={{ background: `linear-gradient(135deg, ${detail.palette.join(', ')})` }} role="img" aria-label="Palette of this style" />}
+              {thumbFor(detail) ? <img src={thumbFor(detail)!} alt={`${detail.name}: the same scene in this style`} /> : <div className="sg-swatch big" style={{ background: `linear-gradient(135deg, ${detail.palette.join(', ')})` }} role="img" aria-label="Palette of this style" />}
               <h3>{detail.name}</h3>
-              <p className="sg-fam">{familyOf(detail)}{familyOf(detail) === PROJECT_FAMILY ? '' : ' · picture shows the family look'}</p>
+              <p className="sg-fam">{familyOf(detail)}{!hasOwnThumb(detail) && thumbFor(detail) ? ' · picture shows the family look' : ''}</p>
               <p>{detail.description}</p>
               <div className="sg-palette" aria-label="Palette">{detail.palette.map((c, i) => <span key={`${c}-${i}`} style={{ background: c }} title={c} />)}</div>
               <dl>
