@@ -25,3 +25,5 @@ Only what you start: prompts and reference images go to the provider you picked 
 
 ## Reporting a problem
 Open a private security advisory on the GitHub repository, or email the maintainer. Please do not post keys or project files publicly.
+
+- Music (0.31.0): Suno is reached through Kie.ai with the same Kie key (kept in the Windows Credential Manager). Only the text you write is sent, and only when you press Make music. Result files are downloaded only from public https addresses (redirects re-checked), capped at 80 MB while streaming, kept only if they are audio, and saved under the assets folder with a sanitised name. The address check reads the host text and does not resolve DNS.
