@@ -15,7 +15,7 @@ Built with Tauri 2 (Rust), React and TypeScript. Projects are saved as `.pone` f
 | **Motion, voice and music** | Turntable, walk, run and speaking clips from a character's approved front view; voice auditions with Windows voices, ElevenLabs, VoiceKiller or a local server, and a fixed **casting line** so voices are compared on the same words. **Design a voice** from a description written from the script or by your local AI helper (ElevenLabs Voice Design, Qwen TTS). **Make music with Suno** (through Kie.ai) for a character theme or a scene score. |
 | **Review** | Every picture waiting for a decision, large, beside the approved reference it has to match; technical checks kept apart from Approve, Request changes and Reject. |
 | **Direct** (optional) | The Director's room: coverage planned per scene, a shot editor (camera, composition, blocking, cast and wardrobe, lighting, performance, audio), storyboard frames from your approved references, continuity checks and an animatic. |
-| **Deliver** | A package checklist where every open line has a button to its fix, verified or draft packages, and an optional shot compiler with an editable prompt for Seedance, Kling and Veo. |
+| **Deliver** | A package checklist where every open line has a button to its fix, verified or draft packages, failed views grouped by cause with the fixes that can help, a Tasks list by role, and an optional shot compiler with an editable prompt for Seedance, Kling and Veo. |
 
 **Look.** A gallery of 117 visual styles, each with its own picture of the same scene, searchable, filterable by family, with favourites. **Navigation.** One sidebar; Alt+1 to Alt+6 switch workspace.
 

@@ -13,7 +13,9 @@ const videoPurposes = {
   expression: "Expression test · explore facial emotion and micro-performance",
 } as const;
 type VideoPurpose = keyof typeof videoPurposes;
-import { AgentDepartmentBoard } from "./AgentDepartmentBoard";
+import { TaskList } from "./TaskList";
+import { FailureGroups } from "./FailureGroups";
+import { isTauri } from "../appHelpers";
 
 type Audit = { ready: boolean; missingAssets: string[]; incompleteShots: string[] };
 
@@ -41,8 +43,10 @@ export function DeliveryCenter(props: {
   styleLocked: boolean;
   /** Takes the person to where a checklist item is fixed. */
   onFix: (fix: NonNullable<ChecklistItem["fix"]>) => void;
+  openProviders: () => void;
+  openDesign: () => void;
 }) {
-  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix } = props;
+  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix, openProviders, openDesign } = props;
   const [videoPurpose, setVideoPurpose] = useState<VideoPurpose>("acting");
   const [videoAspect, setVideoAspect] = useState("16:9");
   const preset = videoPresets[model];
@@ -111,14 +115,7 @@ export function DeliveryCenter(props: {
       <div className="dc-cols">
         <div className="panel dc-issues">
           <h3>What still needs work</h3>
-          {failed.length > 0 && (
-            <div className="dc-group">
-              <h4><AlertTriangle size={15} /> Failed jobs <small>{failed.length}</small></h4>
-              <ul>{failed.slice(0, 8).map((j) => (
-                <li key={j.id}><span><b>{j.label}</b><small>{j.error ?? "The provider returned an error."}</small></span><button className="secondary" onClick={() => setQueue((q) => retry(q, j.id))}><RotateCcw size={13} /> Retry</button></li>
-              ))}</ul>
-            </div>
-          )}
+          <FailureGroups queue={queue} setQueue={setQueue} desktop={isTauri} assetName={name} openProviders={openProviders} openDesign={openDesign} notify={notify} />
           {issues.length === 0 && failed.length === 0 && <p className="helper">Nothing is blocking delivery.</p>}
           {issues.map((s) => (
             <div className="dc-group" key={s.sceneId}>
@@ -237,7 +234,7 @@ export function DeliveryCenter(props: {
 
       </div>
 
-      <AgentDepartmentBoard analysis={analysis} queue={queue} audit={audit} styleLocked={styleLocked} notify={notify} />
+      <TaskList analysis={analysis} queue={queue} audit={audit} styleLocked={styleLocked} onAct={(a) => onFix(a)} />
     </section>
   );
 }

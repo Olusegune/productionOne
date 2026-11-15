@@ -3,7 +3,7 @@
 ## Commands
 ```powershell
 npx tsc -b                                          # types (plain `tsc --noEmit -p .` checks nothing here)
-npx vitest run                                      # unit and component tests (364 at 0.33.0)
+npx vitest run                                      # unit and component tests (393 after 0.33.0)
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (78 at 0.32.0; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 npm audit
@@ -29,6 +29,8 @@ rafter secrets .                                    # before every push
 | Versions agree everywhere | `src/versionSync.test.ts` | package.json, package-lock.json, tauri.conf.json, Cargo.toml, Cargo.lock, splash, changelog, release notes |
 | Voice descriptions (from the script, the AI helper's prompt and reply parsing, limits), music briefs (theme or scene, evidence, limits), and their screens | `src/domain/voiceDesign.test.ts`, `musicBrief.test.ts`, `src/components/VoiceBriefTools.test.tsx`, `MusicMaker.test.tsx` | The local model is mocked; the descriptions are checked to use only confirmed fields |
 | Suno request limits and result reading | Rust `suno.rs` tests | Model allow-list, title, style and lyrics lengths, length range, waiting, finished and failed task records; the network call is not unit-tested (run live) |
+| Failed views grouped by cause (message sorting, grouping, superseded attempts), the group screen (one group per cause, only helpful fixes, retry all and retry one) | `src/domain/failureGroups.test.ts`, `src/components/FailureGroups.test.tsx` | |
+| Task list (every role has a target, reason, group and a real place to go; the group follows the project's state) and its screen | `src/components/TaskList.test.tsx` | |
 | Review queue, approved reference choice, Deliver checklist and draft or verified rule | `src/domain/review.test.ts`, `src/views/ReviewView.test.tsx` | Approve, Request changes (opens the sheet, generates nothing), Reject, Turned down, no reference, empty |
 | Style gallery: search, families, favourites, details, focus, the locked state, and a picture on disk for every one of the 117 styles | `src/domain/styleGallery.test.ts`, `src/components/StyleGallery.test.tsx` | The list of pictures must equal the folder exactly; each file must be a real image under 120 KB |
 | Script workspace: toolbar, templates only when empty or on request, questions apart from confirmed findings, Evidence jumps, Facts toggle, tabs keep the script | `src/views/StoryView.test.tsx` | |
