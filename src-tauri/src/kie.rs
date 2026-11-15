@@ -150,7 +150,7 @@ pub fn parse_index(text: &str, kind: &str) -> Vec<DiscoveredModel> {
     out
 }
 
-fn is_public_https(url: &str) -> bool {
+pub(crate) fn is_public_https(url: &str) -> bool {
     let Some(rest) = url.strip_prefix("https://") else { return false };
     let host = rest.split(['/', '?', '#']).next().unwrap_or("");
     let host = host.rsplit('@').next().unwrap_or("").split(':').next().unwrap_or("");
@@ -161,7 +161,7 @@ fn client(secs: u64) -> Result<reqwest::Client, String> {
     reqwest::Client::builder().timeout(Duration::from_secs(secs)).build().map_err(|e| e.to_string())
 }
 
-async fn kie_json(req: reqwest::RequestBuilder) -> Result<Value, String> {
+pub(crate) async fn kie_json(req: reqwest::RequestBuilder) -> Result<Value, String> {
     let response = req.send().await.map_err(|e| if e.is_timeout() { "Kie.ai timed out (timeout)".to_string() } else { format!("Kie.ai could not be reached: {}", e.without_url()) })?;
     let http = response.status();
     let body: Value = response.json().await.unwrap_or(Value::Null);

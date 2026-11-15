@@ -29,7 +29,7 @@ pub fn valid_id(id: &str) -> bool { !id.is_empty() && id.len() <= 64 && id.chars
 
 fn trim_body(bytes: &[u8]) -> String { String::from_utf8_lossy(bytes).chars().take(300).collect() }
 
-fn save_audio(app: &tauri::AppHandle, output_name: &str, bytes: &[u8]) -> Result<String, String> {
+pub(crate) fn save_audio(app: &tauri::AppHandle, output_name: &str, bytes: &[u8]) -> Result<String, String> {
     let stem = safe_package_name(output_name);
     if stem.is_empty() { return Err("Output name is required".into()); }
     let ext = audio_extension(bytes).ok_or("The service did not return audio.")?;

@@ -9,6 +9,7 @@ import { SearchSelect } from './SearchSelect'
 import { LevelledAudio } from './LevelledAudio'
 import { VoiceCloud } from './VoiceCloud'
 import { VoiceBriefTools } from './VoiceBriefTools'
+import { MusicMaker } from './MusicMaker'
 import { latestElevenModel, rankElevenModels, supportsAudioTags, type CloudModel } from '../domain/elevenModels'
 import { castingLine, castingLineChoices, sampleLines, soundBrief, suggestVoice, voiceBrief, type CastingLineKind, type InstalledVoice } from '../domain/voiceAudition'
 
@@ -135,6 +136,7 @@ ${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</b
       <pre className="helper" style={{ whiteSpace: 'pre-wrap' }}>{soundBrief(asset)}</pre>
       <div className="sheet-actions-row"><button className="secondary" onClick={() => copy(soundBrief(asset))}><Copy size={14} /> Copy sound brief</button></div>
     </>}
+    {isCharacter && desktop && <MusicMaker asset={asset} story={story} desktop={desktop} providersVersion={providersVersion} openProviders={openProviders} notify={notify} setError={setError} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: c.duration, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
     {error && <p className="helper warn" role="alert">{error}</p>}
     {mine.length > 0 && <div className="clip-grid">{mine.slice().reverse().map((c) => <figure key={c.id}><LevelledAudio path={c.path} label={`${c.assetName} voice audition`} /><figcaption><b>“{(c.line ?? '').slice(0, 60)}”</b><small>{c.model}</small></figcaption></figure>)}</div>}
   </section>

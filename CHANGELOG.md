@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+- Music with Suno: in a character's Voice and sound, "Make music with Suno" makes a character theme or the score for a scene the character is in. Write the style from the script (stated personality, role, and the scene's heading: where and when), with the local AI helper, or by hand; choose the model (V6 Mini, V6, V6 Wild), length (10 to 180 s), instrumental or your own lyrics. Each request makes two tracks, saved with the audio clips and played by the level-matched player.
+- Suno is reached through Kie.ai (a third-party route: Suno has no public API), with the Kie key already used for images and video. Your text goes to Kie.ai only when you press Make music; it spends Kie credits. The screen says so, and to check Kie's and Suno's terms before commercial use.
+- Backend: new command `make_music` (Rust `suno.rs`): fixed Kie addresses, allow-listed model, length and text limits checked before anything is sent, result files downloaded only from public https hosts (redirects re-checked), capped at 80 MB, kept only if they sniff as audio, saved under the assets folder with a sanitised name.
+- Checked live (2026-11-14): one instrumental V6 Mini request returned two valid 48 kHz stereo mp3 tracks of 10.4 s and 10.0 s in 22 s; the test files were deleted.
+- Not done: lyrics generation, extending or covering a track, WAV conversion, vocals from your own voice, music for a whole film timeline; vocal tracks and the V6 and V6 Wild models were not run live.
+
 ## 0.30.0 (2026-11-14): close recent projects, design voices from the script
 - Recent projects: each entry has a close button and the list has "Clear list" (the project file is never deleted). Entries show the file name only; Windows paths showed in full before because the name was split on a malformed pattern.
 - Voice design: under a character's voice engine, "Fill from the script" builds a voice description from the character's confirmed fields (age, gender, role, personality, sound direction) and their own dialogue, and shows what it was built from; nothing is guessed. "Ask the AI helper" has the local model (Ollama or LM Studio) write the description from a rough idea, and only confirmed fields and the character's lines are sent to it. Works with ElevenLabs Voice Design and with Qwen TTS (description as the voice). Chatterbox clones from a recording, so it shows a note instead.
