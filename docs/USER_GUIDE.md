@@ -108,6 +108,13 @@ The **package checklist** comes first: script read, style locked, every asset ha
 
 **Tasks** lists the work by role, grouped as Needs approval, Ready or running, Blocked and Complete. Each line says what it is about, why it is where it is, and has a button to the place the work is done; the arrow opens the brief, the evidence it was based on, and what it waits on. The tasks do not run anything: they tell you where to go. The top row shows readiness, what is missing, active and failed jobs and the next action. *What still needs work* lists items by scene with buttons that take you to them. The *Shot compiler* builds the prompt for Seedance, Kling or Veo from the shot's data; you can edit it and copy it. *Export verified package* is available only when every sheet and frame is approved; *draft package* is always available and is marked as a draft.
 
+## Appearance
+The palette icon at the bottom of the sidebar opens **Appearance**. Pick a look and it applies at once; each card previews its own colours and heading font.
+- **Studio**: calm graphite and champagne (the default).
+- **Cinematic**: warm surfaces and serif page titles. Its accent comes from your visual style's palette, so changing the style changes the accent.
+- **Futurist**: near-black blue, a cyan accent with a soft glow, tighter corners.
+The same dialog switches dark and light. Your choice is remembered on this computer and never changes what anything does. Ctrl+K also has "Appearance: Studio / Cinematic / Futurist".
+
 ## Command palette, shortcuts and themes
 ![Command palette](screenshots/palette.png)
 

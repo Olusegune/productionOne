@@ -3,7 +3,7 @@
 ## Commands
 ```powershell
 npx tsc -b                                          # types (plain `tsc --noEmit -p .` checks nothing here)
-npx vitest run                                      # unit and component tests (393 at 0.34.0)
+npx vitest run                                      # unit and component tests (405 after 0.34.0)
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (78 at 0.32.0; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 npm audit
@@ -38,6 +38,7 @@ rafter secrets .                                    # before every push
 | Asset Studio tabs (Sheets first, other sections one tab away and still mounted), the one-line look bar, the Add character dialog | `src/App.test.tsx`, `src/components/BibleAdd.test.tsx` | |
 | Identity fields by asset kind (a set or prop shows no age or gender; older saved facts are kept) | `src/components/AssetLab.test.tsx` | |
 | Recent projects (file names on Windows and posix paths; removing one entry) | `src/appHelpers.test.ts`, Rust `desktop.rs` test | |
+| The looks (remembered, applied at once, closed with Escape, dark and light switch), the accent taken from a style palette (most colourful entry, 4.5:1 on the dark surface, none for a grey palette) | `src/domain/appearance.test.ts`, `src/components/AppearanceMenu.test.tsx` | The look's appearance itself is checked by the in-page audit, not by unit tests |
 | Fonts bundled and first in their stacks; the security policy allows only the app's own fonts | `src/fonts.test.ts` | |
 | Alt+1 to Alt+6 | `src/domain/shortcuts.test.ts`, `src/App.test.tsx` | Alt+1 to Alt+5 keep their old meaning; Review is Alt+6 |
 | Providers, Kie parser, VoiceKiller list, local AI, script files, CleanRender maths, launch arguments, backups, sheet export layout | Rust `#[cfg(test)]` modules | |

@@ -1,4 +1,7 @@
 import { toggleTheme } from "./data/theme";
+import { useLook, useProjectAccent } from "./data/appearance";
+import { looks } from "./domain/appearance";
+import { AppearanceMenu } from "./components/AppearanceMenu";
 import { addCharacterAsset, addPropAsset, applyReadAge } from "./domain/readingActions";
 import { hasWork, needsBackup } from "./domain/projectSafety";
 import { workspaceShortcut } from "./domain/shortcuts";
@@ -127,6 +130,8 @@ export default function App() {
     [animaticPlaying, setAnimaticPlaying] = useState(false),
     [animaticTime, setAnimaticTime] = useState(0);
   const [styleBible, setStyleBible] = useState<StyleBible>(defaultStyleBible);
+  const { look, setLook } = useLook();
+  useProjectAccent(look, styleBible.palette);
   const [focusSheetType, setFocusSheetType] = useState<SheetType | undefined>();
   const [promptMode, setPromptMode] =
     useState<keyof PromptPackage>("universal");
@@ -145,6 +150,7 @@ export default function App() {
     [settingsOpen, setSettingsOpen] = useState(false),
     [queue, setQueueState] = useState<QueueState>(emptyQueue),
     [paletteOpen, setPaletteOpen] = useState(false),
+    [appearanceOpen, setAppearanceOpen] = useState(false),
     [localOpen, setLocalOpen] = useState(false),
     [clips, setClipsState] = useState<DemoClip[]>([]),
     [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({}),
@@ -1116,6 +1122,8 @@ export default function App() {
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
     ...["Projects", "Story", "Design", "Review", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
+    { id: "appearance", label: "Appearance: choose a look", hint: "View", run: () => setAppearanceOpen(true) },
+    ...looks.map((l) => ({ id: `look-${l.id}`, label: `Appearance: ${l.name}`, hint: l.tagline, run: () => setLook(l.id) })),
     { id: "theme", label: "Switch between dark and light theme", hint: "View", run: () => setNotice(toggleTheme() === "light" ? "Light theme on. It is new, so tell me about anything hard to read." : "Dark theme on.") },
     { id: "new", label: "New project", hint: "File", run: () => actionsRef.current["file-new"]?.() },
     { id: "open", label: "Open a project…", hint: "File", run: () => actionsRef.current["file-open"]?.() },
@@ -1168,6 +1176,7 @@ export default function App() {
         workspace={workspace}
         onWorkspace={setWorkspace}
         reviewCount={queue.jobs.filter((j) => j.status === "needs-review").length}
+        onAppearance={() => setAppearanceOpen(true)}
         onNext={goNext}
         golden={goldenInput}
         onOpenSettings={() => setSettingsOpen(true)}
@@ -1336,6 +1345,7 @@ export default function App() {
       </main>
       <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} />
       {paletteOpen && <CommandPalette commands={paletteCommands} onClose={() => setPaletteOpen(false)} />}
+      {appearanceOpen && <AppearanceMenu look={look} onLook={setLook} onClose={() => setAppearanceOpen(false)} />}
     </div>
   );
 }
