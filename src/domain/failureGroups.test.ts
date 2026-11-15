@@ -20,6 +20,11 @@ describe('causeOf', () => {
     ['Google Gemini could not be reached: connection refused', 'network'],
     ['Rejected by the safety filter', 'content'],
     ['OpenAI image request failed (503): overloaded', 'server'],
+    ['OpenAI image request failed (500 Internal Server Error): boom', 'server'],
+    ['KIE request failed (502 Bad Gateway): upstream', 'server'],
+    ['ElevenLabs answered 503 Service Unavailable: {}', 'server'],
+    ['ElevenLabs answered 401 Unauthorized: {}', 'key'],
+    ['ElevenLabs answered 404 Not Found: voice_not_found', 'other'],
     ['Something strange happened', 'other'],
   ])('%s -> %s', (message, cause) => { expect(causeOf(message)).toBe(cause) })
   it('puts a credits message before a rate limit one, because credits are the real cause', () => {

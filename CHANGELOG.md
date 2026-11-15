@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Failure groups read real status codes.** Providers write the status as "(500 Internal Server Error)" or "answered 503 Service Unavailable", not just "(500)", so server errors landed in "other" and ElevenLabs errors lost their code. Found by live checks; 5 new tests.
+
 ## 0.38.0 (2026-11-15): polish
 - **Cast board on small windows.** The row of cards now comes first in the Assets tab and stays pinned at the top while you scroll the selected asset (a single scrolling row of narrow cards); selecting a card scrolls it into view. On windows narrower than 1280 px the script source takes a height that follows the window (180–360 px) so the cards start on the first screen.
 - **Light theme contrast.** The emotion chips have their own darkened colours in the light theme (and lifted ones in the dark theme), the "universal" prompt tabs and the Deliver video-model notes read at 4.5:1; the in-page audit now also understands `color-mix()` backgrounds and switches off colour transitions while it measures. The six workspaces pass in all three looks, dark and light.
