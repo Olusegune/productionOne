@@ -316,15 +316,6 @@ export function SheetStudio(props: {
           <select value={activeVariant} onChange={(e) => setVariant(e.target.value)}>{variants.map((v) => <option key={v}>{v}</option>)}</select></label>
         <label><span>Sheet</span>
           <select value={activeType} onChange={(e) => setSheetType(e.target.value as SheetType)}>{sheetTypes.map((t) => <option key={t}>{t}</option>)}</select></label>
-        <label><span>Shape</span>
-          <select value={shapeOverride} onChange={(e) => setShape(e.target.value)} aria-label="Image shape for this sheet" title="The shape of new images on this sheet. Images already made keep their shape.">
-            <option value="">Default ({shapeChoices.find((s) => s.value === views[0]?.aspect)?.label ?? views[0]?.aspect ?? "by view"})</option>
-            {shapeChoices.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select></label>
-        <label><span>Backdrop</span>
-          <select value={backdrop} onChange={(e) => setBackdrop(e.target.value)} aria-label="Backdrop for this sheet" title="One flat background for every new image on this sheet, so the views agree. Images already made keep theirs.">
-            {backdropChoices.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
-          </select></label>
         {asset.type === "character" && activeType === "Expressions" && plan && plan.length > 1 && (
           <label><span>Expressions</span>
             <select value={fromStory ? "story" : "full"} onChange={(e) => setFromStory(e.target.value === "story")}>
@@ -336,6 +327,19 @@ export function SheetStudio(props: {
           <label><span>Intensity</span>
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>{intensities.map((i) => <option key={i}>{i}</option>)}</select></label>
         )}
+      </div>
+      <details className="ss-more">
+        <summary>Shape, backdrop and image model <small>{modelId}</small></summary>
+        <div className="ss-bar">
+        <label><span>Shape</span>
+          <select value={shapeOverride} onChange={(e) => setShape(e.target.value)} aria-label="Image shape for this sheet" title="The shape of new images on this sheet. Images already made keep their shape.">
+            <option value="">Default ({shapeChoices.find((s) => s.value === views[0]?.aspect)?.label ?? views[0]?.aspect ?? "by view"})</option>
+            {shapeChoices.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select></label>
+        <label><span>Backdrop</span>
+          <select value={backdrop} onChange={(e) => setBackdrop(e.target.value)} aria-label="Backdrop for this sheet" title="One flat background for every new image on this sheet, so the views agree. Images already made keep theirs.">
+            {backdropChoices.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+          </select></label>
         <label className="ss-model"><span>Image model · reference sheets</span>
           <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={choice.pick} onRefresh={() => void refreshModels()} refreshing={refreshing} />
         </label>
@@ -343,7 +347,8 @@ export function SheetStudio(props: {
           <button className={size === "grid" ? "on" : ""} onClick={() => setSize("grid")} aria-pressed={size === "grid"} title="Grid" aria-label="Grid previews"><LayoutGrid size={15} /></button>
           <button className={size === "large" ? "on" : ""} onClick={() => setSize("large")} aria-pressed={size === "large"} title="Large previews" aria-label="Large previews"><Square size={15} /></button>
         </div>
-      </div>
+        </div>
+      </details>
 
       <div className="ss-work">
         <div className="ss-main">

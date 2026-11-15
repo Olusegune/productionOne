@@ -3,7 +3,7 @@
 ## Commands
 ```powershell
 npx tsc -b                                          # types (plain `tsc --noEmit -p .` checks nothing here)
-npx vitest run                                      # unit and component tests (350 at 0.32.0)
+npx vitest run                                      # unit and component tests (362 after 0.32.0)
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (78 at 0.32.0; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 npm audit
@@ -31,8 +31,11 @@ rafter secrets .                                    # before every push
 | Suno request limits and result reading | Rust `suno.rs` tests | Model allow-list, title, style and lyrics lengths, length range, waiting, finished and failed task records; the network call is not unit-tested (run live) |
 | Review queue, approved reference choice, Deliver checklist and draft or verified rule | `src/domain/review.test.ts`, `src/views/ReviewView.test.tsx` | Approve, Request changes (opens the sheet, generates nothing), Reject, Turned down, no reference, empty |
 | Style gallery: search, families, favourites, details, focus, the locked state, and a picture on disk for every one of the 117 styles | `src/domain/styleGallery.test.ts`, `src/components/StyleGallery.test.tsx` | The list of pictures must equal the folder exactly; each file must be a real image under 120 KB |
+| Script workspace: toolbar, templates only when empty or on request, questions apart from confirmed findings, Evidence jumps, Facts toggle, tabs keep the script | `src/views/StoryView.test.tsx` | |
+| Asset Studio tabs (Sheets first, other sections one tab away and still mounted), the one-line look bar, the Add character dialog | `src/App.test.tsx`, `src/components/BibleAdd.test.tsx` | |
 | Identity fields by asset kind (a set or prop shows no age or gender; older saved facts are kept) | `src/components/AssetLab.test.tsx` | |
 | Recent projects (file names on Windows and posix paths; removing one entry) | `src/appHelpers.test.ts`, Rust `desktop.rs` test | |
+| Fonts bundled and first in their stacks; the security policy allows only the app's own fonts | `src/fonts.test.ts` | |
 | Alt+1 to Alt+6 | `src/domain/shortcuts.test.ts`, `src/App.test.tsx` | Alt+1 to Alt+5 keep their old meaning; Review is Alt+6 |
 | Providers, Kie parser, VoiceKiller list, local AI, script files, CleanRender maths, launch arguments, backups, sheet export layout | Rust `#[cfg(test)]` modules | |
 

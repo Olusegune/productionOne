@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactElement } from "react";
 import { characterArcs, sceneMood } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 import { EmotionChip } from "./bible";
@@ -11,21 +11,21 @@ import { applyAi } from "../engine/aiBeats";
 import { explainStory } from "../engine/explain";
 
 /** What the story engine found, each finding linked back to the script line it came from. */
-export function ReadingPanel({ story, onJump, desktop = false, onStory, notify, onAddProp, onUseAge }: { story?: ParsedStory; onJump: (line: number) => void; desktop?: boolean; onStory?: (story: ParsedStory) => void; notify?: (message: string) => void; onAddProp?: (name: string) => void; onUseAge?: (character: string, value: string) => void }) {
+export function ReadingPanel({ story, onJump, desktop = false, onStory, notify, onAddProp, onUseAge, part = "all", bare = false }: { part?: "all" | "questions" | "reading"; bare?: boolean; story?: ParsedStory; onJump: (line: number) => void; desktop?: boolean; onStory?: (story: ParsedStory) => void; notify?: (message: string) => void; onAddProp?: (name: string) => void; onUseAge?: (character: string, value: string) => void }) {
   const [propName, setPropName] = useState("");
   const local = useLocalAi(desktop);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const why = useMemo(() => (story ? explainStory(story) : null), [story]);
   const arcs = useMemo(() => (story ? characterArcs(story) : []), [story]);
-  if (!story || !story.scenes.length) return <section className="panel po-reading"><EmptyState icon={ScanText} title="Nothing read yet" tone="blue">Paste or import a script and press Analyze. Reading is free and happens on your computer.</EmptyState></section>;
+  if (!story || !story.scenes.length) return <section className={bare ? "po-reading bare" : "panel po-reading"}><EmptyState icon={ScanText} title="Nothing read yet" tone="blue">Paste or import a script and press Analyze. Reading is free and happens on your computer.</EmptyState></section>;
   const jump = (line: number, label: string) => <button className="po-line" onClick={() => onJump(line)} title="Show this line in the script">{label}</button>;
   return (
-    <section className="panel po-reading" aria-label="What the engine found">
-      <div className="panel-heading">
+    <section className={bare ? "po-reading bare" : "panel po-reading"} aria-label={part === "questions" ? "Questions about the reading" : "What the engine found"}>
+      {!bare && <div className="panel-heading">
         <div><span className="eyebrow">THE ENGINE'S READING · FREE, LOCAL</span><h3>{story.scenes.length} scene{story.scenes.length === 1 ? "" : "s"} · {story.characters.length} character{story.characters.length === 1 ? "" : "s"} · {story.props.length} prop{story.props.length === 1 ? "" : "s"}</h3></div>
         <span className="pill">{story.format}</span>
-      </div>
-      {desktop && onStory && (
+      </div>}
+      {part !== "questions" && desktop && onStory && (
         <div className="ai-row">
           <button className="secondary" disabled={!!progress || !local.config.textModel} onClick={async () => {
             try {
@@ -40,12 +40,13 @@ export function ReadingPanel({ story, onJump, desktop = false, onStory, notify, 
           <small>{local.config.textModel ? `Uses ${local.config.textModel} on this computer. Nothing is sent online.` : "Open Local AI and choose a model to use this."}</small>
         </div>
       )}
-      {story.warnings.map((w) => <p key={w} className="helper warn">{w}</p>)}
-      {why && <details open={why.needsReview > 0}>
+      {part !== "reading" && story.warnings.map((w) => <p key={w} className="helper warn">{w}</p>)}
+      {part === "questions" && why && <QuestionList why={why} jump={jump} />}
+      {part === "all" && why && <details open={why.needsReview > 0}>
         <summary>How this was read{why.needsReview > 0 ? ` · ${why.needsReview} to check` : ""}</summary>
         <ul className="po-plain">{why.findings.map((f, i) => <li key={i}><span className={`pill conf-${f.confidence}`}>{f.confidence}</span> <b>{f.subject}</b> <small>{f.reason}</small>{f.line ? <> {jump(f.line, `line ${f.line}`)}</> : null}</li>)}</ul>
       </details>}
-      <details open>
+      {part !== "questions" && <><details open>
         <summary>Scenes and mood</summary>
         <ul className="po-plain">
           {story.scenes.map((s) => { const mood = sceneMood(s); return (
@@ -76,6 +77,23 @@ export function ReadingPanel({ story, onJump, desktop = false, onStory, notify, 
           <ul className="po-plain">{story.props.map((p) => <li key={p.name}><b>{p.name}</b>{p.condition && <small> · {p.condition}</small>} {jump(p.evidence[0].line, `line ${p.evidence[0].line}`)}</li>)}</ul>
         </details>
       )}
+      </>}
     </section>
+  );
+}
+
+/** What the reading is unsure about, apart from what it is confident about. Each line links back to the script. */
+function QuestionList({ why, jump }: { why: ReturnType<typeof explainStory>; jump: (line: number, label: string) => ReactElement }) {
+  const unsure = why.findings.filter((f) => f.confidence !== "high");
+  const sure = why.findings.filter((f) => f.confidence === "high");
+  const row = (f: (typeof why.findings)[number], i: number) => <li key={`${f.subject}-${i}`}><span className={`pill conf-${f.confidence}`}>{f.confidence}</span> <b>{f.subject}</b> <small>{f.reason}</small>{f.line ? <> {jump(f.line, `line ${f.line}`)}</> : null}</li>;
+  return (
+    <>
+      {unsure.length === 0 ? <p className="helper">Nothing needs checking. Everything the reading found is well supported by the script.</p> : <>
+        <h4 className="po-sub">Needs your check <span>{unsure.length}</span></h4>
+        <ul className="po-plain">{unsure.map(row)}</ul>
+      </>}
+      {sure.length > 0 && <details><summary>Confirmed by the script ({sure.length})</summary><ul className="po-plain">{sure.map(row)}</ul></details>}
+    </>
   );
 }

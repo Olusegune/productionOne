@@ -245,7 +245,7 @@ kbd { font: 600 12px/1 var(--ui); color: var(--text-2); background: rgba(255, 25
 /* Fraunces: a warm, cinematic serif for titles. Plus Jakarta Sans: a friendly, geometric sans for everything you read and click. */
 :root {
   --ui: "Plus Jakarta Sans Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  --display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --display: "Space Grotesk Variable", "Inter Variable", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
 }
 body { font-size: 15px; letter-spacing: 0; line-height: 1.6; }
 h1, h2, h3, .po-title, .golden-head h3 { font-family: var(--display); font-weight: 560; letter-spacing: -.012em; line-height: 1.18; }
@@ -358,7 +358,7 @@ h3.with-icon > svg { flex: none; color: var(--gold-2); }
    surfaces, thin separators, compact controls, tabular numbers wherever a number is a reading. Light theme keeps its own tokens. */
 :root {
   --ui: "Inter Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --display: "Inter Variable", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --display: "Space Grotesk Variable", "Inter Variable", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   --bg: #131315;
   --surface: rgba(255, 255, 255, .042);
   --surface-2: rgba(255, 255, 255, .072);

@@ -50,3 +50,12 @@ identity fields by asset kind (3), Review queue and checklist logic (8), Review 
 - Script and Asset Studio layouts were not redesigned in this release. The screenshots in the guide show the older top bar.
 - The installers on a clean machine; Windows SmartScreen for an unsigned installer.
 - Audio quality by ear; screen readers; keyboard paths through the gallery by hand (covered by tests only).
+
+## After the 0.32.0 release: Script, Asset Studio and fonts (unreleased, branch `ui/phase4-script-studio`)
+| Check | Result |
+|---|---|
+| Tests | 362 JS pass (Script workspace, Add dialog, Asset Studio tabs, look bar, fonts); 78 Rust unchanged |
+| Audit, six workspaces, dark theme, 1024, 1280, 1440, 1920 px, with Space Grotesk | No horizontal overflow, no text under 12 px, no contrast failures, no small targets |
+| Audit, light theme | Projects, Story, Review, Direct clean; the emotion chips, "universal" and one Deliver note still below 4.5:1 (older); two fixes made (surface tokens and white text on the dark gold had no light values) |
+| Packaged app, real project | Story: 3 thumbnails shown, tabs work, no overflow. Asset Studio: Sheets tab first, four tabs, look strip one row. Fonts: Inter and Space Grotesk loaded, headings and wordmark in Space Grotesk, 0 console or policy errors. First picture starts 794 px down an 880 px window, was 988 px: better, still only just above the fold (**not met**: the brief wanted pictures above the fold at representative sizes) |
+| Session | Restored from the backup after every packaged test; recents list put back |

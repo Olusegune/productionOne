@@ -12,6 +12,7 @@ Only what you start: prompts and reference images go to the provider you picked 
 - Every file name that comes from a script or a provider is cleaned before it becomes a path; image tools only read inside the assets folder.
 - Key shape is checked on save so a mistyped key fails with a clear message instead of a 401 later.
 - Downloads use an allowlist of hosts; archives are unpacked by the system `tar`, not by shell commands built from text.
+- Fonts (Inter, Space Grotesk, Courier Prime) are bundled npm packages under open licences and are served from the app itself; the content-security policy allows only `'self'` and `data:` fonts, so nothing is fetched from a font service.
 - The page never uses `innerHTML`, `eval` or shell strings. A strict content-security policy is set (0.29.2): scripts only from the app's own bundle, no inline scripts, images and media only from the app, data and blob URLs and the app's own assets folder, no frames, no forms, no plugins. Checked in the packaged app: a remote script, an inline script and a remote image are all blocked, and the app itself loads with no violations.
 - Backend commands that take a file path from the page confine it: images, audio, CleanRender, QA, sheet export, `label_image` and `inspect_image` only touch files inside the assets folder; a labelled image can only be a new `.png` directly in that folder; ComfyUI can only be started from an install the app made; saved projects always end in `.pone`.
 - CleanRender never overwrites the original image: corrections are saved as new numbered files.

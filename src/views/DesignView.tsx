@@ -1,7 +1,7 @@
+import { useState } from "react";
 import { BibleTree, AssetInspector } from "../components/bible";
 import { ArtDirectionBar } from "../components/ArtDirectionBar";
-import { SectionNav } from "../components/SectionNav";
-import { designSections, isTauri } from "../appHelpers";
+import { isTauri } from "../appHelpers";
 import { AssetLab } from "../components/AssetLab";
 import { CharacterBible } from "../components/CharacterBible";
 import { SheetStudio } from "../components/SheetStudio";
@@ -68,7 +68,16 @@ export interface DesignViewProps {
   styleBible: StyleBible;
 }
 
+type Section = "sheets" | "identity" | "motion" | "voice";
+const sections: Array<{ id: Section; label: string }> = [
+  { id: "sheets", label: "Sheets" },
+  { id: "identity", label: "Identity" },
+  { id: "motion", label: "Motion" },
+  { id: "voice", label: "Voice and sound" },
+];
+
 export function DesignView(p: DesignViewProps) {
+  const [section, setSection] = useState<Section>("sheets");
   const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddCharacter, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible } = p;
   return (
 <div className="po-design">
@@ -79,16 +88,21 @@ export function DesignView(p: DesignViewProps) {
               onChange={setStyleBible}
               sheetCount={plannedSheets.length}
             />
-            <SectionNav sections={designSections} />
-            <div id="sec-identity">
+            <div className="as-head">
+              <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small>{analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
+              <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
+                {sections.map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+              </div>
+            </div>
+            <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>
             <AssetLab
               asset={analysis.assets[selectedAsset]}
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
               notify={setNotice}
             />
             </div>
-            <CharacterBible asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
-            <div id="sec-sheets">
+            <div id="sec-sheets" role="tabpanel" aria-labelledby="as-tab-sheets" hidden={section !== "sheets"}>
+            <CharacterBible onSection={setSection} asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
             <SheetStudio
               assets={analysis.assets}
               scenes={analysis.scenes}
@@ -113,7 +127,7 @@ export function DesignView(p: DesignViewProps) {
               focusSheetType={focusSheetType}
             />
             </div>
-            <div id="sec-motion">
+            <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>
             <MotionDemo
               asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
               queue={queue}
@@ -125,7 +139,7 @@ export function DesignView(p: DesignViewProps) {
               openProviders={() => setProvidersOpen(true)}
             />
             </div>
-            <div id="sec-voice">
+            <div id="sec-voice" role="tabpanel" aria-labelledby="as-tab-voice" hidden={section !== "voice"}>
             <VoiceAudition
               asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]}
               story={analysis.story}

@@ -16,17 +16,24 @@ The **sidebar** on the left holds the project name and its save state, the works
 ## Story
 ![Story workspace: script, reading and inventory](screenshots/story.png)
 
-Paste text or **Import script** (txt, md, Fountain, Final Draft, Word, PDF). Word and PDF come from the desktop app; scanned PDFs need OCR first. **Analyze script** lists scenes, characters, props, story variants and feelings. Every finding shows the line it came from. **Deepen with local AI** (optional) asks a local model for beats and keeps only those whose quoted evidence is in the script.
+The Story screen (**Script breakdown**) has the script on the left and the breakdown on the right. The toolbar has **Import script** (txt, md, Fountain, Final Draft, Word, PDF; Word and PDF come from the desktop app, and scanned PDFs need OCR first), **Analyze script**, and **Templates**.
 
-The **Script template** chooser is a starting point only: imported source text is preserved, and nothing is replaced until you choose **Use as starting point**.
+The breakdown has three tabs:
+- **Assets**: every character, costume, prop and set the script needs, each with its type, an editable name, a picture once one is approved, its status, the scenes it is in, an **Evidence** button that jumps the script to where it comes from, and (for characters) a **Facts** toggle for age, gender, race, ethnicity and role. Add or remove assets here.
+- **Questions**: what the reading is unsure about (a name that speaks only once, a scene with no time of day), kept apart from the findings the script clearly supports. Each line links to its script line. The number on the tab is how many need your check.
+- **Reading**: scenes and mood, characters and how they feel, ages, costumes and conditions, and props. **Deepen with local AI** (optional) asks a local model for beats and keeps only those whose quoted evidence is in the script.
 
-## Design
+**Templates** are shown only when the script is empty, or on request in a dialog from the toolbar. They are a starting point: imported source text is preserved, and nothing is replaced until you choose **Use as starting point**.
+
+## Design (Asset Studio)
+The left side lists every asset (add a character from an image with the button at the top). The top strip shows the film's **look**: its name, a **Browse styles** button, the palette and **Lock style**; **Look settings** folds away the name, creative direction, materials, animation approach and world treatment. Below it, the chosen asset has four tabs: **Sheets** (the default: the pictures), **Identity**, **Motion**, and **Voice and sound**. Switching tabs never loses what you were doing. On a sheet, **Shape, backdrop and image model** are folded under one line that names the model.
+
 ![Design workspace: production bible, visual style and asset lab](screenshots/design-style.png)
 
 The **production bible** (left) lists every character, prop and set. The **visual style** (117 presets) flows into every prompt; **Lock style** freezes it.
 
 ### Starting from an image you already have (for example from Midjourney)
-In the bible, type a name, optionally choose a gender (it helps pick a matching voice and is never guessed), and press **Add from image**. Choose the image: it becomes the approved front view, the identity lock turns on, and every other sheet is built from it. No script is needed. A character can also be started from a script and have its front view replaced with **Use my image**.
+In the bible press **Add character from image**, type a name in the dialog, optionally choose a gender (it helps pick a matching voice and is never guessed), and press **Add from image**. Choose the image: it becomes the approved front view, the identity lock turns on, and every other sheet is built from it. No script is needed. A character can also be started from a script and have its front view replaced with **Use my image**.
 
 ### Identity fields
 On a character's **Identity** tab: age, gender, race, ethnicity and role go into every image and video prompt. Two more fields are yours to use:

@@ -18,14 +18,14 @@ const tabs: BibleTab[] = [
 ]
 const stateText: Record<SectionState, string> = { empty: 'not started', working: 'generating', review: 'needs review', approved: 'approved', blocked: 'locked', ready: 'ready' }
 
-export function CharacterBible({ asset, onSheet, notify, jobs = [], dialogueLines = 0 }: { asset?: ExtractedAsset; onSheet: (sheet: SheetType) => void; notify: (message: string) => void; jobs?: ImageJob[]; dialogueLines?: number }) {
+export function CharacterBible({ asset, onSheet, notify, jobs = [], dialogueLines = 0, onSection }: { asset?: ExtractedAsset; onSheet: (sheet: SheetType) => void; notify: (message: string) => void; jobs?: ImageJob[]; dialogueLines?: number; /** Switches the Asset Studio tab, so a button here can reach a section that is not on screen. */ onSection?: (section: 'sheets' | 'identity' | 'motion' | 'voice') => void }) {
   const [active, setActive] = useState<SectionId>('identity')
   const refs = useRef<Array<HTMLButtonElement | null>>([])
   if (!asset || asset.type !== 'character') return null
   const progress = characterBibleProgress(jobs, asset.id, dialogueLines)
   const current = tabs.find((tab) => tab.id === active) ?? tabs[0]
   const currentProgress = progress.find((p) => p.id === current.id)!
-  const choose = (tab: BibleTab) => { setActive(tab.id); if (tab.sheet) onSheet(tab.sheet) }
+  const choose = (tab: BibleTab) => { setActive(tab.id); if (tab.sheet) { onSection?.('sheets'); onSheet(tab.sheet) } }
   const onKey = (event: KeyboardEvent, index: number) => {
     const move = event.key === 'ArrowRight' ? index + 1 : event.key === 'ArrowLeft' ? index - 1 : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null
     if (move === null) return
@@ -41,7 +41,7 @@ export function CharacterBible({ asset, onSheet, notify, jobs = [], dialogueLine
     <div className="character-bible-tabs" role="tablist" aria-label="Character Bible sections">{tabs.map((tab, index) => { const Icon = tab.icon; const p = progress.find((x) => x.id === tab.id)!; const on = active === tab.id
       return <button key={tab.id} ref={(el) => { refs.current[index] = el }} id={`bible-tab-${tab.id}`} role="tab" aria-selected={on} aria-controls="bible-panel" tabIndex={on ? 0 : -1} className={`${on ? 'on' : ''} state-${p.state}`} onClick={() => choose(tab)} onKeyDown={(e) => onKey(e, index)}><Icon size={13} aria-hidden="true" />{tab.label}<span className="bible-state">{stateText[p.state]}</span></button> })}</div>
     <div className="character-bible-next" id="bible-panel" role="tabpanel" aria-labelledby={`bible-tab-${current.id}`} aria-live="polite"><b>{current.label}</b><span>{currentProgress.next}</span>
-      {(current.id === 'motion' || current.id === 'voice') && <button className={currentProgress.state === 'blocked' ? 'secondary' : 'primary'} onClick={() => { const el = document.getElementById(current.id === 'motion' ? 'motion-audition' : 'voice-audition'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus?.() }}>{current.id === 'motion' ? 'Open motion audition' : 'Open voice audition'}</button>}
+      {(current.id === 'motion' || current.id === 'voice') && <button className={currentProgress.state === 'blocked' ? 'secondary' : 'primary'} onClick={() => { onSection?.(current.id === 'motion' ? 'motion' : 'voice'); window.setTimeout(() => { const el = document.getElementById(current.id === 'motion' ? 'motion-audition' : 'voice-audition'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus?.() }, 60) }}>{current.id === 'motion' ? 'Open motion audition' : 'Open voice audition'}</button>}
     </div>
   </section>
 }
