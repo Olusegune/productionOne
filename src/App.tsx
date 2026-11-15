@@ -1330,7 +1330,7 @@ export default function App() {
             openShot={(id) => { const i = shots.findIndex((x) => x.id === id); if (i >= 0) setSelectedShot(i); setWorkspace(storyboardsEnabled ? "Direct" : "Design"); }}
             notify={setNotice}
             styleLocked={styleBible.locked}
-            onFix={(fix) => { if (fix.kind === "review") setWorkspace("Review"); else if (fix.kind === "script") setWorkspace("Story"); else if (fix.kind === "asset" && fix.assetId) { const i = analysis.assets.findIndex((x) => x.id === fix.assetId); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); } else setWorkspace("Design"); }}
+            openProviders={() => setProvidersOpen(true)} openDesign={() => setWorkspace("Design")} onFix={(fix) => { if (fix.kind === "review") setWorkspace("Review"); else if (fix.kind === "script") setWorkspace("Story"); else if (fix.kind === "asset" && fix.assetId) { const i = analysis.assets.findIndex((x) => x.id === fix.assetId); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); } else setWorkspace("Design"); }}
           />
         )}
       </main>
