@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BibleTree, AssetInspector } from "../components/bible";
 import { ArtDirectionBar } from "../components/ArtDirectionBar";
 import { isTauri } from "../appHelpers";
@@ -76,8 +76,26 @@ const sections: Array<{ id: Section; label: string }> = [
   { id: "voice", label: "Voice and sound" },
 ];
 
+/** True while the window is wide enough for the side inspector (it is hidden below 1281 px). */
+function useWide(): boolean {
+  const query = "(min-width: 1281px)";
+  const [wide, setWide] = useState(() => (typeof window !== "undefined" && window.matchMedia ? window.matchMedia(query).matches : true));
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia(query);
+    const on = () => setWide(mq.matches);
+    on();
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
+  return wide;
+}
+
 export function DesignView(p: DesignViewProps) {
   const [section, setSection] = useState<Section>("sheets");
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const wide = useWide();
+  const inInspector = wide && section === "sheets";
   const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddCharacter, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible } = p;
   return (
 <div className="po-design">
@@ -125,6 +143,7 @@ export function DesignView(p: DesignViewProps) {
               settings={sheetSettings}
               setSettings={setSheetSettings}
               focusSheetType={focusSheetType}
+              controlsSlot={inInspector ? slot : null}
             />
             </div>
             <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>
@@ -392,7 +411,7 @@ export function DesignView(p: DesignViewProps) {
             </section>
             </details>
             </div>
-            <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} />
+            <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} slotRef={inInspector ? setSlot : undefined} />
           </div>
   );
 }

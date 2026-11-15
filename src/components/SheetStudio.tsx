@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, X } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
@@ -111,8 +112,10 @@ export function SheetStudio(props: {
   /** Per-sheet choices saved with the project: shape (asset|sheet) and backdrop (asset|sheet|backdrop). Empty means the defaults. */
   settings?: Record<string, string>;
   setSettings?: (update: (m: Record<string, string>) => Record<string, string>) => void;
+  /** When given, the sheet's controls (look, sheet, model, generate, notes) are drawn there, for example in the side inspector, and only the pictures stay in this panel. */
+  controlsSlot?: HTMLElement | null;
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, refs, setRefs, focusSheetType } = props;
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, controlsSlot, refs, setRefs, focusSheetType } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
@@ -286,20 +289,7 @@ export function SheetStudio(props: {
   const toggleCompare = (key: string) => setCompare((c) => (c.includes(key) ? c.filter((k) => k !== key) : [...c, key].slice(-2)));
   const compareItems = compare.map((k) => ({ key: k, view: views.find((v) => v.key === k), job: jobFor(k) })).filter((x): x is { key: string; view: (typeof views)[number]; job: ImageJob } => !!x.view && !!x.job?.outputPath);
 
-  return (
-    <section className="panel sheet-studio" aria-label="Reference sheets">
-      <header className="ss-head">
-        <div>
-          <span className="eyebrow">Reference sheets · {activeVariant}</span>
-          <h3>{asset.name} <span className="ss-type">{activeType}</span></h3>
-          <p className="ss-status" aria-live="polite">
-            <i className={reviewCount ? "dot review" : generatingCount ? "dot busy" : "dot"} />
-            {views.length ? `${approvedCount} of ${views.length} approved` : "No views planned"}
-            {reviewCount > 0 && ` · ${reviewCount} to review`}
-            {generatingCount > 0 && ` · ${generatingCount} in the queue`}
-            {queue.paused && " · paused"}
-          </p>
-        </div>
+  const headActions = (
         <div className="ss-head-actions">
           {queue.paused ? (
             <button className="secondary" disabled={!waiting && !stats.generating} onClick={() => setQueue((q) => ({ ...q, paused: false }))}><Play size={14} /> Resume</button>
@@ -309,8 +299,8 @@ export function SheetStudio(props: {
           <button className="secondary" disabled={!waiting} onClick={() => setQueue((q) => cancelAllWaiting(q))}>Cancel waiting</button>
           {desktop && <button className="secondary" disabled={viewItems.length === 0} onClick={() => setQuality(0)} title="Check colour, noise, highlights and sharpness, and correct them without changing the original"><Wand2 size={14} /> Image quality</button>}
         </div>
-      </header>
-
+  );
+  const bar = (
       <div className="ss-bar">
         <label><span>Look</span>
           <select value={activeVariant} onChange={(e) => setVariant(e.target.value)}>{variants.map((v) => <option key={v}>{v}</option>)}</select></label>
@@ -328,6 +318,8 @@ export function SheetStudio(props: {
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>{intensities.map((i) => <option key={i}>{i}</option>)}</select></label>
         )}
       </div>
+  );
+  const more = (
       <details className="ss-more">
         <summary>Shape, backdrop and image model <small>{modelId}</small></summary>
         <div className="ss-bar">
@@ -349,8 +341,67 @@ export function SheetStudio(props: {
         </div>
         </div>
       </details>
+  );
+  const sheetSettings = (
+        <aside className="ss-inspector" aria-label="Sheet settings">
+          <div className="ss-actions">
+            <button className="primary" onClick={() => generate(false)} disabled={!newKeys.length}><Sparkles size={15} /> Generate {newKeys.length} view{newKeys.length === 1 ? "" : "s"}</button>
+            <p className="ss-cost" aria-live="polite">{newCost.label}</p>
+            {newKeys.length > 1 && <button className="secondary" onClick={() => generate(true, newKeys)} title="Make one image first to check the look">Test one first</button>}
+            {redoKeys.length > 0 && <>
+              <button className="secondary" onClick={() => generate(false, redoKeys, true)} title="Makes a new version of every view that is not approved yet. Approved views are left alone."><RefreshCw size={14} /> Regenerate {redoKeys.length} unapproved</button>
+              <p className="ss-cost">{redoCost.label}</p>
+            </>}
+            {pickedKeys.length > 0 && <>
+              <button className="secondary" onClick={() => generate(false, pickedKeys, true)}><RefreshCw size={14} /> Regenerate {pickedKeys.length} selected</button>
+              <p className="ss-cost">{pickedCost.label}</p>
+            </>}
+            {!configured[provider] && desktop && (provider === "comfyui" ? <button className="secondary" onClick={openLocal}>Start ComfyUI</button> : <button className="secondary" onClick={openProviders}>Add {providerLabels[provider]} key</button>)}
+          </div>
+          <Fold title="Reference photos" hint={mine.length ? `${mine.length} added` : "none yet"} defaultOpen>
+            <div className="ss-refs-row">
+              {mine.map((p) => (
+                <figure key={p}><img src={convertFileSrc(p)} alt="Reference photo" /><button onClick={() => setRefs((r) => ({ ...r, [asset.id]: (r[asset.id] ?? []).filter((x) => x !== p) }))} aria-label="Remove this photo"><X size={13} /></button></figure>
+              ))}
+              {desktop && <button className="ss-add" onClick={() => void addRefPhotos()}><ImagePlus size={16} /> Add photos</button>}
+            </div>
+            {mine.length === 0 && <p className="helper">Photos of the actor, costume or location. Drop images on the window too. They go with every request to models that accept references.</p>}
+          </Fold>
+          <Fold title="Notes" hint="added to every prompt, saved with the project" defaultOpen>
+            <textarea className="ss-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. dust-worn jacket, torn left sleeve" aria-label="Notes for this sheet" />
+          </Fold>
+          <Fold title="Identity lock" hint={lock.kind === "locked" ? "on" : lock.kind === "waiting-for-anchor" ? "needs approved front" : "off: model has no references"} defaultOpen={lock.kind !== "locked"}>
+            <p className="helper" role={lock.kind === "no-references" ? "alert" : undefined}>{lock.message}</p>
+            {suggestion && <button className="secondary" onClick={() => { choice.pick(suggestion.provider, suggestion.id); notify(`Switched to ${suggestion.name}: it uses your approved front view as a reference.`); }}>Switch to {suggestion.name}</button>}
+            {lock.kind === "no-references" && !suggestion && <p className="helper">No model with reference support is available with your current keys. Add a Kie.ai or Google key to lock identity.</p>}
+          </Fold>
+          <Fold title="Model">
+            <p className="helper">{model ? `${model.name}. ${model.note}` : "Custom model id: this app does not know its capabilities."}</p>
+          </Fold>
+        </aside>
+  );
 
-      <div className="ss-work">
+  return (
+    <section className="panel sheet-studio" aria-label="Reference sheets">
+      <header className="ss-head">
+        <div>
+          <span className="eyebrow">Reference sheets · {activeVariant}</span>
+          <h3>{asset.name} <span className="ss-type">{activeType}</span></h3>
+          <p className="ss-status" aria-live="polite">
+            <i className={reviewCount ? "dot review" : generatingCount ? "dot busy" : "dot"} />
+            {views.length ? `${approvedCount} of ${views.length} approved` : "No views planned"}
+            {reviewCount > 0 && ` · ${reviewCount} to review`}
+            {generatingCount > 0 && ` · ${generatingCount} in the queue`}
+            {queue.paused && " · paused"}
+          </p>
+        </div>
+        {!controlsSlot && headActions}
+      </header>
+
+      {!controlsSlot && bar}
+      {!controlsSlot && more}
+
+      <div className={`ss-work${controlsSlot ? " solo" : ""}`}>
         <div className="ss-main">
           {!desktop && <p className="helper">Image generation runs in the Windows app. The browser preview shows the plan only.</p>}
           {compare.length > 0 && (
@@ -417,42 +468,7 @@ export function SheetStudio(props: {
           </div>
         </div>
 
-        <aside className="ss-inspector" aria-label="Sheet settings">
-          <div className="ss-actions">
-            <button className="primary" onClick={() => generate(false)} disabled={!newKeys.length}><Sparkles size={15} /> Generate {newKeys.length} view{newKeys.length === 1 ? "" : "s"}</button>
-            <p className="ss-cost" aria-live="polite">{newCost.label}</p>
-            {newKeys.length > 1 && <button className="secondary" onClick={() => generate(true, newKeys)} title="Make one image first to check the look">Test one first</button>}
-            {redoKeys.length > 0 && <>
-              <button className="secondary" onClick={() => generate(false, redoKeys, true)} title="Makes a new version of every view that is not approved yet. Approved views are left alone."><RefreshCw size={14} /> Regenerate {redoKeys.length} unapproved</button>
-              <p className="ss-cost">{redoCost.label}</p>
-            </>}
-            {pickedKeys.length > 0 && <>
-              <button className="secondary" onClick={() => generate(false, pickedKeys, true)}><RefreshCw size={14} /> Regenerate {pickedKeys.length} selected</button>
-              <p className="ss-cost">{pickedCost.label}</p>
-            </>}
-            {!configured[provider] && desktop && (provider === "comfyui" ? <button className="secondary" onClick={openLocal}>Start ComfyUI</button> : <button className="secondary" onClick={openProviders}>Add {providerLabels[provider]} key</button>)}
-          </div>
-          <Fold title="Reference photos" hint={mine.length ? `${mine.length} added` : "none yet"} defaultOpen>
-            <div className="ss-refs-row">
-              {mine.map((p) => (
-                <figure key={p}><img src={convertFileSrc(p)} alt="Reference photo" /><button onClick={() => setRefs((r) => ({ ...r, [asset.id]: (r[asset.id] ?? []).filter((x) => x !== p) }))} aria-label="Remove this photo"><X size={13} /></button></figure>
-              ))}
-              {desktop && <button className="ss-add" onClick={() => void addRefPhotos()}><ImagePlus size={16} /> Add photos</button>}
-            </div>
-            {mine.length === 0 && <p className="helper">Photos of the actor, costume or location. Drop images on the window too. They go with every request to models that accept references.</p>}
-          </Fold>
-          <Fold title="Notes" hint="added to every prompt, saved with the project" defaultOpen>
-            <textarea className="ss-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. dust-worn jacket, torn left sleeve" aria-label="Notes for this sheet" />
-          </Fold>
-          <Fold title="Identity lock" hint={lock.kind === "locked" ? "on" : lock.kind === "waiting-for-anchor" ? "needs approved front" : "off: model has no references"} defaultOpen={lock.kind !== "locked"}>
-            <p className="helper" role={lock.kind === "no-references" ? "alert" : undefined}>{lock.message}</p>
-            {suggestion && <button className="secondary" onClick={() => { choice.pick(suggestion.provider, suggestion.id); notify(`Switched to ${suggestion.name}: it uses your approved front view as a reference.`); }}>Switch to {suggestion.name}</button>}
-            {lock.kind === "no-references" && !suggestion && <p className="helper">No model with reference support is available with your current keys. Add a Kie.ai or Google key to lock identity.</p>}
-          </Fold>
-          <Fold title="Model">
-            <p className="helper">{model ? `${model.name}. ${model.note}` : "Custom model id: this app does not know its capabilities."}</p>
-          </Fold>
-        </aside>
+        {!controlsSlot && sheetSettings}
       </div>
 
       {quality !== null && viewItems.length > 0 && (
@@ -462,6 +478,7 @@ export function SheetStudio(props: {
       {lightbox !== null && viewItems.length > 0 && (
         <Lightbox items={viewItems} index={Math.min(lightbox, viewItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={doApprove} onReject={doReject} />
       )}
+      {controlsSlot && createPortal(<div className="ss-controls" role="group" aria-label="Sheet controls">{headActions}{bar}{more}{sheetSettings}</div>, controlsSlot)}
     </section>
   );
 }

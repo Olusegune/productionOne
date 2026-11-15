@@ -85,7 +85,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddChara
 }
 
 /** What the engine knows about the selected asset, with the script lines it came from. */
-export function AssetInspector({ asset, story }: { asset?: ExtractedAsset; story?: ParsedStory }) {
+export function AssetInspector({ asset, story, slotRef }: { asset?: ExtractedAsset; story?: ParsedStory; /** Called with the element that holds the sheet controls, or null when they are not shown here. */ slotRef?: (el: HTMLElement | null) => void }) {
   const arc = useMemo(() => (story && asset ? characterArcs(story).find((a) => a.character.toUpperCase() === asset.name.toUpperCase()) : undefined), [story, asset]);
   if (!asset) return <aside className="po-inspector"><span className="eyebrow">INSPECTOR</span><p className="helper">Select something in the bible to see what the script says about it.</p></aside>;
   const scenes = story?.scenes.filter((s) => asset.sceneIds.includes(s.id)) ?? [];
@@ -94,6 +94,7 @@ export function AssetInspector({ asset, story }: { asset?: ExtractedAsset; story
   const plan = arc ? expressionPlan(arc) : [];
   return (
     <aside className="po-inspector" aria-label="Inspector">
+      {slotRef && <div className="ss-slot" ref={slotRef} />}
       <span className="eyebrow">{asset.type.toUpperCase()} · {asset.id}</span>
       <h3>{asset.name}</h3>
       <section>

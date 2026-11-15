@@ -131,3 +131,16 @@
 .ad-compact .style-browser-trigger > span { overflow: hidden; text-overflow: ellipsis; }
 .po-canvas .ss-main > .ss-export { display: inline-flex; align-items: center; gap: 10px; margin: 0 16px 6px 0; vertical-align: top; }
 .po-canvas .ss-bar select { height: 40px; }
+
+/* Sheet controls live in the side inspector on wide windows; the pictures keep the whole canvas */
+.ss-work.solo { grid-template-columns: minmax(0, 1fr); display: grid; }
+.ss-slot { margin-bottom: 14px; }
+.ss-controls { display: grid; gap: 10px; }
+.ss-controls .ss-head-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ss-controls .ss-head-actions button { flex: 1 1 auto; justify-content: center; }
+.ss-controls .ss-bar { grid-template-columns: 1fr 1fr; }
+.ss-controls .ss-more { margin: 0; }
+.ss-controls .ss-inspector { position: static; width: auto; border: 0; padding: 0; background: transparent; }
+.po-shell .po-design { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr) 320px; }
+.ss-controls .ss-bar { grid-template-columns: minmax(0, 1fr); }
+.ss-controls .ss-more > summary { flex-wrap: wrap; }
