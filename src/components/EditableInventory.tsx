@@ -30,7 +30,7 @@ export function EditableInventory({ analysis, onChange, onAdd, onJump, outputs =
           const line = firstLine(asset)
           const isOpen = open === asset.id
           return (
-            <li className="ei-row inventory-row" key={asset.id}>
+            <li className="ei-row" key={asset.id}>
               <div className="ei-main">
                 <span className="ei-thumb"><RealImage path={outputs[asset.id]} label={`Approved picture of ${asset.name}`} empty="No picture yet" /></span>
                 <div className="ei-fields">
