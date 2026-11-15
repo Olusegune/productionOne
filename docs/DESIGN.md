@@ -1,4 +1,4 @@
-# Design notes (0.36.0)
+# Design notes (0.37.0)
 
 Production One is a tool people sit in for hours, next to footage and reference art. The interface is therefore quiet: it gets out of the way of the images, and the things that matter (the next step, what needs review, what is running) are the only things that glow.
 
@@ -15,6 +15,8 @@ One **sidebar** (216 px; 76 px, icons only, below 1280 px wide) replaces the old
 
 ## Looks (0.35.0; Cinematic default since 0.36.0)
 The app has three looks, chosen in Appearance and stored in `localStorage` (`po.look.v2`, only when a choice is made; until then Cinematic), applied as `data-look` on the root. Studio is the plain tokens and has no rules. Cinematic, the default, also tints the page from the accent, gives panels depth, lays the script out as a centred page and enlarges the cast portraits. `src/looks.css` is imported last (after `polish.css`, which is itself the last layer) so its rules win ties; it sets the colour and font tokens for Cinematic and Futurist in dark and light, plus a few shapes (radius, glow, tracking). Because most screens read the tokens (`--bg`, `--panel-1`, `--panel-2`, `--line-1`, `--text*`, `--gold*`, `--blue`, `--display`, `--ui`, `--radius`), a new look is mostly a new set of values. Cinematic's accent is `--accent-project`, set on the root from the style palette by `accentFromPalette` (`src/domain/appearance.ts`): the most colourful entry, lifted toward white until it has 4.5:1 against the dark surface. Older screens that hard-code colours follow a look only partly; the audit in `scripts/qa/in-page-audit.js` should be run for every look and both themes after any CSS change.
+
+**Cast board (0.37.0).** The Story screen's Assets tab is `src/components/CastBoard.tsx`, with its logic in `src/domain/castBoard.ts` (evidence, scenes, looks, selection). The selected asset's preview sits above the card grid so it is on screen without scrolling (about 350 px tall at 1600 x 900); the grid of 104 px cards follows. Each kind of asset has a tint (`--tint-character`, `-costume`, `-prop`, `-set`, `-environment`, darker in the light theme) used only as an edge and a border, never as text. The old list is `EditableInventory`, one switch away.
 
 ## Typography
 - **Fonts by look.** Studio and Futurist headings use Space Grotesk, Cinematic headings use Fraunces, and Futurist body text uses Geist (Inter elsewhere). All are bundled.

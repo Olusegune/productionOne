@@ -11,4 +11,4 @@
 - **Open blocker:** Production installers are not code-signed; Windows may display an unknown-publisher warning.
 - **Next task:** Run one user-authorized credentialed paid acceptance task and code-sign the resulting installers when signing credentials are available.
 - **Acceptance test:** Configure KIE, enter an explicit per-task spending ceiling, submit one Seedance task, poll it to completion, import/label the result, restart the app, and export a ZIP referencing that verified file.
-- **Last known build:** `0.36.0` Windows x64 NSIS and MSI, on `main`. Latest QA: `docs/QA_REPORT_0.36.0.md`. 406 JS and 78 Rust tests pass; `cargo audit` and `npm audit` report 0 vulnerabilities. User guide with screenshots: `docs/USER_GUIDE.md`.
+- **Last known build:** `0.37.0` Windows x64 NSIS and MSI, on `main`. Latest QA: `docs/QA_REPORT_0.37.0.md`. 424 JS and 78 Rust tests pass; `cargo audit` and `npm audit` report 0 vulnerabilities. User guide with screenshots: `docs/USER_GUIDE.md`.

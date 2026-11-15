@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRef, useState } from 'react'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { StoryView } from './StoryView'
@@ -14,6 +14,9 @@ function Harness({ initial = SCRIPT, spies }: { initial?: string; spies: { onJum
   return <StoryView script={script} setScript={setScript} scriptArea={createRef()} analysis={analysis} setAnalysis={(u) => setAnalysis(u as never)} desktop={false} notify={() => {}} onImport={spies.onImport} onAnalyze={spies.onAnalyze} onJump={spies.onJump} onAddProp={() => {}} onUseAge={() => {}} onAddAsset={() => {}} />
 }
 const spies = () => ({ onJump: vi.fn(), onImport: vi.fn(), onAnalyze: vi.fn() })
+
+beforeEach(() => { localStorage.clear() })
+const showList = () => fireEvent.click(screen.getByRole('button', { name: /List/ }))
 
 describe('Script workspace', () => {
   it('has a compact toolbar and counts the scenes and assets', () => {
@@ -46,6 +49,7 @@ describe('Script workspace', () => {
   it('jumps the script to the evidence for an asset, and for a finding', () => {
     const s = spies()
     render(<Harness spies={s} />)
+    showList()
     fireEvent.click(screen.getAllByRole('button', { name: /Evidence/ })[0])
     expect(s.onJump).toHaveBeenCalledTimes(1)
     expect(typeof s.onJump.mock.calls[0][0]).toBe('number')
@@ -55,6 +59,7 @@ describe('Script workspace', () => {
   })
   it('keeps character facts editable behind a Facts toggle and keeps what was typed', () => {
     render(<Harness spies={spies()} />)
+    showList()
     const id = analyzeScript(SCRIPT).assets.find((a) => a.type === 'character')!.id
     expect(screen.queryByLabelText(`${id} age`)).toBeNull()
     fireEvent.click(screen.getAllByRole('button', { name: /Facts/ })[0])

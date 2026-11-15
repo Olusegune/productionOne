@@ -1,7 +1,7 @@
 import { useMemo, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { FileInput, FileText, ScanText, X } from "lucide-react";
-import { EditableInventory } from "../components/EditableInventory";
+import { CastBoard } from "../components/CastBoard";
 import { ReadingPanel } from "../components/ReadingPanel";
 import { ScriptTemplatePicker } from "../components/ScriptTemplatePicker";
 import type { AnalysisResult } from "../domain/productionStudio";
@@ -26,6 +26,8 @@ export function StoryView(props: {
   onAddAsset: () => void;
   /** Approved picture per asset id, for thumbnails. */
   outputs?: Record<string, string>;
+  /** Opens an asset where its sheets are made. */
+  onOpenAsset?: (assetId: string) => void;
 }) {
   const { script, analysis, notify } = props;
   const [tab, setTab] = useState<Tab>("assets");
@@ -80,7 +82,7 @@ export function StoryView(props: {
             ))}
           </div>
           <div id="sv-panel" role="tabpanel" aria-labelledby={`sv-tab-${tab}`} className="sv-panel">
-            {tab === "assets" && <EditableInventory analysis={analysis} onChange={props.setAnalysis} onAdd={props.onAddAsset} onJump={props.onJump} outputs={props.outputs} />}
+            {tab === "assets" && <CastBoard analysis={analysis} onChange={props.setAnalysis} onAdd={props.onAddAsset} onJump={props.onJump} outputs={props.outputs} onOpenAsset={props.onOpenAsset} />}
             {tab === "questions" && <ReadingPanel bare part="questions" story={story} onJump={props.onJump} desktop={props.desktop} notify={notify} />}
             {tab === "reading" && <ReadingPanel bare part="reading" story={story} onJump={props.onJump} desktop={props.desktop} onStory={(next) => props.setAnalysis((a) => ({ ...a, story: next }))} notify={notify} onAddProp={props.onAddProp} onUseAge={props.onUseAge} />}
           </div>

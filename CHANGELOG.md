@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.37.0 (2026-11-14): the cast board
+- **Cast board.** The Assets tab on the Story screen now shows a card for every character, costume, prop and set (its approved picture, name, type and status; a coloured top edge for each kind), and for the one you select, a large picture beside what the script says about it: the first description line that names a character (or their first line of dialogue), the line a prop was found on, or a set's first scene heading, each with **Show in the script**; the scenes it is in as chips that jump to them; and, folded under a disclosure, the ages and costumes the script gives a character and the facts that go into image prompts. Name, type and facts stay editable; **Remove** removes the selected asset; **Make its sheets** or **Open in Design** takes you to its sheets. Arrow keys, Home and End move between cards. **List** switches to the compact list (remembered). Nothing is written for you: every quote is from the script.
+- Tests: 424 JS (the evidence and scene logic, the board, the list switch).
+
 ## 0.36.0 (2026-11-14): Cinematic is the default look
 - **Cinematic is now the default look.** Studio and Futurist stay one click away in Appearance. A look is remembered only when you choose one (the first version stored its default on every start, so it could not tell a choice from a default); the key is now `po.look.v2`, so everyone starts in Cinematic once.
 - Cinematic polish: the page takes a soft tint from the accent (your style's palette) at the top and corner; panels have depth (an inner highlight and a long shadow); titles are larger; the script is a centred, page-width column on a slightly lifted sheet; the cast has bigger portraits (76 px); the primary button has a gentle gradient and glow; cards lift and rows warm on hover (off when the system asks for reduced motion); selection and scrollbars follow the accent.
