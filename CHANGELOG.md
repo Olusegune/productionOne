@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.31.0 (2026-11-14): music with Suno
 - Music with Suno: in a character's Voice and sound, "Make music with Suno" makes a character theme or the score for a scene the character is in. Write the style from the script (stated personality, role, and the scene's heading: where and when), with the local AI helper, or by hand; choose the model (V6 Mini, V6, V6 Wild), length (10 to 180 s), instrumental or your own lyrics. Each request makes two tracks, saved with the audio clips and played by the level-matched player.
 - Suno is reached through Kie.ai (a third-party route: Suno has no public API), with the Kie key already used for images and video. Your text goes to Kie.ai only when you press Make music; it spends Kie credits. The screen says so, and to check Kie's and Suno's terms before commercial use.
 - Backend: new command `make_music` (Rust `suno.rs`): fixed Kie addresses, allow-listed model, length and text limits checked before anything is sent, result files downloaded only from public https hosts (redirects re-checked), capped at 80 MB, kept only if they sniff as audio, saved under the assets folder with a sanitised name.
