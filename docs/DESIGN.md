@@ -1,4 +1,4 @@
-# Design notes (0.38.0)
+# Design notes (0.38.1)
 
 Production One is a tool people sit in for hours, next to footage and reference art. The interface is therefore quiet: it gets out of the way of the images, and the things that matter (the next step, what needs review, what is running) are the only things that glow.
 

@@ -20,7 +20,8 @@ export const causeInfo: Record<Cause, CauseInfo> = {
 /** Sorts one error message into the cause it shares with other failures. The first matching rule wins, most specific first. */
 export function causeOf(message: string): Cause {
   const m = message || ''
-  const code = /\((\d{3})\)/.exec(m)?.[1]
+  // Providers write the status as "(402)", "(500 Internal Server Error)" or "answered 404 Not Found".
+  const code = /(?:\(|answered )([1-5]\d{2})\b/.exec(m)?.[1]
   if (/no model page|not published a readable request schema|model (is )?(not found|not available|unavailable)|unknown model|invalid model|no longer available|does not exist/i.test(m)) return 'model-unavailable'
   if (code === '402' || /insufficient|out of credits|not enough credits|credit balance|billing|payment required|quota exceeded/i.test(m)) return 'credits'
   if (code === '401' || code === '403' || /No .* key is saved|invalid api key|unauthori[sz]ed|forbidden/i.test(m)) return 'key'
