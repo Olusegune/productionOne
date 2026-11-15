@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.38.1 (2026-11-15): failure groups fix
 - **Failure groups read real status codes.** Providers write the status as "(500 Internal Server Error)" or "answered 503 Service Unavailable", not just "(500)", so server errors landed in "other" and ElevenLabs errors lost their code. Found by live checks; 5 new tests.
 
 ## 0.38.0 (2026-11-15): polish
