@@ -38,13 +38,13 @@ Windows 10 or 11 with WebView2 (included in Windows 11; the installer adds it on
 
 ## First five minutes
 
-1. **Providers** (top bar): paste a key for one provider. Keys are stored in the Windows credential store, never in project files.
+1. **Providers** (sidebar, bottom): paste a key for one provider. Keys are stored in the Windows credential store, never in project files.
 2. **Story**: paste a script or choose **Import script**, then **Analyze script**.
 3. **Design**: approve the visual style, pick a character, choose a model, press **Generate**. Use **Test one first** to check the look cheaply.
 4. Approve the front view; the other views use it as their reference.
 5. **Direct → Plan all scenes**, then **Generate frames**. **Deliver** shows what is left.
 
-No key? Open **Local AI** (top bar) and let it find or install ComfyUI.
+No key? Open **Local AI** (sidebar, bottom) and let it find or install ComfyUI.
 
 ## Develop
 

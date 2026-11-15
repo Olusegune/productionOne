@@ -1,18 +1,22 @@
 /* ===== Production One theme: loaded last. Depth and light instead of flat outlines; bundled fonts (works offline). ===== */
 :root {
   color-scheme: dark;
-  --bg: #0a0c0f;
+  --bg: #0d1017;
   --surface: rgba(255, 255, 255, .035);
   --surface-2: rgba(255, 255, 255, .06);
   --stroke: rgba(255, 255, 255, .08);
   --stroke-strong: rgba(255, 255, 255, .16);
-  --text: #eef1f4;
+  --text: #eef2f8;
   --text-2: #b4bcc4;
-  --text-3: #8b959f;
-  --gold: #c49a46;
-  --gold-2: #d6ad59;
+  --text-3: #98a4b8;
+  --gold: #cba96a;
+  --gold-2: #d8b779;
   --gold-deep: #a77e31;
-  --blue: #6aa6cf;
+  --blue: #79d8e8;
+  --panel-1: #151a24;
+  --panel-2: #1c2330;
+  --line-1: #293241;
+  --side-w: 216px;
   --radius: 8px;
   --radius-sm: 6px;
   --shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 18px 50px rgba(0, 0, 0, .38);

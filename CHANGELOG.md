@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- Interface, phase 1 of the redesign: one left sidebar replaces the top bar and the repeated step bar. It holds the project name and its real save state, the five workspaces (same names, same Alt+1 to Alt+5), the next step as a single button with its reason, Local AI, the command palette and Providers. Below 1280 px it collapses to icons (with names for screen readers). Progress through the steps stays on the Projects screen.
+- Colours and sizes: a calmer graphite base, champagne primary actions and cyan focus, new surface tokens, and nothing essential below 12 px (the 11 px labels are now 12 px). Checked at 1024, 1280, 1440 and 1920 px in the dark theme: no horizontal overflow, no text under 12 px, no contrast failures.
+- Fixed: a set, prop or vehicle no longer shows Age, Gender, Race, Ethnicity, Role and Personality in its Identity tab (found by the redesign audit; confirmed in the app). It shows only "Never"; any character facts an older project had saved on such an asset are kept and listed, not deleted.
+- Known, not changed: in the light theme the emotion chips and a few small labels ("universal", one Deliver note) are below 4.5:1 contrast; they predate this change.
+
 ## 0.31.0 (2026-11-14): music with Suno
 - Music with Suno: in a character's Voice and sound, "Make music with Suno" makes a character theme or the score for a scene the character is in. Write the style from the script (stated personality, role, and the scene's heading: where and when), with the local AI helper, or by hand; choose the model (V6 Mini, V6, V6 Wild), length (10 to 180 s), instrumental or your own lyrics. Each request makes two tracks, saved with the audio clips and played by the level-matched player.
 - Suno is reached through Kie.ai (a third-party route: Suno has no public API), with the Kie key already used for images and video. Your text goes to Kie.ai only when you press Make music; it spends Kie credits. The screen says so, and to check Kie's and Suno's terms before commercial use.
