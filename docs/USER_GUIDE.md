@@ -1,11 +1,14 @@
 # Production One user guide
 
-Follow the **Golden Path**; the sidebar shows your next step: Create, Analyze, Design, Generate, Review, Deliver (Direct is optional). The gold button in the sidebar always names the next useful step. **Ctrl+K** opens the command palette for any action, and **Alt+1 to Alt+5** switches workspace.
+Follow the **Golden Path**; the sidebar shows your next step: Create, Analyze, Design, Generate, Review, Deliver (Direct is optional). The gold button in the sidebar always names the next useful step. **Ctrl+K** opens the command palette for any action, and **Alt+1 to Alt+6** switches workspace (Projects, Story, Design, Direct, Deliver, Review).
+
+The **sidebar** on the left holds the project name and its save state, the workspaces, the next step as one gold button, Local AI, the command palette and Providers. Below 1280 px wide it shrinks to icons. *The screenshots in this guide were taken before 0.32.0 and show the older top bar; the same controls are now in the sidebar.*
 
 ![Projects overview with the Golden Path](screenshots/projects.png)
 
 ## Projects, files and backups
 - **New / Open / Save** are in the File menu and on Projects. Projects are `.pone` files. Old `.pguy` projects open and are saved as a new `.pone`, leaving the original untouched.
+- **Recent projects** on the Projects screen show file names only. Press **×** on an entry to remove it from the list, or **Clear list** to remove them all. This never deletes a project file.
 - Double-click a `.pone` or `.pguy` in Explorer to open it. If Production One is already running the project opens in that window.
 - The title bar shows *Unsaved changes*, *Autosaved* or *Saved*. Closing with unsaved changes asks first.
 - **Nothing is lost when you start a new production or open another one.** If the production on screen has work in it and is not safely in a saved file, the app first copies it to `Documents\Production One\Backups` (newest 30 kept) and tells you where the copy is. If the copy cannot be made, nothing is replaced. Open a backup with **Open** like any project.
@@ -53,6 +56,9 @@ On a character's **Identity** tab: age, gender, race, ethnicity and role go into
 ### Export a sheet as one image
 **Export sheet as one image** puts the views of a sheet into one labelled PNG. **Export every sheet as one image** does the same for all of an asset's sheets (up to 40 views), which is the way to export a location whose sheets hold one view each. Files go to `Documents\Production One\Sheets`.
 
+### Choosing a look
+On the Design screen press **Browse styles**. The gallery has a picture for every one of the 117 styles, all showing the same scene so you compare styles, not subjects. Search (every word must match), filter by family, star favourites (kept on this computer), and click a style to see its description, palette, materials, rendering and lighting. **Use this style** applies it without locking it; lock it on the Design screen when you are happy. The gallery cannot be opened while the style is locked.
+
 ### Image quality (CleanRender)
 Open **Image quality** in the sheet header. It measures the image and suggests fixes in plain language, for example "the mid-tones lean strongly yellow". **Try this** sets sliders; the split view shows original and corrected live. **Save corrected revision** writes a new file and a new revision; the original is never changed. **Apply to all** uses the same settings on every image of the sheet. It cannot fix faces, hands, likeness or plastic-looking skin; for those it says to regenerate, use a reference photo, or retouch.
 
@@ -62,6 +68,10 @@ On an asset's **Motion** tab, choose a clip (turntable, idle, walk, run, speaks 
 ![Voice audition with the casting-line picker](screenshots/voice-casting.png)
 
 On the **Voice and sound** tab, pick an engine (free Windows voices, ElevenLabs, VoiceKiller, or a local speech server), a voice, and a line. Each character gets its own suggested Windows voice from its stated gender and age.
+
+**Design a voice.** Under the engine, **Fill from the script** writes a voice description from the character's confirmed age, gender, role, personality and sound direction and from their own dialogue, and shows what it was built from; if the script says too little it says what is missing and writes nothing. **Ask the AI helper** has your local model (Ollama or LM Studio) write one from a rough idea; only confirmed fields and the character's lines are sent, and nothing leaves your computer. The description feeds ElevenLabs Voice Design (three previews, then keep one; keeping uses a custom-voice slot) and the Qwen TTS voice field. Chatterbox clones from a recording and cannot design from words, so it shows a note.
+
+**Music with Suno.** Under **Make music with Suno** you can make a theme for the character or the score for a scene they are in. Write the style from the script (stated personality and role, and the scene's heading: where and when), with the AI helper, or by hand; choose the model (V6 Mini, V6, V6 Wild), the length and instrumental or your own lyrics. Each request makes two tracks and spends Kie.ai credits. Suno is reached through Kie.ai, a third-party service, so your text goes to Kie.ai when you press **Make music**; check Kie's and Suno's terms before commercial use. Tracks are saved with the audio clips.
 
 Each clip plays **level-matched** (to -20 LUFS, never boosted past 12 dB or into clipping) with the silence at its two ends trimmed, so voices are compared fairly; the line under the player says what was done. Untick **Level-matched** to hear the original as recorded. Your saved files are never changed.
 
@@ -74,6 +84,9 @@ Each clip plays **level-matched** (to -20 LUFS, never boosted past 12 dB or into
 
 Generation runs in the queue at the bottom, two at a time. **Pause** lets running images finish and holds the rest. Views that match a front view wait until you approve it; the bar says how many are waiting and offers **Open sheets**. If the app closes in the middle of generation, the images that were in flight come back marked *failed, may already be billed* so you can decide whether to retry; waiting images are kept and the queue starts paused.
 
+## Review
+**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match, with a badge in the sidebar for how many wait. Technical checks are listed apart from your decision. **Approve** it; **Request changes** (turns it down and opens its sheet; nothing is generated); or **Reject** (keeps the file; find it again under *Turned down*). Generation details and the prompt are one click away.
+
 ## Direct (optional)
 ![Director's room](screenshots/direct.png)
 
@@ -82,7 +95,7 @@ Turn on the Director's room, then **Plan all scenes**. Select a shot to edit it 
 ## Deliver
 ![Deliver: readiness and the department board](screenshots/deliver.png)
 
-The top row shows readiness, what is missing, active and failed jobs and the next action. *What still needs work* lists items by scene with buttons that take you to them. The *Shot compiler* builds the prompt for Seedance, Kling or Veo from the shot's data; you can edit it and copy it. *Export verified package* is available only when every sheet and frame is approved; *draft package* is always available and is marked as a draft.
+The **package checklist** comes first: script read, style locked, every asset has an approved sheet, nothing waiting for review, failed jobs. Each open line has a button to where it is fixed, and an export is a draft until the list is done. Below it are the hand-off options (verified or draft package, then the optional shot compiler, collapsed when no shots are planned) and the department board. The top row shows readiness, what is missing, active and failed jobs and the next action. *What still needs work* lists items by scene with buttons that take you to them. The *Shot compiler* builds the prompt for Seedance, Kling or Veo from the shot's data; you can edit it and copy it. *Export verified package* is available only when every sheet and frame is approved; *draft package* is always available and is marked as a draft.
 
 ## Command palette, shortcuts and themes
 ![Command palette](screenshots/palette.png)
@@ -107,7 +120,3 @@ Cloud models bill at the provider. The small counter in the queue dock counts re
 | Word/PDF import says no text | The PDF is a scan; run OCR first or paste the text. |
 | ComfyUI "not running" | Open Local AI and press Start. |
 | I opened a project and lost the one I had | Look in `Documents\Production One\Backups`; the app saved a copy first. |
-
-**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match. Technical checks are listed apart from your decision. Approve it; Request changes (turns it down and opens its sheet, nothing is generated); or Reject (keeps the file; find it again under Turned down). **Deliver** opens with a package checklist: every open line has a button to where it is fixed, and an export is a draft until the list is done.
-
-**Choosing a look:** on the Design screen press **Browse styles**. Search, filter by family, star favourites, and click a style to see its details; **Use this style** applies it without locking it. The pictures show one scene in each family's look, so you compare styles, not subjects.
