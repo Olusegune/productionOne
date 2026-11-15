@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- **Cinematic is now the default look.** Studio and Futurist stay one click away in Appearance. A look is remembered only when you choose one (the first version stored its default on every start, so it could not tell a choice from a default); the key is now `po.look.v2`, so everyone starts in Cinematic once.
+- Cinematic polish: the page takes a soft tint from the accent (your style's palette) at the top and corner; panels have depth (an inner highlight and a long shadow); titles are larger; the script is a centred, page-width column on a slightly lifted sheet; the cast has bigger portraits (76 px); the primary button has a gentle gradient and glow; cards lift and rows warm on hover (off when the system asks for reduced motion); selection and scrollbars follow the accent.
+- Checked: Cinematic, dark and light, all six workspaces at 1024, 1440 and 1920 px: no overflow, no text under 12 px, no contrast failures (apart from the older emotion-chip, "universal" and Deliver-note labels in the light theme). The audit now sees the primary button's real background colour.
+- Tests: 406 JS (the default, the version-2 key, nothing stored until a choice).
+
 ## 0.35.0 (2026-11-14): Appearance, three looks
 - **Appearance: three looks.** The palette icon at the bottom of the sidebar (or Ctrl+K, then "Appearance") opens a dialog to try a look on your own project, at once, with a preview of each. **Studio** is the default. **Cinematic** has warmer surfaces, serif page titles (Fraunces), rounder panels, and an accent taken from your visual style's palette (the most colourful entry, lifted until it reads at 4.5:1; a palette with no colour keeps the gold). **Futurist** has near-black blue surfaces, a cyan accent with a soft glow, tighter corners, uppercase tracked labels and a sharper body font (Geist). Each look has a dark and a light form; the dialog also switches dark and light. The choice is remembered on this computer. A look changes colours, fonts and shapes only, never what a control does. Palette commands: Appearance: Studio, Cinematic, Futurist.
 - Two bundled fonts added (SIL Open Font Licence): Fraunces and Geist, about 66 KB. Nothing is fetched from the network.
