@@ -2,7 +2,7 @@
 
 ## Commands
 ```powershell
-npx tsc --noEmit -p .                               # types
+npx tsc -b                                          # types (plain `tsc --noEmit -p .` checks nothing here)
 npx vitest run                                      # unit and component tests (318 at 0.31.0)
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (78 at 0.31.0; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
@@ -35,7 +35,7 @@ Driven through the app's own window with WebView2's debug port (`--remote-debugg
 A second copy of the app cannot run beside an installed one (single-instance), and the app shares one data folder, so a live test replaces the autosave. The app backs the previous production up first (Backups folder); reopen it afterwards.
 
 ## Release gate (run before every release)
-1. `npx tsc --noEmit -p .`, `npx vitest run`, `cargo test`, `cargo clippy --all-targets -- -D warnings`.
+1. `npx tsc -b`, `npx vitest run`, `cargo test`, `cargo clippy --all-targets -- -D warnings`.
 2. `npm audit` and `cargo audit` (0 vulnerabilities).
 3. `rafter secrets .`, and `rafter run` when the plan's quota allows.
 4. Build, then in the packaged app: a fresh load with console and security-policy violations recorded (none expected), a walk of every workspace and sheet, thumbnails, audio and video playback, an export, PDF and Word import, a ledger write, and the path-confinement checks (commands given a path outside the assets folder must refuse it). The 0.31.0 run is in [QA_REPORT_0.31.0.md](QA_REPORT_0.31.0.md); the 0.30.0 run is in [QA_REPORT_0.30.0.md](QA_REPORT_0.30.0.md); the 0.29.2 run is in [QA_REPORT_0.29.2.md](QA_REPORT_0.29.2.md).

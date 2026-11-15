@@ -107,3 +107,5 @@ Cloud models bill at the provider. The small counter in the queue dock counts re
 | Word/PDF import says no text | The PDF is a scan; run OCR first or paste the text. |
 | ComfyUI "not running" | Open Local AI and press Start. |
 | I opened a project and lost the one I had | Look in `Documents\Production One\Backups`; the app saved a copy first. |
+
+**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match. Technical checks are listed apart from your decision. Approve it; Request changes (turns it down and opens its sheet, nothing is generated); or Reject (keeps the file; find it again under Turned down). **Deliver** opens with a package checklist: every open line has a button to where it is fixed, and an export is a draft until the list is done.
