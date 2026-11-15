@@ -41,44 +41,38 @@ export function TopBar(props: {
   }, [doneIds.join("|")]);
   return (
     <div className="po-top" role="banner">
-      <div className="po-bar">
-        <div className="po-brand">
-          <span className="po-ring" style={{ "--p": `${progress}%` } as React.CSSProperties} title={`Golden Path ${progress}% complete`}><BrandMark size={30} /><span className="visually-hidden">Golden Path {progress}% complete</span></span>
-          <button className="po-title" onClick={props.onOpenSettings} title="Project settings">{props.title}</button>
-          {cheer && <span className="po-cheer" role="status"><Check size={12} aria-hidden="true" /> {cheer}</span>}
-          <span className={`po-save${props.unsaved ? " unsaved" : ""}`} role="status">{props.saveLabel}</span>
-        </div>
-        <nav className="po-tabs" aria-label="Workspaces">
-          {workspaceNames.map((name) => (
-            <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined}>
-              {(() => { const Icon = workspaceIcons[name]; return <Icon size={15} aria-hidden="true" />; })()}
-              <span>{name}</span>
-              {name === "Direct" && <em>optional</em>}
-            </button>
-          ))}
-        </nav>
-        <div className="po-actions">
-          {next && (
-            <button className="primary" onClick={() => props.onNext(next)} title={next.detail}>
-              <span className="btn-label">{next.action}</span> <ArrowRight size={14} aria-hidden="true" />
-            </button>
-          )}
-          {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}
-          <button className="icon-button" onClick={props.onPalette} title="Command palette (Ctrl+K)" aria-label="Open command palette"><CommandIcon size={16} /></button>
-          <button className="icon-button" onClick={props.onProviders} title="Providers and keys" aria-label="Providers and keys"><WandSparkles size={16} /></button>
-        </div>
+      <div className="po-brand">
+        <span className="po-ring" style={{ "--p": `${progress}%` } as React.CSSProperties} title={`Production ${progress}% through its steps`}><BrandMark size={30} /><span className="visually-hidden">Production {progress}% through its steps</span></span>
+        <span className="po-wordmark">Production <b>One</b></span>
       </div>
-      <ol className="po-steps" aria-label="Golden Path">
-        {steps.map((step) => (
-          <li key={step.id} className={step.state}>
-            <button onClick={() => props.onWorkspace(step.workspace)} title={`${step.label}: ${step.detail}`}>
-              <span className="po-step-dot">{step.state === "done" ? <Check size={11} /> : null}</span>
-              <span>{step.label}</span>
-            </button>
-          </li>
+      <div className="po-project">
+        <button className="po-title" onClick={props.onOpenSettings} title="Project settings">{props.title}</button>
+        <span className={`po-save${props.unsaved ? " unsaved" : ""}`} role="status">{props.saveLabel}</span>
+        {cheer && <span className="po-cheer" role="status"><Check size={12} aria-hidden="true" /> {cheer}</span>}
+      </div>
+      <nav className="po-tabs" aria-label="Workspaces">
+        {workspaceNames.map((name) => (
+          <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name} title={name}>
+            {(() => { const Icon = workspaceIcons[name]; return <Icon size={18} aria-hidden="true" />; })()}
+            <span>{name}</span>
+            {name === "Direct" && <em>optional</em>}
+          </button>
         ))}
-        {next && <li className="po-hint" aria-live="polite">{next.detail}</li>}
-      </ol>
+      </nav>
+      {next && (
+        <div className="po-next">
+          <small>Next step</small>
+          <p>{next.detail}</p>
+          <button className="primary" onClick={() => props.onNext(next)} title={next.detail} aria-label={next.action}>
+            <span className="btn-label">{next.action}</span> <ArrowRight size={14} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <div className="po-actions">
+        {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}
+        <button className="icon-button" onClick={props.onPalette} title="Command palette (Ctrl+K)" aria-label="Open command palette"><CommandIcon size={16} /></button>
+        <button className="icon-button" onClick={props.onProviders} title="Providers and keys" aria-label="Providers and keys"><WandSparkles size={16} /></button>
+      </div>
     </div>
   );
 }

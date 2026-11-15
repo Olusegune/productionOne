@@ -22,7 +22,7 @@ export function FirstRun({ onKeys, onStory }: { onKeys: () => void; onStory: () 
       <ol>
         <li><KeyRound size={18} aria-hidden="true" /><div><b>Add a provider key</b><p>Image and voice providers charge for each request. Keys stay on this computer. Nothing is sent until you press a generate button, and each one shows what it will cost.</p><button className="secondary" onClick={onKeys}>Add keys</button></div></li>
         <li><FileText size={18} aria-hidden="true" /><div><b>Paste or import a script</b><p>Production One reads characters, props and sets from it and shows how it read them, so you can correct a miss.</p><button className="secondary" onClick={onStory}>Open Story</button></div></li>
-        <li><Route size={18} aria-hidden="true" /><div><b>Follow the Golden Path</b><p>The gold button at the top always names the next step: design, generate, review, deliver.</p></div></li>
+        <li><Route size={18} aria-hidden="true" /><div><b>Follow the Golden Path</b><p>The gold button in the sidebar always names the next step: design, generate, review, deliver.</p></div></li>
       </ol>
       <button className="primary" onClick={close}>Got it</button>
     </section>

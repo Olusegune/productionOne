@@ -1,6 +1,6 @@
 # Production One user guide
 
-Follow the **Golden Path** across the top: Create, Analyze, Design, Generate, Review, Deliver (Direct is optional). The gold button at the top right always names the next useful step. **Ctrl+K** opens the command palette for any action, and **Alt+1 to Alt+5** switches workspace.
+Follow the **Golden Path**; the sidebar shows your next step: Create, Analyze, Design, Generate, Review, Deliver (Direct is optional). The gold button in the sidebar always names the next useful step. **Ctrl+K** opens the command palette for any action, and **Alt+1 to Alt+5** switches workspace.
 
 ![Projects overview with the Golden Path](screenshots/projects.png)
 

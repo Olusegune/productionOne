@@ -68,6 +68,7 @@ import "./theme.css";
 import "./director.css";
 import "./delivery.css";
 import "./cleanrender.css";
+import "./shell-v2.css";
 import { sampleStory } from "./engine/sampleStory";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
