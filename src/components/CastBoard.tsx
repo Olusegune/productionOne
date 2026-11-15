@@ -30,6 +30,7 @@ export function CastBoard(props: {
   const cards = useRef<Array<HTMLButtonElement | null>>([])
   const selectedKey = keepSelection(analysis.assets, selectedId)
   useEffect(() => { if (selectedKey !== selectedId) setSelectedId(selectedKey) }, [selectedKey, selectedId])
+  useEffect(() => { const i = analysis.assets.findIndex((a) => a.id === selectedKey); cards.current[i]?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' }) }, [selectedKey])
   const choose = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v) } catch { /* the view is a convenience */ } }
   const selected = analysis.assets.find((a) => a.id === selectedKey)
   const patch = (id: string, change: Partial<ExtractedAsset>) => onChange({ ...analysis, assets: analysis.assets.map((a) => (a.id === id ? { ...a, ...change } : a)) })
@@ -65,6 +66,27 @@ export function CastBoard(props: {
         <p className="helper">No assets yet. Analyze the script, or add one.</p>
       ) : (
         <>
+
+          <ul className="cb-grid" aria-label="Cast board">
+            {analysis.assets.map((a, i) => (
+              <li key={a.id}>
+                <button
+                  ref={(el) => { cards.current[i] = el }}
+                  className={`cb-card${a.id === selectedKey ? ' on' : ''}`}
+                  style={{ ['--tint' as string]: typeTint[a.type] }}
+                  aria-pressed={a.id === selectedKey}
+                  aria-label={`${a.name}, ${typeName[a.type]}, ${a.status === 'approved' ? 'approved' : 'planned'}`}
+                  tabIndex={a.id === selectedKey ? 0 : -1}
+                  onClick={() => setSelectedId(a.id)}
+                  onKeyDown={(e) => move(e, i)}
+                >
+                  <span className="cb-img"><RealImage path={outputs[a.id]} label="" empty="No picture yet" /></span>
+                  <span className="cb-name">{a.name}</span>
+                  <span className="cb-meta"><i className={`cb-dot ${a.status}`} aria-hidden="true" />{typeName[a.type]}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
 
           {selected && (
             <article className="cb-detail" aria-label={`${selected.name}, selected`} style={{ ['--tint' as string]: typeTint[selected.type] }}>
@@ -117,26 +139,6 @@ export function CastBoard(props: {
             </article>
           )}
 
-          <ul className="cb-grid" aria-label="Cast board">
-            {analysis.assets.map((a, i) => (
-              <li key={a.id}>
-                <button
-                  ref={(el) => { cards.current[i] = el }}
-                  className={`cb-card${a.id === selectedKey ? ' on' : ''}`}
-                  style={{ ['--tint' as string]: typeTint[a.type] }}
-                  aria-pressed={a.id === selectedKey}
-                  aria-label={`${a.name}, ${typeName[a.type]}, ${a.status === 'approved' ? 'approved' : 'planned'}`}
-                  tabIndex={a.id === selectedKey ? 0 : -1}
-                  onClick={() => setSelectedId(a.id)}
-                  onKeyDown={(e) => move(e, i)}
-                >
-                  <span className="cb-img"><RealImage path={outputs[a.id]} label="" empty="No picture yet" /></span>
-                  <span className="cb-name">{a.name}</span>
-                  <span className="cb-meta"><i className={`cb-dot ${a.status}`} aria-hidden="true" />{typeName[a.type]}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
         </>
       )}
     </div>

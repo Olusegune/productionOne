@@ -138,3 +138,19 @@
 /* ---------- Light theme: selected states that must stay readable in every look (loaded last, so these win) ---------- */
 :root[data-theme="light"] .rv-filter button.on, :root[data-theme="light"] .sg-fav-toggle.on, :root[data-theme="light"] .sg-families button.on { background: var(--gold-2); color: #fff; }
 :root[data-theme="light"] .po-shell .po-tabs button.active span, :root[data-theme="light"] .po-shell .po-tabs button.active b { color: var(--text); }
+
+/* ---------- Light theme: the last low-contrast labels (loaded last, so these win) ---------- */
+/* Emotion chips take their colour from two variables: the original in the dark theme, a darkened one in the light theme (no colour filter) */
+.po-emotion { color: var(--emo); }
+:root[data-theme="light"] .po-emotion { color: var(--emo-l); filter: none; }
+/* The prompt tabs and the video model card kept dark-theme colours in the light theme */
+:root[data-theme="light"] .prompt-tabs button { color: var(--text-2); }
+:root[data-theme="light"] .prompt-tabs button.active { background: color-mix(in srgb, var(--gold-2) 14%, transparent); color: var(--text); }
+:root[data-theme="light"] .video-model-card { background: var(--panel-2); border-color: var(--line-1); }
+:root[data-theme="light"] .video-model-card b { color: var(--gold-deep); }
+:root[data-theme="light"] .video-model-card span, :root[data-theme="light"] .video-model-card small { color: var(--text-2); }
+
+/* Light theme: status colours written for dark panels (approved, failing counts, capability notes). */
+:root[data-theme="light"] i.approved, :root[data-theme="light"] .status.approved, :root[data-theme="light"] .graph-list i.approved, :root[data-theme="light"] .dc-caps li.ok svg { color: #2f6b52; }
+:root[data-theme="light"] .dc-stats dd.bad { color: #a3422e; }
+:root[data-theme="light"] .dc-caps li.bad { color: #8a5a1c; }

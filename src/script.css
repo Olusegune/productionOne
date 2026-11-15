@@ -210,3 +210,15 @@
 .cb-evidence { padding: 8px 12px; gap: 4px; }
 .cb-scenes { flex-wrap: nowrap; overflow-x: auto; max-height: none; padding-bottom: 2px; scrollbar-width: thin; }
 .cb-chip { flex: none; }
+
+/* Cast board, small windows: the cards are a strip that stays at the top of the pane, so you can change asset without scrolling; the preview sits below it */
+.cb-grid { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; position: sticky; top: -14px; z-index: 2; margin: 0 -2px; padding: 8px 2px 10px; background: var(--panel-1); border-bottom: 1px solid var(--line-1); scrollbar-width: thin; }
+.cb-grid > li { flex: none; width: 92px; }
+.cb-card { padding: 5px 5px 7px; }
+.cb-name { font-size: 13px; }
+.cb-meta { font-size: 12px; }
+.cb-img { aspect-ratio: 3 / 4; }
+:root[data-theme="light"] .cb-grid { background: var(--panel-1); }
+
+/* Narrow windows: the source stacks above the breakdown, so let its height follow the window and keep the cast cards in view. */
+@media (max-width: 1280px) { .sv-body .sv-source .script-editor { height: clamp(180px, 28vh, 360px); min-height: 160px; } }

@@ -2,7 +2,7 @@
 
 Follow the **Golden Path**; the sidebar shows your next step: Create, Analyze, Design, Generate, Review, Deliver (Direct is optional). The gold button in the sidebar always names the next useful step. **Ctrl+K** opens the command palette for any action, and **Alt+1 to Alt+6** switches workspace (Projects, Story, Design, Direct, Deliver, Review).
 
-The **sidebar** on the left holds the project name and its save state, the workspaces, the next step as one gold button, Local AI, the command palette and Providers. Below 1280 px wide it shrinks to icons. *The screenshots in this guide were taken before 0.32.0 and show the older top bar; the same controls are now in the sidebar.*
+The **sidebar** on the left holds the project name and its save state, the workspaces, the next step as one gold button, Local AI, the command palette and Providers. Below 1280 px wide it shrinks to icons. *The screenshots of the workspaces, the palette and the light theme were retaken for 0.38.0. The sheet, voice, audition and queue pictures are older and show the previous top bar; the same controls are now in the sidebar.*
 
 ![Projects overview with the Golden Path](screenshots/projects.png)
 
@@ -100,7 +100,7 @@ Generation runs in the queue at the bottom, two at a time. **Pause** lets runnin
 Turn on the Director's room, then **Plan all scenes**. Select a shot to edit it in the sections on the right (drag the edge to resize). **Generate frame** is the main action on a card; the **...** menu has your own image, move, duplicate and delete. Arrow keys move between shots; drag a card to reorder inside its scene. Grid, list and large layouts are in the toolbar. Continuity notes appear under the cards. The animatic plays the frames with dialogue and a temp track. Export the shot list as CSV or Markdown.
 
 ## Deliver
-![Deliver: readiness and the department board](screenshots/deliver.png)
+![Deliver: the checklist and the delivery package](screenshots/deliver.png)
 
 The **package checklist** comes first: script read, style locked, every asset has an approved sheet, nothing waiting for review, failed jobs. Each open line has a button to where it is fixed, and an export is a draft until the list is done. Below it are the hand-off options (verified or draft package, then the optional shot compiler, collapsed when no shots are planned) and the **Tasks** list.
 

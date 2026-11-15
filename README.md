@@ -62,7 +62,7 @@ npm run desktop:build  # installers under src-tauri/target/release/bundle/
 python scripts/make-icons.py   # rebuild icons from branding/
 ```
 
-Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.37.0.md](docs/QA_REPORT_0.37.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.38.0.md](docs/QA_REPORT_0.38.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Honest limits
 
