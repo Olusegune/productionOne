@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.35.0 (2026-11-14): Appearance, three looks
 - **Appearance: three looks.** The palette icon at the bottom of the sidebar (or Ctrl+K, then "Appearance") opens a dialog to try a look on your own project, at once, with a preview of each. **Studio** is the default. **Cinematic** has warmer surfaces, serif page titles (Fraunces), rounder panels, and an accent taken from your visual style's palette (the most colourful entry, lifted until it reads at 4.5:1; a palette with no colour keeps the gold). **Futurist** has near-black blue surfaces, a cyan accent with a soft glow, tighter corners, uppercase tracked labels and a sharper body font (Geist). Each look has a dark and a light form; the dialog also switches dark and light. The choice is remembered on this computer. A look changes colours, fonts and shapes only, never what a control does. Palette commands: Appearance: Studio, Cinematic, Futurist.
 - Two bundled fonts added (SIL Open Font Licence): Fraunces and Geist, about 66 KB. Nothing is fetched from the network.
 - Light theme, all looks: the selected chips and the active sidebar item had unreadable text on some screens (white on a pale background, 1.2:1); fixed.
