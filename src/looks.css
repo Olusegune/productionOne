@@ -149,3 +149,8 @@
 :root[data-theme="light"] .video-model-card { background: var(--panel-2); border-color: var(--line-1); }
 :root[data-theme="light"] .video-model-card b { color: var(--gold-deep); }
 :root[data-theme="light"] .video-model-card span, :root[data-theme="light"] .video-model-card small { color: var(--text-2); }
+
+/* Light theme: status colours written for dark panels (approved, failing counts, capability notes). */
+:root[data-theme="light"] i.approved, :root[data-theme="light"] .status.approved, :root[data-theme="light"] .graph-list i.approved, :root[data-theme="light"] .dc-caps li.ok svg { color: #2f6b52; }
+:root[data-theme="light"] .dc-stats dd.bad { color: #a3422e; }
+:root[data-theme="light"] .dc-caps li.bad { color: #8a5a1c; }

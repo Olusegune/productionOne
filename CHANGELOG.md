@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.38.0 (2026-11-15): polish
 - **Cast board on small windows.** The row of cards now comes first in the Assets tab and stays pinned at the top while you scroll the selected asset (a single scrolling row of narrow cards); selecting a card scrolls it into view. On windows narrower than 1280 px the script source takes a height that follows the window (180–360 px) so the cards start on the first screen.
 - **Light theme contrast.** The emotion chips have their own darkened colours in the light theme (and lifted ones in the dark theme), the "universal" prompt tabs and the Deliver video-model notes read at 4.5:1; the in-page audit now also understands `color-mix()` backgrounds and switches off colour transitions while it measures. The six workspaces pass in all three looks, dark and light.
+- **Status colours in the light theme.** The green "approved" marker and the red failing count were too pale on light panels; found by auditing the packaged app on a real project.
 - **Guide screenshots retaken** for the sidebar layout (Projects, Story, Design, Direct, Deliver, palette, light theme), from the art-free demo project.
 - Tests: 428 JS (4 new: emotion chip colours on every surface).
 
