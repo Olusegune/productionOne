@@ -14,15 +14,16 @@ function Wrapper({ onClose = () => {} }: { onClose?: () => void }) {
 }
 
 describe('appearance', () => {
-  it('starts in Studio, applies a look at once, and remembers it', () => {
-    expect(document.documentElement.dataset.look).toBe('studio')
-    render(<Wrapper />)
-    expect(screen.getByRole('radio', { name: /Studio/ }).getAttribute('aria-checked')).toBe('true')
-    fireEvent.click(screen.getByRole('radio', { name: /Cinematic/ }))
+  it('starts in Cinematic without storing anything, applies a chosen look at once, and remembers only a choice', () => {
     expect(document.documentElement.dataset.look).toBe('cinematic')
-    expect(localStorage.getItem('po.look')).toBe('cinematic')
+    expect(localStorage.getItem('po.look.v2')).toBeNull()
+    render(<Wrapper />)
     expect(screen.getByRole('radio', { name: /Cinematic/ }).getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByRole('radio', { name: /Studio/ }).getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(screen.getByRole('radio', { name: /Studio/ }))
+    expect(document.documentElement.dataset.look).toBe('studio')
+    expect(localStorage.getItem('po.look.v2')).toBe('studio')
+    expect(screen.getByRole('radio', { name: /Studio/ }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('radio', { name: /Cinematic/ }).getAttribute('aria-checked')).toBe('false')
     fireEvent.click(screen.getByRole('radio', { name: /Futurist/ }))
     expect(document.documentElement.dataset.look).toBe('futurist')
   })
@@ -41,10 +42,10 @@ describe('appearance', () => {
   })
   it('switches the colour scheme from the same dialog without changing the look', () => {
     render(<Wrapper />)
-    fireEvent.click(screen.getByRole('radio', { name: /Cinematic/ }))
+    fireEvent.click(screen.getByRole('radio', { name: /Futurist/ }))
     fireEvent.click(screen.getByRole('button', { name: /Light/ }))
     expect(document.documentElement.dataset.theme).toBe('light')
-    expect(document.documentElement.dataset.look).toBe('cinematic')
+    expect(document.documentElement.dataset.look).toBe('futurist')
   })
 })
 

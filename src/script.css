@@ -147,3 +147,4 @@
 
 /* The older inventory style capped the list at 375 px and scrolled it inside the pane, which clipped the list and left the pane half empty. The pane itself scrolls now. */
 .sv-panel .editable-inventory, .ei { max-height: none; overflow: visible; }
+.ei-line { grid-template-columns: 150px minmax(0, 1fr); }

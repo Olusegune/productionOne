@@ -24,6 +24,60 @@
 }
 :root[data-look="cinematic"][data-theme="light"] .primary { color: #fff; }
 
+/* ---------- Cinematic, polished (0.36): the page takes the project's colour, the script reads like a page, panels have depth ---------- */
+:root[data-look="cinematic"] .po-main {
+  background:
+    radial-gradient(1100px 420px at 18% -8%, color-mix(in srgb, var(--gold-2) 11%, transparent), transparent 70%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--gold-2) 5%, transparent), transparent 70%);
+}
+:root[data-look="cinematic"][data-theme="light"] .po-main {
+  background:
+    radial-gradient(1100px 420px at 18% -8%, color-mix(in srgb, var(--gold-2) 9%, transparent), transparent 70%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--gold-2) 4%, transparent), transparent 70%);
+}
+:root[data-look="cinematic"] ::selection { background: color-mix(in srgb, var(--gold-2) 38%, transparent); }
+:root[data-look="cinematic"] * { scrollbar-color: color-mix(in srgb, var(--text-3) 45%, transparent) transparent; }
+
+/* Panels: a soft raised surface, an inner highlight, a long shadow */
+:root[data-look="cinematic"] .panel, :root[data-look="cinematic"] .sv-source, :root[data-look="cinematic"] .sv-breakdown, :root[data-look="cinematic"] .rv-side, :root[data-look="cinematic"] .fg-group {
+  box-shadow: inset 0 1px 0 rgba(255, 244, 225, .05), 0 14px 38px rgba(0, 0, 0, .28);
+}
+:root[data-look="cinematic"][data-theme="light"] .panel, :root[data-look="cinematic"][data-theme="light"] .sv-source, :root[data-look="cinematic"][data-theme="light"] .sv-breakdown, :root[data-look="cinematic"][data-theme="light"] .rv-side, :root[data-look="cinematic"][data-theme="light"] .fg-group {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 12px 30px rgba(70, 45, 20, .12);
+}
+
+/* Titles: larger, calmer, with the accent kept for the small things */
+:root[data-look="cinematic"] .panel h3, :root[data-look="cinematic"] .tl-head h3, :root[data-look="cinematic"] .dc-checklist h3 { font-size: 24px; font-weight: 500; }
+:root[data-look="cinematic"] .eyebrow { letter-spacing: .06em; font-size: 12px; }
+:root[data-look="cinematic"] .stat-tiles b { font-size: 1.9rem; }
+:root[data-look="cinematic"] .po-launch-head h2, :root[data-look="cinematic"] .projects-intro h2 { font-weight: 500; letter-spacing: -.012em; }
+
+/* The script as a page: a centred column of screenplay width on a slightly lifted sheet */
+:root[data-look="cinematic"] .sv-source .script-editor {
+  max-width: 720px; margin-inline: auto; padding: 36px 52px; background: color-mix(in srgb, var(--panel-1) 55%, #000 0%); border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--line-1), 0 18px 40px rgba(0, 0, 0, .35); font-size: 16px; line-height: 1.85;
+}
+:root[data-look="cinematic"][data-theme="light"] .sv-source .script-editor { background: #fffdf8; box-shadow: 0 0 0 1px var(--line-1), 0 14px 30px rgba(70, 45, 20, .14); }
+
+/* The cast: bigger portraits */
+:root[data-look="cinematic"] .ei-main { grid-template-columns: 76px minmax(0, 1fr); gap: 14px; }
+:root[data-look="cinematic"] .ei-thumb { width: 76px; height: 76px; border-radius: 12px; }
+:root[data-look="cinematic"] .ei-row { padding: 12px; }
+
+/* Controls: a little more presence */
+:root[data-look="cinematic"] .primary { border-radius: 10px; background-color: var(--gold-2); background-image: linear-gradient(180deg, color-mix(in srgb, var(--gold-2) 100%, #fff 12%), var(--gold-2)); box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset, 0 8px 20px color-mix(in srgb, var(--gold-2) 28%, transparent); }
+:root[data-look="cinematic"] .secondary { border-radius: 10px; }
+:root[data-look="cinematic"] .po-shell .po-next { background: linear-gradient(160deg, color-mix(in srgb, var(--gold-2) 14%, var(--panel-2)), var(--panel-2)); }
+:root[data-look="cinematic"] .po-shell .po-tabs button.active { box-shadow: inset 3px 0 var(--gold-2); background: color-mix(in srgb, var(--gold-2) 10%, var(--panel-2)); }
+
+/* A little motion: cards lift, rows warm. Off when the system asks for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-look="cinematic"] .sg-card, :root[data-look="cinematic"] .ei-row, :root[data-look="cinematic"] .rv-list button, :root[data-look="cinematic"] .am-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease; }
+  :root[data-look="cinematic"] .sg-card:hover, :root[data-look="cinematic"] .am-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(0, 0, 0, .35); }
+  :root[data-look="cinematic"] .ei-row:hover { border-color: color-mix(in srgb, var(--gold-2) 45%, var(--line-1)); }
+}
+:root[data-look="cinematic"] .tl-row:hover { background: color-mix(in srgb, var(--gold-2) 6%, transparent); }
+
 /* ---------- Futurist: near-black blue, a cyan accent with a soft glow, tighter corners ---------- */
 :root[data-look="futurist"] {
   --bg: #070a10; --panel-1: #0e131d; --panel-2: #151c2a; --line-1: #222f45;

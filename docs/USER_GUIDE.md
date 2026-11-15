@@ -110,10 +110,10 @@ The **package checklist** comes first: script read, style locked, every asset ha
 
 ## Appearance
 The palette icon at the bottom of the sidebar opens **Appearance**. Pick a look and it applies at once; each card previews its own colours and heading font.
-- **Studio**: calm graphite and champagne (the default).
-- **Cinematic**: warm surfaces and serif page titles. Its accent comes from your visual style's palette, so changing the style changes the accent.
+- **Studio**: calm graphite and champagne (the earlier look).
+- **Cinematic** (the default): warm surfaces, serif page titles, a soft tint from your visual style's palette, panels with depth, and the script shown as a page-width column. Its accent comes from the palette, so changing the style changes the accent.
 - **Futurist**: near-black blue, a cyan accent with a soft glow, tighter corners.
-The same dialog switches dark and light. Your choice is remembered on this computer and never changes what anything does. Ctrl+K also has "Appearance: Studio / Cinematic / Futurist".
+The same dialog switches dark and light. Your choice is remembered on this computer (until you choose, the app starts in Cinematic) and never changes what anything does. Ctrl+K also has "Appearance: Studio / Cinematic / Futurist".
 
 ## Command palette, shortcuts and themes
 ![Command palette](screenshots/palette.png)

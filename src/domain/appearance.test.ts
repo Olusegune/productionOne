@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { accentFromPalette, contrast, isLook, looks, savedLook, storeLook } from './appearance'
+import { DEFAULT_LOOK, accentFromPalette, contrast, isLook, looks, savedLook, storeLook } from './appearance'
 
 beforeEach(() => { localStorage.clear() })
 
@@ -11,12 +11,17 @@ describe('looks', () => {
     expect(isLook('neon')).toBe(false)
     expect(isLook(undefined)).toBe(false)
   })
-  it('remembers the choice, and falls back to Studio for anything else', () => {
-    expect(savedLook()).toBe('studio')
-    storeLook('cinematic')
+  it('is Cinematic until a look is chosen, remembers a choice, and falls back to Cinematic for anything else', () => {
+    expect(DEFAULT_LOOK).toBe('cinematic')
     expect(savedLook()).toBe('cinematic')
-    localStorage.setItem('po.look', 'garbage')
-    expect(savedLook()).toBe('studio')
+    storeLook('futurist')
+    expect(savedLook()).toBe('futurist')
+    localStorage.setItem('po.look.v2', 'garbage')
+    expect(savedLook()).toBe('cinematic')
+  })
+  it('ignores a value stored by the first version, which could not tell a choice from a default', () => {
+    localStorage.setItem('po.look', 'studio')
+    expect(savedLook()).toBe('cinematic')
   })
 })
 
