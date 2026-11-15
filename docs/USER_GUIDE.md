@@ -2,7 +2,7 @@
 
 Follow the **Golden Path**; the sidebar shows your next step: Create, Analyze, Design, Generate, Review, Deliver (Direct is optional). The gold button in the sidebar always names the next useful step. **Ctrl+K** opens the command palette for any action, and **Alt+1 to Alt+6** switches workspace (Projects, Story, Design, Direct, Deliver, Review).
 
-The **sidebar** on the left holds the project name and its save state, the workspaces, the next step as one gold button, Local AI, the command palette and Providers. Below 1280 px wide it shrinks to icons. *The screenshots of the workspaces, the palette and the light theme were retaken for 0.38.0. The sheet, voice, audition and queue pictures are older and show the previous top bar; the same controls are now in the sidebar.*
+The **sidebar** on the left holds the project name and its save state, the workspaces, the next step as one gold button, Local AI, the command palette and Providers. Below 1280 px wide it shrinks to icons. *The screenshots of the workspaces, the palette and the light theme were retaken for 0.38.0. The voice picture was retaken for 0.39.0. The sheet, audition and queue pictures are older and show the previous top bar (they need generated pictures and a busy queue, which the art-free demo project does not have); the same controls are now in the sidebar.*
 
 ![Projects overview with the Golden Path](screenshots/projects.png)
 

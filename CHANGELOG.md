@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- **Older screens follow the looks.** The Providers dialog, its cards and fields, the prompt box and prompt editor, the style picker button, the model notes and the cost pop-up were written with fixed graphite colours; in Cinematic and Futurist they now take the look's own surfaces (Studio keeps its colours).
+- **Cinematic, light theme: the sidebar.** The dark gradient meant for the dark theme also applied in the light theme, so the logo and the navigation labels were dark on dark (about 1.5 to 2:1). The light theme now has a light sidebar. The in-page audit missed this because it ignored gradient backgrounds; it now averages a gradient's colours, and it also caught the grey "Not generated" label (3.7:1), now darker in the light theme.
+- Guide: the voice-casting screenshot is retaken from the demo project. The sheet, audition and queue pictures stay older (they need generated pictures and jobs).
+
 ## 0.38.1 (2026-11-15): failure groups fix
 - **Failure groups read real status codes.** Providers write the status as "(500 Internal Server Error)" or "answered 503 Service Unavailable", not just "(500)", so server errors landed in "other" and ElevenLabs errors lost their code. Found by live checks; 5 new tests.
 
