@@ -148,3 +148,65 @@
 /* The older inventory style capped the list at 375 px and scrolled it inside the pane, which clipped the list and left the pane half empty. The pane itself scrolls now. */
 .sv-panel .editable-inventory, .ei { max-height: none; overflow: visible; }
 .ei-line { grid-template-columns: 150px minmax(0, 1fr); }
+
+/* ===== Cast board (0.37): pictures first on the Story screen ===== */
+:root { --tint-character: #e0b878; --tint-costume: #e08aa0; --tint-prop: #b59ae0; --tint-set: #6fb7b0; --tint-environment: #8fc08a; }
+:root[data-theme="light"] { --tint-character: #a06a22; --tint-costume: #b0405e; --tint-prop: #6b4fb0; --tint-set: #1f7a74; --tint-environment: #3f7a38; }
+.cb { display: grid; gap: 14px; }
+.cb-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cb-count { margin-right: auto; font-size: 14px; color: var(--text-2); }
+.cb .inventory-header { display: none; }
+.cb-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
+.cb-card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 6px; width: 100%; padding: 8px 8px 10px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line-1); border-top: 3px solid var(--tint); }
+.cb-card:hover { border-color: color-mix(in srgb, var(--tint) 60%, var(--line-1)); border-top-color: var(--tint); }
+.cb-card.on { border-color: var(--tint); background: color-mix(in srgb, var(--tint) 10%, var(--panel-2)); box-shadow: 0 0 0 1px var(--tint); }
+.cb-card:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.cb-img { display: block; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--bg); }
+.cb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cb-img .real-empty { min-height: 0; height: 100%; padding: 6px; font-size: 12px; border: 0; line-height: 1.25; }
+.cb-name { font: 600 15px/1.2 var(--display); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.cb-meta { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); padding: 0 2px; }
+.cb-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); flex: none; }
+.cb-dot.approved { background: #6fcf97; }
+.cb-detail { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 18px; padding: 16px; border-radius: 16px; background: var(--panel-2); border: 1px solid var(--line-1); border-left: 4px solid var(--tint); }
+.cb-hero { display: grid; gap: 10px; align-content: start; }
+.cb-hero img, .cb-hero .real-empty { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; display: block; background: var(--bg); }
+.cb-hero .real-empty { min-height: 0; display: grid; place-items: center; text-align: center; padding: 10px; border: 1px dashed var(--line-1); }
+.cb-hero .secondary { justify-content: center; height: 36px; font-size: 13px; }
+.cb-info { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.cb-line { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px; }
+.cb-line select, .cb-line input { height: 38px; font-size: 15px; min-width: 0; }
+.cb-status { margin: 0; display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 14px; }
+.cb-evidence { margin: 0; padding: 10px 14px; border-left: 3px solid var(--tint); background: color-mix(in srgb, var(--tint) 8%, transparent); border-radius: 0 10px 10px 0; display: grid; gap: 6px; }
+.cb-evidence p { margin: 0; font: 500 16px/1.5 var(--display); color: var(--text); }
+.cb-evidence .tertiary { justify-self: start; font-size: 13px; }
+.cb-scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+.cb-chip { all: unset; cursor: pointer; display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line-1); font-size: 13px; color: var(--text); }
+.cb-chip small { color: var(--text-2); font-size: 12px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-chip:hover { border-color: var(--tint); }
+.cb-chip:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.cb-looks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.cb-looks li { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cb-looks small { color: var(--text-3); font-size: 13px; }
+.cb-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.cb-facts input { height: 36px; font-size: 14px; }
+.cb-actions { display: flex; justify-content: flex-end; }
+@media (max-width: 760px) { .cb-detail { grid-template-columns: 1fr; } .cb-hero { max-width: 220px; } }
+@media (prefers-reduced-motion: no-preference) { .cb-card { transition: transform .16s ease, border-color .16s ease, background-color .16s ease; } .cb-card:hover { transform: translateY(-2px); } }
+.cb-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.cb-card { padding: 6px 6px 8px; border-radius: 12px; }
+.cb-name { font-size: 14px; }
+.cb-detail { grid-template-columns: minmax(140px, 190px) minmax(0, 1fr); }
+.cb-more { border-top: 1px solid var(--line-1); padding-top: 8px; display: grid; gap: 10px; }
+.cb-more > summary { cursor: pointer; font-size: 14px; color: var(--text-2); display: flex; gap: 10px; align-items: baseline; }
+.cb-more > summary small { color: var(--text-3); font-size: 13px; }
+.cb-more > :not(summary) { margin-top: 10px; }
+.cb-evidence p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.cb-scenes { max-height: 72px; overflow: hidden; }
+.cb-detail { grid-template-columns: minmax(120px, 150px) minmax(0, 1fr); gap: 16px; padding: 14px; }
+.cb-hero .secondary { font-size: 12px; padding: 0 8px; }
+.cb-info { gap: 8px; }
+.cb-evidence p { font-size: 15px; line-height: 1.45; -webkit-line-clamp: 3; }
+.cb-evidence { padding: 8px 12px; gap: 4px; }
+.cb-scenes { flex-wrap: nowrap; overflow-x: auto; max-height: none; padding-bottom: 2px; scrollbar-width: thin; }
+.cb-chip { flex: none; }

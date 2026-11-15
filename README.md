@@ -10,7 +10,7 @@ Built with Tauri 2 (Rust), React and TypeScript. Projects are saved as `.pone` f
 
 | Step | What you get |
 |---|---|
-| **Create / Story** | Paste or import a script (`.txt`, `.md`, Fountain, Final Draft `.fdx`, Word `.docx`, PDF). The reader finds scenes, characters, props, story variants (wardrobe, injury, age) and emotions, and shows the line each finding came from. |
+| **Create / Story** | A cast board of every character, prop and set as pictures, each beside what the script says about it. Paste or import a script (`.txt`, `.md`, Fountain, Final Draft `.fdx`, Word `.docx`, PDF). The reader finds scenes, characters, props, story variants (wardrobe, injury, age) and emotions, and shows the line each finding came from. |
 | **Design** | A production bible, a style bible, and reference sheets per character, prop and set (turnarounds, expressions from the story's feelings, poses, wardrobe, details; multi-view, functional and detail sheets for props; establishing, interior, exterior, plan and lighting for locations). **Start a character from an image you already have** (for example a Midjourney render) and build every sheet from it. Per-sheet **Shape** and **Backdrop**, one-image **sheet export**, a personality and a "never drift" list per character. Approved front views become the anchor that keeps later views consistent, including the Wardrobe sheet. Image quality (CleanRender) checks colour casts, clipping, noise, bloom and sharpness and corrects them as separate revisions. |
 | **Motion, voice and music** | Turntable, walk, run and speaking clips from a character's approved front view; voice auditions with Windows voices, ElevenLabs, VoiceKiller or a local server, and a fixed **casting line** so voices are compared on the same words. **Design a voice** from a description written from the script or by your local AI helper (ElevenLabs Voice Design, Qwen TTS). **Make music with Suno** (through Kie.ai) for a character theme or a scene score. |
 | **Review** | Every picture waiting for a decision, large, beside the approved reference it has to match; technical checks kept apart from Approve, Request changes and Reject. |
@@ -62,7 +62,7 @@ npm run desktop:build  # installers under src-tauri/target/release/bundle/
 python scripts/make-icons.py   # rebuild icons from branding/
 ```
 
-Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.36.0.md](docs/QA_REPORT_0.36.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
+Architecture and status log: [docs/PRODUCTION_ONE_PLAN.md](docs/PRODUCTION_ONE_PLAN.md). Testing and what is not covered: [docs/TESTING.md](docs/TESTING.md). Latest QA run: [docs/QA_REPORT_0.37.0.md](docs/QA_REPORT_0.37.0.md). Design principles: [docs/DESIGN.md](docs/DESIGN.md). Security and privacy: [SECURITY.md](SECURITY.md). Using the app: [docs/USER_GUIDE.md](docs/USER_GUIDE.md). Changes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Honest limits
 
