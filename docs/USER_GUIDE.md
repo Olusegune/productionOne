@@ -109,3 +109,5 @@ Cloud models bill at the provider. The small counter in the queue dock counts re
 | I opened a project and lost the one I had | Look in `Documents\Production One\Backups`; the app saved a copy first. |
 
 **Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match. Technical checks are listed apart from your decision. Approve it; Request changes (turns it down and opens its sheet, nothing is generated); or Reject (keeps the file; find it again under Turned down). **Deliver** opens with a package checklist: every open line has a button to where it is fixed, and an export is a draft until the list is done.
+
+**Choosing a look:** on the Design screen press **Browse styles**. Search, filter by family, star favourites, and click a style to see its details; **Use this style** applies it without locking it. The pictures show one scene in each family's look, so you compare styles, not subjects.

@@ -70,6 +70,7 @@ import "./delivery.css";
 import "./cleanrender.css";
 import "./shell-v2.css";
 import "./review.css";
+import "./gallery.css";
 import { sampleStory } from "./engine/sampleStory";
 import { LocalAiPanel } from "./components/LocalAiPanel";
 import { useLocalAi } from "./data/localAi";
