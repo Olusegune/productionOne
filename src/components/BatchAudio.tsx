@@ -7,6 +7,7 @@ import type { DemoClip } from '../domain/demoClips'
 import { providerById, providers, type ProviderId } from '../domain/voiceDirection'
 import { cachedVoices, rememberVoices } from '../domain/voiceCache'
 import { latestElevenModel, rankElevenModels, type CloudModel } from '../domain/elevenModels'
+import { countWithSavedVoice, rememberVoice, savedVoiceFor } from '../domain/castVoice'
 import { sampleLines, voiceBrief, type InstalledVoice } from '../domain/voiceAudition'
 import '../batch.css'
 import { estimateMusic, estimateVoice, failureText, isStopper, planMusicBatch, planVoiceBatch, type MusicTargetRef, type Prices, type RunState, type VoiceChoice } from '../domain/batchAudio'
@@ -31,8 +32,10 @@ export function BatchAudio(props: {
   notify: (message: string) => void
   providersVersion: number
   openProviders: (providerId?: string) => void
+  /** Saves a voice on a character. */
+  onAssetChange?: (asset: ExtractedAsset) => void
 }) {
-  const { assets, story, setClips, desktop, notify, providersVersion, openProviders } = props
+  const { assets, story, setClips, desktop, notify, providersVersion, openProviders, onAssetChange } = props
   const characters = useMemo(() => assets.filter((a) => a.type === 'character'), [assets])
   const [tab, setTab] = useState<'voice' | 'music'>('voice')
   const [providerId, setProviderId] = useState<ProviderId>(() => { try { return (localStorage.getItem('po.voice.provider') as ProviderId) || 'windows' } catch { return 'windows' } })
@@ -53,11 +56,27 @@ export function BatchAudio(props: {
   useEffect(() => { setCloud(cachedVoices<CloudVoice>(providerId)); setConfirming(false) }, [providerId, providersVersion])
   useEffect(() => { setConfirming(false) }, [tab, choices, targets, idea])
 
-  const choice = (a: ExtractedAsset): VoiceChoice => choices[a.id] ?? { include: false, voice: '' }
+  // A character's saved voice fills in for this engine unless the person has chosen another for this batch.
+  const choice = (a: ExtractedAsset): VoiceChoice => choices[a.id] ?? { include: false, voice: savedVoiceFor(a, providerId)?.voice ?? '' }
   const patch = (a: ExtractedAsset, p: Partial<VoiceChoice>) => setChoices((c) => ({ ...c, [a.id]: { ...choice(a), ...p } }))
   const chooseProvider = (id: ProviderId) => { setProviderId(id); try { localStorage.setItem('po.voice.provider', id) } catch { /* storage unavailable */ } }
 
-  const voiceItems = useMemo(() => planVoiceBatch({ assets, story, choices, providerId }), [assets, story, choices, providerId])
+  const effectiveChoices = useMemo(() => Object.fromEntries(characters.map((a) => [a.id, choices[a.id] ?? { include: false, voice: savedVoiceFor(a, providerId)?.voice ?? '' }])), [characters, choices, providerId])
+  const savedCount = countWithSavedVoice(assets, providerId)
+  const tickSaved = () => setChoices((c) => ({ ...c, ...Object.fromEntries(characters.filter((a) => savedVoiceFor(a, providerId)).map((a) => [a.id, { ...(c[a.id] ?? { voice: savedVoiceFor(a, providerId)!.voice }), include: true }])) }))
+  const rememberChosen = () => {
+    if (!onAssetChange) return
+    let n = 0
+    for (const a of characters) {
+      const c = effectiveChoices[a.id]
+      if (!c?.include || !c.voice.trim()) continue
+      const label = provider.transport === 'cloud' ? cloud.find((v) => (providerId === 'voicekiller' ? v.name : v.id) === c.voice)?.name : undefined
+      onAssetChange(rememberVoice(a, { provider: providerId, voice: c.voice, label }))
+      n += 1
+    }
+    notify(n ? `Saved ${n} voice${n === 1 ? '' : 's'}. Those characters will start with them next time.` : 'Tick characters and choose their voices first.')
+  }
+  const voiceItems = useMemo(() => planVoiceBatch({ assets, story, choices: effectiveChoices, providerId }), [assets, story, effectiveChoices, providerId])
   const musicItems = useMemo(() => planMusicBatch({ assets, story, targets, idea }), [assets, story, targets, idea])
   const voiceEstimate = estimateVoice(voiceItems, providerId, prices)
   const musicEstimate = estimateMusic(musicItems, prices)
@@ -108,11 +127,12 @@ export function BatchAudio(props: {
               path = await invoke<string>('speak_http', { base, model: provider.defaultModel, voice: v.voice, text: v.line, speed: 1, extra: provider.languages ? { language: 'en', exaggeration: 0.5 } : undefined, outputName })
             } else if (providerId === 'elevenlabs') path = await invoke<string>('speak_elevenlabs', { voiceId: v.voice, modelId, text: v.line, stability: 0.5, speed: 1, outputName })
             else path = await invoke<string>('speak_voicekiller', { voiceName: v.voice, script: v.line, instructions: asset.soundDirection ?? '', outputName })
-            const label = provider.transport === 'windows' ? `Windows voice · ${v.voice || 'default'}` : `${provider.label} · ${v.voice || 'default voice'}`
+            const shown = provider.transport === 'cloud' ? (cloud.find((c) => (providerId === 'voicekiller' ? c.name : c.id) === v.voice)?.name ?? v.voice) : v.voice
+            const label = provider.transport === 'windows' ? `Windows voice · ${v.voice || 'default'}` : `${provider.label} · ${shown || 'default voice'}`
             addClip(asset, label, path, voiceBrief(asset, v.line), v.line)
           } else {
             const m = item as (typeof musicItems)[number]
-            const tracks = await invoke<Track[]>('make_music', { request: { title: m.title, style: m.style, instrumental: true, lyrics: '', negativeTags: '', model: 'V6_MINI', durationSeconds: 45, vocalGender: '', outputName: `${m.assetId}_${m.id.replace(/^MB-/, '')}_batch` } })
+            const tracks = await invoke<Track[]>('make_music', { request: { title: m.title, style: m.style, instrumental: true, lyrics: '', negativeTags: '', model: 'V6_MINI', durationSeconds: 45, vocalGender: '', outputName: `${m.assetId}_${m.fileTag}_batch` } })
             for (const t of tracks) addClip({ id: m.assetId, name: m.assetName }, `Suno V6_MINI · ${m.label}`, t.path, m.style, t.title || m.title, Math.round(t.duration))
           }
           made += 1
@@ -147,6 +167,7 @@ export function BatchAudio(props: {
       <label className="settings-field"><span>Voice engine</span>
         <select value={providerId} onChange={(e) => chooseProvider(e.target.value as ProviderId)}>{batchProviders.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
       <p className="helper">Each ticked character speaks the first line the script gives them (or the line you type). Performance direction stays in the single audition.</p>
+      {savedCount > 0 && <p className="helper" role="status">{savedCount} character{savedCount === 1 ? ' has' : 's have'} a saved voice for this engine. <button className="secondary" onClick={tickSaved}>Tick them</button></p>}
       {needsCloudList && cloud.length === 0 && <p className="helper"><button className="secondary" onClick={() => void loadCloud()}>Load my {provider.label.replace(' (cloud)', '')} voices</button> Choose a voice for each character from your account.</p>}
       <table className="batch-table"><caption className="sr-only">Characters to cast</caption>
         <thead><tr><th scope="col">Make</th><th scope="col">Character</th><th scope="col">Voice</th><th scope="col">Line</th></tr></thead>
@@ -165,6 +186,7 @@ export function BatchAudio(props: {
           </tr>
         })}</tbody></table>
       {characters.length === 0 && <p className="helper">No characters yet. Analyze a script first.</p>}
+      {onAssetChange && characters.length > 0 && <div className="sheet-actions-row"><button className="secondary" onClick={rememberChosen}>Remember the chosen voices</button></div>}
     </> : <>
       <p className="helper">Themes come from each character's stated personality and role; scene scores from the scene heading and a character in it. Instrumental, about 45 seconds, Suno V6 Mini through Kie.ai. Nothing is written for you that the script does not state.</p>
       <fieldset className="batch-targets"><legend>Themes</legend>{characters.map((a) => <label key={a.id}><input type="checkbox" checked={hasTarget({ kind: 'theme', assetId: a.id })} onChange={() => toggleTarget({ kind: 'theme', assetId: a.id })} /> {a.name}</label>)}</fieldset>

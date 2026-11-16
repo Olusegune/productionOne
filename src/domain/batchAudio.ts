@@ -64,6 +64,8 @@ export interface MusicItem {
   assetName: string
   /** Plain label for lists, for example "Theme for MARA" or "Score for scene 2". */
   label: string
+  /** Short, file-name-safe tag for the saved files, for example "theme" or "scene-3". */
+  fileTag: string
   title: string
   style: string
   skip?: string
@@ -78,7 +80,7 @@ export function planMusicBatch(args: { assets: ExtractedAsset[]; story?: ParsedS
       const asset = assets.find((a) => a.id === target.assetId)
       if (!asset) continue
       const brief = scriptMusicBrief(asset, { kind: 'theme' }, story, idea)
-      const item: MusicItem = { id: `MB-theme-${asset.id}`, assetId: asset.id, assetName: asset.name, label: `Theme for ${asset.name}`, title: brief.title, style: brief.style }
+      const item: MusicItem = { id: `MB-theme-${asset.id}`, assetId: asset.id, assetName: asset.name, label: `Theme for ${asset.name}`, fileTag: 'theme', title: brief.title, style: brief.style }
       if (!brief.style) item.skip = `Not enough stated. Missing: ${brief.missing.join(', ') || 'a personality'}.`
       items.push(item)
     } else {
@@ -86,9 +88,9 @@ export function planMusicBatch(args: { assets: ExtractedAsset[]; story?: ParsedS
       if (!scene) continue
       const who = assets.find((a) => a.type === 'character' && a.sceneIds.includes(scene.id))
       const label = `Score for scene ${scene.number}: ${scene.setting}`
-      if (!who) { items.push({ id: `MB-scene-${scene.id}`, assetId: '', assetName: '', label, title: '', style: '', skip: 'No character is placed in this scene, so there is nothing to base the music on.' }); continue }
+      if (!who) { items.push({ id: `MB-scene-${scene.id}`, assetId: '', assetName: '', label, fileTag: `scene-${scene.number}`, title: '', style: '', skip: 'No character is placed in this scene, so there is nothing to base the music on.' }); continue }
       const brief = scriptMusicBrief(who, { kind: 'scene', sceneId: scene.id }, story, idea)
-      const item: MusicItem = { id: `MB-scene-${scene.id}`, assetId: who.id, assetName: who.name, label, title: brief.title, style: brief.style }
+      const item: MusicItem = { id: `MB-scene-${scene.id}`, assetId: who.id, assetName: who.name, label, fileTag: `scene-${scene.number}`, title: brief.title, style: brief.style }
       if (!brief.style) item.skip = `Not enough stated. Missing: ${brief.missing.join(', ') || 'a scene heading'}.`
       items.push(item)
     }

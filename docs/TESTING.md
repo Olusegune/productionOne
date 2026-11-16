@@ -3,7 +3,7 @@
 ## Commands
 ```powershell
 npx tsc -b                                          # types (plain `tsc --noEmit -p .` checks nothing here)
-npx vitest run                                      # unit and component tests (465 at 0.41.0)
+npx vitest run                                      # unit and component tests (493 at 0.42.0)
 cargo test --manifest-path src-tauri/Cargo.toml     # Rust tests (78 at 0.32.0; set CARGO_TARGET_DIR if the app is running)
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 npm audit
@@ -65,3 +65,6 @@ A second copy of the app cannot run beside an installed one (single-instance), a
 - CleanRender on real model output: measurements and corrections are tested on synthetic images only. Video flicker is not measured.
 - The installers on a clean machine, the file-association icon and uninstall (checked from the generated script and package contents only), and Windows SmartScreen for an unsigned installer.
 - Audio quality; screen readers; the light theme's emotion-chip contrast (a colour filter the audit cannot measure).
+
+## Live testing (real app, real providers)
+See `HANDOVER_FOR_CLAUDE.md` ("Live testing without touching the owner's app") and `docs/LIVE_TEST_THE_RENEWAL_2026-11-16.md` for the method and the last run. `scripts/live/pick-dialog.ps1 <title regex> <path>` types a path into a native file dialog the app opened.

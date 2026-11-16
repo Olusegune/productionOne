@@ -438,6 +438,12 @@ pub fn run() {
         .setup(|app| {
             let menu = desktop::build_menu(app.handle())?;
             app.set_menu(menu)?;
+            // The asset protocol (pictures in the Director's room and the lightbox, audio and video players) only serves what its scope allows. On a first run the assets folder does not
+            // exist yet, so the scope built from the config at start-up does not cover it and every picture is refused until the next start. Make the folder and allow it now.
+            if let Ok(dir) = app.path().app_data_dir().map(|d| d.join("assets")) {
+                let _ = std::fs::create_dir_all(&dir);
+                let _ = app.asset_protocol_scope().allow_directory(&dir, true);
+            }
             Ok(())
         })
         .on_menu_event(|app, event| desktop::handle_menu_event(app, event.id().as_ref()))

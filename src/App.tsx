@@ -36,6 +36,8 @@ import {
 import {
   advanceQueue,
   analyzeScript,
+  mergeAnalysis,
+  titleFromScript,
   animaticDuration, 
   compileAssetPrompt,
   compileShotPackage,
@@ -350,8 +352,10 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [animaticPlaying, totalAnimaticDuration, shots]);
   const analyze = () => {
-    const next = analyzeScript(script);
+    const next = mergeAnalysis(analysis, analyzeScript(script));
     setAnalysis(next);
+    const named = titleFromScript(title, next.story?.title);
+    if (named) setTitle(named);
     setShots((current) =>
       current.map((shot, index) => ({
         ...shot,
@@ -372,6 +376,8 @@ export default function App() {
     setScript(converted.text);
     const next = analyzeScript(converted.text);
     setAnalysis(next);
+    const named = titleFromScript(title, next.story?.title);
+    if (named) setTitle(named);
     setNotice(`${name} imported: ${next.scenes.length} scenes and ${next.assets.length} assets.${converted.notes.length ? " " + converted.notes.join(" ") : ""}`);
   };
   const importScript = async (file: File) => {

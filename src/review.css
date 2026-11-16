@@ -137,3 +137,4 @@
 .rv-take { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 14px; color: var(--text-2); }
 .rv-take select { height: 36px; }
 .rv-keep { justify-content: center; width: 100%; }
+.rv-compare .rv-note { grid-row: 2; }
