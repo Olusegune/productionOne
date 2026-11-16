@@ -1,5 +1,60 @@
 # Production One handover (START HERE)
 
+## Session handover, 2026-11-15 (read this first; the older notes below are history)
+
+**State.** Released: **v0.39.0** (tag on `main`; Windows setup.exe, MSI and portable zip on the GitHub release). The branch `ui/projects-hero` (and its pull request) holds the **Projects home hero**: built and tested, **not merged, not released**, no version bump yet. Releases in this stretch, newest first: 0.39.0 older screens follow the looks and a Cinematic light-sidebar fix; 0.38.1 failure groups read real status codes; 0.38.0 cast board on small windows and light-theme contrast; 0.37.0 cast board; 0.36.0 Cinematic default; 0.35.0 three looks (Studio, Cinematic, Futurist); 0.34.0 failure groups and Tasks; 0.33.0 Script and Asset Studio layouts and Space Grotesk; 0.32.0 sidebar redesign and a style gallery with 117 pictures; 0.31.0 Suno music via Kie.ai; 0.30.0 voice design. Per-release detail: `CHANGELOG.md`, `RELEASE_NOTES_<v>.md`, `docs/QA_REPORT_<v>.md`.
+
+**What the app is.** A Tauri 2 + React 19 + TypeScript + Rust Windows desktop app that turns a script into reference assets (characters, props, sets), voices and music, then a delivery package. Repo: https://github.com/Olusegune/productionOne (private).
+
+### Set up on a new PC
+1. Install Git, Node 20 or newer, Rust (stable, MSVC toolchain) with the Windows C++ build tools, WebView2 (ships with Windows 11) and `gh` (logged in as the repo owner). Optional: Chrome (used for screenshots) and Ollama with `qwen2.5vl:7b` (local helper features).
+2. `git clone https://github.com/Olusegune/productionOne`, then `npm ci`.
+3. Dev UI: `npx vite` (port 5173). It runs the demo project "The Last Horizon" in a browser. Image and voice generation only run in the Windows app; the browser shows the plan.
+4. The gate (all must pass before a release): `npx tsc -b` (**this is the real type check**; `tsc --noEmit -p .` checks nothing), `npx vitest run` (442 JS tests with the hero), `cd src-tauri && cargo test` (78), `cargo clippy --all-targets -- -D warnings`, `cargo audit`, `npm audit`, `rafter secrets .`.
+5. Installers: set `CARGO_TARGET_DIR` to a folder outside the repo, then `npx tauri build`. Outputs: `<target>/release/bundle/nsis` and `msi`; the portable exe is `<target>/release/ProductionOne.exe`.
+
+### Things that are NOT in git (they do not travel)
+- **API keys** (Kie.ai, ElevenLabs, VoiceKiller, OpenAI, Google, fal, OpenRouter) live in Windows Credential Manager on the old PC. On a new PC the owner enters them in the app (Providers). Never type, read or log keys.
+- **The owner's projects and art.** The real project's Midjourney-derived character art must never be committed. Docs screenshots come from the art-free demo project only.
+- **Installers** (`Desktop\ProductionOne-Release-<v>` on the old PC, with SHA256.txt): rebuild, or download from the GitHub release.
+- **Claude's memory files** are local to the old PC; the useful content is in this note.
+- **Remote Rafter scan** (`rafter run`): unavailable (plan quota used up). `rafter secrets .` works offline.
+
+### The release routine (the owner says "Merge and release")
+Branch, then bump the version in 6 files: `package.json`, `package-lock.json` (2 places), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` (the `production-guy` entry) and `public/splash.html`. Then: CHANGELOG (turn "## Unreleased" into the version heading), `RELEASE_NOTES_<v>.md`, `docs/QA_REPORT_<v>.md`, docs counts (`docs/TESTING.md`, `PROJECT_STATE.md`, `README.md`, `docs/PRODUCTION_ONE_PLAN.md`), the gate, `npx tauri build`, a packaged check, push and PR, wait for CI (`gh pr checks N --watch`; the Rust job takes about 4 minutes), `gh pr merge N --merge`, then `gh release create vX --target main --notes-file RELEASE_NOTES_X.md <setup.exe> <msi> <portable.zip>`, and copy the files plus a SHA256.txt to a Desktop release folder. Merge and release only when the owner asks.
+
+### Interface QA
+`scripts/qa/in-page-audit.js`: load it in the page, then `await window.__audit(['Projects','Story','Design','Review','Direct','Deliver'])`. It checks overflow, text under 12 px, WCAG contrast (it understands `color-mix()` and gradient backgrounds, and turns transitions off while measuring) and small targets. Run it for all three looks and both themes (`document.documentElement.dataset.look` = studio, cinematic or futurist; `.dataset.theme` = dark or light). Every release was audited clean. It cannot see text over photos.
+
+### Packaged-app check on the owner's real project (old PC only)
+Launching the packaged app replaces the owner's autosave. The ritual: launch `ProductionOne.exe` with the environment variable `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222` and drive it over the Chrome DevTools protocol. Afterwards restart it with the backup `.pone` file as its argument, confirm "0 queued, 0 running, 8 to review, 55 done", then put `recent-projects.json` (in `%APPDATA%\com.productionguy.studio`) back. A new PC has no real project: use the demo.
+
+### Architecture pointers
+- **Looks:** the `data-look` attribute on `<html>`; tokens and per-look rules live in `src/looks.css` (loaded last, so it wins ties); also `src/domain/appearance.ts`, `src/data/appearance.ts` and `src/components/AppearanceMenu.tsx`. Cinematic is the default; a look is stored only when chosen (`po.look.v2`). The older stylesheets (`polish.css`, `studio.css`, `shell-v2.css` and others) still hold fixed colours. New work should use the tokens: `--bg --panel-1 --panel-2 --line-1 --text --text-2 --gold --gold-2 --gold-deep`.
+- **Screens:** `src/views/*` and `src/components/*`; pure, tested logic in `src/domain/*` (for example `castBoard.ts`, `failureGroups.ts`, `taskList.ts`, `review.ts`, `projectHero.ts`, `goldenPath.ts`, `styleGallery.ts`).
+- **Rust commands:** `src-tauri/src/` (`kie.rs`, `suno.rs`, `voice_cloud.rs`, `local.rs` and others). The content-security policy is strict (fonts from the app itself only).
+- **Live provider checks that worked (2026-11-15):** Suno vocals, V6 and V6 Wild; ElevenLabs sound effects and voice design; the Qwen description helper through Ollama; Kie image generation.
+
+### Open items (none urgent)
+1. **Merge and release the Projects hero** (branch `ui/projects-hero`): `src/components/ProjectHero.tsx`, `src/domain/projectHero.ts`, the CSS at the end of `src/looks.css`, and the new `docs/screenshots/projects.png`. Suggested version 0.40.0.
+2. Revision compare on Review (two takes side by side, keep one).
+3. Batch voice and music (several characters or scenes, with a cost estimate first).
+4. A text size setting in Appearance.
+5. The guide's sheet, audition and queue screenshots still show the old top bar. They need generated pictures and a busy queue; keep the art-free rule.
+6. Code signing (Windows SmartScreen warns on every install; it needs a certificate).
+7. Not yet checked: the Local AI and help dialogs in the new looks, and a real failed image generation in the UI (failure groups are covered by tests and real provider error strings).
+
+### Working with the owner
+- Replies are short and decisive ("Do 1 to 3", "Merge and release"). Do the work, then report plainly what was and was not checked.
+- The provider spend budget the owner set was 5 USD; live checks are small. Ask before anything larger.
+- Never enter or read credentials; never kill or touch the owner's running app; docs screenshots from the demo project only.
+- Update the documentation, the QA report and the unit tests with every release.
+- Tool gotchas: the bash tool mis-parses some heredocs with apostrophes or backslashes (write files with the editor tool); `\b` inside a Python string becomes a backspace character (use raw strings or the editor); repo files use CRLF (open with `newline=''` when rewriting).
+
+---
+
+## Earlier notes (history; the build steps and paths below may be out of date)
+
 **Update 2026-11-14 (release 0.39.0).** `main` carries everything from 0.21 to 0.39.0 (the work branch `ui/0.21-polish` was merged in PR #1 and deleted) (UI polish, image-first characters, per-sheet Shape and Backdrop, sheet export, backups, casting lines, personality and Never fields, a full systems and stress run, and a design refresh). Read `CHANGELOG.md` from the top, `docs/QA_REPORT_0.29.0.md`, `docs/DESIGN.md` and `docs/USER_GUIDE.md`. Test counts at 0.29.2: 296 JS, 73 Rust. Run the release gate in `docs/TESTING.md` before every release (it caught 7 dependency advisories, a missing content-security policy and two unconfined path commands at 0.29.2). `src/versionSync.test.ts` fails when the version differs between files, so bump them together (package.json, package-lock.json twice, tauri.conf.json, Cargo.toml, Cargo.lock, public/splash.html, CHANGELOG.md, RELEASE_NOTES_<version>.md). A live test of the packaged app replaces the autosave of the owner's session (the app backs it up to `Documents\Production One\Backups` first). The text below was written at 0.20.0.
 
 Written 2026-11-12 at release 0.20.0. Older notes are kept unchanged under "Earlier notes" at the bottom.

@@ -6,6 +6,8 @@ The **sidebar** on the left holds the project name and its save state, the works
 
 ![Projects overview with the Golden Path](screenshots/projects.png)
 
+The top of Projects shows where the production stands: a progress bar, one big **Continue** button for the next step, and the look of the film as a picture.
+
 ## Projects, files and backups
 - **New / Open / Save** are in the File menu and on Projects. Projects are `.pone` files. Old `.pguy` projects open and are saved as a new `.pone`, leaving the original untouched.
 - **Recent projects** on the Projects screen show file names only. Press **×** on an entry to remove it from the list, or **Clear list** to remove them all. This never deletes a project file.
