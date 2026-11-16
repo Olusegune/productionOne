@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyQueue, type ImageJob, type QueueState } from './generationQueue'
+import { emptyQueue, MISSING_FILE_ERROR, type ImageJob, type QueueState } from './generationQueue'
 import { causeOf, groupFailures } from './failureGroups'
 
 const job = (over: Partial<ImageJob>): ImageJob => ({
@@ -54,4 +54,16 @@ describe('groupFailures', () => {
     expect(groupFailures(q)).toEqual([])
   })
   it('is empty when nothing failed', () => { expect(groupFailures(queue([]))).toEqual([]) })
+})
+
+describe('takes whose picture is gone', () => {
+  it('are their own cause, with advice that is not retry or change model', () => {
+    expect(causeOf(MISSING_FILE_ERROR)).toBe('gone')
+    const groups = groupFailures(queue([job({ id: 'g', error: MISSING_FILE_ERROR }), job({ id: 'c', key: 'k2', error: 'Kie.ai request failed (402): Insufficient credits' })]))
+    const gone = groups.find((g) => g.cause === 'gone')!
+    expect(gone.fixes).toEqual(['open-design'])
+    expect(gone.advice).toMatch(/Generate/)
+    expect(gone.advice).not.toMatch(/choose another model|different model/i)
+    expect(groups.find((g) => g.cause === 'credits')?.jobs.map((j) => j.id)).toEqual(['c'])
+  })
 })

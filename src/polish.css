@@ -467,3 +467,7 @@ body, input, select, textarea, button { font-feature-settings: "calt", "kern", "
 .clip-missing { border: 1px dashed var(--stroke); border-radius: 10px; padding: 12px; display: grid; gap: 8px; }
 .clip-missing-body { display: grid; gap: 4px; }
 .clip-missing-body small { color: var(--text-2); line-height: 1.45; }
+.engine-switch { display: grid; gap: 6px; width: 100%; }
+.engine-switch select { width: 100%; min-height: 36px; }
+.engine-switch .engine-note { color: var(--text-2); line-height: 1.4; }
+.engine-switch .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -41,6 +41,7 @@ export function FailureGroups(props: {
             </div>
             <p className="fg-advice">{g.advice}</p>
             <div className="fg-actions">
+              {g.fixes.includes('open-design') && <button className="secondary" onClick={openDesign}>Open Design</button>}
               {g.fixes.includes('refresh-models') && <button className="secondary" disabled={!desktop} onClick={async () => notify(await choice.refresh())}><RefreshCw size={14} aria-hidden="true" /> Refresh models</button>}
               {g.fixes.includes('choose-model') && differs && desktop && <button className="secondary" onClick={() => { setQueue((q) => reassignModel(q, ids, choice.provider, choice.modelId)); notify(`${g.jobs.length} ${g.jobs.length === 1 ? 'view' : 'views'} moved to ${current}. They will run when the queue is next started.`) }}><Shuffle size={14} aria-hidden="true" /> Use {current} for these {g.jobs.length}</button>}
               {g.fixes.includes('choose-model') && <button className="tertiary" onClick={openDesign}>Choose a model</button>}
@@ -53,7 +54,7 @@ export function FailureGroups(props: {
                 {g.jobs.map((j) => (
                   <li key={j.id}>
                     <span><b>{assetName(j.assetId)} · {j.label}</b><small>{j.error ?? 'The provider returned an error.'}</small></span>
-                    <button className="tertiary" onClick={() => setQueue((q) => retry(q, j.id))}>Retry</button>
+                    {g.cause !== 'gone' && <button className="tertiary" onClick={() => setQueue((q) => retry(q, j.id))}>Retry</button>}
                   </li>
                 ))}
               </ul>

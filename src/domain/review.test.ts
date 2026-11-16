@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyQueue, type ImageJob, type QueueState } from './generationQueue'
+import { emptyQueue, MISSING_FILE_ERROR, type ImageJob, type QueueState } from './generationQueue'
 import type { AnalysisResult } from './productionStudio'
 import { approvedReference, awaitingReview, defaultCompareTarget, deliveryChecklist, keepRevision, otherRevisions, packageKind, revisionsOfView, turnedDown } from './review'
 
@@ -94,5 +94,25 @@ describe('revision compare', () => {
     const state = q()
     expect(keepRevision(state, 'bad')).toBe(state)
     expect(keepRevision(state, 'missing')).toBe(state)
+  })
+})
+
+describe('checklist advice for takes whose picture is gone', () => {
+  const base = { analysis, queue: queue([]), missingAssets: [] as string[], incompleteShots: [] as string[], styleLocked: true }
+  it('does not tell a person to retry or change model, and keeps real failures separate', () => {
+    const gone = job({ id: 'g', key: 'k1', status: 'failed', error: MISSING_FILE_ERROR })
+    const real = job({ id: 'r', key: 'k2', status: 'failed', error: 'Kie.ai request failed (402): Insufficient credits' })
+    const only = deliveryChecklist({ ...base, queue: queue([gone]) })
+    expect(only.find((i) => i.id === 'failed')).toBeUndefined()
+    expect(only.find((i) => i.id === 'gone')).toMatchObject({ state: 'todo', label: '1 picture is not on this computer' })
+    expect(only.find((i) => i.id === 'gone')?.detail).not.toMatch(/retry|different model/i)
+    const both = deliveryChecklist({ ...base, queue: queue([gone, real]) })
+    expect(both.find((i) => i.id === 'failed')?.label).toBe('1 failed job')
+    expect(both.find((i) => i.id === 'gone')).toBeDefined()
+  })
+  it('stops counting once a newer take of the view exists', () => {
+    const gone = job({ id: 'g', key: 'k1', status: 'failed', error: MISSING_FILE_ERROR })
+    const items = deliveryChecklist({ ...base, queue: queue([gone, job({ id: 'n', key: 'k1', revision: 2, status: 'queued' })]) })
+    expect(items.some((i) => i.id === 'gone')).toBe(false)
   })
 })
