@@ -85,7 +85,8 @@ import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
-import { addSupplied, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
+import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
+import { reconcileMissing } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -1145,7 +1146,13 @@ export default function App() {
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
   ];
-  useImageQueue(queue, setQueue, isTauri && hydrated, (n) => setNotice(`${n} picture${n === 1 ? " is" : "s are"} not on this computer, so ${n === 1 ? "it was" : "they were"} marked as needing a new picture. Open Design and press Generate, or use Use my image.`));
+  useImageQueue(queue, setQueue, isTauri && hydrated, (n, missing) => {
+    const jobs = dropMissing(queue, missing).state.jobs;
+    const fixed = reconcileMissing(analysis.assets, assetOutputs, jobs, missing);
+    setAssetOutputs(fixed.outputs);
+    if (fixed.demoted.length) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (fixed.demoted.includes(a.id) ? { ...a, status: "planned" } : a)) }));
+    if (n) setNotice(`${n} picture${n === 1 ? " is" : "s are"} not on this computer, so ${n === 1 ? "it was" : "they were"} marked as needing a new picture. Open Design and press Generate, or use Use my image.`);
+  }, Object.values(assetOutputs));
   const onSheetApproved = (job: ImageJob, primary: boolean) => {
     if (!job.outputPath) return;
     const path = job.outputPath;
