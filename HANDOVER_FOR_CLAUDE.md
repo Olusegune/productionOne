@@ -2,7 +2,7 @@
 
 ## Session handover, 2026-11-15 (read this first; the older notes below are history)
 
-**State.** Released: **v0.39.0** (tag on `main`; Windows setup.exe, MSI and portable zip on the GitHub release). The branch `ui/projects-hero` (and its pull request) holds the **Projects home hero**: built and tested, **not merged, not released**, no version bump yet. Releases in this stretch, newest first: 0.39.0 older screens follow the looks and a Cinematic light-sidebar fix; 0.38.1 failure groups read real status codes; 0.38.0 cast board on small windows and light-theme contrast; 0.37.0 cast board; 0.36.0 Cinematic default; 0.35.0 three looks (Studio, Cinematic, Futurist); 0.34.0 failure groups and Tasks; 0.33.0 Script and Asset Studio layouts and Space Grotesk; 0.32.0 sidebar redesign and a style gallery with 117 pictures; 0.31.0 Suno music via Kie.ai; 0.30.0 voice design. Per-release detail: `CHANGELOG.md`, `RELEASE_NOTES_<v>.md`, `docs/QA_REPORT_<v>.md`.
+**State.** Released: **v0.40.0** (tag on `main`; Windows setup.exe, MSI and portable zip on the GitHub release). The **Projects home hero** shipped in 0.40.0. Releases in this stretch, newest first: 0.40.0 the Projects hero; 0.39.0 older screens follow the looks and a Cinematic light-sidebar fix; 0.38.1 failure groups read real status codes; 0.38.0 cast board on small windows and light-theme contrast; 0.37.0 cast board; 0.36.0 Cinematic default; 0.35.0 three looks (Studio, Cinematic, Futurist); 0.34.0 failure groups and Tasks; 0.33.0 Script and Asset Studio layouts and Space Grotesk; 0.32.0 sidebar redesign and a style gallery with 117 pictures; 0.31.0 Suno music via Kie.ai; 0.30.0 voice design. Per-release detail: `CHANGELOG.md`, `RELEASE_NOTES_<v>.md`, `docs/QA_REPORT_<v>.md`.
 
 **What the app is.** A Tauri 2 + React 19 + TypeScript + Rust Windows desktop app that turns a script into reference assets (characters, props, sets), voices and music, then a delivery package. Repo: https://github.com/Olusegune/productionOne (private).
 
@@ -36,7 +36,7 @@ Launching the packaged app replaces the owner's autosave. The ritual: launch `Pr
 - **Live provider checks that worked (2026-11-15):** Suno vocals, V6 and V6 Wild; ElevenLabs sound effects and voice design; the Qwen description helper through Ollama; Kie image generation.
 
 ### Open items (none urgent)
-1. **Merge and release the Projects hero** (branch `ui/projects-hero`): `src/components/ProjectHero.tsx`, `src/domain/projectHero.ts`, the CSS at the end of `src/looks.css`, and the new `docs/screenshots/projects.png`. Suggested version 0.40.0.
+1. (done in 0.40.0) The Projects hero: `src/components/ProjectHero.tsx`, `src/domain/projectHero.ts`.
 2. Revision compare on Review (two takes side by side, keep one).
 3. Batch voice and music (several characters or scenes, with a cost estimate first).
 4. A text size setting in Appearance.
