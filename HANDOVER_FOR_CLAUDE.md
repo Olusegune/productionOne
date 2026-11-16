@@ -10,7 +10,7 @@
 1. Install Git, Node 20 or newer, Rust (stable, MSVC toolchain) with the Windows C++ build tools, WebView2 (ships with Windows 11) and `gh` (logged in as the repo owner). Optional: Chrome (used for screenshots) and Ollama with `qwen2.5vl:7b` (local helper features).
 2. `git clone https://github.com/Olusegune/productionOne`, then `npm ci`.
 3. Dev UI: `npx vite` (port 5173). It runs the demo project "The Last Horizon" in a browser. Image and voice generation only run in the Windows app; the browser shows the plan.
-4. The gate (all must pass before a release): `npx tsc -b` (**this is the real type check**; `tsc --noEmit -p .` checks nothing), `npx vitest run` (442 JS tests with the hero), `cd src-tauri && cargo test` (78), `cargo clippy --all-targets -- -D warnings`, `cargo audit`, `npm audit`, `rafter secrets .`.
+4. The gate (all must pass before a release): `npx tsc -b` (**this is the real type check**; `tsc --noEmit -p .` checks nothing), `npx vitest run` (465 JS tests at 0.41.0), `cd src-tauri && cargo test` (78), `cargo clippy --all-targets -- -D warnings`, `cargo audit`, `npm audit`, `rafter secrets .`.
 5. Installers: set `CARGO_TARGET_DIR` to a folder outside the repo, then `npx tauri build`. Outputs: `<target>/release/bundle/nsis` and `msi`; the portable exe is `<target>/release/ProductionOne.exe`.
 
 ### Things that are NOT in git (they do not travel)
@@ -37,8 +37,8 @@ Launching the packaged app replaces the owner's autosave. The ritual: launch `Pr
 
 ### Open items (none urgent)
 1. (done in 0.40.0) The Projects hero: `src/components/ProjectHero.tsx`, `src/domain/projectHero.ts`.
-2. (done on branch `feat/revision-compare`, unreleased) Revision compare on Review: `keepRevision` and friends in `src/domain/review.ts`, UI in `src/views/ReviewView.tsx`.
-3. Batch voice and music (several characters or scenes, with a cost estimate first).
+2. (done in 0.41.0) Revision compare on Review: `keepRevision` and friends in `src/domain/review.ts`, UI in `src/views/ReviewView.tsx`.
+3. (done in 0.41.0) Batch voice and music: `src/domain/batchAudio.ts`, `src/components/BatchAudio.tsx`, mounted under the Voice section in `src/views/DesignView.tsx`.
 4. A text size setting in Appearance.
 5. The guide's sheet, audition and queue screenshots still show the old top bar. They need generated pictures and a busy queue; keep the art-free rule.
 6. Code signing (Windows SmartScreen warns on every install; it needs a certificate).

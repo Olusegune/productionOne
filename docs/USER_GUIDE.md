@@ -140,3 +140,10 @@ Cloud models bill at the provider. The small counter in the queue dock counts re
 | Word/PDF import says no text | The PDF is a scan; run OCR first or paste the text. |
 | ComfyUI "not running" | Open Local AI and press Start. |
 | I opened a project and lost the one I had | Look in `Documents\Production One\Backups`; the app saved a copy first. |
+
+### Batch voice and music
+Under the Voice and sound section, **Batch** casts several characters or scores several themes and scenes at once.
+- **Voices:** choose an engine, tick the characters and choose a voice for each (cloud engines: press *Load my voices* once). Each speaks the first line the script gives them, or a line you type in the Line box.
+- **Music:** tick character themes and scene scores. Each is built from the personality, role and scene heading the script states (Suno V6 Mini through Kie.ai, instrumental, about 45 seconds). A theme with no stated personality or role is skipped, and the list says why.
+- **Cost first:** the line under the table says what the batch will spend. Windows voices and speech servers on your network cost nothing; ElevenLabs and VoiceKiller are billed by characters, Suno by request (two tracks each). The app does not know prices: type yours and it shows a dollar figure. **Review and make** shows the list; nothing is sent until you press the confirming button, which says "Spend credits" when it will spend any. A paid batch is limited to 20 items; **Stop after this one** is available while it runs, and a key or credit problem stops the batch.
+- Results are saved with the audio clips, like a single audition.
