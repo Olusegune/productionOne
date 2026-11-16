@@ -278,3 +278,20 @@ describe('pictures that are no longer on this computer', () => {
     expect(dropMissing(s, []).dropped).toBe(0)
   })
 })
+
+describe('switching a view to another engine', () => {
+  const failedFor = (extra: Partial<JobRequest>) => {
+    const s = funded(enqueue(emptyQueue(), [req('side', extra)], 1).state)
+    return { ...s, jobs: s.jobs.map((j) => ({ ...j, status: 'failed' as const })) }
+  }
+  it('keeps the reference when the engine takes references', () => {
+    const failed = failedFor({ useAnchor: true, references: ['C:/ref.png'] })
+    const out = reassignModel(failed, [failed.jobs[0].id], 'kie', 'seedream/5-pro-image-to-image', 5, true).jobs[0]
+    expect(out).toMatchObject({ provider: 'kie', model: 'seedream/5-pro-image-to-image', status: 'queued', useAnchor: true, references: ['C:/ref.png'] })
+  })
+  it('drops the reference and the anchor when it does not, so the request is not refused', () => {
+    const failed = failedFor({ useAnchor: true, references: ['C:/ref.png'] })
+    const out = reassignModel(failed, [failed.jobs[0].id], 'openai', 'gpt-image-1.5', 5, false).jobs[0]
+    expect(out).toMatchObject({ provider: 'openai', status: 'queued', useAnchor: false, references: [] })
+  })
+})

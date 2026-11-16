@@ -281,6 +281,10 @@ export const cancelAllWaiting = (state: QueueState, now = Date.now()) => ({ ...s
  * Pictures that are no longer on this computer (a project opened elsewhere, files deleted). Such a take cannot be shown, used as a reference or kept approved,
  * so it becomes a failed take that says why. The view then counts as needing a picture: Generate and Use my image both work on it.
  */
+/** The message a take carries when its picture is not on this computer. Other screens use it to tell this apart from a provider failure. */
+export const MISSING_FILE_ERROR = 'This picture is no longer on this computer, for example because the project was opened somewhere its files are not. Press Generate, or add it again with Use my image.'
+export const isMissingFile = (j: { status: string; error?: string }) => j.status === 'failed' && j.error === MISSING_FILE_ERROR
+
 export function dropMissing(state: QueueState, missing: string[], now = Date.now()): { state: QueueState; dropped: number } {
   if (!missing.length) return { state, dropped: 0 }
   const gone = new Set(missing)
@@ -288,7 +292,7 @@ export function dropMissing(state: QueueState, missing: string[], now = Date.now
   const jobs = state.jobs.map((j) => {
     if (!j.outputPath || !gone.has(j.outputPath) || (j.status !== 'completed' && j.status !== 'needs-review')) return j
     dropped++
-    return { ...j, status: 'failed' as const, approved: false, rejected: false, outputPath: undefined, error: 'This picture is no longer on this computer, for example because the project was opened somewhere its files are not. Press Generate, or add it again with Use my image.', updatedAt: now }
+    return { ...j, status: 'failed' as const, approved: false, rejected: false, outputPath: undefined, error: MISSING_FILE_ERROR, updatedAt: now }
   })
   return dropped ? { state: { ...state, jobs }, dropped } : { state, dropped: 0 }
 }
@@ -299,9 +303,10 @@ export const retry = (state: QueueState, id: string, now = Date.now()) =>
   patchJob(state, id, (j) => (j.status === 'failed' || j.status === 'cancelled' ? touch(j, { status: 'queued', error: undefined, notBefore: undefined }, now) : j))
 
 /** Moves jobs that have not produced a file to another provider/model. Completed work is never reassigned. */
-export const reassignModel = (state: QueueState, ids: string[], provider: string, model: string, now = Date.now()): QueueState => ({
+/** `takesReferences: false` also drops the reference and anchor from those views: an engine that cannot take them would otherwise refuse the request. */
+export const reassignModel = (state: QueueState, ids: string[], provider: string, model: string, now = Date.now(), takesReferences = true): QueueState => ({
   ...state,
-  jobs: state.jobs.map((j) => (ids.includes(j.id) && (j.status === 'queued' || j.status === 'failed' || j.status === 'cancelled') ? touch(j, { provider, model, status: 'queued', error: undefined }, now) : j)),
+  jobs: state.jobs.map((j) => (ids.includes(j.id) && (j.status === 'queued' || j.status === 'failed' || j.status === 'cancelled') ? touch(j, { provider, model, status: 'queued', error: undefined, ...(takesReferences ? {} : { useAnchor: false, references: [] }) }, now) : j)),
 })
 
 /**

@@ -1,12 +1,13 @@
 import { isSuperseded, type ImageJob, type QueueState } from './generationQueue'
 
-export type Cause = 'model-unavailable' | 'credits' | 'key' | 'rate-limit' | 'network' | 'server' | 'content' | 'other'
+export type Cause = 'gone' | 'model-unavailable' | 'credits' | 'key' | 'rate-limit' | 'network' | 'server' | 'content' | 'other'
 /** What a person can do about a cause. Retrying only helps when the cause was temporary. */
-export type FixKind = 'refresh-models' | 'choose-model' | 'retry' | 'open-providers'
+export type FixKind = 'open-design' | 'refresh-models' | 'choose-model' | 'retry' | 'open-providers'
 
 interface CauseInfo { label: string; advice: string; fixes: FixKind[] }
 
 export const causeInfo: Record<Cause, CauseInfo> = {
+  gone: { label: 'The picture is not on this computer', advice: 'The project points at a picture that is not here, for example because it was opened on another computer. Retrying cannot bring it back: open the view and press Generate to make it again, or add your own picture with Use my image.', fixes: ['open-design'] },
   'model-unavailable': { label: 'The model is not available', advice: 'The provider no longer lists this model, or has not published how to call it. Refreshing the model list or choosing another model fixes it; retrying alone will not.', fixes: ['refresh-models', 'choose-model', 'retry'] },
   credits: { label: 'Not enough credits', advice: 'The provider says the account is out of credits. Add credits at the provider, then retry.', fixes: ['open-providers', 'retry'] },
   key: { label: 'The key was missing or rejected', advice: 'Check the key in Provider Settings, then retry.', fixes: ['open-providers', 'retry'] },
@@ -20,6 +21,7 @@ export const causeInfo: Record<Cause, CauseInfo> = {
 /** Sorts one error message into the cause it shares with other failures. The first matching rule wins, most specific first. */
 export function causeOf(message: string): Cause {
   const m = message || ''
+  if (/no longer on this computer/i.test(m)) return 'gone'
   // Providers write the status as "(402)", "(500 Internal Server Error)" or "answered 404 Not Found".
   const code = /(?:\(|answered )([1-5]\d{2})\b/.exec(m)?.[1]
   if (/no model page|not published a readable request schema|model (is )?(not found|not available|unavailable)|unknown model|invalid model|no longer available|does not exist/i.test(m)) return 'model-unavailable'

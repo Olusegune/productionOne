@@ -28,6 +28,7 @@ import {
   modelTakesReferences,
   providerLabels,
   providerOrder,
+  quickEngines,
   type ProviderKey,
   type CatalogModel,
   type DiscoveredCatalog,
@@ -52,6 +53,7 @@ import { detectStoryVariants, type SheetType, type StyleBible } from "../domain/
 import { characterArcs, expressionPlan } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 import { ModelPicker } from "./ModelPicker";
+import { EngineSwitch } from "./EngineSwitch";
 import { useModelChoice } from "../data/modelChoice";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { Fold } from "./Fold";
@@ -457,8 +459,8 @@ export function SheetStudio(props: {
                     {job && job.status === "queued" && <button className="secondary" onClick={() => setQueue((q) => cancel(q, job.id))}>Cancel</button>}
                     {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={() => generate(false, [view.key], true)}>Regenerate</button>}
                     {job && wouldEnqueue(job, true) && !job.approved && <label className="view-pick"><input type="checkbox" checked={picked.includes(view.key)} onChange={() => togglePick(view.key)} /> Select</label>}
-                    {job && (job.status === "queued" || job.status === "failed") && model && (job.provider !== provider || job.model !== modelId) && (
-                      <button className="secondary" onClick={() => setQueue((q) => reassignModel(q, [job.id], provider, modelId))}>Use {model.name}</button>
+                    {job && (job.status === "queued" || job.status === "failed") && job.source !== "supplied" && (
+                      <EngineSwitch options={quickEngines(catalog, configured, job.useAnchor)} current={job} onUse={(o) => setQueue((q) => reassignModel(q, [job.id], o.provider, o.model, Date.now(), o.takesReferences))} />
                     )}
                     {desktop && <button className="tertiary" onClick={() => void useOwnImage(view.key, view.label)} title="Use your own image for this view"><ImagePlus size={14} /> Use my image</button>}
                     {at >= 0 && <button className={`tertiary${compare.includes(view.key) ? " on" : ""}`} aria-pressed={compare.includes(view.key)} onClick={() => toggleCompare(view.key)} title="Compare with another view"><Columns2 size={14} /> Compare</button>}

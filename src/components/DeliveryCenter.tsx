@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, ArrowRight, Check, Compass, ShieldCheck, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
-import { committedUsd, retry, type QueueState } from "../domain/generationQueue";
+import { committedUsd, isMissingFile, retry, type QueueState } from "../domain/generationQueue";
 import { videoPresets, type AnalysisResult, type CompiledShotPackage, type SceneCoverage, type ShotRecord, type VideoModel } from "../domain/productionStudio";
 import { Fold } from "./Fold";
 import { deliveryChecklist, packageKind, type ChecklistItem } from "../domain/review";
@@ -54,7 +54,8 @@ export function DeliveryCenter(props: {
   const kind = (id: string) => analysis.assets.find((a) => a.id === id)?.type ?? "asset";
   const sceneName = (id: string) => analysis.scenes.find((s) => s.id === id)?.heading ?? id;
   const shotName = (id: string) => { const s = shots.find((x) => x.id === id); return s ? `${s.title ?? s.id}` : id; };
-  const failed = queue.jobs.filter((j) => j.status === "failed");
+  const failed = queue.jobs.filter((j) => j.status === "failed" && !isMissingFile(j));
+  const gone = queue.jobs.filter((j) => isMissingFile(j) && !queue.jobs.some((o) => o.key === j.key && o.revision > j.revision)).length;
   const needsReview = queue.jobs.filter((j) => j.status === "needs-review").length;
   const active = queue.jobs.filter((j) => ["queued", "generating", "validating", "pending"].includes(j.status)).length;
   const total = Math.max(1, analysis.assets.length);
@@ -87,6 +88,7 @@ export function DeliveryCenter(props: {
           <div><dt>Missing assets</dt><dd>{audit.missingAssets.length}</dd></div>
           <div><dt>Incomplete shots</dt><dd>{audit.incompleteShots.length}</dd></div>
           <div><dt>Active jobs</dt><dd>{active}</dd></div>
+          {gone > 0 && <div><dt>Pictures missing</dt><dd className="bad">{gone}</dd></div>}
           <div><dt>Failed jobs</dt><dd className={failed.length ? "bad" : ""}>{failed.length}</dd></div>
           <div><dt>Needs review</dt><dd className={needsReview ? "warn" : ""}>{needsReview}</dd></div>
           <div><dt>Recorded spend</dt><dd>{queue.perImageUsd === null ? "Unknown" : `$${committedUsd(queue).toFixed(2)}`}</dd></div>
@@ -116,7 +118,7 @@ export function DeliveryCenter(props: {
         <div className="panel dc-issues">
           <h3>What still needs work</h3>
           <FailureGroups queue={queue} setQueue={setQueue} desktop={isTauri} assetName={name} openProviders={openProviders} openDesign={openDesign} notify={notify} />
-          {issues.length === 0 && failed.length === 0 && <p className="helper">Nothing is blocking delivery.</p>}
+          {issues.length === 0 && failed.length === 0 && gone === 0 && <p className="helper">Nothing is blocking delivery.</p>}
           {issues.map((s) => (
             <div className="dc-group" key={s.sceneId}>
               <h4>{sceneName(s.sceneId)} <small>{s.videoReady ? "video ready" : `${s.verifiedAssets.length}/${s.requiredAssets.length} references · ${s.plannedShots.length} shots`}</small></h4>

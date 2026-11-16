@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { useState } from 'react'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { FailureGroups } from './FailureGroups'
-import { emptyQueue, type ImageJob, type QueueState } from '../domain/generationQueue'
+import { emptyQueue, MISSING_FILE_ERROR, type ImageJob, type QueueState } from '../domain/generationQueue'
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: async () => () => {} }))
 vi.mock('@tauri-apps/api/core', () => ({
@@ -69,5 +69,18 @@ describe('failed views by cause', () => {
   it('renders nothing when nothing failed', () => {
     const { container } = render(<Harness jobs={[]} spies={spies()} />)
     expect(container.firstChild).toBeNull()
+  })
+})
+
+describe('views whose picture is gone', () => {
+  it('say so, offer Open Design instead of Retry or a different model, and have no per-view Retry', () => {
+    const s = spies()
+    render(<Harness jobs={many(2, MISSING_FILE_ERROR)} spies={s} />)
+    expect(screen.getByText('The picture is not on this computer')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Retry/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Choose a model/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Open Design' }))
+    expect(s.openDesign).toHaveBeenCalledTimes(1)
+    expect(document.querySelectorAll('.fg-details .tertiary').length).toBe(0)
   })
 })

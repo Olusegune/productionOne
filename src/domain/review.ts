@@ -1,4 +1,5 @@
 import type { ImageJob, QueueState } from './generationQueue'
+import { isMissingFile } from './generationQueue'
 import type { AnalysisResult } from './productionStudio'
 import { primaryViewKeys } from './sheetSpecs'
 
@@ -65,7 +66,9 @@ export function deliveryChecklist(args: { analysis: AnalysisResult; queue: Queue
   const { analysis, queue, missingAssets, incompleteShots, styleLocked } = args
   const name = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id
   const review = queue.jobs.filter((j) => j.status === 'needs-review').length
-  const failed = queue.jobs.filter((j) => j.status === 'failed' && !queue.jobs.some((o) => o.key === j.key && o.revision > j.revision)).length
+  const open = queue.jobs.filter((j) => j.status === 'failed' && !queue.jobs.some((o) => o.key === j.key && o.revision > j.revision))
+  const gone = open.filter(isMissingFile)
+  const failed = open.length - gone.length
   const items: ChecklistItem[] = []
   items.push(analysis.assets.length
     ? { id: 'script', state: 'ok', label: 'Script read', detail: `${analysis.assets.length} asset${analysis.assets.length === 1 ? '' : 's'} found` }
@@ -79,6 +82,7 @@ export function deliveryChecklist(args: { analysis: AnalysisResult; queue: Queue
   items.push(review === 0
     ? { id: 'review', state: 'ok', label: 'Nothing waiting for review', detail: '' }
     : { id: 'review', state: 'todo', label: `${review} picture${review === 1 ? '' : 's'} waiting for your decision`, detail: 'Approve, request changes or reject each one.', fix: { kind: 'review', label: 'Open Review' } })
+  if (gone.length > 0) items.push({ id: 'gone', state: 'todo', label: `${gone.length} picture${gone.length === 1 ? ' is' : 's are'} not on this computer`, detail: 'Press Generate on the view to make it again, or add your own with Use my image.', fix: { kind: 'failed', label: 'Open Design' } })
   if (failed > 0) items.push({ id: 'failed', state: 'todo', label: `${failed} failed job${failed === 1 ? '' : 's'}`, detail: 'Retry them, or choose a different model.', fix: { kind: 'failed', label: 'See failed jobs' } })
   if (incompleteShots.length > 0) items.push({ id: 'shots', state: 'todo', label: `${incompleteShots.length} storyboard frame${incompleteShots.length === 1 ? '' : 's'} not approved`, detail: 'Only matters if you use the optional storyboard.' })
   return items

@@ -93,3 +93,45 @@ export function mergeVideoModels(discovered: DiscoveredCatalog) {
   for (const m of discovered['kie-video']?.models ?? []) if (!merged.some((x) => x.id === m.id)) merged.push({ id: m.id, name: m.name, note: 'Listed by Kie.ai. Price and limits are not verified here.' })
   return merged
 }
+
+export interface EngineOption {
+  key: string
+  provider: ProviderKey
+  model: string
+  label: string
+  /** The provider has a key (or, for ComfyUI, is running). */
+  available: boolean
+  takesReferences: boolean
+  /** Why it cannot be used yet, or what is lost by using it. */
+  note: string
+}
+
+const PROVIDER_NEEDS: Record<ProviderKey, string> = { kie: 'needs a Kie.ai key', google: 'needs a Google key', openai: 'needs an OpenAI key', openrouter: 'needs an OpenRouter key', fal: 'needs a fal.ai key', comfyui: 'start ComfyUI from Local AI' }
+
+/**
+ * The few engines worth offering on a view that needs to be made again: Nano Banana, the newest Seedream, the newest GPT Image, and a model on this computer.
+ * `needsReferences` is true when the view is built from the approved front (identity lock): then the image-to-image variant is chosen, and an engine that cannot
+ * take references says so, because using it drops the lock. Only models in `catalog` are offered, so a retired id never appears.
+ */
+export function quickEngines(catalog: CatalogModel[], configured: Record<string, boolean>, needsReferences: boolean): EngineOption[] {
+  const has = (provider: ProviderKey, id: string) => catalog.find((m) => m.provider === provider && m.id === id)
+  const option = (provider: ProviderKey, id: string, label: string): EngineOption | null => {
+    const m = has(provider, id)
+    if (!m) return null
+    const available = !!configured[provider]
+    const lost = needsReferences && !m.references
+    return { key: `${provider}|${id}`, provider, model: id, label, available, takesReferences: m.references, note: !available ? PROVIDER_NEEDS[provider] : lost ? 'no identity lock: it cannot use the approved front as a reference' : '' }
+  }
+  const pick = (...choices: Array<EngineOption | null>) => choices.find((c) => c && c.available) ?? choices.find((c) => !!c) ?? null
+  const kieOr = (kieId: string, label: string, fallback: EngineOption | null) => pick(option('kie', kieId, label), fallback)
+  const out: Array<EngineOption | null> = [
+    pick(option('google', 'gemini-nano-banana-2.1', 'Nano Banana 2.1'), option('kie', 'google/nanobanana-2-1', 'Nano Banana 2.1')),
+    kieOr(needsReferences ? 'seedream/5-pro-image-to-image' : 'seedream/5-pro-text-to-image', 'Seedream 5.0 Pro', option('openrouter', 'bytedance-seed/seedream-4.5', 'Seedream 4.5')),
+    kieOr(needsReferences ? 'gpt/gpt-image-2-5-flare-image-to-image' : 'gpt/gpt-image-2-5-flare-text-to-image', 'GPT Image 2.5', option('openai', 'gpt-image-1.5', 'GPT Image 1.5')),
+  ]
+  const local = catalog.filter((m) => m.provider === 'comfyui')
+  const localModel = (needsReferences ? local.find((m) => m.references) : undefined) ?? local[0]
+  if (localModel) out.push(option('comfyui', localModel.id, `On this computer: ${localModel.name}`))
+  else out.push({ key: 'comfyui|none', provider: 'comfyui', model: '', label: 'On this computer (ComfyUI)', available: false, takesReferences: false, note: PROVIDER_NEEDS.comfyui })
+  return out.filter((o): o is EngineOption => !!o)
+}
