@@ -295,12 +295,40 @@ const AUX = /\b(?:doesn't|don't|didn't|isn't|aren't|wasn't|won't|can't|cannot|do
 const PROP_RX = new RegExp(`\\b${PROP_VERB}\\s+(?:(?:an?|the|his|her|their|its|some|one)\\s+)?([a-z][a-z'-]*(?:\\s+[a-z][a-z'-]*){0,3}?)(?=\\s+(?:and|on|in|at|to|with|from|into|onto|beside|toward|towards|against|for|as|while|then|before|after|over|under)\\b|[,.;:!?]|$)`, 'gi')
 const DAMAGE = /\b(broken|cracked|shattered|torn|burned|burnt|rusted|rusty|bent|chipped|damaged|weathered|worn|frayed|dented|scratched|stained|bloodied|charred|snapped)\b/i
 
+/** Words that end an object phrase: "a microphone out of habit" is a microphone. */
+const PROP_FILLER = new Set(['out', 'though', 'but', 'by', 'up', 'down', 'about', 'again', 'like', 'so', 'around', 'away', 'back', 'off', 'single', 'few', 'couple'])
+/** Tangible things a scene often needs to show. They are found with or without a verb ("a brass stamp", "an umbrella in one hand"). Words such as glass, light or file are left out: they are mostly not objects. */
+const OBJECT_NOUNS = 'stamp|umbrella|folio|folder|ledger|briefcase|suitcase|satchel|knife|dagger|sword|gun|pistol|rifle|pen|pencil|cane|staff|lantern|lamp|torch|key|keys|phone|radio|camera|ring|necklace|medallion|watch|compass|map|letter|envelope|book|notebook|diary|photograph|photo|painting|mask|crown|trophy|microphone|guitar|violin|drum|bottle|cup|mug|cigar|candle|backpack|bag|chest|coin|coins|badge|clipboard|contract|scroll|parcel|package|laptop|tablet|headphones|glasses|sunglasses|bouquet|flag|rope|shovel|axe|hammer|wrench|lighter|ticket|passport|wallet|purse|basket|tray|teapot|kettle'
+const OBJECT_RX = new RegExp(String.raw`\b(?:an?|the|his|her|their|its)\s+((?:[a-z][a-z'-]*\s+){0,2}?)(${OBJECT_NOUNS})s?\b`, 'gi')
+
 function addProps(scenes: StoryScene[]): StoryProp[] {
   const props = new Map<string, StoryProp>()
+  const note = (scene: StoryScene, act: { line: number; text: string }, rawName: string, noun: string) => {
+    const name = rawName.toLowerCase()
+    const evidence = { line: act.line, text: act.text }
+    const damage = DAMAGE.source.slice(2, -2)
+    const cond = new RegExp(String.raw`\b${escapeRx(noun)}s?\s+(?:is|are|was|were|looks?)\s+(?:\w+\s+)?(${damage})\b|\b${escapeRx(noun)}s?\s+with\s+an?\s+(${damage})\b`, 'i').exec(act.text)
+    const condition = (DAMAGE.exec(name)?.[1] ?? cond?.[1] ?? cond?.[2])?.toLowerCase()
+    const existing = props.get(noun)
+    if (existing) {
+      if (!existing.sceneIds.includes(scene.id)) existing.sceneIds.push(scene.id)
+      if (!existing.evidence.some((e) => e.line === evidence.line)) existing.evidence.push(evidence)
+      if (name.split(' ').length > existing.name.split(' ').length) existing.name = name
+      if (condition && !existing.condition) existing.condition = condition
+    } else props.set(noun, { name, sceneIds: [scene.id], evidence: [evidence], condition })
+  }
   for (const scene of scenes) {
     for (const act of scene.action) {
+      for (const m of act.text.matchAll(OBJECT_RX)) {
+        const adj = m[1].trim().split(/\s+/).filter(Boolean)
+        if (adj.some((w) => NOT_PHRASE_START.has(w.toLowerCase()) || PROP_FILLER.has(w.toLowerCase()) || AUX.test(w))) continue
+        note(scene, act, [...adj, m[2]].join(' '), m[2].toLowerCase())
+      }
       for (const m of act.text.matchAll(PROP_RX)) {
-        const words = m[1].trim().split(/\s+/)
+        const cut = m[1].trim().split(/\s+/)
+        const stop = cut.findIndex((w, i) => i > 0 && PROP_FILLER.has(w.toLowerCase()))
+        const words = (stop > 0 ? cut.slice(0, stop) : cut).filter((w, i) => !(i === 0 && PROP_FILLER.has(w.toLowerCase())))
+        if (words.length === 0) continue
         const last = words[words.length - 1].toLowerCase()
         if (NOT_PROPS.has(last) || words.length === 0 || NOT_PHRASE_START.has(words[0].toLowerCase()) || /^(?:what|how|where|these|those)$/.test(words[0].toLowerCase()) || AUX.test(m[1]) || /(?:ing|ed)$/.test(last) && words.length === 1) continue
         const name = words.join(' ').toLowerCase()
@@ -320,9 +348,17 @@ function addProps(scenes: StoryScene[]): StoryProp[] {
   return [...props.values()]
 }
 
+const NUMBER_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 }
+/** "nineteen" is 19 and "twenty-three" is 23; anything else is not an age. */
+export function ageFromWords(text: string): number | undefined {
+  const parts = text.toLowerCase().trim().split(/[\s-]+/)
+  if (parts.length === 1) return NUMBER_WORDS[parts[0]]
+  if (parts.length === 2 && NUMBER_WORDS[parts[0]] >= 20 && NUMBER_WORDS[parts[1]] >= 1 && NUMBER_WORDS[parts[1]] <= 9) return NUMBER_WORDS[parts[0]] + NUMBER_WORDS[parts[1]]
+  return undefined
+}
 const AGE_WORDS = 'young|teenage|teen|child|little|elderly|older|old|aged|adult|middle-aged|baby|infant'
-const WEAR = /\b(?:wears?|wearing|dressed in|clad in|in a|in an|in the|puts? on|slips? into|changes? into)\s+(?:(?:an?|the|his|her|their)\s+)?([a-z][a-z'-]*(?:\s+[a-z][a-z'-]*){0,3}?)(?=\s+(?:and|with|over|under|that|which|as|while|,)|[,.;:!?]|$)/i
-const GARMENT = /\b(jacket|coat|dress|gown|suit|uniform|robe|shirt|blouse|tunic|cloak|cape|hoodie|sweater|armor|armour|vest|skirt|trousers|pants|jeans|scarf|hat|cap|helmet|boots|shoes|apron|poncho|kimono|sari|saree|gele|dashiki|overalls|costume|wetsuit|lab coat|jumpsuit)s?\b/i
+const WEAR = /\b(?:wears?|wearing|dressed in|clad in|in|puts? on|slips? into|changes? into)\s+(?:(?:an?|the|his|her|their)\s+)?([a-z][a-z'-]*(?:\s+[a-z][a-z'-]*){0,3}?)(?=\s+(?:and|with|over|under|that|which|as|while|,)|[,.;:!?]|$)/i
+const GARMENT = /\b(jacket|coat|dress|gown|suit|uniform|robe|shirt|blouse|tunic|cloak|cape|hoodie|sweater|armor|armour|vest|skirt|trousers|pants|jeans|scarf|hat|cap|helmet|boots|shoes|apron|poncho|kimono|sari|saree|gele|dashiki|overalls|costume|wetsuit|lab coat|jumpsuit|clothes|clothing|outfit|attire|tuxedo|tailcoat|puffer|bomber|parka|tracksuit|jersey|t-shirt)s?\b/i
 const INJURY = /\b(wounded|injured|bleeding|bandaged|bandage|limping|limps?|bruised|scarred|burned|burnt|cut|gash|broken arm|broken leg|black eye|stitches|crutch|sling|cast)\b/i
 const STATE = /\b(disguised as|disguised|in disguise|transforms?|transformed|becomes|turns into|possessed|glowing|ghostly|drenched|soaked|muddy|covered in (?:dust|mud|blood|ash|soot))\b/i
 
@@ -349,7 +385,9 @@ function addVariants(scenes: StoryScene[], characters: string[]): StoryVariant[]
           const ageBefore = new RegExp(`\\b(${AGE_WORDS})\\s+${n}\\b`, 'i').exec(sentence)
           const ageParen = new RegExp(`\\b${n}\\s*\\(\\s*(?:age\\s+)?(\\d{1,3}s?|${AGE_WORDS})\\s*\\)`, 'i').exec(sentence)
           const ageIs = new RegExp(`\\b${n}\\b[^.]{0,20}?(?:,|\\()\\s*(?:age[sd]?\\s+)?(\\d{1,3})\\b`, 'i').exec(sentence)
-          const age = ageBefore?.[1] ?? ageParen?.[1] ?? ageIs?.[1]
+          const ageSpelled = new RegExp(String.raw`\b${n}\b\s*,\s*((?:[a-z]+-)?[a-z]+)\s*,`, 'i').exec(sentence)
+          const spelled = ageSpelled && ageFromWords(ageSpelled[1])
+          const age = ageBefore?.[1] ?? ageParen?.[1] ?? ageIs?.[1] ?? (spelled ? String(spelled) : undefined)
           if (age) push({ character: name, kind: 'age', value: /^\d/.test(age) ? `Age ${age}` : titleCase(age), sceneId: scene.id, evidence })
           // Wardrobe: only the sentence part that follows this character's name, so "Marcus watches Amina, who wears ..." is attributed correctly.
           const at = sentence.search(new RegExp(`\\b${n}\\b`, 'i'))
