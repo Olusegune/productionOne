@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyQueue, type ImageJob, type QueueState } from './generationQueue'
 import type { AnalysisResult } from './productionStudio'
-import { approvedReference, awaitingReview, deliveryChecklist, packageKind, turnedDown } from './review'
+import { approvedReference, awaitingReview, defaultCompareTarget, deliveryChecklist, keepRevision, otherRevisions, packageKind, revisionsOfView, turnedDown } from './review'
 
 const job = (over: Partial<ImageJob>): ImageJob => ({
   id: 'j', key: 'k', assetId: 'A1', variant: 'base', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', prompt: '', aspect: '3:4', fullBody: true, provider: 'kie', model: 'm', references: [], useAnchor: false,
@@ -51,5 +51,48 @@ describe('delivery checklist', () => {
   it('asks for a script when there are no assets', () => {
     const items = deliveryChecklist({ ...base, analysis: { scenes: [], assets: [] } as unknown as AnalysisResult })
     expect(items[0]).toMatchObject({ id: 'script', state: 'todo', fix: { kind: 'script' } })
+  })
+})
+
+describe('revision compare', () => {
+  const view = { assetId: 'A1', variant: 'base', sheetType: 'Turnaround', viewKey: 'front' }
+  const q = () => queue([
+    job({ id: 'v1', ...view, revision: 1, approved: true, outputPath: 'v1.png' }),
+    job({ id: 'v2', ...view, revision: 2, status: 'needs-review', outputPath: 'v2.png' }),
+    job({ id: 'v3', ...view, revision: 3, rejected: true, outputPath: 'v3.png' }),
+    job({ id: 'bad', ...view, revision: 4, status: 'failed' }),
+    job({ id: 'side', ...view, viewKey: 'profile', revision: 1, outputPath: 's.png' }),
+    job({ id: 'other', assetId: 'A2', ...{ variant: 'base', sheetType: 'Turnaround', viewKey: 'front' }, revision: 1, outputPath: 'o.png' }),
+  ])
+  it('lists the other takes of the same view only, newest first, ignoring failed jobs and other views or assets', () => {
+    const state = q()
+    expect(otherRevisions(state, state.jobs[1]).map((j) => j.id)).toEqual(['v3', 'v1'])
+    expect(revisionsOfView(state, state.jobs[0]).map((j) => j.id)).toEqual(['v3', 'v2', 'v1'])
+  })
+  it('compares against the approved take by default, else the newest other take, else nothing', () => {
+    const state = q()
+    expect(defaultCompareTarget(state, state.jobs[1])?.id).toBe('v1')
+    expect(defaultCompareTarget(queue([job({ id: 'a', revision: 1, status: 'needs-review', outputPath: 'a.png' }), job({ id: 'b', revision: 2, status: 'needs-review', outputPath: 'b.png' })]), job({ id: 'b', revision: 2, outputPath: 'b.png' }))?.id).toBe('a')
+    expect(defaultCompareTarget(queue([job({ id: 'solo', outputPath: 's.png' })]), job({ id: 'solo', outputPath: 's.png' }))).toBeNull()
+  })
+  it('keeping the new take approves it and turns the approved and waiting takes down, deleting nothing', () => {
+    const next = keepRevision(q(), 'v2', 50)
+    const by = (id: string) => next.jobs.find((j) => j.id === id)!
+    expect(by('v2')).toMatchObject({ approved: true, rejected: false, status: 'completed' })
+    expect(by('v1')).toMatchObject({ approved: false, rejected: true, outputPath: 'v1.png' })
+    expect(next.jobs).toHaveLength(6)
+    expect(by('side').approved).toBe(false)
+    expect(by('other')).toEqual(q().jobs[5])
+  })
+  it('keeping the older approved take rejects a waiting newer one, and an earlier turned-down take can be brought back', () => {
+    const back = keepRevision(q(), 'v3', 60)
+    expect(back.jobs.find((j) => j.id === 'v3')).toMatchObject({ approved: true, rejected: false })
+    expect(back.jobs.find((j) => j.id === 'v1')).toMatchObject({ approved: false, rejected: true })
+    expect(back.jobs.find((j) => j.id === 'v2')).toMatchObject({ approved: false, rejected: true })
+  })
+  it('does nothing for a take that has no file or is not finished', () => {
+    const state = q()
+    expect(keepRevision(state, 'bad')).toBe(state)
+    expect(keepRevision(state, 'missing')).toBe(state)
   })
 })

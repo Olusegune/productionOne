@@ -94,7 +94,7 @@ Each clip plays **level-matched** (to -20 LUFS, never boosted past 12 dB or into
 Generation runs in the queue at the bottom, two at a time. **Pause** lets running images finish and holds the rest. Views that match a front view wait until you approve it; the bar says how many are waiting and offers **Open sheets**. If the app closes in the middle of generation, the images that were in flight come back marked *failed, may already be billed* so you can decide whether to retry; waiting images are kept and the queue starts paused.
 
 ## Review
-**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match, with a badge in the sidebar for how many wait. Technical checks are listed apart from your decision. **Approve** it; **Request changes** (turns it down and opens its sheet; nothing is generated); or **Reject** (keeps the file; find it again under *Turned down*). Generation details and the prompt are one click away.
+**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match, with a badge in the sidebar for how many wait. Technical checks are listed apart from your decision. **Approve** it; **Request changes** (turns it down and opens its sheet; nothing is generated); or **Reject** (keeps the file; find it again under *Turned down*). When a view has more than one take, **Other takes** puts two takes side by side (pick which to compare with) and **Keep revision N** approves that one and turns the other down; no file is deleted and nothing is generated. Generation details and the prompt are one click away.
 
 ## Direct (optional)
 ![Director's room](screenshots/direct.png)
@@ -140,3 +140,10 @@ Cloud models bill at the provider. The small counter in the queue dock counts re
 | Word/PDF import says no text | The PDF is a scan; run OCR first or paste the text. |
 | ComfyUI "not running" | Open Local AI and press Start. |
 | I opened a project and lost the one I had | Look in `Documents\Production One\Backups`; the app saved a copy first. |
+
+### Batch voice and music
+Under the Voice and sound section, **Batch** casts several characters or scores several themes and scenes at once.
+- **Voices:** choose an engine, tick the characters and choose a voice for each (cloud engines: press *Load my voices* once). Each speaks the first line the script gives them, or a line you type in the Line box.
+- **Music:** tick character themes and scene scores. Each is built from the personality, role and scene heading the script states (Suno V6 Mini through Kie.ai, instrumental, about 45 seconds). A theme with no stated personality or role is skipped, and the list says why.
+- **Cost first:** the line under the table says what the batch will spend. Windows voices and speech servers on your network cost nothing; ElevenLabs and VoiceKiller are billed by characters, Suno by request (two tracks each). The app does not know prices: type yours and it shows a dollar figure. **Review and make** shows the list; nothing is sent until you press the confirming button, which says "Spend credits" when it will spend any. A paid batch is limited to 20 items; **Stop after this one** is available while it runs, and a key or credit problem stops the batch.
+- Results are saved with the audio clips, like a single audition.
