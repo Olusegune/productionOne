@@ -147,3 +147,9 @@ Under the Voice and sound section, **Batch** casts several characters or scores 
 - **Music:** tick character themes and scene scores. Each is built from the personality, role and scene heading the script states (Suno V6 Mini through Kie.ai, instrumental, about 45 seconds). A theme with no stated personality or role is skipped, and the list says why.
 - **Cost first:** the line under the table says what the batch will spend. Windows voices and speech servers on your network cost nothing; ElevenLabs and VoiceKiller are billed by characters, Suno by request (two tracks each). The app does not know prices: type yours and it shows a dollar figure. **Review and make** shows the list; nothing is sent until you press the confirming button, which says "Spend credits" when it will spend any. A paid batch is limited to 20 items; **Stop after this one** is available while it runs, and a key or credit problem stops the batch.
 - Results are saved with the audio clips, like a single audition.
+
+### A voice for each character
+In the single audition, choose an engine and voice, then **Save as this character's voice**. From then on that character opens with that engine and voice, the batch panel fills it in (**Tick them** ticks everyone who has one), and it is saved with the project. **Clear** removes it. In the batch panel, **Remember the chosen voices** saves the voices of every ticked character at once. A saved voice is only offered to the engine it belongs to.
+
+### Try it with the sample film
+`samples/the-renewal.fountain` is a short film (THE RENEWAL, the Bureau of Infernal Affairs) with three characters, props and four locations; `samples/WORLD_BUREAU_OF_INFERNAL_AFFAIRS.md` describes its world. Paste or import the script and press Analyze to see the reader at work. The project is named from the script's title while it still has a placeholder name.

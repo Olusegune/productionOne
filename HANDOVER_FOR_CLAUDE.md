@@ -2,7 +2,7 @@
 
 ## Session handover, 2026-11-15 (read this first; the older notes below are history)
 
-**State.** Released: **v0.40.0** (tag on `main`; Windows setup.exe, MSI and portable zip on the GitHub release). The **Projects home hero** shipped in 0.40.0. Releases in this stretch, newest first: 0.40.0 the Projects hero; 0.39.0 older screens follow the looks and a Cinematic light-sidebar fix; 0.38.1 failure groups read real status codes; 0.38.0 cast board on small windows and light-theme contrast; 0.37.0 cast board; 0.36.0 Cinematic default; 0.35.0 three looks (Studio, Cinematic, Futurist); 0.34.0 failure groups and Tasks; 0.33.0 Script and Asset Studio layouts and Space Grotesk; 0.32.0 sidebar redesign and a style gallery with 117 pictures; 0.31.0 Suno music via Kie.ai; 0.30.0 voice design. Per-release detail: `CHANGELOG.md`, `RELEASE_NOTES_<v>.md`, `docs/QA_REPORT_<v>.md`.
+**State (updated 2026-11-16).** Released: **v0.41.0** (revision compare, batch voice and music); **0.42.0** (a real story through the real app, saved voices, and the fixes it found) is on a branch awaiting "Merge and release". Before that: **v0.40.0** (tag on `main`; Windows setup.exe, MSI and portable zip on the GitHub release). The **Projects home hero** shipped in 0.40.0. Releases in this stretch, newest first: 0.40.0 the Projects hero; 0.39.0 older screens follow the looks and a Cinematic light-sidebar fix; 0.38.1 failure groups read real status codes; 0.38.0 cast board on small windows and light-theme contrast; 0.37.0 cast board; 0.36.0 Cinematic default; 0.35.0 three looks (Studio, Cinematic, Futurist); 0.34.0 failure groups and Tasks; 0.33.0 Script and Asset Studio layouts and Space Grotesk; 0.32.0 sidebar redesign and a style gallery with 117 pictures; 0.31.0 Suno music via Kie.ai; 0.30.0 voice design. Per-release detail: `CHANGELOG.md`, `RELEASE_NOTES_<v>.md`, `docs/QA_REPORT_<v>.md`.
 
 **What the app is.** A Tauri 2 + React 19 + TypeScript + Rust Windows desktop app that turns a script into reference assets (characters, props, sets), voices and music, then a delivery package. Repo: https://github.com/Olusegune/productionOne (private).
 
@@ -38,11 +38,14 @@ Launching the packaged app replaces the owner's autosave. The ritual: launch `Pr
 ### Open items (none urgent)
 1. (done in 0.40.0) The Projects hero: `src/components/ProjectHero.tsx`, `src/domain/projectHero.ts`.
 2. (done in 0.41.0) Revision compare on Review: `keepRevision` and friends in `src/domain/review.ts`, UI in `src/views/ReviewView.tsx`.
-3. (done in 0.41.0) Batch voice and music: `src/domain/batchAudio.ts`, `src/components/BatchAudio.tsx`, mounted under the Voice section in `src/views/DesignView.tsx`.
+3. (done in 0.41.0; saved voices done in 0.42.0) Batch voice and music: `src/domain/batchAudio.ts`, `src/components/BatchAudio.tsx`, mounted under the Voice section in `src/views/DesignView.tsx`.
 4. A text size setting in Appearance.
 5. The guide's sheet, audition and queue screenshots still show the old top bar. They need generated pictures and a busy queue; keep the art-free rule.
 6. Code signing (Windows SmartScreen warns on every install; it needs a certificate).
 7. Not yet checked: the Local AI and help dialogs in the new looks, and a real failed image generation in the UI (failure groups are covered by tests and real provider error strings).
+
+### Live testing without touching the owner's app (0.42.0)
+Build a separate copy with its own identifier and data folder: write a small JSON with `{"identifier":"com.productionguy.studio.livetest","productName":"Production One LiveTest"}` and run `npx tauri build --no-bundle --config <that file>` (use its own `CARGO_TARGET_DIR`). It reads the same saved keys (the credential service name does not depend on the identifier), the owner's running app and autosave stay untouched, and each new identifier gives a fresh first-run state. Drive it over `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` with playwright-core. Native file dialogs cannot be scripted from the page: click the button, then type the path into the dialog with `scripts/live/pick-dialog.ps1`. Turn the app's spending cap on first. The test film is `samples/the-renewal.fountain`; the characters' art is the owner's and is never committed.
 
 ### Working with the owner
 - Replies are short and decisive ("Do 1 to 3", "Merge and release"). Do the work, then report plainly what was and was not checked.
