@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- **Projects home hero.** The top of Projects is now a hero: the title, a line saying where the production stands ("3 of 8 assets approved · 1 request running"), a progress bar to a delivery package, one big button for the next step ("Continue: Approve a visual style", or "Open Deliver" when everything is done), New / Open / Save, and the look of the film as a picture (the style's own gallery picture, or its palette) with its name and colours. The five count tiles sit under it. Nothing new is stored or invented: it reads the Golden Path and the style.
+- Tests: 442 JS (5 for the summary, 4 for the hero component).
+
 ## 0.39.0 (2026-11-15): older screens follow the looks
 - **Older screens follow the looks.** The Providers dialog, its cards and fields, the prompt box and prompt editor, the style picker button, the model notes and the cost pop-up were written with fixed graphite colours; in Cinematic and Futurist they now take the look's own surfaces (Studio keeps its colours).
 - **Cinematic, light theme: the sidebar.** The dark gradient meant for the dark theme also applied in the light theme, so the logo and the navigation labels were dark on dark (about 1.5 to 2:1). The light theme now has a light sidebar. The in-page audit missed this because it ignored gradient backgrounds; it now averages a gradient's colours, and it also caught the grey "Not generated" label (3.7:1), now darker in the light theme.

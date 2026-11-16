@@ -1,11 +1,12 @@
-import { Download, FilePlus2, FolderOpen, History, X } from "lucide-react";
+import { History, X } from "lucide-react";
 import { recentName } from "../appHelpers";
 import { Eyebrow } from "../components/Eyebrow";
 import { FirstRun } from "../components/FirstRun";
 import { GoldenPath } from "../components/GoldenPath";
-import { StatTiles } from "../components/StatTiles";
+import { ProjectHero } from "../components/ProjectHero";
 import type { GoldenPathInput, GoldenStep } from "../domain/goldenPath";
 import type { AnalysisResult } from "../domain/productionStudio";
+import type { StyleBible } from "../domain/visualDevelopment";
 
 /** The Projects workspace: project header, getting started, Golden Path and recent files. */
 export function ProjectsView(props: {
@@ -13,6 +14,7 @@ export function ProjectsView(props: {
   filePath: string | null | undefined;
   analysis: AnalysisResult;
   golden: GoldenPathInput;
+  style: StyleBible;
   recents: string[];
   onNew: () => void;
   onOpen: () => void;
@@ -29,18 +31,7 @@ export function ProjectsView(props: {
   const count = (...types: string[]) => analysis.assets.filter((a) => types.includes(a.type)).length;
   return (
     <section className="po-launch">
-      <div className="po-launch-head">
-        <div>
-          <span className="eyebrow">{filePath ?? "AUTOSAVED PRODUCTION"}</span>
-          <h2>{title}</h2>
-          <StatTiles scenes={analysis.scenes.length} characters={count("character")} props={count("prop")} sets={count("set", "environment")} approved={golden.approvedCount} total={golden.assetCount} />
-        </div>
-        <div className="hero-actions">
-          <button className="secondary" onClick={props.onNew}><FilePlus2 size={15} /> New</button>
-          <button className="secondary" onClick={props.onOpen}><FolderOpen size={15} /> Open…</button>
-          <button className="secondary" onClick={props.onSave}><Download size={15} /> Save</button>
-        </div>
-      </div>
+      <ProjectHero title={title} filePath={filePath} style={props.style} golden={golden} counts={{ scenes: analysis.scenes.length, characters: count("character"), props: count("prop"), sets: count("set", "environment") }} onNew={props.onNew} onOpen={props.onOpen} onSave={props.onSave} onContinue={props.onNext} onWorkspace={props.onWorkspace} />
       <FirstRun onKeys={props.onKeys} onStory={() => props.onWorkspace("Story")} />
       <GoldenPath input={golden} onGo={props.onWorkspace} onNext={props.onNext} />
       {recents.length > 0 && (
