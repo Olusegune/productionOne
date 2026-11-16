@@ -115,7 +115,7 @@ body { min-width: 0; }
 .design-workspace > .three-column { padding-top: 8px !important; }
 .character-bible { margin: 8px 0 12px; padding: 14px; border-radius: 10px; background: rgba(255,255,255,.035); box-shadow: none; }
 .character-bible-head p { max-width: 620px; }
-.character-bible-tabs { margin: 12px 0 10px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.character-bible-tabs { margin: 12px 0 10px; flex-wrap: wrap; overflow-x: visible; padding-bottom: 4px; row-gap: 6px; }
 .character-bible-tabs button { flex: 0 0 auto; padding: 7px 9px; }
 .character-bible-next { padding-top: 9px; }
 .sheet-studio { padding: 18px; }

@@ -277,6 +277,22 @@ export const cancel = (state: QueueState, id: string, now = Date.now()) =>
 /** A running request cannot be recalled from the provider, so cancelling one only stops its result from being used. */
 export const cancelAllWaiting = (state: QueueState, now = Date.now()) => ({ ...state, jobs: state.jobs.map((j) => (j.status === 'queued' || j.status === 'pending' ? touch(j, { status: 'cancelled' }, now) : j)) })
 
+/**
+ * Pictures that are no longer on this computer (a project opened elsewhere, files deleted). Such a take cannot be shown, used as a reference or kept approved,
+ * so it becomes a failed take that says why. The view then counts as needing a picture: Generate and Use my image both work on it.
+ */
+export function dropMissing(state: QueueState, missing: string[], now = Date.now()): { state: QueueState; dropped: number } {
+  if (!missing.length) return { state, dropped: 0 }
+  const gone = new Set(missing)
+  let dropped = 0
+  const jobs = state.jobs.map((j) => {
+    if (!j.outputPath || !gone.has(j.outputPath) || (j.status !== 'completed' && j.status !== 'needs-review')) return j
+    dropped++
+    return { ...j, status: 'failed' as const, approved: false, rejected: false, outputPath: undefined, error: 'This picture is no longer on this computer, for example because the project was opened somewhere its files are not. Press Generate, or add it again with Use my image.', updatedAt: now }
+  })
+  return dropped ? { state: { ...state, jobs }, dropped } : { state, dropped: 0 }
+}
+
 export const retry = (state: QueueState, id: string, now = Date.now()) =>
   // Attempts are immutable submission history. A manual retry starts a new
   // retry cycle, but must never erase a request that may already be billable.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ImageJob } from './generationQueue'
 import {
-  addSupplied, anchorFor, shouldAnchor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
+  addSupplied, anchorFor, dropMissing, shouldAnchor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
   reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
 } from './generationQueue'
 
@@ -247,5 +247,34 @@ describe('which views are made from the approved image', () => {
     expect(shouldAnchor(q, subject('costume-front', 'Wardrobe', 'CHAR-001'))).toBe(false)
     const other = approvedFront('CHAR-001', 'Turnaround', 'front', 'Dust-worn jacket')
     expect(shouldAnchor(other, subject('costume-front', 'Wardrobe'))).toBe(false)
+  })
+})
+
+describe('pictures that are no longer on this computer', () => {
+  const supplied = { assetId: 'CHAR-001', variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', aspect: '3:4', fullBody: true, path: 'C:/gone/mine.png', width: 2000, height: 3000 }
+  it('turns an approved take whose file is gone into a failed one that says why, and stops using it as the anchor', () => {
+    let s = funded(enqueue(emptyQueue(), [req('side', { useAnchor: true })], 1).state)
+    s = addSupplied(s, supplied, 5000).state
+    const side = s.jobs.find((j) => j.viewKey === 'side')!
+    expect(anchorFor(s, side)).toBe('C:/gone/mine.png')
+    const out = dropMissing(s, ['C:/gone/mine.png'], 6000)
+    expect(out.dropped).toBe(1)
+    const front = out.state.jobs.find((j) => j.viewKey === 'front')!
+    expect(front).toMatchObject({ status: 'failed', approved: false, outputPath: undefined })
+    expect(front.error).toMatch(/no longer on this computer/)
+    expect(anchorFor(out.state, side)).toBeUndefined()
+  })
+  it('lets Generate remake the view, because a failed take counts as needing a picture', () => {
+    const s = addSupplied(funded(emptyQueue()), supplied, 5000).state
+    const out = dropMissing(s, ['C:/gone/mine.png']).state
+    const again = enqueue(out, [req('front')], 7000)
+    expect(again.added).toBe(1)
+  })
+  it('leaves files that exist, and takes still in the queue, alone', () => {
+    const s = addSupplied(funded(emptyQueue()), supplied, 5000).state
+    const same = dropMissing(s, ['C:/other.png'])
+    expect(same.dropped).toBe(0)
+    expect(same.state).toBe(s)
+    expect(dropMissing(s, []).dropped).toBe(0)
   })
 })
