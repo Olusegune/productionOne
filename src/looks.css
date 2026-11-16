@@ -191,3 +191,11 @@
 .ph-look { max-height: 300px; }
 .ph-look img { object-position: 50% 25%; }
 @media (max-width: 1100px) { .ph-look { max-height: 190px; } }
+
+/* Character Bible: it was written with fixed dark colours, so in the light theme its tabs and next-step line were pale on pale (1.6 to 2:1). It follows the look and theme now. */
+.character-bible { background: var(--panel-1); border-color: var(--line-1); }
+.character-bible-head p, .character-bible-next span { color: var(--text-2); }
+.character-bible-tabs button { color: var(--text-2); background: var(--panel-2); border-color: var(--line-1); }
+.character-bible-tabs button * { color: inherit; }
+.character-bible-tabs button.on { color: var(--text); border-color: var(--gold-2); }
+.character-bible-next b { color: var(--text); }
