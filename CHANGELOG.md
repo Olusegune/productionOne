@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.40.0 (2026-11-15): the Projects hero
 - **Projects home hero.** The top of Projects is now a hero: the title, a line saying where the production stands ("3 of 8 assets approved · 1 request running"), a progress bar to a delivery package, one big button for the next step ("Continue: Approve a visual style", or "Open Deliver" when everything is done), New / Open / Save, and the look of the film as a picture (the style's own gallery picture, or its palette) with its name and colours. The five count tiles sit under it. Nothing new is stored or invented: it reads the Golden Path and the style.
 - Tests: 442 JS (5 for the summary, 4 for the hero component).
 
