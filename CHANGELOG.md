@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.43.0 (2026-11-16): pictures travel with the project
+- **A saved project carries its pictures.** Save and Save As now also write a folder named like the project (`film_files` next to `film.pone`) holding every picture, sound and clip the project uses. Opening a project on another computer, or from another data folder, finds any missing file in that folder and copies it back into the app, so nothing shows "no image" and nothing fails. Move the `.pone` and its `_files` folder together. Autosave does not copy files; an explicit Save does. Logic and test: `src-tauri/src/desktop.rs`.
+- **Clearer failure when a picture is missing.** A view built from a picture that is no longer on the computer used to fail with "The system cannot find the path specified. (os error 3)". It now names the picture and says to add it again with **Use my image**, then retry.
+- Tests: 493 JS, 79 Rust (1 more).
+
 ## 0.42.0 (2026-11-16): a real story through the real app
 A short film, THE RENEWAL (the Bureau of Infernal Affairs, three characters from the owner's own artwork), was taken through the packaged app with real providers: story, front views from the owner's images, a consistent turnaround, revision compare, a paid ElevenLabs batch, a paid Suno batch, saving and reopening, and the Director's room. It found real bugs; they are fixed here. Report: `docs/LIVE_TEST_THE_RENEWAL_2026-11-16.md`. Sample script and world: `samples/`.
 - **Saved voice per character.** The single audition has **Save as this character's voice** (and Clear); a character with a saved voice opens with that engine and voice chosen. The batch panel fills in each character's saved voice, **Tick them** ticks everyone who has one, and **Remember the chosen voices** saves a whole batch's casting. Saved with the project (`castVoice`). Logic: `src/domain/castVoice.ts`.

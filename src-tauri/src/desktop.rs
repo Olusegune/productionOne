@@ -75,6 +75,83 @@ pub fn with_pone_extension(path: &Path) -> PathBuf {
     }
 }
 
+const MEDIA_EXTENSIONS: [&str; 10] = ["png", "jpg", "jpeg", "webp", "mp3", "wav", "m4a", "flac", "mp4", "webm"];
+
+fn assets_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path().app_data_dir().map(|dir| dir.join("assets")).map_err(|error| error.to_string())
+}
+
+/// The folder that travels with "<name>.pone": "<name>_files", next to it.
+pub fn pictures_folder(project: &Path) -> PathBuf {
+    let stem = project.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "project".into());
+    project.with_file_name(format!("{stem}_files"))
+}
+
+fn is_media_path(text: &str) -> bool {
+    Path::new(text).extension().and_then(|e| e.to_str()).map(|e| MEDIA_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str())).unwrap_or(false)
+}
+
+fn visit_strings(value: &mut serde_json::Value, visit: &mut dyn FnMut(&mut String)) {
+    match value {
+        serde_json::Value::String(text) => visit(text),
+        serde_json::Value::Array(items) => items.iter_mut().for_each(|item| visit_strings(item, visit)),
+        serde_json::Value::Object(map) => map.values_mut().for_each(|item| visit_strings(item, visit)),
+        _ => {}
+    }
+}
+
+/// Copies every picture, sound and clip the project points at (and that lives in this app's assets folder) into "<name>_files" next to the project,
+/// so the saved project can be moved to another computer. Existing identical files are left alone. Returns how many files the project uses.
+pub fn bundle_media(assets: &Path, project: &Path, contents: &str) -> Result<usize, String> {
+    let Ok(mut value) = serde_json::from_str::<serde_json::Value>(contents) else { return Ok(0) };
+    let mut wanted: Vec<PathBuf> = Vec::new();
+    visit_strings(&mut value, &mut |text| {
+        let path = Path::new(text.as_str());
+        if is_media_path(text) && path.is_absolute() && path.starts_with(assets) && path.is_file() && !wanted.iter().any(|w| w == path) {
+            wanted.push(path.to_path_buf());
+        }
+    });
+    if wanted.is_empty() { return Ok(0); }
+    let folder = pictures_folder(project);
+    fs::create_dir_all(&folder).map_err(|error| format!("Could not create {}: {error}", folder.display()))?;
+    for source in &wanted {
+        let Some(name) = source.file_name() else { continue };
+        let target = folder.join(name);
+        let same = fs::metadata(&target).ok().zip(fs::metadata(source).ok()).map(|(a, b)| a.len() == b.len()).unwrap_or(false);
+        if !same { fs::copy(source, &target).map_err(|error| format!("Could not copy {}: {error}", source.display()))?; }
+    }
+    Ok(wanted.len())
+}
+
+/// When a project is opened, any picture path that does not exist on this computer is looked up in "<name>_files" next to the project. A match is copied
+/// into this app's assets folder and the project is pointed at the copy. Returns the (possibly rewritten) text and how many files were relinked.
+pub fn relink_media(assets: &Path, project: &Path, contents: &str) -> (String, usize) {
+    let folder = pictures_folder(project);
+    if !folder.is_dir() { return (contents.to_string(), 0); }
+    let Ok(mut value) = serde_json::from_str::<serde_json::Value>(contents) else { return (contents.to_string(), 0) };
+    let mut count = 0usize;
+    visit_strings(&mut value, &mut |text| {
+        let path = Path::new(text.as_str());
+        if !is_media_path(text) || !path.is_absolute() || path.is_file() { return; }
+        let Some(name) = path.file_name() else { return };
+        let bundled = folder.join(name);
+        if !bundled.is_file() { return; }
+        let target = assets.join(name);
+        if !target.is_file() && (fs::create_dir_all(assets).is_err() || fs::copy(&bundled, &target).is_err()) { return; }
+        *text = target.to_string_lossy().into_owned();
+        count += 1;
+    });
+    if count == 0 { return (contents.to_string(), 0); }
+    (serde_json::to_string(&value).unwrap_or_else(|_| contents.to_string()), count)
+}
+
+fn relinked(app: &tauri::AppHandle, mut opened: OpenedProject) -> OpenedProject {
+    if let Ok(assets) = assets_dir(app) {
+        opened.contents = relink_media(&assets, Path::new(&opened.path), &opened.contents).0;
+    }
+    opened
+}
+
 fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
     let temp = path.with_extension("pone.tmp");
     fs::write(&temp, contents).map_err(|error| format!("Could not write the project: {error}"))?;
@@ -100,14 +177,14 @@ pub async fn open_project_dialog(app: tauri::AppHandle) -> Result<Option<OpenedP
         .blocking_pick_file();
     let Some(file) = picked else { return Ok(None) };
     let path = file.into_path().map_err(|error| error.to_string())?;
-    let opened = read_project(&path)?;
+    let opened = relinked(&app, read_project(&path)?);
     remember(&app, &opened.path);
     Ok(Some(opened))
 }
 
 #[tauri::command]
 pub fn open_project_path(app: tauri::AppHandle, path: String) -> Result<OpenedProject, String> {
-    let opened = read_project(Path::new(&path))?;
+    let opened = relinked(&app, read_project(Path::new(&path))?);
     remember(&app, &opened.path);
     Ok(opened)
 }
@@ -127,6 +204,7 @@ pub async fn save_project_dialog(app: tauri::AppHandle, suggested: String, conte
     write_atomic(&path, &contents)?;
     let saved = path.to_string_lossy().into_owned();
     remember(&app, &saved);
+    bundle_media(&assets_dir(&app)?, &path, &contents).map_err(|error| format!("The project was saved, but its pictures were not copied next to it. {error}"))?;
     Ok(Some(saved))
 }
 
@@ -138,6 +216,7 @@ pub fn save_project_path(app: tauri::AppHandle, path: String, contents: String) 
     }
     write_atomic(&target, &contents)?;
     remember(&app, &path);
+    bundle_media(&assets_dir(&app)?, &target, &contents).map_err(|error| format!("The project was saved, but its pictures were not copied next to it. {error}"))?;
     Ok(path)
 }
 
@@ -343,5 +422,36 @@ mod tests {
         fs::write(&bad, "x").unwrap();
         assert!(read_project(&bad).is_err());
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn pictures_travel_with_the_project_and_are_found_again_on_another_computer() {
+        let root = std::env::temp_dir().join(format!("production-one-media-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let here_assets = root.join("here").join("assets");
+        fs::create_dir_all(&here_assets).unwrap();
+        let picture = here_assets.join("venom_front_v01_yours.png");
+        fs::write(&picture, b"png-bytes").unwrap();
+        let outside = root.join("elsewhere.png");
+        fs::write(&outside, b"not ours").unwrap();
+        let project = root.join("share").join("film.pone");
+        fs::create_dir_all(project.parent().unwrap()).unwrap();
+        let text = serde_json::json!({ "jobs": [{ "outputPath": picture.to_string_lossy() }], "other": outside.to_string_lossy(), "note": "a.png" }).to_string();
+        assert_eq!(bundle_media(&here_assets, &project, &text).unwrap(), 1);
+        assert!(pictures_folder(&project).join("venom_front_v01_yours.png").is_file());
+        assert!(!pictures_folder(&project).join("elsewhere.png").exists(), "only files from the app's own assets folder are copied");
+        // another computer: a different assets folder, and the old path is gone
+        let there_assets = root.join("there").join("assets");
+        fs::remove_file(&picture).unwrap();
+        let (relinked, count) = relink_media(&there_assets, &project, &text);
+        assert_eq!(count, 1);
+        let moved = there_assets.join("venom_front_v01_yours.png");
+        assert!(moved.is_file());
+        let value: serde_json::Value = serde_json::from_str(&relinked).unwrap();
+        assert_eq!(value["jobs"][0]["outputPath"].as_str().unwrap(), moved.to_string_lossy());
+        // a path that exists is left alone, and a project with no folder is untouched
+        assert_eq!(relink_media(&there_assets, &project, &relinked).1, 0);
+        assert_eq!(relink_media(&there_assets, &root.join("none.pone"), &text), (text.clone(), 0));
+        let _ = fs::remove_dir_all(root);
     }
 }

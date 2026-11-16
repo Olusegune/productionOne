@@ -153,3 +153,6 @@ In the single audition, choose an engine and voice, then **Save as this characte
 
 ### Try it with the sample film
 `samples/the-renewal.fountain` is a short film (THE RENEWAL, the Bureau of Infernal Affairs) with three characters, props and four locations; `samples/WORLD_BUREAU_OF_INFERNAL_AFFAIRS.md` describes its world. Paste or import the script and press Analyze to see the reader at work. The project is named from the script's title while it still has a placeholder name.
+
+### Moving a project to another computer
+**Save** (and **Save As**) put a folder next to the project file, named after it (`film_files` beside `film.pone`), with every picture, sound and clip the project uses. Move the `.pone` file and its `_files` folder together. When the project is opened, anything missing on that computer is found in the folder and copied back into the app. Autosave does not copy files; an explicit Save does, so press Save before you copy the project.

@@ -38,7 +38,14 @@ fn fal_size(aspect: &str) -> Result<&'static str, String> {
 }
 
 fn image_data_url(path: &str) -> Result<(String, String), String> {
-    let bytes = fs::read(path).map_err(|error| format!("Could not read reference image: {error}"))?;
+    let bytes = fs::read(path).map_err(|error| {
+        let name = Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_string());
+        if error.kind() == std::io::ErrorKind::NotFound {
+            format!("The picture this view is built from ({name}) is no longer on this computer, for example because the project was opened from another computer or data folder. Add it again with Use my image, then retry.")
+        } else {
+            format!("Could not read reference image {name}: {error}")
+        }
+    })?;
     let mime = match image::guess_format(&bytes).map_err(|error| error.to_string())? {
         image::ImageFormat::Png => "image/png",
         image::ImageFormat::Jpeg => "image/jpeg",
