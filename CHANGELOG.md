@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.43.3 (2026-11-16): missing storyboard frames, clips and reference photos are flagged too
+- **Storyboard frames** whose picture is not on this computer are marked **Picture missing** in the Director's room (they were already taken out of the queue by 0.43.1; the card now says so) and can be remade with Generate frame or Use my own image. Retry is not offered for your own images.
+- **Audio and video clips** whose file is gone show **File missing** with their line or prompt kept, and a **Remove from list** button, instead of a player that cannot play. The flag clears if the file is back.
+- **Reference photos** that are gone are taken off their lists, since a request that sent one would fail.
+- The notice names what was found: pictures, clips and reference photos. Logic and tests: `src/domain/missingFiles.ts`; component `src/components/MissingClip.tsx`.
+- Tests: 507 JS (6 more), 80 Rust.
+
 ## 0.43.2 (2026-11-16): an asset no longer stays Approved when its picture is gone
 - **Fixed: the stale Approved label.** When the picture that made a character, prop or set Approved is not on this computer, the asset went on saying "Approved" and the home page kept counting it. The app now removes that picture from the asset, points it at another approved front view that still has a file if there is one, and otherwise sets the asset back to planned. Assets approved another way, or whose picture is fine, are untouched. The asset's recorded picture is checked along with the queue's. Logic and tests: `src/domain/missingFiles.ts`.
 - Tests: 501 JS (5 more), 80 Rust.

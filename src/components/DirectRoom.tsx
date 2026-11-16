@@ -209,7 +209,7 @@ export function DirectRoom(props: {
                   <button className="dr-thumb" onClick={() => setSelected(s.id)} onDoubleClick={() => at >= 0 && setLightbox(at)} aria-label={`Select ${s.title ?? s.id}`}>
                     {frame?.outputPath ? <img src={convertFileSrc(frame.outputPath)} alt={`Frame for ${s.title ?? s.id}`} /> : <FramePreview shot={s} aspect={aspect} />}
                     <span className="dr-num">{i + 1}</span>
-                    <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.status === "needs-review" ? "Needs review" : "Frame") : "No frame"}</span>
+                    <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.status === "needs-review" ? "Needs review" : frame.status === "failed" && !frame.outputPath ? "Picture missing" : "Frame") : mine.some((j) => j.status === "failed" && /no longer on this computer/.test(j.error ?? "")) ? "Picture missing" : "No frame"}</span>
                     {warns > 0 && <span className="dr-warn" title="Continuity warnings"><AlertTriangle size={13} /> {warns}</span>}
                     {at >= 0 && <span className="dr-zoom" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setLightbox(at); }} onKeyDown={(e) => { if (e.key === "Enter") setLightbox(at); }} aria-label="Open full size"><Maximize2 size={14} /></span>}
                   </button>
@@ -222,7 +222,7 @@ export function DirectRoom(props: {
                     {frame?.status === "needs-review" && (<><button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button><button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button></>)}
                     {!live && frame?.status !== "needs-review" && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
                     {live && <span className="dr-busy">{live.status}…</span>}
-                    {mine.some((j) => j.status === "failed") && !live && <button className="secondary" onClick={() => { const j = mine.find((x) => x.status === "failed"); if (j) setQueue((q) => retry(q, j.id)); }}>Retry</button>}
+                    {mine.some((j) => j.status === "failed" && j.source !== "supplied" && j.prompt) && !live && <button className="secondary" onClick={() => { const j = mine.find((x) => x.status === "failed" && x.source !== "supplied" && x.prompt); if (j) setQueue((q) => retry(q, j.id)); }}>Retry</button>}
                     <div className="dr-more">
                       <button className="icon-mini" aria-haspopup="menu" aria-expanded={menuFor === s.id} aria-label="More actions" onClick={() => setMenuFor((m) => (m === s.id ? null : s.id))}><MoreHorizontal size={16} /></button>
                       {menuFor === s.id && (

@@ -14,6 +14,8 @@ export interface DemoClip {
   kind?: 'video' | 'audio'
   /** For audio: the spoken line or sound brief. */
   line?: string
+  /** Set when the file is not on this computer (a project opened elsewhere). The record stays so the prompt or line is not lost. */
+  missing?: boolean
 }
 
 export type MotionKey = 'turntable' | 'walk' | 'idle' | 'poses' | 'custom' | 'speak' | 'emote' | 'run' | 'drive' | 'startup' | 'door' | 'handle'

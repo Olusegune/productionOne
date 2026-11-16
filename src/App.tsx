@@ -86,7 +86,7 @@ import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
-import { reconcileMissing } from "./domain/missingFiles";
+import { dropMissingRefs, flagMissingClips, reconcileMissing } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -1151,8 +1151,18 @@ export default function App() {
     const fixed = reconcileMissing(analysis.assets, assetOutputs, jobs, missing);
     setAssetOutputs(fixed.outputs);
     if (fixed.demoted.length) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (fixed.demoted.includes(a.id) ? { ...a, status: "planned" } : a)) }));
-    if (n) setNotice(`${n} picture${n === 1 ? " is" : "s are"} not on this computer, so ${n === 1 ? "it was" : "they were"} marked as needing a new picture. Open Design and press Generate, or use Use my image.`);
-  }, Object.values(assetOutputs));
+    const flagged = flagMissingClips(clips, missing);
+    const clipCount = flagged === clips ? 0 : flagged.filter((c) => c.missing).length;
+    if (flagged !== clips) setClips(() => flagged);
+    const refs = dropMissingRefs(assetRefs, missing);
+    if (refs.dropped) setAssetRefs(() => refs.refs);
+    const parts = [
+      n ? `${n} picture${n === 1 ? "" : "s"} (sheet views or storyboard frames)` : "",
+      clipCount ? `${clipCount} audio or video clip${clipCount === 1 ? "" : "s"}` : "",
+      refs.dropped ? `${refs.dropped} reference photo${refs.dropped === 1 ? "" : "s"}` : "",
+    ].filter(Boolean);
+    if (parts.length) setNotice(`Not on this computer: ${parts.join(", ")}. Views and frames are marked as needing a new picture (press Generate, or Use my image); clips say File missing; missing reference photos were taken off their lists.`);
+  }, [...Object.values(assetOutputs), ...clips.map((c) => c.path), ...Object.values(assetRefs).flat()]);
   const onSheetApproved = (job: ImageJob, primary: boolean) => {
     if (!job.outputPath) return;
     const path = job.outputPath;
