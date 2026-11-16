@@ -109,7 +109,8 @@ export interface EngineOption {
 const PROVIDER_NEEDS: Record<ProviderKey, string> = { kie: 'needs a Kie.ai key', google: 'needs a Google key', openai: 'needs an OpenAI key', openrouter: 'needs an OpenRouter key', fal: 'needs a fal.ai key', comfyui: 'start ComfyUI from Local AI' }
 
 /**
- * The few engines worth offering on a view that needs to be made again: Nano Banana, the newest Seedream, the newest GPT Image, and a model on this computer.
+ * The engines worth offering on a view that must be made again: Nano Banana (2.1 and Pro), the newest Seedream, the newest GPT Image, Ideogram Character, Wan 2.7 Image Pro, and a model on this computer.
+ * Every engine is always listed, including the one the view used before: choosing it again is how a view is simply tried once more.
  * `needsReferences` is true when the view is built from the approved front (identity lock): then the image-to-image variant is chosen, and an engine that cannot
  * take references says so, because using it drops the lock. Only models in `catalog` are offered, so a retired id never appears.
  */
@@ -126,8 +127,11 @@ export function quickEngines(catalog: CatalogModel[], configured: Record<string,
   const kieOr = (kieId: string, label: string, fallback: EngineOption | null) => pick(option('kie', kieId, label), fallback)
   const out: Array<EngineOption | null> = [
     pick(option('google', 'gemini-nano-banana-2.1', 'Nano Banana 2.1'), option('kie', 'google/nanobanana-2-1', 'Nano Banana 2.1')),
+    option('google', 'gemini-3-pro-image', 'Nano Banana Pro'),
     kieOr(needsReferences ? 'seedream/5-pro-image-to-image' : 'seedream/5-pro-text-to-image', 'Seedream 5.0 Pro', option('openrouter', 'bytedance-seed/seedream-4.5', 'Seedream 4.5')),
     kieOr(needsReferences ? 'gpt/gpt-image-2-5-flare-image-to-image' : 'gpt/gpt-image-2-5-flare-text-to-image', 'GPT Image 2.5', option('openai', 'gpt-image-1.5', 'GPT Image 1.5')),
+    option('kie', 'ideogram/character', 'Ideogram Character'),
+    option('kie', 'wan/2-7-image-pro', 'Wan 2.7 Image Pro'),
   ]
   const local = catalog.filter((m) => m.provider === 'comfyui')
   const localModel = (needsReferences ? local.find((m) => m.references) : undefined) ?? local[0]

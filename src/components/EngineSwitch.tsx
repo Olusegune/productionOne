@@ -7,7 +7,8 @@ import type { EngineOption } from "../domain/imageCatalog";
  */
 export function EngineSwitch({ options, current, onUse }: { options: EngineOption[]; current: { provider: string; model: string }; onUse: (option: EngineOption) => void }) {
   const group = useId();
-  const choices = options.filter((o) => !(o.provider === current.provider && o.model === current.model));
+  const choices = options;
+  const isCurrent = (o: EngineOption) => o.provider === current.provider && o.model === current.model;
   const firstReady = choices.find((o) => o.available && o.model);
   const [key, setKey] = useState<string>("");
   const picked = choices.find((o) => o.key === key) ?? firstReady;
@@ -21,7 +22,7 @@ export function EngineSwitch({ options, current, onUse }: { options: EngineOptio
           return (
             <label key={o.key} className={`engine-opt${on ? " on" : ""}${usable ? "" : " off"}`}>
               <input type="radio" name={group} value={o.key} checked={on} disabled={!usable} onChange={() => setKey(o.key)} />
-              <div className="engine-text"><b>{o.label}</b>{o.note && <small>{o.note}</small>}</div>
+              <div className="engine-text"><b>{o.label}{isCurrent(o) && <em className="engine-current"> · used before</em>}</b>{o.note && <small>{o.note}</small>}</div>
             </label>
           );
         })}
