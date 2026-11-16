@@ -5,6 +5,7 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
   addCleaned,
+  betterTake,
   addSupplied,
   approve,
   cancel,
@@ -155,7 +156,7 @@ export function SheetStudio(props: {
 
   const jobFor = (viewKey: string) => {
     const mine = queue.jobs.filter((j) => asset && j.assetId === asset.id && j.variant === activeVariant && j.sheetType === activeType && j.viewKey === viewKey);
-    return mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
+    return mine.reduce<ImageJob | undefined>((a, b) => betterTake(a, b), undefined);
   };
 
   const shapeKey = asset ? `${asset.id}|${activeType}` : "";
@@ -276,7 +277,7 @@ export function SheetStudio(props: {
   /** Every sheet of this asset (this look) with at least one picture, newest picture per view. Locations whose sheets hold a single view each have nothing to combine until they are put together like this. */
   const everyItem = asset ? sheetTypes.flatMap((type) => viewsFor(asset.type, type, intensity, usePlan ? plan : undefined).flatMap((v) => {
     const mine = queue.jobs.filter((j) => j.assetId === asset.id && j.variant === activeVariant && j.sheetType === type && j.viewKey === v.key && j.outputPath);
-    const job = mine.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined);
+    const job = mine.reduce<ImageJob | undefined>((a, b) => betterTake(a, b), undefined);
     return job ? [{ job, label: `${type}: ${v.label}` }] : [];
   })) : [];
   const exportEverything = async () => {

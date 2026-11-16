@@ -214,6 +214,16 @@ export function addCleaned(state: QueueState, from: ImageJob, file: { path: stri
   return { state: { ...state, jobs: [...state.jobs, job] }, job }
 }
 
+/**
+ * Which of two takes of the same view stands for it: an approved take beats one that is not, and between equals the newer revision wins.
+ * Without this, keeping an older take (Review, "Keep revision 1") would leave the newer, turned-down one on show.
+ */
+export const betterTake = <T extends { revision: number; approved: boolean; rejected?: boolean }>(a: T | undefined, b: T): T => {
+  if (!a) return b
+  const rank = (j: T) => (j.approved && !j.rejected ? 1 : 0)
+  return rank(b) !== rank(a) ? (rank(b) > rank(a) ? b : a) : b.revision > a.revision ? b : a
+}
+
 /** True while an anchor view exists in the queue but is not approved yet. */
 export function waitingForAnchor(state: QueueState, job: ImageJob): boolean {
   if (!job.useAnchor || anchorFor(state, job)) return false
