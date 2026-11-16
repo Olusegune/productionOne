@@ -18,6 +18,39 @@ export function approvedReference(queue: QueueState, job: ImageJob): ImageJob | 
   return found[0] ?? null
 }
 
+/** Every picture of the same view (same asset, look, sheet and view) that can still be chosen between, newest revision first. */
+export const revisionsOfView = (queue: QueueState, job: ImageJob): ImageJob[] =>
+  queue.jobs
+    .filter((j) => j.assetId === job.assetId && j.variant === job.variant && j.sheetType === job.sheetType && j.viewKey === job.viewKey && j.outputPath && (j.status === 'needs-review' || j.status === 'completed'))
+    .sort((a, b) => b.revision - a.revision || b.updatedAt - a.updatedAt)
+
+/** The other takes of this view, newest first. */
+export const otherRevisions = (queue: QueueState, job: ImageJob): ImageJob[] => revisionsOfView(queue, job).filter((j) => j.id !== job.id)
+
+/** The take to show beside this one by default: the approved one if there is one, otherwise the newest other take. Null when there is only one take. */
+export const defaultCompareTarget = (queue: QueueState, job: ImageJob): ImageJob | null => {
+  const others = otherRevisions(queue, job)
+  return others.find((j) => j.approved) ?? others[0] ?? null
+}
+
+/**
+ * Keep one take of a view and turn the others down. The kept take is approved; every other take of the same view that was approved or waiting for a decision is rejected.
+ * Files are never deleted, so a turned-down take can be found again under "Turned down" and kept later.
+ */
+export function keepRevision(queue: QueueState, keepId: string, now = Date.now()): QueueState {
+  const keep = queue.jobs.find((j) => j.id === keepId)
+  if (!keep || !keep.outputPath || (keep.status !== 'needs-review' && keep.status !== 'completed')) return queue
+  const group = new Set(revisionsOfView(queue, keep).map((j) => j.id))
+  return {
+    ...queue,
+    jobs: queue.jobs.map((j) => {
+      if (!group.has(j.id)) return j
+      if (j.id === keepId) return { ...j, status: 'completed' as const, approved: true, rejected: false, updatedAt: now }
+      return j.approved || j.status === 'needs-review' ? { ...j, status: 'completed' as const, approved: false, rejected: true, updatedAt: now } : j
+    }),
+  }
+}
+
 export interface ChecklistItem {
   id: string
   state: 'ok' | 'todo'

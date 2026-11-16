@@ -127,3 +127,13 @@
 .fg-details li span { display: grid; gap: 2px; min-width: 0; }
 .fg-details li small { color: var(--text-3); font-size: 13px; overflow-wrap: anywhere; }
 :root[data-theme="light"] .fg-count { color: #fff; }
+
+/* Revision compare (0.41) */
+.rv-center { display: grid; gap: 10px; min-width: 0; }
+.rv-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rv-mode > button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--text-2); border: 1px solid var(--line-1); background: var(--panel-1); }
+.rv-mode > button.on { background: var(--panel-2); color: var(--text); border-color: var(--gold-2); }
+.rv-mode > button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.rv-take { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 14px; color: var(--text-2); }
+.rv-take select { height: 36px; }
+.rv-keep { justify-content: center; width: 100%; }

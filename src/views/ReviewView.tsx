@@ -3,10 +3,11 @@ import { AlertTriangle, Check, MessageSquareWarning, X } from "lucide-react";
 import { RealImage } from "../components/RealImage";
 import { approve, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
 import type { AnalysisResult } from "../domain/productionStudio";
-import { approvedReference, awaitingReview, turnedDown } from "../domain/review";
+import { approvedReference, awaitingReview, defaultCompareTarget, keepRevision, otherRevisions, turnedDown } from "../domain/review";
 import { primaryViewKeys } from "../domain/sheetSpecs";
 
 type Filter = "waiting" | "turned-down";
+type CompareMode = "reference" | "revisions";
 
 /**
  * Review: one picture at a time, large, next to the approved reference it has to match. Technical checks are shown separately from the creative decision.
@@ -29,6 +30,11 @@ export function ReviewView(props: {
   const list = filter === "waiting" ? waiting : down;
   const job = list.find((j) => j.id === pickedId) ?? list[0];
   const reference = job ? approvedReference(queue, job) : null;
+  const others = useMemo(() => (job ? otherRevisions(queue, job) : []), [queue, job]);
+  const [mode, setMode] = useState<CompareMode>("reference");
+  const [takeId, setTakeId] = useState<string | null>(null);
+  const take = others.find((j) => j.id === takeId) ?? (job ? defaultCompareTarget(queue, job) : null);
+  const comparing = mode === "revisions" && !!take;
   const assetName = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id;
 
   const decideNext = (from: ImageJob) => {
@@ -46,6 +52,14 @@ export function ReviewView(props: {
     setQueue((q) => reject(q, j.id));
     notify(thenOpen ? `${j.label} turned down. Change the notes on the sheet, then generate again when you are ready.` : `${j.label} rejected. The file is kept; a new revision can be generated later.`);
     if (thenOpen) openAsset(j.assetId, j.sheetType); else decideNext(j);
+  };
+
+  const doKeep = (keep: ImageJob) => {
+    if (!job) return;
+    setQueue((q) => keepRevision(q, keep.id));
+    onApproved(keep, primaryViewKeys.includes(keep.viewKey));
+    notify(`${assetName(keep.assetId)} · ${keep.label}: kept revision ${keep.revision}. The other takes were turned down and their files are kept.`);
+    decideNext(job);
   };
 
   return (
@@ -76,18 +90,50 @@ export function ReviewView(props: {
             ))}
           </ul>
 
-          <div className="rv-compare" aria-label="Comparison">
-            {reference && (
-              <figure>
-                <figcaption><span className="rv-tag ok">Approved reference</span><small>{reference.label} · revision {reference.revision}</small></figcaption>
-                <div className="rv-image"><RealImage path={reference.outputPath} label={`Approved ${reference.label} of ${assetName(reference.assetId)}`} empty="No picture" /></div>
-              </figure>
+          <div className="rv-center">
+            {others.length > 0 && (
+              <div className="rv-mode" role="group" aria-label="Compare with">
+                <button className={!comparing ? "on" : ""} aria-pressed={!comparing} onClick={() => setMode("reference")}>Approved reference</button>
+                <button className={comparing ? "on" : ""} aria-pressed={comparing} onClick={() => setMode("revisions")}>Other takes ({others.length})</button>
+                {comparing && (
+                  <label className="rv-take"><span>Compare with</span>
+                    <select value={take?.id} onChange={(e) => setTakeId(e.target.value)}>
+                      {others.map((o) => <option key={o.id} value={o.id}>Revision {o.revision}{o.approved ? " (approved)" : o.rejected ? " (turned down)" : " (waiting)"}</option>)}
+                    </select></label>
+                )}
+              </div>
             )}
-            <figure>
-              <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
-              <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
-            </figure>
-            {!reference && <p className="rv-note">No approved reference exists for {assetName(job.assetId)} yet, so there is nothing to compare against.</p>}
+            <div className="rv-compare" aria-label="Comparison">
+              {comparing && take ? (
+                <>
+                  <figure>
+                    <figcaption><span className={`rv-tag${take.approved ? " ok" : ""}`}>{take.approved ? "Approved" : take.rejected ? "Turned down" : "Waiting"} · revision {take.revision}</span><small>{take.label}</small></figcaption>
+                    <div className="rv-image"><RealImage path={take.outputPath} label={`${take.label} of ${assetName(take.assetId)}, revision ${take.revision}`} empty="No picture" /></div>
+                    <button className="secondary rv-keep" onClick={() => doKeep(take)}><Check size={15} aria-hidden="true" /> Keep revision {take.revision}</button>
+                  </figure>
+                  <figure>
+                    <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
+                    <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
+                    <button className="secondary rv-keep" onClick={() => doKeep(job)}><Check size={15} aria-hidden="true" /> Keep revision {job.revision}</button>
+                  </figure>
+                  <p className="rv-note">Keeping one approves it and turns the other down. Nothing is deleted and nothing is generated.</p>
+                </>
+              ) : (
+                <>
+                  {reference && (
+                    <figure>
+                      <figcaption><span className="rv-tag ok">Approved reference</span><small>{reference.label} · revision {reference.revision}</small></figcaption>
+                      <div className="rv-image"><RealImage path={reference.outputPath} label={`Approved ${reference.label} of ${assetName(reference.assetId)}`} empty="No picture" /></div>
+                    </figure>
+                  )}
+                  <figure>
+                    <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
+                    <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
+                  </figure>
+                  {!reference && <p className="rv-note">No approved reference exists for {assetName(job.assetId)} yet, so there is nothing to compare against.</p>}
+                </>
+              )}
+            </div>
           </div>
 
           <aside className="rv-side" aria-label="Decision">
