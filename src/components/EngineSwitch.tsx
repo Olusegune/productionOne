@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { EngineOption } from "../domain/imageCatalog";
 
 /**
- * On a view that failed or is waiting: choose which engine makes it, then press Use. Nothing is sent by choosing; the button is the confirming click
- * (the spending limit still applies). Engines that are not ready say why, and one that cannot hold the character's identity says so.
+ * On a view that failed or is waiting: choose which engine makes it, then press Use. The choices are an inline list, not a pop-up, so every engine and the reason
+ * it cannot be used is readable at once. Nothing is sent by choosing; the button is the confirming click (the spending limit still applies).
  */
 export function EngineSwitch({ options, current, onUse }: { options: EngineOption[]; current: { provider: string; model: string }; onUse: (option: EngineOption) => void }) {
+  const group = useId();
   const choices = options.filter((o) => !(o.provider === current.provider && o.model === current.model));
   const firstReady = choices.find((o) => o.available && o.model);
   const [key, setKey] = useState<string>("");
@@ -13,16 +14,19 @@ export function EngineSwitch({ options, current, onUse }: { options: EngineOptio
   if (!choices.length) return null;
   return (
     <div className="engine-switch">
-      <label>
-        <span className="sr-only">Make this view with</span>
-        <select value={picked?.key ?? ""} onChange={(e) => setKey(e.target.value)} aria-label="Make this view with">
-          {choices.map((o) => (
-            <option key={o.key} value={o.key} disabled={!o.available || !o.model}>{o.label}{o.note ? ` (${o.note})` : ""}</option>
-          ))}
-        </select>
-      </label>
+      <div className="engine-list" role="radiogroup" aria-label="Make this view with">
+        {choices.map((o) => {
+          const usable = o.available && !!o.model;
+          const on = picked?.key === o.key;
+          return (
+            <label key={o.key} className={`engine-opt${on ? " on" : ""}${usable ? "" : " off"}`}>
+              <input type="radio" name={group} value={o.key} checked={on} disabled={!usable} onChange={() => setKey(o.key)} />
+              <div className="engine-text"><b>{o.label}</b>{o.note && <small>{o.note}</small>}</div>
+            </label>
+          );
+        })}
+      </div>
       <button className="secondary" disabled={!picked || !picked.available || !picked.model} onClick={() => picked && onUse(picked)}>Use {picked?.label.replace(/^On this computer: /, "") ?? "this engine"}</button>
-      {picked?.note && picked.available && <small className="engine-note">{picked.note}</small>}
     </div>
   );
 }

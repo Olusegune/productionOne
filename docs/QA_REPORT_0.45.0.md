@@ -9,7 +9,7 @@ Go for the option. It was tested in unit tests and in the real app up to the pro
 | Check | Result |
 |---|---|
 | Types: `npx tsc -b` | Pass |
-| JS tests | 537 pass (13 new: colour wording, the new backdrop line, the prompt) |
+| JS tests | 538 pass (14 new: colour wording, the new backdrop line, the prompt, the engine list) |
 | Rust tests | 83 pass, 1 ignored (2 new: backdrop colour from the edge of a picture) |
 | `cargo clippy --all-targets -- -D warnings` | Clean |
 | `npm audit` / `rafter secrets .` | 0 vulnerabilities / clean |
@@ -22,6 +22,13 @@ Go for the option. It was tested in unit tests and in the real app up to the pro
 
 ## Real app (separate copy of the release build)
 A picture with a teal background (about #1e4a52) and a figure in the middle was added as Venomspur's front view. The Backdrop list showed the four choices; with the new one selected, the panel first said "Needs an approved front view. Until there is one, flat grey is used.", and after the front was added said "Keeps your front view's backdrop (about #1e4a52)." 0 console errors. The test picture is a plain drawing made for the test, not the owner's art.
+
+## Drop-down lists (owner's report: the engine drop-down looked ugly)
+- **Cause:** the app's fields have a translucent fill, so the pop-up list of every native `<select>` blended it over white and came out pale grey; one very long label also stretched the list.
+- **Fix:** every drop-down list gets a solid, themed colour (dark and light looks) in `looks.css`, and disabled choices are dimmed. The engine choice on a view that must be made again is now an inline list (radio rows with the reason an engine cannot be used shown), not a pop-up. Three long labels were shortened (video purpose shows its short name with the full text on hover; the draft casting lines keep their "a native speaker must check" warning in fewer words).
+- **Audit in the real app** (all six workspaces and the character tabs, 96 to 102 drop-downs): every option now has a solid background (rgb(38, 32, 25) in the dark Studio look) and a dark colour scheme; the longest label went from 74 characters to 60.
+- **Engine list in the real app:** four compact rows (38 px, 57 px with a note), selected row highlighted, "no identity lock" note visible, no pop-up.
+- **Not seen:** the browser's own pop-up list is drawn by the operating system and is not in the page, so I could not screenshot it; I checked the computed colours of every option instead. The owner should confirm the list looks right. The light theme was checked by its CSS only, not looked at.
 
 ## Not checked
 - **No picture was generated with the option.** Whether a model keeps the colour and lighting, and whether it still keeps the figure's identity, depends on the model and was not tried (no paid run). The earlier live test noticed the mismatch (teal front, grey views); this option addresses it in the prompt only.

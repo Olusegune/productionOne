@@ -42,10 +42,10 @@ export const castingLineChoices: ReadonlyArray<{ value: CastingLineKind; label: 
   { value: 'pangram-es', label: 'Pangram, Spanish: every letter (have a native speaker check)' },
   { value: 'pangram-fr', label: 'Pangram, French: every letter (have a native speaker check)' },
   { value: 'pangram-de', label: 'Pangram, German: every letter (have a native speaker check)' },
-  { value: 'draft-pcm', label: 'DRAFT casting line, Nigerian Pidgin (a native speaker must check it)' },
-  { value: 'draft-yo', label: 'DRAFT casting line, Yoruba (a native speaker must check it)' },
-  { value: 'draft-ig', label: 'DRAFT casting line, Igbo (a native speaker must check it)' },
-  { value: 'draft-ha', label: 'DRAFT casting line, Hausa (a native speaker must check it)' },
+  { value: 'draft-pcm', label: 'DRAFT line, Nigerian Pidgin: a native speaker must check' },
+  { value: 'draft-yo', label: 'DRAFT line, Yoruba: a native speaker must check' },
+  { value: 'draft-ig', label: 'DRAFT line, Igbo: a native speaker must check' },
+  { value: 'draft-ha', label: 'DRAFT line, Hausa: a native speaker must check' },
   { value: 'range', label: 'Emotional range: curious, playful, whispered, shouted' },
 ]
 

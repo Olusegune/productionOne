@@ -12,26 +12,32 @@ const options = [
 ]
 
 describe('choosing another engine for a view', () => {
-  it('lists the engines, leaves out the one already in use, and disables those that are not ready', () => {
+  it('lists the engines inline, leaves out the one already in use, and disables those that are not ready, with the reason visible', () => {
     render(<EngineSwitch options={options} current={{ provider: 'google', model: 'nano' }} onUse={() => {}} />)
-    const select = screen.getByLabelText('Make this view with') as HTMLSelectElement
-    const labels = [...select.options].map((o) => o.textContent)
-    expect(labels.some((l) => l?.startsWith('Nano Banana'))).toBe(false)
-    expect(labels).toContain('GPT Image 1.5 (needs an OpenAI key)')
-    expect([...select.options].find((o) => o.value === 'openai|gpt')?.disabled).toBe(true)
+    const radios = screen.getAllByRole('radio') as HTMLInputElement[]
+    expect(radios.map((r) => r.value)).toEqual(['kie|seed', 'openai|gpt', 'comfyui|sdxl'])
+    expect(radios.find((r) => r.value === 'openai|gpt')?.disabled).toBe(true)
+    expect(screen.getByText('needs an OpenAI key')).toBeTruthy()
+    expect(document.querySelector('select')).toBeNull()
   })
   it('sends nothing until Use is pressed, then hands over the chosen engine', () => {
     const onUse = vi.fn()
     render(<EngineSwitch options={options} current={{ provider: 'google', model: 'nano' }} onUse={onUse} />)
     expect(onUse).not.toHaveBeenCalled()
-    fireEvent.change(screen.getByLabelText('Make this view with'), { target: { value: 'comfyui|sdxl' } })
-    expect(document.querySelector('.engine-note')?.textContent).toMatch(/no identity lock/)
+    fireEvent.click(screen.getByRole('radio', { name: /On this computer: SDXL/ }))
+    expect(screen.getByText(/no identity lock/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Use SDXL' }))
     expect(onUse).toHaveBeenCalledTimes(1)
     expect(onUse.mock.calls[0][0]).toMatchObject({ provider: 'comfyui', model: 'sdxl' })
   })
   it('selects the first ready engine by default', () => {
     render(<EngineSwitch options={options} current={{ provider: 'google', model: 'nano' }} onUse={() => {}} />)
+    expect((screen.getByRole('radio', { name: /Seedream 5.0 Pro/ }) as HTMLInputElement).checked).toBe(true)
     expect(screen.getByRole('button', { name: 'Use Seedream 5.0 Pro' })).toBeTruthy()
+  })
+  it('does not let a disabled engine be used', () => {
+    const onUse = vi.fn()
+    render(<EngineSwitch options={[options[2]]} current={{ provider: 'google', model: 'nano' }} onUse={onUse} />)
+    expect((screen.getByRole('button', { name: /Use/ }) as HTMLButtonElement).disabled).toBe(true)
   })
 })
