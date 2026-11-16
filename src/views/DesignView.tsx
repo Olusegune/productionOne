@@ -7,6 +7,7 @@ import { CharacterBible } from "../components/CharacterBible";
 import { SheetStudio } from "../components/SheetStudio";
 import { MotionDemo } from "../components/MotionDemo";
 import { VoiceAudition } from "../components/VoiceAudition";
+import { BatchAudio } from "../components/BatchAudio";
 import { type ProviderId } from "../domain/providerRegistry";
 import { Eyebrow } from "../components/Eyebrow";
 import { Library, Copy, Plus, ListOrdered, Pause, Play, Download } from "lucide-react";
@@ -169,6 +170,16 @@ export function DesignView(p: DesignViewProps) {
               providersVersion={Number(providersOpen)}
               openProviders={(id) => { if (id) setCredentialProvider(id as ProviderId); setProvidersOpen(true); }}
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
+            />
+            <BatchAudio
+              assets={analysis.assets}
+              story={analysis.story}
+              clips={clips}
+              setClips={setClips}
+              desktop={isTauri}
+              notify={setNotice}
+              providersVersion={Number(providersOpen)}
+              openProviders={(id) => { if (id) setCredentialProvider(id as ProviderId); setProvidersOpen(true); }}
             />
             </div>
             <details className="po-classic">
