@@ -75,6 +75,20 @@ export function mergeAnalysis(previous: AnalysisResult, next: AnalysisResult): A
   return { ...next, assets }
 }
 
+/** The sample project and an unnamed one carry placeholder names. */
+const placeholderTitles = new Set(['', 'the last horizon', 'untitled production', 'untitled'])
+
+/**
+ * A new script with a title line names the project, but only while the project still has a placeholder name. A name the person chose is never replaced.
+ * Returns the new name, or undefined to leave it alone.
+ */
+export function titleFromScript(current: string, scriptTitle: string | undefined): string | undefined {
+  const next = scriptTitle?.replace(/\s+/g, ' ').trim()
+  if (!next || !placeholderTitles.has(current.trim().toLowerCase()) || next.toLowerCase() === current.trim().toLowerCase()) return undefined
+  // A title typed in capitals reads better as a name: THE RENEWAL becomes The Renewal.
+  return next === next.toUpperCase() && /[A-Z]/.test(next) ? next.toLowerCase().replace(/(^|[\s-])([a-z])/g, (_m, a: string, b: string) => a + b.toUpperCase()) : next
+}
+
 export function analyzeScript(text: string): AnalysisResult {
   const story = parseStory(text)
   const scenes: ScriptScene[] = story.scenes.map((scene) => ({

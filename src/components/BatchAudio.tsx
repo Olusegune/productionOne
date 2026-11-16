@@ -127,11 +127,12 @@ export function BatchAudio(props: {
               path = await invoke<string>('speak_http', { base, model: provider.defaultModel, voice: v.voice, text: v.line, speed: 1, extra: provider.languages ? { language: 'en', exaggeration: 0.5 } : undefined, outputName })
             } else if (providerId === 'elevenlabs') path = await invoke<string>('speak_elevenlabs', { voiceId: v.voice, modelId, text: v.line, stability: 0.5, speed: 1, outputName })
             else path = await invoke<string>('speak_voicekiller', { voiceName: v.voice, script: v.line, instructions: asset.soundDirection ?? '', outputName })
-            const label = provider.transport === 'windows' ? `Windows voice · ${v.voice || 'default'}` : `${provider.label} · ${v.voice || 'default voice'}`
+            const shown = provider.transport === 'cloud' ? (cloud.find((c) => (providerId === 'voicekiller' ? c.name : c.id) === v.voice)?.name ?? v.voice) : v.voice
+            const label = provider.transport === 'windows' ? `Windows voice · ${v.voice || 'default'}` : `${provider.label} · ${shown || 'default voice'}`
             addClip(asset, label, path, voiceBrief(asset, v.line), v.line)
           } else {
             const m = item as (typeof musicItems)[number]
-            const tracks = await invoke<Track[]>('make_music', { request: { title: m.title, style: m.style, instrumental: true, lyrics: '', negativeTags: '', model: 'V6_MINI', durationSeconds: 45, vocalGender: '', outputName: `${m.assetId}_${m.id.replace(/^MB-/, '')}_batch` } })
+            const tracks = await invoke<Track[]>('make_music', { request: { title: m.title, style: m.style, instrumental: true, lyrics: '', negativeTags: '', model: 'V6_MINI', durationSeconds: 45, vocalGender: '', outputName: `${m.assetId}_${m.fileTag}_batch` } })
             for (const t of tracks) addClip({ id: m.assetId, name: m.assetName }, `Suno V6_MINI · ${m.label}`, t.path, m.style, t.title || m.title, Math.round(t.duration))
           }
           made += 1
