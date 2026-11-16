@@ -156,3 +156,6 @@ In the single audition, choose an engine and voice, then **Save as this characte
 
 ### Moving a project to another computer
 **Save** (and **Save As**) put a folder next to the project file, named after it (`film_files` beside `film.pone`), with every picture, sound and clip the project uses. Move the `.pone` file and its `_files` folder together. When the project is opened, anything missing on that computer is found in the folder and copied back into the app. Autosave does not copy files; an explicit Save does, so press Save before you copy the project.
+
+### New views that keep the backdrop of your own front view
+On a sheet, **Backdrop** can be **Same as my front view (colour and lighting)**. The app reads the colour of your approved front view's background and asks every new view to keep it: the same colour, the same soft lighting, nothing added. It needs an approved front view; until there is one, flat grey is used. Views already made keep their own backdrop. **Flat grey**, **Flat white** and **Match the reference image (flat tone)** are still there when you want one plain field for every view.

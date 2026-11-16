@@ -205,3 +205,14 @@
 :root[data-theme="light"] .character-bible-tabs .state-approved .bible-state { color: #1f6b4a; opacity: 1; }
 :root[data-theme="light"] .notice { color: #14392a; background: rgba(31, 107, 74, .12); border-color: rgba(31, 107, 74, .35); }
 :root[data-theme="light"] .notice button { color: #14392a; min-height: 28px; padding: 0 10px; }
+
+/* ---------- Drop-down lists (every <select>) ----------
+   The fields have a translucent fill, so the pop-up list used to blend it over white and come out pale grey. The list gets a solid, themed colour, and a long
+   label can no longer stretch it: long text is cut short in the field and wraps in the list where the browser allows. */
+select { color-scheme: dark; }
+select option, select optgroup { background-color: var(--panel-2, #1c2330); color: var(--text, #eef2f8); font-size: 14px; padding: 6px 10px; }
+select option:disabled { color: var(--text-3, #98a4b8); }
+:root[data-theme="light"] select { color-scheme: light; }
+:root[data-theme="light"] select option, :root[data-theme="light"] select optgroup { background-color: #ffffff; color: #15181c; }
+:root[data-theme="light"] select option:disabled { color: #7a828a; }
+select { max-width: 100%; }

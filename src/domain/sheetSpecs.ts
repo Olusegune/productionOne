@@ -15,17 +15,25 @@ export interface ViewSpec {
 }
 
 /** Common delivery and reference-sheet canvases, including cinema, broadcast, print and social formats. */
-export type Backdrop = 'gray' | 'white' | 'match'
+import { describeColour } from './backdropColour'
+
+export type Backdrop = 'gray' | 'white' | 'match' | 'front'
 export const backdropChoices: ReadonlyArray<{ value: Backdrop; label: string }> = [
   { value: 'gray', label: 'Flat grey (default)' },
   { value: 'white', label: 'Flat white' },
-  { value: 'match', label: 'Match the reference image' },
+  { value: 'match', label: 'Match the reference image (flat tone)' },
+  { value: 'front', label: 'Same as my front view (colour and lighting)' },
 ]
 
 /** One backdrop rule for every view of a sheet, so the views agree with each other. A flat field, not a room: nothing to stand on, no cast shadow, nothing spilling onto it. */
-export function backdropLine(backdrop: Backdrop = 'gray', anchored = false): string {
+export function backdropLine(backdrop: Backdrop = 'gray', anchored = false, backdropHex = ''): string {
   const tail = 'no gradient, no vignette, no floor, no wall, no horizon, and no cast or contact shadow, glow or colour spill anywhere on it. Even, shadowless lighting on the subject, no text, no labels, no borders, no watermark.'
   if (backdrop === 'white') return `The background is one flat, uniform pure-white field from corner to corner: ${tail}`
+  if (backdrop === 'front' && anchored) {
+    const word = backdropHex ? describeColour(backdropHex) : ''
+    const colour = backdropHex ? ` Its colour is ${word ? `${word}, ` : ''}about ${backdropHex}.` : ''
+    return `The background is exactly the background of the attached reference image: the same colour, the same soft studio lighting and the same gentle falloff across the frame.${colour} Add nothing to it: no props, no floor line, no horizon, no text, no labels, no borders, no watermark.`
+  }
   if (backdrop === 'match' && anchored) return `The background is the same single flat, plain tone as the attached reference image, uniform from corner to corner: ${tail}`
   return `The background is one flat, uniform neutral mid-grey field (about 18% grey) from corner to corner: ${tail}`
 }
@@ -149,6 +157,8 @@ export interface PromptInput {
   anchored?: boolean
   /** The flat background for the whole sheet. Defaults to flat grey. */
   backdrop?: Backdrop
+  /** For the 'front' backdrop: the colour read from the front view's own background, e.g. "#1e4a52". */
+  backdropHex?: string
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -160,7 +170,7 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
   return [facts ? `Confirmed character identity: ${facts}.` : '', never ? `Must never drift: ${never}.` : ''].filter(Boolean).join(' ')
 }
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
@@ -169,7 +179,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     anchored ? anchoredPromptLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,
-    backdropLine(backdrop, anchored),
+    backdropLine(backdrop, anchored, backdropHex),
     asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
     'Exactly ONE single image of ONE subject in ONE view. Do not make a grid, contact sheet, collage, split-screen, triptych or several views side by side; no repeated copies of the subject.',
     view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',

@@ -455,6 +455,38 @@ pub fn qa_pixels(img: &image::RgbImage, full_body: bool) -> ImageQa {
     ImageQa { width: w, height: h, mean_luma: mean, luma_spread: spread, subject_touches_top: touches_top, subject_touches_bottom: touches_bottom, subject_touches_sides: touches_sides, notes }
 }
 
+/// The colour of a picture's background, as the middle value of the pixels along its outer edge (top, left and right, and the bottom corners), so a figure
+/// standing in the middle, or touching one edge, does not change it. Returns "#rrggbb".
+pub fn border_colour(img: &image::RgbImage) -> String {
+    let (w, h) = img.dimensions();
+    let band = ((w.min(h) as f32 * 0.06).round() as u32).max(1);
+    let mut channels: [Vec<u8>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+    for y in 0..h {
+        for x in 0..w {
+            let on_top = y < band;
+            let on_side = x < band || x >= w - band;
+            let on_bottom_corner = y >= h - band && (x < w / 5 || x >= w - w / 5);
+            if on_top || on_side || on_bottom_corner {
+                let p = img.get_pixel(x, y);
+                for c in 0..3 { channels[c].push(p[c]); }
+            }
+        }
+    }
+    let mid = |v: &mut Vec<u8>| { v.sort_unstable(); v.get(v.len() / 2).copied().unwrap_or(0) };
+    let [mut r, mut g, mut b] = channels;
+    format!("#{:02x}{:02x}{:02x}", mid(&mut r), mid(&mut g), mid(&mut b))
+}
+
+/// The background colour of a picture this app saved, so a new view can be asked to keep the same backdrop as the person's own front view.
+#[tauri::command]
+pub fn backdrop_colour(app: tauri::AppHandle, path: String) -> Result<String, String> {
+    let file = inside_assets(&app, &path)?;
+    let img = image::open(&file).map_err(|e| format!("Could not read the picture: {e}"))?;
+    let (w, h) = img.dimensions();
+    if w < 16 || h < 16 { return Err("The image is too small to read a backdrop from".into()); }
+    Ok(border_colour(&img.to_rgb8()))
+}
+
 #[tauri::command]
 pub fn qa_image(app: tauri::AppHandle, path: String, full_body: bool) -> Result<ImageQa, String> {
     let file = inside_assets(&app, &path)?;
@@ -466,6 +498,22 @@ pub fn qa_image(app: tauri::AppHandle, path: String, full_body: bool) -> Result<
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn reads_the_backdrop_colour_from_the_edge_and_ignores_a_figure_in_the_middle() {
+        let teal = image::Rgb([30u8, 74, 82]);
+        let mut img = image::RgbImage::from_pixel(200, 300, teal);
+        for y in 60..300 { for x in 70..130 { img.put_pixel(x, y, image::Rgb([240, 240, 240])); } }
+        assert_eq!(super::border_colour(&img), "#1e4a52");
+    }
+
+    #[test]
+    fn a_figure_touching_the_bottom_edge_does_not_change_the_backdrop() {
+        let grey = image::Rgb([128u8, 128, 128]);
+        let mut img = image::RgbImage::from_pixel(120, 120, grey);
+        for y in 20..120 { for x in 50..70 { img.put_pixel(x, y, image::Rgb([0, 0, 0])); } }
+        assert_eq!(super::border_colour(&img), "#808080");
+    }
+
     #[test]
     fn says_which_files_are_not_on_this_computer() {
         let dir = std::env::temp_dir().join(format!("po-missing-{}", std::process::id()));

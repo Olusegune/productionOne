@@ -165,7 +165,7 @@ export function DeliveryCenter(props: {
             <label><span>Video model · motion tests and shot delivery</span>
               <select value={model} onChange={(e) => setModel(e.target.value as VideoModel)}>{Object.keys(videoPresets).map((m) => <option key={m}>{m}</option>)}</select></label>
             <label><span>Video purpose</span>
-              <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+              <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key} title={label}>{label.split(" · ")[0]}</option>)}</select></label>
             <label><span>Video aspect ratio</span><select aria-label="Choose video aspect ratio" value={videoAspect} onChange={(e) => setVideoAspect(e.target.value)}>{preset.aspectRatios.map(ratio => <option key={ratio}>{ratio}</option>)}</select></label>
           </div>
           <div className="video-model-card"><b>{preset.provider} · {preset.model} · {videoAspect}</b><span>{preset.tasks.join(' · ')}</span><small>{preset.note}</small></div>
@@ -205,7 +205,7 @@ export function DeliveryCenter(props: {
             <label><span>Video model · motion tests and shot delivery</span>
               <select value={model} onChange={(e) => setModel(e.target.value as VideoModel)}>{Object.keys(videoPresets).map((m) => <option key={m}>{m}</option>)}</select></label>
             <label><span>Video purpose</span>
-              <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+              <select aria-label="Choose video purpose" value={videoPurpose} onChange={(e) => setVideoPurpose(e.target.value as VideoPurpose)}>{Object.entries(videoPurposes).map(([key, label]) => <option key={key} value={key} title={label}>{label.split(" · ")[0]}</option>)}</select></label>
             <label><span>Video aspect ratio</span><select aria-label="Choose video aspect ratio" value={videoAspect} onChange={(e) => setVideoAspect(e.target.value)}>{preset.aspectRatios.map(ratio => <option key={ratio}>{ratio}</option>)}</select></label>
           </div>
           <div className="video-model-card"><b>{preset.provider} · {preset.model} · {videoAspect}</b><span>{preset.tasks.join(' · ')}</span><small>{preset.note}</small></div>
