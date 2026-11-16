@@ -14,7 +14,8 @@
 :root[data-look="cinematic"] .sv-head h2, :root[data-look="cinematic"] .rv-head h2, :root[data-look="cinematic"] .sg-head h2 { font-size: 34px; line-height: 1.1; }
 :root[data-look="cinematic"] .po-wordmark { font-size: 18px; white-space: nowrap; }
 :root[data-look="cinematic"] .panel, :root[data-look="cinematic"] .sv-source, :root[data-look="cinematic"] .sv-breakdown, :root[data-look="cinematic"] .sg, :root[data-look="cinematic"] .rv-side, :root[data-look="cinematic"] .fg-group, :root[data-look="cinematic"] .ei-row { border-radius: 16px; }
-:root[data-look="cinematic"] .po-shell > .po-top { background: linear-gradient(180deg, #1d1915, #14110f); }
+:root[data-look="cinematic"]:not([data-theme="light"]) .po-shell > .po-top { background: linear-gradient(180deg, #1d1915, #14110f); }
+:root[data-look="cinematic"][data-theme="light"] .po-shell > .po-top { background: linear-gradient(180deg, #fbf9f4, #f1ece2); }
 :root[data-look="cinematic"] .script-editor { font-size: 16px; line-height: 1.8; }
 
 :root[data-look="cinematic"][data-theme="light"] {
@@ -154,3 +155,14 @@
 :root[data-theme="light"] i.approved, :root[data-theme="light"] .status.approved, :root[data-theme="light"] .graph-list i.approved, :root[data-theme="light"] .dc-caps li.ok svg { color: #2f6b52; }
 :root[data-theme="light"] .dc-stats dd.bad { color: #a3422e; }
 :root[data-theme="light"] .dc-caps li.bad { color: #8a5a1c; }
+
+/* Older screens: surfaces written with fixed graphite colours now follow the look's own tokens (Cinematic and Futurist; Studio keeps its original colours). */
+:root:not([data-look="studio"]) .provider-modal { background: var(--panel-1); border-color: var(--line-1); }
+:root:not([data-look="studio"]) .provider-modal article { background: var(--panel-2); border-color: var(--line-1); }
+:root:not([data-look="studio"]) .provider-modal select, :root:not([data-look="studio"]) .provider-modal input,
+:root:not([data-look="studio"]) .style-browser-trigger, :root:not([data-look="studio"]) .prompt-box, :root:not([data-look="studio"]) .asset-prompt-editor { background: var(--bg); border-color: var(--line-1); color: var(--text); }
+:root:not([data-look="studio"]) .prompt-box { background: var(--panel-1); }
+:root:not([data-look="studio"]) .po-cost-pop, :root:not([data-look="studio"]) .golden-dot, :root:not([data-look="studio"]) .model-match, :root:not([data-look="studio"]) .video-model-card { background: var(--panel-2); border-color: var(--line-1); }
+:root:not([data-look="studio"]) .asset-browser button.selected { background: color-mix(in srgb, var(--gold-2) 10%, var(--panel-2)); border-color: color-mix(in srgb, var(--gold-2) 45%, var(--line-1)); color: var(--text); }
+/* Light theme: the "Not generated" tile sits on a grey wash over a dark thumbnail, so its label needs the full text colour. */
+:root[data-theme="light"] .thumb-empty, :root[data-theme="light"] .thumb-empty span { color: var(--text); }
