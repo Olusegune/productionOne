@@ -47,6 +47,7 @@ pub fn export_contact_sheet(app: tauri::AppHandle, title: String, cells: Vec<She
     // Only images this app saved are read, so a path from the page cannot pull in any other file.
     let mut images = Vec::new();
     for cell in &cells {
+        if !std::path::Path::new(&cell.path).is_file() { return Err(format!("{} is no longer on this computer, so the sheet cannot be made. Remake it, then export again.", cell.label)); }
         let path = crate::providers::inside_assets(&app, &cell.path)?;
         images.push(image::open(&path).map_err(|e| format!("Could not read {}: {e}", cell.label))?);
     }
