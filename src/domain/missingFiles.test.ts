@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dropMissingRefs, flagMissingClips, reconcileMissing } from './missingFiles'
+import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from './missingFiles'
 
 const job = (assetId: string, viewKey: string, outputPath: string | undefined, revision = 1, approved = true) => ({ assetId, viewKey, approved, outputPath, revision })
 
@@ -57,5 +57,25 @@ describe('reference photos that are gone', () => {
     const out = dropMissingRefs(refs, ['C:/x.png'])
     expect(out.refs).toBe(refs)
     expect(out.dropped).toBe(0)
+  })
+})
+
+describe('shots whose storyboard frame is gone', () => {
+  const shots = [{ id: 'SHOT-001', storyboardStatus: 'approved' }, { id: 'SHOT-002', storyboardStatus: 'approved' }, { id: 'SHOT-003', storyboardStatus: 'waived' }]
+  const frame = (assetId: string, outputPath: string | undefined, approved = true) => ({ assetId, sheetType: 'Storyboard', approved, outputPath })
+  it('stop being Approved, so the Deliver audit stops calling the storyboard complete', () => {
+    const before = [frame('SHOT-001', 'C:/gone/f1.png'), frame('SHOT-002', 'C:/here/f2.png')]
+    const after = [frame('SHOT-001', undefined, false), frame('SHOT-002', 'C:/here/f2.png')]
+    expect(reconcileShots(shots, before, after, ['C:/gone/f1.png'])).toEqual(['SHOT-001'])
+  })
+  it('stay Approved when another approved frame of the shot still has a file', () => {
+    const before = [frame('SHOT-001', 'C:/gone/f1.png'), frame('SHOT-001', 'C:/here/f1b.png')]
+    const after = [frame('SHOT-001', undefined, false), frame('SHOT-001', 'C:/here/f1b.png')]
+    expect(reconcileShots(shots, before, after, ['C:/gone/f1.png'])).toEqual([])
+  })
+  it('leave shots approved by hand or waived alone, and ignore sheet views', () => {
+    const before = [{ assetId: 'SHOT-002', sheetType: 'Turnaround', approved: true, outputPath: 'C:/gone/x.png' }]
+    expect(reconcileShots(shots, before, before, ['C:/gone/x.png'])).toEqual([])
+    expect(reconcileShots(shots, [], [], ['C:/gone/y.png'])).toEqual([])
   })
 })

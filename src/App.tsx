@@ -86,7 +86,7 @@ import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
-import { dropMissingRefs, flagMissingClips, reconcileMissing } from "./domain/missingFiles";
+import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -881,6 +881,22 @@ export default function App() {
       );
       return;
     }
+    // Files can vanish while the app is open: look again right before the package is made, so "production-ready" is never claimed for pictures that are gone.
+    {
+      const { invoke: check } = await import("@tauri-apps/api/core");
+      // Everything the project tracks is checked in one pass (so a later re-check has nothing new to say), but only approved pictures stop the package.
+      const gone = await check<string[]>("missing_files", { paths: [...new Set(trackedPaths)] }).catch(() => [] as string[]);
+      if (gone.length) {
+        const dropped = dropMissing(queue, gone).dropped;
+        if (dropped) setQueue((q) => dropMissing(q, gone).state);
+        handleMissing(dropped, gone);
+        const approvedGone = gone.filter((p) => Object.values(assetOutputs).includes(p));
+        if (approvedGone.length) {
+          setNotice(`No package was made: ${approvedGone.length} approved picture${approvedGone.length === 1 ? " is" : "s are"} not on this computer. The audit was updated. Remake or replace ${approvedGone.length === 1 ? "it" : "them"}, approve, then export again.`);
+          return;
+        }
+      }
+    }
     const quote = (value: unknown) => `"${String(value).replace(/"/g, '""')}"`;
     const ledger = [
       "asset_id,asset_name,type,status,scenes,reference_file",
@@ -1146,9 +1162,15 @@ export default function App() {
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
   ];
-  useImageQueue(queue, setQueue, isTauri && hydrated, (n, missing) => {
+  /** Every file outside the queue that the project records: approved pictures, clips and reference photos. */
+  const trackedPaths = [...Object.values(assetOutputs), ...clips.map((c) => c.path), ...Object.values(assetRefs).flat()];
+  /** Files the project points at that are not on this computer: marks what depends on them, and says so. Used when a project loads and again just before a package is made. */
+  const handleMissing = (n: number, missing: string[]) => {
     const jobs = dropMissing(queue, missing).state.jobs;
     const fixed = reconcileMissing(analysis.assets, assetOutputs, jobs, missing);
+    const afterJobs = dropMissing(queue, missing).state.jobs;
+    const lostShots = reconcileShots(shots, queue.jobs, afterJobs, missing);
+    if (lostShots.length) setShots((list) => list.map((s) => (lostShots.includes(s.id) ? { ...s, storyboardStatus: "planned" } : s)));
     setAssetOutputs(fixed.outputs);
     if (fixed.demoted.length) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (fixed.demoted.includes(a.id) ? { ...a, status: "planned" } : a)) }));
     const flagged = flagMissingClips(clips, missing);
@@ -1162,7 +1184,8 @@ export default function App() {
       refs.dropped ? `${refs.dropped} reference photo${refs.dropped === 1 ? "" : "s"}` : "",
     ].filter(Boolean);
     if (parts.length) setNotice(`Not on this computer: ${parts.join(", ")}. Views and frames are marked as needing a new picture (press Generate, or Use my image); clips say File missing; missing reference photos were taken off their lists.`);
-  }, [...Object.values(assetOutputs), ...clips.map((c) => c.path), ...Object.values(assetRefs).flat()]);
+  };
+  useImageQueue(queue, setQueue, isTauri && hydrated, handleMissing, trackedPaths);
   const onSheetApproved = (job: ImageJob, primary: boolean) => {
     if (!job.outputPath) return;
     const path = job.outputPath;

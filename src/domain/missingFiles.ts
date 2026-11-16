@@ -55,3 +55,20 @@ export function dropMissingRefs(refs: Record<string, string[]>, missing: string[
   }
   return dropped ? { refs: next, dropped } : { refs, dropped: 0 }
 }
+
+interface ShotLike { id: string; storyboardStatus: string }
+interface FrameJobLike { assetId: string; sheetType: string; approved: boolean; rejected?: boolean; outputPath?: string }
+
+/**
+ * A shot is Approved when its storyboard frame is. If that frame's file is gone, the shot must not stay Approved, or the Deliver audit calls the storyboard
+ * complete and the package production-ready with a frame that does not exist. Only shots that had a frame go missing are touched: a shot approved by hand with
+ * no frame (storyboards switched off, or waived) is left alone. `before` and `after` are the takes before and after the missing files were taken out.
+ */
+export function reconcileShots(shots: ShotLike[], before: FrameJobLike[], after: FrameJobLike[], missing: string[]): string[] {
+  const gone = new Set(missing)
+  const lost = new Set(before.filter((j) => j.sheetType === 'Storyboard' && !!j.outputPath && gone.has(j.outputPath)).map((j) => j.assetId))
+  return shots
+    .filter((s) => s.storyboardStatus === 'approved' && lost.has(s.id))
+    .filter((s) => !after.some((j) => j.assetId === s.id && j.sheetType === 'Storyboard' && j.approved && !j.rejected && !!j.outputPath))
+    .map((s) => s.id)
+}

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.43.4 (2026-11-16): the Deliver audit and the package no longer trust pictures that are gone
+Checked the package and the Deliver audit for missing paths. Findings and fixes:
+- **A shot stayed Approved when its storyboard frame was gone**, so with storyboards on, the Deliver audit counted the storyboard as complete and the package as production-ready with a frame that does not exist. A shot whose frame file is missing now goes back to planned. Shots approved by hand, or waived, are left alone. (`reconcileShots` in `src/domain/missingFiles.ts`.)
+- **Files that vanish while the app is open** were only noticed when a project loaded. Pressing Export package now checks the approved pictures first; if any are gone it updates the audit, makes no package and says which step to take.
+- **The verified package's refusal** named the full folder path of each missing picture; it now names the files, says how many, and what to do. **Export sheet as one image** says which view is gone instead of a system error.
+- Checked and found sound: the audit asks which assets have a recorded picture and are Approved, so since 0.43.2 a missing picture already stops "ready"; a draft package lists missing references in its readme instead of failing.
+- Tests: 510 JS (3 more), 81 Rust (1 more).
+
 ## 0.43.3 (2026-11-16): missing storyboard frames, clips and reference photos are flagged too
 - **Storyboard frames** whose picture is not on this computer are marked **Picture missing** in the Director's room (they were already taken out of the queue by 0.43.1; the card now says so) and can be remade with Generate frame or Use my own image. Retry is not offered for your own images.
 - **Audio and video clips** whose file is gone show **File missing** with their line or prompt kept, and a **Remove from list** button, instead of a player that cannot play. The flag clears if the file is back.

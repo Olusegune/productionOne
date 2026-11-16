@@ -355,6 +355,12 @@ fn export_production_package(app: tauri::AppHandle, package_name: String, manife
     Ok(output_path.to_string_lossy().to_string())
 }
 
+/// The verified package refuses to be made from pictures that are gone. Says which, by file name, and what to do.
+fn missing_references_message(missing: &[&String]) -> String {
+    let names: Vec<String> = missing.iter().map(|p| std::path::Path::new(p.as_str()).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| p.to_string())).collect();
+    format!("No verified package was made: {} approved picture{} not on this computer ({}). Remake or replace {}, approve, then export again.", names.len(), if names.len() == 1 { " is" } else { "s are" }, names.join(", "), if names.len() == 1 { "it" } else { "them" })
+}
+
 fn write_production_package(output_path: &std::path::Path, input: &ProductionPackageInput) -> Result<(), String> {
     let manifest: Value = serde_json::from_str(&input.manifest).map_err(|error| format!("Asset manifest is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.style_bible).map_err(|error| format!("Style Bible is invalid: {error}"))?;
@@ -362,7 +368,7 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
     if input.export_mode != "draft" && input.export_mode != "verified" { return Err("Export mode must be draft or verified".to_string()); }
     if input.export_mode == "verified" && manifest.get("status").and_then(Value::as_str) != Some("production-ready") { return Err("Verified package requires a production-ready manifest".to_string()); }
     let missing: Vec<&String> = input.reference_paths.iter().filter(|source_path| !std::path::Path::new(source_path.as_str()).is_file()).collect();
-    if input.export_mode == "verified" && !missing.is_empty() { return Err(format!("Verified package has missing references: {}", missing.iter().map(|p| p.as_str()).collect::<Vec<_>>().join(", "))); }
+    if input.export_mode == "verified" && !missing.is_empty() { return Err(missing_references_message(&missing)); }
     let incomplete = if missing.is_empty() { "None".to_string() } else { missing.iter().map(|p| p.as_str()).collect::<Vec<_>>().join("\n") };
     let temporary = output_path.with_extension("zip.tmp");
     let file = fs::File::create(&temporary).map_err(|error| error.to_string())?;
@@ -584,6 +590,17 @@ mod tests {
         assert!(archive.by_name("production_readme.md").is_ok());
         drop(archive);
         std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn verified_package_names_missing_pictures_by_file_name() {
+        let path = std::env::temp_dir().join(format!("production-one-missing-ref-{}.zip", std::process::id()));
+        let gone = std::env::temp_dir().join("nowhere-at-all").join("venom_front_v01.png").to_string_lossy().into_owned();
+        let input = super::ProductionPackageInput { manifest: "{\"status\":\"production-ready\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![gone], export_mode: "verified".into() };
+        let message = super::write_production_package(&path, &input).unwrap_err();
+        assert!(message.contains("venom_front_v01.png") && message.contains("not on this computer"), "{message}");
+        assert!(!message.contains("nowhere-at-all"), "the folder is not echoed: {message}");
+        assert!(!path.exists());
     }
 
     #[test]
