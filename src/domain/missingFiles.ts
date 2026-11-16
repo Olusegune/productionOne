@@ -29,3 +29,29 @@ export function reconcileMissing(
   }
   return { outputs: next, demoted }
 }
+
+/** Clips whose file is not on this computer are flagged (and un-flagged if it is back); the record and its prompt stay. Returns the same array when nothing changed. */
+export function flagMissingClips<T extends { path: string; missing?: boolean }>(clips: T[], missing: string[]): T[] {
+  const gone = new Set(missing)
+  let changed = false
+  const next = clips.map((c) => {
+    const isGone = gone.has(c.path)
+    if (isGone === !!c.missing) return c
+    changed = true
+    return isGone ? { ...c, missing: true } : { ...c, missing: undefined }
+  })
+  return changed ? next : clips
+}
+
+/** Reference photos that are gone are taken out, since a request that sends one fails. Returns the same object when nothing changed, and how many were removed. */
+export function dropMissingRefs(refs: Record<string, string[]>, missing: string[]): { refs: Record<string, string[]>; dropped: number } {
+  const gone = new Set(missing)
+  let dropped = 0
+  const next: Record<string, string[]> = {}
+  for (const [id, list] of Object.entries(refs)) {
+    const kept = list.filter((p) => !gone.has(p))
+    dropped += list.length - kept.length
+    next[id] = kept
+  }
+  return dropped ? { refs: next, dropped } : { refs, dropped: 0 }
+}

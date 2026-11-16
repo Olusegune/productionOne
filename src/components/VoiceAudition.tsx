@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { MissingClip } from "./MissingClip";
 import { invoke } from '@tauri-apps/api/core'
 import { Check, Copy, Volume2 } from 'lucide-react'
 import type { ExtractedAsset } from '../domain/productionStudio'
@@ -162,6 +163,6 @@ ${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</b
     </>}
     {isCharacter && desktop && <MusicMaker asset={asset} story={story} desktop={desktop} providersVersion={providersVersion} openProviders={openProviders} notify={notify} setError={setError} onClip={(c) => setClips((list) => [...list, { id: `AUD-${asset.id}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, assetId: asset.id, assetName: asset.name, motion: 'custom', model: c.label, path: c.path, prompt: c.line, duration: c.duration, createdAt: Date.now(), kind: 'audio', line: c.line }])} />}
     {error && <p className="helper warn" role="alert">{error}</p>}
-    {mine.length > 0 && <div className="clip-grid">{mine.slice().reverse().map((c) => <figure key={c.id}><LevelledAudio path={c.path} label={`${c.assetName} voice audition`} /><figcaption><b>“{(c.line ?? '').slice(0, 60)}”</b><small>{c.model}</small></figcaption></figure>)}</div>}
+    {mine.length > 0 && <div className="clip-grid">{mine.slice().reverse().map((c) => c.missing ? <MissingClip key={c.id} clip={c} onRemove={() => setClips((all) => all.filter((x) => x.id !== c.id))} /> : <figure key={c.id}><LevelledAudio path={c.path} label={`${c.assetName} voice audition`} /><figcaption><b>“{(c.line ?? '').slice(0, 60)}”</b><small>{c.model}</small></figcaption></figure>)}</div>}
   </section>
 }

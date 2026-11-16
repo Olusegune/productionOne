@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { MissingClip } from "./MissingClip";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
 import { buildMotionPrompt, clipName, motionKeysFor, presetFor, type DemoClip, type MotionKey } from "../domain/demoClips";
@@ -100,7 +101,7 @@ export function MotionDemo(props: {
       )}
       {mine.length > 0 && (
         <div className="clip-grid">
-          {mine.slice().reverse().map((c) => (
+          {mine.slice().reverse().map((c) => c.missing ? <MissingClip key={c.id} clip={c} onRemove={() => setClips((all) => all.filter((x) => x.id !== c.id))} /> : (
             <figure key={c.id}>
               <video controls loop muted playsInline src={convertFileSrc(c.path)} aria-label={`${c.assetName} ${c.motion} demo`} />
               <figcaption><b>{c.motion === "custom" ? "Custom motion" : presetFor(c.motion).label}</b><small>{c.model} · {c.duration}s</small></figcaption>
