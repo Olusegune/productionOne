@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.43.2 (2026-11-16): an asset no longer stays Approved when its picture is gone
+- **Fixed: the stale Approved label.** When the picture that made a character, prop or set Approved is not on this computer, the asset went on saying "Approved" and the home page kept counting it. The app now removes that picture from the asset, points it at another approved front view that still has a file if there is one, and otherwise sets the asset back to planned. Assets approved another way, or whose picture is fine, are untouched. The asset's recorded picture is checked along with the queue's. Logic and tests: `src/domain/missingFiles.ts`.
+- Tests: 501 JS (5 more), 80 Rust.
+
 ## 0.43.1 (2026-11-16): missing pictures are shown as missing, and two layout fixes
 - **A picture that is not on this computer is no longer shown as Approved.** A project opened where its pictures are not (another computer, a deleted data folder) used to show every view as Approved with "No image yet" and "Nothing new to generate", and a view built from such a picture failed with a path error. The app now checks the files when a project loads, turns each missing take into a failed one that says why, and says so in a notice. **Generate** then counts and remakes those views, and **Use my image** adds your own again. Your own images cannot be remade by Retry (it has no prompt), so only Generate and Use my image are offered for them. Command `missing_files` in `src-tauri/src/providers.rs`; logic `dropMissing` in `src/domain/generationQueue.ts`.
 - **Sheet tabs wrap** (Identity, Turnaround, Poses, Expressions, Wardrobe, Detail) instead of hiding behind a horizontal scroll bar.
