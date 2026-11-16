@@ -199,3 +199,9 @@
 .character-bible-tabs button * { color: inherit; }
 .character-bible-tabs button.on { color: var(--text); border-color: var(--gold-2); }
 .character-bible-next b { color: var(--text); }
+
+/* Light theme, found by auditing a real project: the recent-projects button, the "approved" tab state and the notice banner kept their dark-theme colours (1.1 to 1.6:1 on a light page). */
+:root[data-theme="light"] .recent-open { color: var(--text); }
+:root[data-theme="light"] .character-bible-tabs .state-approved .bible-state { color: #1f6b4a; opacity: 1; }
+:root[data-theme="light"] .notice { color: #14392a; background: rgba(31, 107, 74, .12); border-color: rgba(31, 107, 74, .35); }
+:root[data-theme="light"] .notice button { color: #14392a; min-height: 28px; padding: 0 10px; }
