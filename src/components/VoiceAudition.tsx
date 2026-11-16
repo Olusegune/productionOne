@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { Copy, Volume2 } from 'lucide-react'
+import { Check, Copy, Volume2 } from 'lucide-react'
 import type { ExtractedAsset } from '../domain/productionStudio'
 import type { ParsedStory } from '../engine/story'
 import type { DemoClip } from '../domain/demoClips'
@@ -11,6 +11,8 @@ import { VoiceCloud } from './VoiceCloud'
 import { VoiceBriefTools } from './VoiceBriefTools'
 import { MusicMaker } from './MusicMaker'
 import { latestElevenModel, rankElevenModels, supportsAudioTags, type CloudModel } from '../domain/elevenModels'
+import { describeCastVoice, forgetVoice, rememberVoice } from '../domain/castVoice'
+import { cachedVoices } from '../domain/voiceCache'
 import { castingLine, castingLineChoices, sampleLines, soundBrief, suggestVoice, voiceBrief, type CastingLineKind, type InstalledVoice } from '../domain/voiceAudition'
 
 /** Hear a character speak (installed Windows voices, free and offline) or get a sound brief for a prop. Auditions are saved with the project like motion clips. */
@@ -52,7 +54,20 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
   const lines = useMemo(() => (asset ? sampleLines(story, asset.name) : []), [story, asset])
   // Each character gets its own suggested voice from its stated gender and age; one character's pick is never carried to the next.
   const suggestedFor = useRef('')
-  useEffect(() => { if (asset && voices.length && suggestedFor.current !== asset.id) { suggestedFor.current = asset.id; setVoice(suggestVoice(voices, asset)?.name ?? '') } }, [voices, asset])
+  useEffect(() => { if (asset && voices.length && suggestedFor.current !== asset.id) { suggestedFor.current = asset.id; setVoice(asset.castVoice?.provider === 'windows' ? asset.castVoice.voice : (suggestVoice(voices, asset)?.name ?? '')) } }, [voices, asset])
+  // A character with a saved voice opens with that engine and voice already chosen.
+  const adopted = useRef('')
+  useEffect(() => {
+    if (!asset || adopted.current === asset.id) return
+    adopted.current = asset.id
+    const saved = asset.castVoice
+    if (!saved || !providers.some((p) => p.id === saved.provider)) return
+    chooseProvider(saved.provider as ProviderId)
+    const t = providerById(saved.provider as ProviderId).transport
+    if (t === 'cloud') setCloudVoice(saved.voice); else if (t === 'http') setServerVoice(saved.voice); else setVoice(saved.voice)
+    if (saved.model) setModel(saved.model)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asset])
   if (!asset || asset.type === 'set' || asset.type === 'environment' || asset.type === 'costume') return null
   const isCharacter = asset.type === 'character'
   const line = custom.trim() || lines[picked]?.text || ''
@@ -77,6 +92,13 @@ export function VoiceAudition(props: { asset?: ExtractedAsset; story?: ParsedSto
 ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind: 'audio', line }])
       notify(`Voice audition saved for ${asset.name}.`)
     } catch (e) { setError(String(e)) } finally { setBusy(false) }
+  }
+  const chosenVoice = provider.transport === 'windows' ? voice : provider.transport === 'cloud' ? cloudVoice : serverVoice
+  const saveVoice = () => {
+    if (!asset || !chosenVoice.trim()) return
+    const label = provider.transport === 'cloud' ? cachedVoices<{ id: string; name: string }>(provider.id).find((v) => v.id === cloudVoice)?.name : undefined
+    onChange(rememberVoice(asset, { provider: provider.id, voice: chosenVoice, label, model: provider.transport === 'cloud' && model && model !== 'latest' ? model : undefined }))
+    notify(`${asset.name} will use this voice from now on, in single auditions and in batches.`)
   }
   const copy = (text: string) => { void navigator.clipboard?.writeText(text); notify('Brief copied. Paste it into your voice or sound tool.') }
   return <section className="panel voice-audition" id="voice-audition" tabIndex={-1} aria-label="Voice and sound audition">
@@ -127,7 +149,9 @@ ${performanceBrief(line, direction)}`, duration: 0, createdAt: Date.now(), kind:
         <button className="primary" disabled={!desktop || busy || !line || (provider.transport === 'windows' && !voices.length) || (provider.transport === 'cloud' && !cloudVoice.trim())} onClick={() => void speak()}><Volume2 size={15} /> {busy ? 'Speaking…' : 'Hear this line'}</button>
         <button className="secondary" onClick={() => copy(`${voiceBrief(asset, line)}
 ${performanceBrief(line, direction)}`)}><Copy size={14} /> Copy casting brief</button>
+        <button className="secondary" disabled={!chosenVoice.trim()} onClick={saveVoice} title="Keep this voice with the character so every later line and batch uses it"><Check size={14} /> Save as this character&apos;s voice</button>
       </div>
+      {asset.castVoice && <p className="helper" role="status">Saved voice: <b>{describeCastVoice(asset.castVoice)}</b>. <button className="secondary" onClick={() => onChange(forgetVoice(asset))}>Clear</button></p>}
       </section>
     </> : <>
       <p className="helper">This brief lists what to record or generate; it is also saved with the asset's sound direction. You can make each sound as a short effect below with ElevenLabs (paid, needs your key).</p>

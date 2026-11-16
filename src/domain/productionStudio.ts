@@ -3,6 +3,16 @@ import type { CameraAngle, Coverage, Movement, ScreenDir, ShotSize } from './dir
 
 export type AssetType = 'character' | 'costume' | 'prop' | 'set' | 'environment'
 
+/** The voice a person chose for a character, kept with the project so every later line and batch reuses it. Which engine, and the voice as that engine names it. */
+export interface CastVoice {
+  provider: string
+  /** Windows voice name, cloud voice id or name, or a speech server's voice name. */
+  voice: string
+  /** What to show the person (for example the cloud voice's display name). */
+  label?: string
+  model?: string
+}
+
 export interface ExtractedAsset {
   id: string
   name: string
@@ -22,6 +32,8 @@ export interface ExtractedAsset {
   motionDirection?: string
   interactionDirection?: string
   soundDirection?: string
+  /** The voice chosen for this character (characters only). */
+  castVoice?: CastVoice
   prompt?: string
 }
 
@@ -40,6 +52,29 @@ export interface AnalysisResult { scenes: ScriptScene[]; assets: ExtractedAsset[
 const slug = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
 /** Reads a script with the story engine (free, local) and maps it to scenes and production assets. The full reading, with line evidence, is kept in `story`. */
+/** Fields a person fills in or confirms. A fresh reading of the script must never wipe them. */
+const KEPT_FIELDS = ['age', 'gender', 'race', 'ethnicity', 'role', 'never', 'personality', 'motionDirection', 'interactionDirection', 'soundDirection', 'castVoice', 'prompt'] as const
+
+/**
+ * Re-reading a script makes new assets; this carries over what the person set on the ones that are still there (matched by type and name).
+ * An asset keeps its old id: ids contain a running number, so a new location added earlier in the script would otherwise renumber every character and orphan their pictures, references and shots.
+ * A value the person set wins over one the reader found. Approval stays with an asset that still exists, because its pictures are tied to the same id. Assets the script no longer has are dropped.
+ */
+export function mergeAnalysis(previous: AnalysisResult, next: AnalysisResult): AnalysisResult {
+  const before = new Map(previous.assets.map((a) => [`${a.type}:${slug(a.name)}`, a]))
+  const assets = next.assets.map((asset) => {
+    const old = before.get(`${asset.type}:${slug(asset.name)}`)
+    if (!old) return asset
+    const merged: ExtractedAsset = { ...asset, id: old.id, status: old.status === 'approved' ? 'approved' : asset.status }
+    for (const key of KEPT_FIELDS) {
+      const value = old[key]
+      if (value !== undefined && value !== '') (merged as unknown as Record<string, unknown>)[key] = value
+    }
+    return merged
+  })
+  return { ...next, assets }
+}
+
 export function analyzeScript(text: string): AnalysisResult {
   const story = parseStory(text)
   const scenes: ScriptScene[] = story.scenes.map((scene) => ({

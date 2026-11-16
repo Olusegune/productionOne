@@ -180,6 +180,7 @@ export function DesignView(p: DesignViewProps) {
               notify={setNotice}
               providersVersion={Number(providersOpen)}
               openProviders={(id) => { if (id) setCredentialProvider(id as ProviderId); setProvidersOpen(true); }}
+              onAssetChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
             />
             </div>
             <details className="po-classic">

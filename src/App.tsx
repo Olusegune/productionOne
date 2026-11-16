@@ -36,6 +36,7 @@ import {
 import {
   advanceQueue,
   analyzeScript,
+  mergeAnalysis,
   animaticDuration, 
   compileAssetPrompt,
   compileShotPackage,
@@ -350,7 +351,7 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [animaticPlaying, totalAnimaticDuration, shots]);
   const analyze = () => {
-    const next = analyzeScript(script);
+    const next = mergeAnalysis(analysis, analyzeScript(script));
     setAnalysis(next);
     setShots((current) =>
       current.map((shot, index) => ({
