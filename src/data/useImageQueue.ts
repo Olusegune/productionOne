@@ -6,6 +6,7 @@ import {
   markValidated,
   markValidating,
   anchorFor,
+  dropMissing,
   startable,
   type ImageJob,
   type QueueState,
@@ -47,8 +48,24 @@ export function useImageQueue(
   queue: QueueState,
   setQueue: (update: (q: QueueState) => QueueState) => void,
   enabled: boolean,
+  onMissing?: (count: number) => void,
 ) {
   const inFlight = useRef(new Set<string>());
+  // Pictures the project points at but this computer does not have: found whenever the set of files changes, and turned into takes that can be remade.
+  const fileKey = queue.jobs.filter((j) => j.outputPath && (j.status === "completed" || j.status === "needs-review")).map((j) => j.outputPath).sort().join("|");
+  useEffect(() => {
+    if (!enabled || !fileKey) return;
+    let cancelled = false;
+    void invoke<string[]>("missing_files", { paths: fileKey.split("|") }).then((missing) => {
+      if (cancelled || !missing.length) return;
+      const dropped = dropMissing(queue, missing).dropped;
+      if (!dropped) return;
+      setQueue((q) => dropMissing(q, missing).state);
+      onMissing?.(dropped);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileKey, enabled]);
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!enabled) return;

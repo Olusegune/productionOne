@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.43.1 (2026-11-16): missing pictures are shown as missing, and two layout fixes
+- **A picture that is not on this computer is no longer shown as Approved.** A project opened where its pictures are not (another computer, a deleted data folder) used to show every view as Approved with "No image yet" and "Nothing new to generate", and a view built from such a picture failed with a path error. The app now checks the files when a project loads, turns each missing take into a failed one that says why, and says so in a notice. **Generate** then counts and remakes those views, and **Use my image** adds your own again. Your own images cannot be remade by Retry (it has no prompt), so only Generate and Use my image are offered for them. Command `missing_files` in `src-tauri/src/providers.rs`; logic `dropMissing` in `src/domain/generationQueue.ts`.
+- **Sheet tabs wrap** (Identity, Turnaround, Poses, Expressions, Wardrobe, Detail) instead of hiding behind a horizontal scroll bar.
+- **Projects home:** the counts row and the Welcome card are no longer touching.
+- Tests: 496 JS (3 more), 80 Rust (1 more).
+
 ## 0.43.0 (2026-11-16): pictures travel with the project
 - **A saved project carries its pictures.** Save and Save As now also write a folder named like the project (`film_files` next to `film.pone`) holding every picture, sound and clip the project uses. Opening a project on another computer, or from another data folder, finds any missing file in that folder and copies it back into the app, so nothing shows "no image" and nothing fails. Move the `.pone` and its `_files` folder together. Autosave does not copy files; an explicit Save does. Logic and test: `src-tauri/src/desktop.rs`.
 - **Clearer failure when a picture is missing.** A view built from a picture that is no longer on the computer used to fail with "The system cannot find the path specified. (os error 3)". It now names the picture and says to add it again with **Use my image**, then retry.

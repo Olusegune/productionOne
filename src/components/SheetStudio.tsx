@@ -453,7 +453,7 @@ export function SheetStudio(props: {
                       <button className="primary" onClick={() => doApprove(job)}><Check size={14} /> Approve</button>
                       <button className="secondary" onClick={() => doReject(job)}><X size={14} /> Reject</button>
                     </>)}
-                    {job && (job.status === "failed" || job.status === "cancelled") && <button className="secondary" onClick={() => setQueue((q) => retry(q, job.id))}>Retry</button>}
+                    {job && (job.status === "failed" || job.status === "cancelled") && job.source !== "supplied" && job.prompt && <button className="secondary" onClick={() => setQueue((q) => retry(q, job.id))}>Retry</button>}
                     {job && job.status === "queued" && <button className="secondary" onClick={() => setQueue((q) => cancel(q, job.id))}>Cancel</button>}
                     {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={() => generate(false, [view.key], true)}>Regenerate</button>}
                     {job && wouldEnqueue(job, true) && !job.approved && <label className="view-pick"><input type="checkbox" checked={picked.includes(view.key)} onChange={() => togglePick(view.key)} /> Select</label>}

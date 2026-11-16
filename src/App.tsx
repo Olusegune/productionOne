@@ -1145,7 +1145,7 @@ export default function App() {
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
   ];
-  useImageQueue(queue, setQueue, isTauri && hydrated);
+  useImageQueue(queue, setQueue, isTauri && hydrated, (n) => setNotice(`${n} picture${n === 1 ? " is" : "s are"} not on this computer, so ${n === 1 ? "it was" : "they were"} marked as needing a new picture. Open Design and press Generate, or use Use my image.`));
   const onSheetApproved = (job: ImageJob, primary: boolean) => {
     if (!job.outputPath) return;
     const path = job.outputPath;

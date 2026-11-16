@@ -167,6 +167,12 @@ fn unique_path(dir: &Path, stem: &str, ext: &str) -> PathBuf {
     path
 }
 
+/// Which of the given files are not on this computer. A project opened elsewhere, or after its pictures were deleted, points at files that are gone.
+#[tauri::command]
+pub fn missing_files(paths: Vec<String>) -> Vec<String> {
+    paths.into_iter().take(5000).filter(|path| !Path::new(path).is_file()).collect()
+}
+
 #[tauri::command]
 pub async fn generate_image(app: tauri::AppHandle, provider: String, model: String, prompt: String, aspect: String, quality: String, references: Vec<String>, output_name: String) -> Result<ImportedAsset, String> {
     if prompt.trim().is_empty() { return Err("Prompt is required".into()); }
@@ -460,6 +466,19 @@ pub fn qa_image(app: tauri::AppHandle, path: String, full_body: bool) -> Result<
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn says_which_files_are_not_on_this_computer() {
+        let dir = std::env::temp_dir().join(format!("po-missing-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let here = dir.join("here.png");
+        std::fs::write(&here, b"x").unwrap();
+        let gone = dir.join("gone.png");
+        let asked = vec![here.to_string_lossy().into_owned(), gone.to_string_lossy().into_owned(), dir.to_string_lossy().into_owned()];
+        let missing = super::missing_files(asked);
+        assert_eq!(missing, vec![gone.to_string_lossy().into_owned(), dir.to_string_lossy().into_owned()], "a folder is not a picture either");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
     #[test]
     fn a_labelled_image_can_only_be_a_new_png_directly_inside_the_assets_folder() {
         let root = std::env::temp_dir().join(format!("po-assets-{}", std::process::id()));
