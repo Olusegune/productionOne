@@ -168,6 +168,16 @@ export function SheetStudio(props: {
   const setSetting = (key: string, value: string) => setSettings((m) => { const next = { ...m }; if (value) next[key] = value; else delete next[key]; return next; });
   const setShape = (value: string) => setSetting(shapeKey, value);
   const setBackdrop = (value: string) => setSetting(backdropKey, value === "gray" ? "" : value);
+  // "Same as my front view": the colour is read once from the approved front view's own background, so it can go into every prompt in words and as a hex value.
+  const frontPath = asset ? anchorFor(queue, { assetId: asset.id, variant: activeVariant } as ImageJob) : undefined;
+  const [frontColour, setFrontColour] = useState<{ path: string; hex: string } | null>(null);
+  useEffect(() => {
+    if (backdrop !== "front" || !frontPath || !desktop || frontColour?.path === frontPath) return;
+    let live = true;
+    void invoke<string>("backdrop_colour", { path: frontPath }).then((hex) => { if (live) setFrontColour({ path: frontPath, hex }); }).catch(() => {});
+    return () => { live = false; };
+  }, [backdrop, frontPath, desktop]);
+  const backdropHex = backdrop === "front" && frontColour && frontColour.path === frontPath ? frontColour.hex : "";
   /** `only` limits the run to those view keys; `force` makes a new revision even where an image already exists (never for views still in the queue). */
   const generate = (testOneFirst = false, only?: string[], force = false) => {
     if (!asset) return;
@@ -175,7 +185,7 @@ export function SheetStudio(props: {
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, anchored: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, anchored: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) }),
       aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
       references: modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []) : [],
       useAnchor: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
@@ -334,7 +344,8 @@ export function SheetStudio(props: {
         <label><span>Backdrop</span>
           <select value={backdrop} onChange={(e) => setBackdrop(e.target.value)} aria-label="Backdrop for this sheet" title="One flat background for every new image on this sheet, so the views agree. Images already made keep theirs.">
             {backdropChoices.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
-          </select></label>
+          </select>
+          {backdrop === "front" && <small className="helper">{frontPath ? (backdropHex ? `Keeps your front view's backdrop (about ${backdropHex}).` : "Reading your front view's backdrop…") : "Needs an approved front view. Until there is one, flat grey is used."}</small>}</label>
         <label className="ss-model"><span>Image model · reference sheets</span>
           <ModelPicker catalog={catalog} configured={configured} provider={provider} modelId={modelId} onPick={choice.pick} onRefresh={() => void refreshModels()} refreshing={refreshing} />
         </label>
