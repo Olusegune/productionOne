@@ -37,7 +37,7 @@ Launching the packaged app replaces the owner's autosave. The ritual: launch `Pr
 
 ### Open items (none urgent)
 1. (done in 0.40.0) The Projects hero: `src/components/ProjectHero.tsx`, `src/domain/projectHero.ts`.
-2. Revision compare on Review (two takes side by side, keep one).
+2. (done on branch `feat/revision-compare`, unreleased) Revision compare on Review: `keepRevision` and friends in `src/domain/review.ts`, UI in `src/views/ReviewView.tsx`.
 3. Batch voice and music (several characters or scenes, with a cost estimate first).
 4. A text size setting in Appearance.
 5. The guide's sheet, audition and queue screenshots still show the old top bar. They need generated pictures and a busy queue; keep the art-free rule.

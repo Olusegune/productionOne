@@ -94,7 +94,7 @@ Each clip plays **level-matched** (to -20 LUFS, never boosted past 12 dB or into
 Generation runs in the queue at the bottom, two at a time. **Pause** lets running images finish and holds the rest. Views that match a front view wait until you approve it; the bar says how many are waiting and offers **Open sheets**. If the app closes in the middle of generation, the images that were in flight come back marked *failed, may already be billed* so you can decide whether to retry; waiting images are kept and the queue starts paused.
 
 ## Review
-**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match, with a badge in the sidebar for how many wait. Technical checks are listed apart from your decision. **Approve** it; **Request changes** (turns it down and opens its sheet; nothing is generated); or **Reject** (keeps the file; find it again under *Turned down*). Generation details and the prompt are one click away.
+**Review** (sidebar, or Alt+6) shows each picture waiting for your decision, large, next to the approved reference it has to match, with a badge in the sidebar for how many wait. Technical checks are listed apart from your decision. **Approve** it; **Request changes** (turns it down and opens its sheet; nothing is generated); or **Reject** (keeps the file; find it again under *Turned down*). When a view has more than one take, **Other takes** puts two takes side by side (pick which to compare with) and **Keep revision N** approves that one and turns the other down; no file is deleted and nothing is generated. Generation details and the prompt are one click away.
 
 ## Direct (optional)
 ![Director's room](screenshots/direct.png)

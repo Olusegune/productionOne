@@ -65,3 +65,31 @@ describe('Review workspace', () => {
     expect(screen.getByText(/All caught up/)).toBeTruthy()
   })
 })
+
+describe('Review: compare revisions of one view', () => {
+  const takes = [
+    job({ id: 'p1', viewKey: 'profile', label: 'Profile', approved: true, outputPath: 'p1.png', revision: 1 }),
+    job({ id: 'p2', viewKey: 'profile', label: 'Profile', status: 'needs-review', outputPath: 'p2.png', revision: 2, updatedAt: 9 }),
+  ]
+  it('offers other takes only when the view has more than one', () => {
+    render(<Harness initial={start([takes[1]])} spies={spies()} />)
+    expect(screen.queryByRole('button', { name: /Other takes/ })).toBeNull()
+  })
+  it('keeping the new take approves it, turns the old approved take down and moves on', () => {
+    const s = spies()
+    render(<Harness initial={start(takes)} spies={s} />)
+    fireEvent.click(screen.getByRole('button', { name: /Other takes \(1\)/ }))
+    expect(screen.getByText(/Approved · revision 1/)).toBeTruthy()
+    expect(screen.getByText(/New · revision 2/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Keep revision 2/ }))
+    expect(states()).toBe('p1:rejected,p2:approved')
+    expect(s.onApproved).toHaveBeenCalledTimes(1)
+    expect(screen.getByText(/All caught up/)).toBeTruthy()
+  })
+  it('keeping the old take rejects the waiting one and keeps both files', () => {
+    render(<Harness initial={start(takes)} spies={spies()} />)
+    fireEvent.click(screen.getByRole('button', { name: /Other takes/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Keep revision 1/ }))
+    expect(states()).toBe('p1:approved,p2:rejected')
+  })
+})
