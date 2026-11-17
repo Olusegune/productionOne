@@ -264,12 +264,17 @@ export function markFailed(state: QueueState, id: string, message: string, now =
   })
 }
 
+/** A decision can be changed at any time: a picture that is waiting, turned down or already approved can be approved (a picture with no file cannot). */
 export const approve = (state: QueueState, id: string, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'needs-review' ? touch(j, { status: 'completed', approved: true, rejected: false }, now) : j))
+  patchJob(state, id, (j) => ((j.status === 'needs-review' || j.status === 'completed') && !!j.outputPath && !j.approved ? touch(j, { status: 'completed', approved: true, rejected: false }, now) : j))
 
-/** Rejecting keeps the file and its record; regenerate then adds a new revision. */
+/** Rejecting keeps the file and its record; regenerate then adds a new revision. An approved picture can be rejected too (the approval is taken back). */
 export const reject = (state: QueueState, id: string, now = Date.now()) =>
-  patchJob(state, id, (j) => (j.status === 'needs-review' || (j.status === 'completed' && !j.approved) ? touch(j, { status: 'completed', approved: false, rejected: true }, now) : j))
+  patchJob(state, id, (j) => ((j.status === 'needs-review' || j.status === 'completed') && !j.rejected ? touch(j, { status: 'completed', approved: false, rejected: true }, now) : j))
+
+/** "I have not decided": takes back an approval or a rejection and puts the picture back among those waiting for a decision. The file is untouched and nothing is generated. */
+export const reconsider = (state: QueueState, id: string, now = Date.now()) =>
+  patchJob(state, id, (j) => (j.status === 'completed' && !!j.outputPath && (j.approved || j.rejected) ? touch(j, { status: 'needs-review', approved: false, rejected: false }, now) : j))
 
 export const cancel = (state: QueueState, id: string, now = Date.now()) =>
   patchJob(state, id, (j) => (j.status === 'queued' || j.status === 'pending' ? touch(j, { status: 'cancelled' }, now) : j))

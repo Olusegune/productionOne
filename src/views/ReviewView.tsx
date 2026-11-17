@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, MessageSquareWarning, X } from "lucide-react";
+import { AlertTriangle, Check, MessageSquareWarning, Undo2, X } from "lucide-react";
 import { RealImage } from "../components/RealImage";
-import { approve, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
+import { approve, reconsider, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
 import type { AnalysisResult } from "../domain/productionStudio";
-import { approvedReference, awaitingReview, defaultCompareTarget, keepRevision, otherRevisions, turnedDown } from "../domain/review";
+import { approvedPictures, approvedReference, awaitingReview, defaultCompareTarget, keepRevision, otherRevisions, turnedDown } from "../domain/review";
 import { primaryViewKeys } from "../domain/sheetSpecs";
 
-type Filter = "waiting" | "turned-down";
+type Filter = "waiting" | "turned-down" | "approved";
 type CompareMode = "reference" | "revisions";
 
 /**
@@ -18,16 +18,18 @@ export function ReviewView(props: {
   queue: QueueState;
   setQueue: (update: (q: QueueState) => QueueState) => void;
   onApproved: (job: ImageJob, primary: boolean) => void;
+  onUnapproved: (job: ImageJob) => void;
   openAsset: (assetId: string, sheetType: string) => void;
   openDesign: () => void;
   notify: (message: string) => void;
 }) {
-  const { analysis, queue, setQueue, onApproved, openAsset, openDesign, notify } = props;
+  const { analysis, queue, setQueue, onApproved, onUnapproved, openAsset, openDesign, notify } = props;
   const [filter, setFilter] = useState<Filter>("waiting");
   const [pickedId, setPickedId] = useState<string | null>(null);
   const waiting = useMemo(() => awaitingReview(queue), [queue]);
   const down = useMemo(() => turnedDown(queue), [queue]);
-  const list = filter === "waiting" ? waiting : down;
+  const approvedList = useMemo(() => approvedPictures(queue), [queue]);
+  const list = filter === "waiting" ? waiting : filter === "approved" ? approvedList : down;
   const job = list.find((j) => j.id === pickedId) ?? list[0];
   const reference = job ? approvedReference(queue, job) : null;
   const others = useMemo(() => (job ? otherRevisions(queue, job) : []), [queue, job]);
@@ -50,8 +52,17 @@ export function ReviewView(props: {
   };
   const doReject = (j: ImageJob, thenOpen: boolean) => {
     setQueue((q) => reject(q, j.id));
+    if (j.approved) onUnapproved(j);
     notify(thenOpen ? `${j.label} turned down. Change the notes on the sheet, then generate again when you are ready.` : `${j.label} rejected. The file is kept; a new revision can be generated later.`);
     if (thenOpen) openAsset(j.assetId, j.sheetType); else decideNext(j);
+  };
+
+  const doUndo = (j: ImageJob) => {
+    setQueue((q) => reconsider(q, j.id));
+    if (j.approved) onUnapproved(j);
+    notify(`${assetName(j.assetId)} · ${j.label} is back to waiting for your decision.`);
+    if (filter !== "waiting") setFilter("waiting");
+    setPickedId(j.id);
   };
 
   const doKeep = (keep: ImageJob) => {
@@ -69,12 +80,13 @@ export function ReviewView(props: {
         <div className="rv-filter" role="group" aria-label="Show">
           <button className={filter === "waiting" ? "on" : ""} aria-pressed={filter === "waiting"} onClick={() => { setFilter("waiting"); setPickedId(null); }}>Waiting ({waiting.length})</button>
           <button className={filter === "turned-down" ? "on" : ""} aria-pressed={filter === "turned-down"} onClick={() => { setFilter("turned-down"); setPickedId(null); }}>Turned down ({down.length})</button>
+          <button className={filter === "approved" ? "on" : ""} aria-pressed={filter === "approved"} onClick={() => { setFilter("approved"); setPickedId(null); }}>Approved ({approvedList.length})</button>
         </div>
       </header>
 
       {!job ? (
         <div className="rv-empty">
-          <p>{filter === "waiting" ? "All caught up. New pictures appear here as soon as they are made and checked." : "Nothing has been turned down."}</p>
+          <p>{filter === "waiting" ? "All caught up. New pictures appear here as soon as they are made and checked." : filter === "approved" ? "Nothing is approved yet." : "Nothing has been turned down."}</p>
           <button className="secondary" onClick={openDesign}>Open Design</button>
         </div>
       ) : (
@@ -112,7 +124,7 @@ export function ReviewView(props: {
                     <button className="secondary rv-keep" onClick={() => doKeep(take)}><Check size={15} aria-hidden="true" /> Keep revision {take.revision}</button>
                   </figure>
                   <figure>
-                    <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
+                    <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : filter === "approved" ? `Approved · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
                     <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
                     <button className="secondary rv-keep" onClick={() => doKeep(job)}><Check size={15} aria-hidden="true" /> Keep revision {job.revision}</button>
                   </figure>
@@ -127,7 +139,7 @@ export function ReviewView(props: {
                     </figure>
                   )}
                   <figure>
-                    <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
+                    <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : filter === "approved" ? `Approved · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
                     <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
                   </figure>
                   {!reference && <p className="rv-note">No approved reference exists for {assetName(job.assetId)} yet, so there is nothing to compare against.</p>}
@@ -147,9 +159,10 @@ export function ReviewView(props: {
             <p className="rv-hint">These are measurements, not a verdict. Whether the picture is right is your call.</p>
 
             <div className="rv-actions" role="group" aria-label="Decide">
-              <button className="primary" disabled={job.approved || job.status === "failed"} onClick={() => doApprove(job)}><Check size={15} aria-hidden="true" /> Approve</button>
+              <button className="primary" disabled={job.approved || job.status === "failed" || !job.outputPath} onClick={() => doApprove(job)}><Check size={15} aria-hidden="true" /> Approve</button>
               <button className="secondary" disabled={job.rejected} onClick={() => doReject(job, true)} title="Turns this picture down and opens its sheet. Nothing is generated."><MessageSquareWarning size={15} aria-hidden="true" /> Request changes</button>
               <button className="secondary" disabled={job.rejected} onClick={() => doReject(job, false)}><X size={15} aria-hidden="true" /> Reject</button>
+              {(job.approved || job.rejected) && <button className="tertiary" onClick={() => doUndo(job)} title="Takes back this decision. The picture goes back to waiting; nothing is generated or deleted."><Undo2 size={15} aria-hidden="true" /> {job.approved ? "Take back approval" : "Not decided"}</button>}
             </div>
             <p className="rv-hint">Request changes opens the sheet so you can adjust the notes. Generating again is a separate step and never happens from here.</p>
 

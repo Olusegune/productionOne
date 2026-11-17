@@ -27,7 +27,7 @@ export function AppearanceMenu({ look, onLook, onClose }: { look: Look; onLook: 
         </div>
         <div className="am-theme">
           <span>Colour scheme</span>
-          <div className="seg" role="group" aria-label="Colour scheme">
+          <div className="seg wide" role="group" aria-label="Colour scheme">
             <button className={theme === "dark" ? "on" : ""} aria-pressed={theme === "dark"} onClick={() => { if (theme !== "dark") setTheme(toggleTheme()); }}><Moon size={14} aria-hidden="true" /> Dark</button>
             <button className={theme === "light" ? "on" : ""} aria-pressed={theme === "light"} onClick={() => { if (theme !== "light") setTheme(toggleTheme()); }}><Sun size={14} aria-hidden="true" /> Light</button>
           </div>

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { Eyebrow } from "./Eyebrow";
-import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Undo2, Wand2, X } from "lucide-react";
 import {
   angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
   shotReferences, shotSizes, sizeLabels, sortShots, type CameraAngle, type Movement, type ScreenDir, type ShotSize,
 } from "../domain/direct";
-import { addSupplied, approve, enqueue, reject, retry, type ImageJob, type QueueState } from "../domain/generationQueue";
+import { addSupplied, approve, enqueue, reconsider, reject, retry, type ImageJob, type QueueState } from "../domain/generationQueue";
 import { modelTakesReferences } from "../domain/imageCatalog";
 import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
 import type { StyleBible } from "../domain/visualDevelopment";
@@ -129,7 +129,8 @@ export function DirectRoom(props: {
     } catch (e) { notify(String(e)); }
   };
   const approveFrame = (job: ImageJob) => { setQueue((q) => approve(q, job.id)); update(job.assetId, { storyboardStatus: "approved" }); };
-  const rejectFrame = (job: ImageJob) => setQueue((q) => reject(q, job.id));
+  const rejectFrame = (job: ImageJob) => { setQueue((q) => reject(q, job.id)); if (job.approved) update(job.assetId, { storyboardStatus: "generated" }); };
+  const undoFrame = (job: ImageJob) => { setQueue((q) => reconsider(q, job.id)); if (job.approved) update(job.assetId, { storyboardStatus: "generated" }); };
 
   const exportList = async (kind: "csv" | "md") => {
     const text = kind === "csv" ? shotListCsv(shots, analysis.scenes) : shotListMarkdown(title, shots, analysis.scenes);
@@ -219,6 +220,10 @@ export function DirectRoom(props: {
                     {s.dialogue && <q>{s.speaker}: {s.dialogue}</q>}
                   </div>
                   <div className="dr-actions">
+                    {frame?.status === "completed" && frame.outputPath && !live && (<>
+                      {frame.approved ? <button className="secondary" onClick={() => undoFrame(frame)} title="Takes the approval back"><Undo2 size={13} /> Undo approval</button> : <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
+                      {frame.rejected ? <button className="secondary" onClick={() => undoFrame(frame)} title="Takes the rejection back"><Undo2 size={13} /> Undo reject</button> : <button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button>}
+                    </>)}
                     {frame?.status === "needs-review" && (<><button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button><button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button></>)}
                     {!live && frame?.status !== "needs-review" && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
                     {live && <span className="dr-busy">{live.status}…</span>}
@@ -302,7 +307,7 @@ export function DirectRoom(props: {
       </div>
 
       <Animatic shots={shots} queue={queue} scenes={analysis.scenes} />
-      {lightbox !== null && lbItems.length > 0 && <Lightbox items={lbItems} index={Math.min(lightbox, lbItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={approveFrame} onReject={rejectFrame} />}
+      {lightbox !== null && lbItems.length > 0 && <Lightbox items={lbItems} index={Math.min(lightbox, lbItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={approveFrame} onReject={rejectFrame} onReconsider={undoFrame} />}
     </div>
   );
 }

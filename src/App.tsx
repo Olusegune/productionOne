@@ -2,7 +2,7 @@ import { toggleTheme } from "./data/theme";
 import { useLook, useProjectAccent } from "./data/appearance";
 import { looks } from "./domain/appearance";
 import { AppearanceMenu } from "./components/AppearanceMenu";
-import { addCharacterAsset, addPropAsset, applyReadAge } from "./domain/readingActions";
+import { addProductionAsset, addPropAsset, applyReadAge, newAssetKinds, ownImageSlot, type NewAssetKind } from "./domain/readingActions";
 import { hasWork, needsBackup } from "./domain/projectSafety";
 import { workspaceShortcut } from "./domain/shortcuts";
 import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers";
@@ -424,24 +424,32 @@ export default function App() {
       ],
     }));
   };
-  /** Start a character from an image the person already has (for example a Midjourney render): it becomes the approved front view and every other sheet is built from it. */
-  const addCharacterFromImage = async (name: string, gender = "") => {
-    if (!isTauri) { setNotice("Adding a character from an image needs the desktop app."); return; }
-    const result = addCharacterAsset(analysis.assets, name, analysis.scenes[0]?.id ?? "SCENE-001", Date.now(), gender);
+  /** Add a character, costume, prop or set. With an image the person already has, it becomes the approved reference view; without one the sheets are planned and nothing is generated. */
+  const addAssetToBible = async (kind: NewAssetKind, name: string, gender = "", withImage = true) => {
+    const noun = newAssetKinds.find((k) => k.kind === kind)?.noun ?? "asset";
+    const result = addProductionAsset(analysis.assets, kind, name, analysis.scenes[0]?.id ?? "SCENE-001", Date.now(), gender);
     if (!result.added || !result.asset) { setNotice(result.reason ?? "Nothing added."); return; }
+    const asset = result.asset;
+    if (!withImage) {
+      setAnalysis((current) => ({ ...current, assets: result.assets }));
+      setSelectedAsset(result.assets.length - 1);
+      setNotice(`${asset.name} added as a ${noun}. Open Reference sheets to plan and generate its pictures.`);
+      return;
+    }
+    if (!isTauri) { setNotice("Adding from an image needs the desktop app."); return; }
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const chosen = await invoke<string[]>("pick_image_files", { multiple: false });
       if (!chosen.length) return;
       const [file] = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen });
       if (!file) return;
-      const asset = result.asset;
-      const out = addSupplied(queue, { assetId: asset.id, variant: "Canonical", sheetType: "Turnaround", viewKey: "front", label: "Front", aspect: "3:4", fullBody: true, path: file.path, width: file.inspection.width, height: file.inspection.height });
+      const slot = ownImageSlot(kind);
+      const out = addSupplied(queue, { assetId: asset.id, variant: "Canonical", sheetType: slot.sheetType, viewKey: slot.viewKey, label: slot.label, aspect: slot.aspect, fullBody: slot.fullBody, path: file.path, width: file.inspection.width, height: file.inspection.height });
       setAnalysis((current) => ({ ...current, assets: result.assets }));
       setQueue(() => out.state);
       onSheetApproved(out.job, true);
       setSelectedAsset(result.assets.length - 1);
-      setNotice(`${asset.name} added with your image as the approved front view. Open Reference sheets to build the turnaround, poses and expressions from it.`);
+      setNotice(`${asset.name} added with your image as the approved ${slot.label.toLowerCase()}. Open Reference sheets to build the other pictures from it.`);
     } catch (error) { setNotice(String(error)); }
   };
   const approveAsset = (index: number) =>
@@ -1193,6 +1201,14 @@ export default function App() {
     setAssetOutputs((current) => (primary || !current[job.assetId] ? { ...current, [job.assetId]: path } : current));
     if (primary) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (a.id === job.assetId ? { ...a, status: "approved" } : a)) }));
   };
+  // Taking an approval back: the asset loses the picture and the Approved label unless another approved front view still stands for it.
+  const onSheetUnapproved = (job: ImageJob) => {
+    if (!job.outputPath || job.sheetType === "Storyboard") return;
+    const after = queue.jobs.map((j) => (j.id === job.id ? { ...j, approved: false } : j));
+    const fixed = reconcileMissing(analysis.assets, assetOutputs, after, [job.outputPath]);
+    setAssetOutputs(fixed.outputs);
+    if (fixed.demoted.length) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (fixed.demoted.includes(a.id) ? { ...a, status: "planned" } : a)) }));
+  };
   // Messages fade on their own so a stale one never sits on screen.
   useEffect(() => {
     if (!notice) return;
@@ -1355,10 +1371,10 @@ export default function App() {
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Design" && (
-          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddCharacter={(name, gender) => void addCharacterFromImage(name, gender)} onSheetApproved={onSheetApproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage) => void addAssetToBible(kind, name, gender, withImage)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
         {workspace === "Review" && (
-          <ReviewView analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
+          <ReviewView analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Direct" && (
           <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} />

@@ -102,3 +102,15 @@ describe('thumbnail shape', () => {
     expect(aspectCss('')).toBe('3 / 4')
   })
 })
+
+describe('sets are drawn full frame', () => {
+  it('a set prompt asks for the place edge to edge, not a flat grey field; a character still gets the flat backdrop', () => {
+    const style = defaultStyleBible
+    const view = { key: 'establishing', label: 'Establishing view', instruction: 'Wide view.', aspect: '16:9', fullBody: false } as never
+    const set = buildViewPrompt({ style, asset: { id: 'S', name: 'OFFICE', type: 'set' }, variant: 'Canonical', sheetType: 'Establishing' as never, view })
+    expect(set).toMatch(/fills the entire frame edge to edge/)
+    expect(set).not.toMatch(/flat, uniform neutral mid-grey/)
+    const person = buildViewPrompt({ style, asset: { id: 'C', name: 'AMINA', type: 'character' }, variant: 'Canonical', sheetType: 'Turnaround' as never, view })
+    expect(person).toMatch(/mid-grey field/)
+  })
+})

@@ -105,7 +105,9 @@ pub fn build_input(schema: &KieSchema, prompt: &str, aspect: &str, image_urls: &
     let mut input = Map::new();
     input.insert("prompt".into(), json!(prompt));
     if let Some(key) = &schema.aspect_key {
-        let chosen = if schema.aspect_values.is_empty() { Some(aspect.to_string()) } else { nearest_aspect(aspect, &schema.aspect_values) };
+        // Models such as Seedance 2.5 accept only "adaptive" when the video starts from a picture: the picture sets the shape.
+        let adaptive = !image_urls.is_empty() && schema.aspect_values.iter().any(|v| v == "adaptive");
+        let chosen = if adaptive { Some("adaptive".to_string()) } else if schema.aspect_values.is_empty() { Some(aspect.to_string()) } else { nearest_aspect(aspect, &schema.aspect_values) };
         if let Some(v) = chosen { input.insert(key.clone(), json!(v)); }
     }
     match (&schema.image, image_urls.is_empty()) {
@@ -190,8 +192,16 @@ pub struct KieFile { pub bytes: Vec<u8>, pub extension: &'static str }
 pub async fn run(api_key: &str, doc_id: &str, prompt: &str, aspect: &str, references: &[(String, String, String)], duration: Option<u32>, wait_secs: u64) -> Result<KieFile, String> {
     if !valid_doc_id(doc_id) { return Err("That Kie model id is not valid".into()); }
     let http = client(120)?;
-    let md = http.get(format!("https://docs.kie.ai/market/{doc_id}.md")).send().await.map_err(|e| format!("Could not read Kie's model page: {}", e.without_url()))?;
-    if !md.status().is_success() { return Err(format!("Kie has no model page called {doc_id} (it may have been renamed). Press Refresh models.")); }
+    let page_url = format!("https://docs.kie.ai/market/{doc_id}.md");
+    // Kie's documentation site sometimes answers a first request with a hiccup (a 5xx or 429, or a dropped connection). Try once more before blaming the model id; only a 404 means the page is gone.
+    let mut md = http.get(&page_url).send().await;
+    if md.as_ref().map(|r| r.status().as_u16() == 429 || r.status().is_server_error()).unwrap_or(true) {
+        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+        md = http.get(&page_url).send().await;
+    }
+    let md = md.map_err(|e| format!("Could not read Kie's model page: {}", e.without_url()))?;
+    if md.status().as_u16() == 404 { return Err(format!("Kie has no model page called {doc_id} (it may have been renamed). Press Refresh models.")); }
+    if !md.status().is_success() { return Err(format!("Kie's documentation site answered {} for {doc_id}. This is usually temporary: try again in a moment.", md.status().as_u16())); }
     let schema = parse_kie_doc(&md.text().await.map_err(|e| e.to_string())?)?;
     let mut urls = Vec::new();
     if !references.is_empty() && schema.image.is_none() { return Err("This Kie model takes no reference images. Choose an image-to-image or edit model, or one that lists an image input.".into()); }
@@ -295,6 +305,15 @@ mod tests {
         let mut s = parse_kie_doc(DOC).unwrap();
         s.image = None;
         assert!(build_input(&s, "p", "1:1", &["https://x.example/a.png".to_string()], None).unwrap_err().contains("no reference images"));
+    }
+
+    #[test]
+    fn a_video_from_a_picture_uses_adaptive_when_the_model_lists_it() {
+        let schema = KieSchema { model: "m".into(), prompt_max: None, aspect_key: Some("aspect_ratio".into()), aspect_values: vec!["16:9".into(), "9:16".into(), "adaptive".into()], image: Some(ImageField { key: "first_frame_url".into(), array: false, max: 1, required: false }), duration_key: None, duration_values: vec![], duration_is_number: false, fixed: vec![], audio_key: None };
+        let with_picture = build_input(&schema, "p", "3:4", &["https://x/y.png".to_string()], None).unwrap();
+        assert_eq!(with_picture["aspect_ratio"], "adaptive");
+        let without = build_input(&schema, "p", "9:16", &[], None).unwrap();
+        assert_eq!(without["aspect_ratio"], "9:16");
     }
 
     #[test]

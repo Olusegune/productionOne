@@ -216,3 +216,18 @@ select option:disabled { color: var(--text-3, #98a4b8); }
 :root[data-theme="light"] select option, :root[data-theme="light"] select optgroup { background-color: #ffffff; color: #15181c; }
 :root[data-theme="light"] select option:disabled { color: #7a828a; }
 select { max-width: 100%; }
+
+/* ---------- Sheet controls rail ----------
+   The right-hand rail used to be a box with its own scrollbar inside the page, so the controls "slid" on their own while the rest stood still. It now scrolls with the
+   page like everything else. (The left-hand list of assets stays pinned: it is navigation, and it keeps its own scroll for a long cast.) */
+.po-inspector { position: static; max-height: none; overflow: visible; }
+
+/* ---------- Colour-scheme switch ----------
+   The shared .seg is built for icon-only buttons (40px wide), which squashed the words Dark and Light. Here each side is as wide as its label needs. */
+.am-theme .seg { height: 40px; display: inline-flex; min-width: 220px; }
+.am-theme .seg button { flex: 1 1 0; width: auto; min-width: 104px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; font-size: 14px; white-space: nowrap; }
+
+/* ---------- Shape, backdrop and image model (folded settings) ----------
+   In the narrow controls rail the auto-fit grid made a zero-width first column, so the Shape field was squeezed to nothing and its label ran into Backdrop's. One field per row. */
+.ss-more .ss-bar { grid-template-columns: minmax(0, 1fr); }
+.ss-more .ss-bar .ss-model { grid-column: 1 / -1; }

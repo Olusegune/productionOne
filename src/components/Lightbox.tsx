@@ -8,7 +8,12 @@ export interface LightboxItem { job: ImageJob; label: string }
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
-/** Full-resolution viewer: wheel or +/- to zoom, drag to pan, double-click for 100%, arrows to move between views, A to approve, R to reject. */
+const decidable = (j: ImageJob) => j.status === "needs-review" || j.status === "completed";
+const canApprove = (j: ImageJob) => decidable(j) && !j.approved;
+const canReject = (j: ImageJob) => decidable(j) && !j.rejected;
+const canUndo = (j: ImageJob) => j.status === "completed" && (j.approved || j.rejected);
+
+/** Full-resolution viewer: wheel or +/- to zoom, drag to pan, double-click for 100%, arrows to move between views, A to approve, R to reject, U to take a decision back. */
 export function Lightbox(props: {
   items: LightboxItem[];
   index: number;
@@ -16,8 +21,10 @@ export function Lightbox(props: {
   onClose: () => void;
   onApprove: (job: ImageJob) => void;
   onReject: (job: ImageJob) => void;
+  /** Takes a decision back (approved or rejected -> waiting). Optional so a viewer without it keeps working. */
+  onReconsider?: (job: ImageJob) => void;
 }) {
-  const { items, index, onIndex, onClose, onApprove, onReject } = props;
+  const { items, index, onIndex, onClose, onApprove, onReject, onReconsider } = props;
   const item = items[index];
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -38,12 +45,13 @@ export function Lightbox(props: {
       else if (e.key === "+" || e.key === "=") zoom(1.4);
       else if (e.key === "-") zoom(1 / 1.4);
       else if (e.key === "0") reset();
-      else if (e.key.toLowerCase() === "a" && item?.job.status === "needs-review") onApprove(item.job);
-      else if (e.key.toLowerCase() === "r" && item?.job.status === "needs-review") onReject(item.job);
+      else if (e.key.toLowerCase() === "a" && item && canApprove(item.job)) onApprove(item.job);
+      else if (e.key.toLowerCase() === "r" && item && canReject(item.job)) onReject(item.job);
+      else if (e.key.toLowerCase() === "u" && item && canUndo(item.job) && onReconsider) onReconsider(item.job);
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [go, zoom, reset, onClose, onApprove, onReject, item]);
+  }, [go, zoom, reset, onClose, onApprove, onReject, onReconsider, item]);
 
   if (!item || !item.job.outputPath) return null;
   const { job } = item;
@@ -102,7 +110,14 @@ export function Lightbox(props: {
             <button className="secondary" onClick={() => onReject(job)}>Reject <kbd>R</kbd></button>
           </div>
         )}
-        {job.status === "completed" && <span className="lb-state">{job.approved ? "Approved" : job.rejected ? "Rejected" : "Completed"}</span>}
+        {job.status === "completed" && (
+          <div className="lb-actions">
+            <span className="lb-state">{job.approved ? "Approved" : job.rejected ? "Rejected" : "Completed"}</span>
+            {canApprove(job) && <button className="primary" onClick={() => onApprove(job)}><Check size={15} /> Approve <kbd>A</kbd></button>}
+            {canReject(job) && <button className="secondary" onClick={() => onReject(job)}>Reject <kbd>R</kbd></button>}
+            {canUndo(job) && onReconsider && <button className="tertiary" onClick={() => onReconsider(job)}>{job.approved ? "Take back approval" : "Not decided"} <kbd>U</kbd></button>}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

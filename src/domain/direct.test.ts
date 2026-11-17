@@ -113,3 +113,16 @@ describe('shot list exports', () => {
     expect(md).toContain('Establishing')
   })
 })
+
+describe('voices that are heard, not seen', () => {
+  it('a PA VOICE or a recording is not cast in the master shot and does not get its own side of the line', () => {
+    const script = ['SCENE 1 — INT. OFFICE — NIGHT', '', 'FLEX', 'Hello.', '', 'PA VOICE', 'Please keep your belongings with you.', '', 'VENOMSPUR', 'Sit down.'].join(String.fromCharCode(10))
+    const a = analyzeScript(script)
+    const plan = planCoverage(a)
+    const master = plan.find((x) => x.coverage === 'master')!
+    const names = master.assetIds.map((id) => a.assets.find((x) => x.id === id)?.name)
+    expect(names).toContain('FLEX')
+    expect(names).toContain('VENOMSPUR')
+    expect(names).not.toContain('PA VOICE')
+  })
+})

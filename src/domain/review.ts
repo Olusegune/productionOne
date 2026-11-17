@@ -11,6 +11,10 @@ export const awaitingReview = (queue: QueueState): ImageJob[] =>
 export const turnedDown = (queue: QueueState): ImageJob[] =>
   queue.jobs.filter((j) => j.rejected && j.outputPath).sort((a, b) => b.updatedAt - a.updatedAt)
 
+/** Pictures that are approved, newest first, so an approval made by mistake can be taken back. */
+export const approvedPictures = (queue: QueueState): ImageJob[] =>
+  queue.jobs.filter((j) => j.approved && !j.rejected && j.outputPath).sort((a, b) => b.updatedAt - a.updatedAt)
+
 /** The approved picture to compare a new one against: the newest approved front view of the same asset and look. Null when nothing is approved yet. */
 export function approvedReference(queue: QueueState, job: ImageJob): ImageJob | null {
   const found = queue.jobs
