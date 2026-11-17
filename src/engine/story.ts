@@ -41,7 +41,7 @@ export interface StoryCharacter {
   mentionCount: number
 }
 
-export interface StoryProp { name: string; sceneIds: string[]; evidence: Evidence[]; condition?: string }
+export interface StoryProp { name: string; sceneIds: string[]; evidence: Evidence[]; condition?: string; /** What the script says it looks like: the sentence that names it and the short descriptive fragments right after it. */ description?: string }
 
 /** What a character wears, read from the script's own description of them (clothes and accessories), so the wardrobe can be designed and kept the same in every shot. */
 export interface StoryCostume { character: string; items: string[]; sceneIds: string[]; evidence: Evidence[] }
@@ -465,6 +465,35 @@ function addCostumes(scenes: StoryScene[], characters: string[]): StoryCostume[]
 const COMMON = new Set('The She He They It As When Then After Before With Her His Their This That These Those There Here And But Soon Now Inside Outside Suddenly Later Meanwhile Behind Above Below Across Around Beside Beyond During While Still Just Every Each Both Some Many One Two Three All Any Not Yes Please Thank Finally Slowly Quietly Beneath Under Over Through Into Onto From For About Against Between Among Toward Towards Until Upon Within Without Also Even Only Once Maybe Perhaps Close Cut Fade Day Night Morning Evening Afternoon Dawn Dusk Monday Tuesday Wednesday Thursday Friday Saturday Sunday January February March April May June July August September October November December God Lord Mr Mrs Ms Dr We You Your Our Its What Who Why How Which Where Whose Like Let Maybe Okay Well Oh Hey Look See Come Go Take Get Make Put Use Give Tell Ask Keep Hold Stand Sit Turn Walk Run Wait Stop Start Begin End Open Shut Pull Push Reach Raise Lower Hear Feel Think Know Want Need Try Help Find Leave Stay Move Bring Carry Pick Place Set Hands Eyes Her Him Them Us Me My Mine'.split(' '))
 const ACTION_VERB = /^(?:is|was|walks?|runs?|looks?|turns?|stands?|sits?|moves?|enters?|exits?|crosses?|steps?|takes?|picks?|holds?|places?|opens?|closes?|reaches?|pulls?|pushes?|kneels?|smiles?|nods?|shakes?|stares?|watches?|listens?|falls?|rises?|lifts?|raises?|drops?|grabs?|leans?|laughs?|cries?|whispers?|says?|speaks?|asks?|replies?|feels?|thinks?|knows?|sees?|hears?|wants?|needs?|begins?|starts?|stops?|waits?|follows?|leads?|finds?|pauses?|hesitates?|frowns?|sighs?|grins?|prays?|bows?|has|have|does|did|can|will|would|then|climbs?|studies|carries|tells?|answers?|explains?|nervously|quietly|slowly|carefully)\b/i
 
+/**
+ * What the script says a prop looks like. The sentence that names it is kept, and so are the short fragments that follow it in the next paragraph when they name no one and do nothing
+ * ("A photograph slips from the file." then "A modest kitchen. A small boy sitting behind a birthday cake."). The first place the prop appears is the one that describes it.
+ */
+function describeProps(scenes: StoryScene[], props: StoryProp[], names: string[]): void {
+  const named = (text: string) => names.some((n) => new RegExp(`\\b${escapeRx(n)}\\b`, 'i').test(text))
+  const sentences = (text: string) => text.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean)
+  const fragment = (text: string) => sentences(text).every((x) => x.split(/\s+/).length <= 12 && !named(x) && !/\b(?:is|are|was|were|says?|looks?|turns?|walks?|steps?|presses|rises|slips|catches|places?|sets?|opens?|closes?)\b/i.test(x))
+  // Only props that show something (a photograph, a map, a letter) get their content described: for an ordinary object the name already carries its look ("silver microphone"), and the lines after it are about the room.
+  const shows = /(?:photograph|photo|picture|painting|portrait|map|letter|notebook|diary|poster|projection|scroll|contract|ledger)$/i
+  for (const p of props) {
+    const first = p.evidence[0]
+    if (!first || !shows.test(p.name)) continue
+    const scene = scenes.find((s) => p.sceneIds[0] === s.id && s.action.some((a) => a.line === first.line)) ?? scenes.find((s) => s.action.some((a) => a.line === first.line))
+    if (!scene) continue
+    const at = scene.action.findIndex((a) => a.line === first.line)
+    const own = sentences(scene.action[at].text)
+    const noun = p.name.split(/\s+/).pop()!.toLowerCase()
+    const mine = own.find((x) => x.toLowerCase().includes(noun)) ?? first.text
+    const parts = [mine]
+    // Fragments in the same paragraph after the naming sentence, then in the next paragraph.
+    const idx = own.indexOf(mine)
+    for (const x of own.slice(idx + 1)) if (fragment(x)) parts.push(x); else break
+    const next = scene.action[at + 1]
+    if (next && next.line - scene.action[at].line <= 3 && fragment(next.text)) parts.push(...sentences(next.text))
+    p.description = parts.join(' ').replace(/\s+/g, ' ').trim()
+  }
+}
+
 /** Names that act in the description (Chloe walks, Chloe looks) but never speak under a cue. Needs repeated evidence; it is labelled so the writer can check it. */
 function inferFromAction(scenes: StoryScene[], known: string[]): StoryCharacter[] {
   const skip = new Set(known.map((k) => k.toUpperCase()))
@@ -531,6 +560,7 @@ export function parseStory(input: string): ParsedStory {
   const uniqueCharacters = [...new Map(characters.map((character) => [character.name.toUpperCase(), character])).values()]
   if (!uniqueCharacters.length && b.scenes.length) b.warnings.push('No characters were found. Characters are read from speaker lines, named people in action, and repeated names in prose. Check how the script marks who is present.')
   const props = addProps(b.scenes)
+  describeProps(b.scenes, props, uniqueCharacters.map((c) => c.name))
   const variants = addVariants(b.scenes, uniqueCharacters.map((c) => c.name))
   if (!b.scenes.length && input.trim()) b.warnings.push('No scenes could be read from this text.')
   return { format, title: titleOf(lines), scenes: b.scenes, characters: uniqueCharacters, props, costumes: addCostumes(b.scenes, uniqueCharacters.map((c) => c.name)), variants, warnings: b.warnings }

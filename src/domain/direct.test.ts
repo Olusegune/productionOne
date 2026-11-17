@@ -101,6 +101,16 @@ describe('frames, references and prompts', () => {
     expect(new Set(again.map((s) => s.id)).size).toBe(again.length)
     expect(again.filter((s) => s.sceneId === 'SCENE-001').length).toBe(shots.filter((s) => s.sceneId === 'SCENE-001').length)
   })
+  it('replanning twice does not draw a kept shot a second time, and refreshes what is written about it', () => {
+    const kept = shots.filter((s) => s.sceneId === 'SCENE-002')
+    let q = emptyQueue()
+    for (const k of kept) q = addSupplied(q, { assetId: k.id, variant: 'Storyboard', sheetType: 'Storyboard', viewKey: 'frame', label: 'f', aspect: '16:9', fullBody: false, path: 'C:/f.png', width: 1, height: 1 }).state
+    const stale = shots.map((s) => (s.sceneId === 'SCENE-002' ? { ...s, action: 'old words' } : s))
+    const again = replanScene(stale, analysis, 'SCENE-002', q)
+    expect(again.filter((s) => s.sceneId === 'SCENE-002')).toHaveLength(kept.length)
+    expect(again.filter((s) => s.sceneId === 'SCENE-002').every((s) => s.action !== 'old words')).toBe(true)
+    expect(replanScene(again, analysis, 'SCENE-002', q)).toHaveLength(again.length)
+  })
 })
 
 describe('shot list exports', () => {
