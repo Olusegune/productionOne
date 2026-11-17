@@ -32,9 +32,14 @@ describe('quick engines for a view that must be made again', () => {
   const comfy: CatalogModel = { provider: 'comfyui', id: 'sdxl-keyframes', name: 'SDXL keyframes', source: 'discovered', references: false, note: '' }
   const catalog = mergeCatalog({}, [comfy])
   const keys = { kie: true, google: true, openai: true, comfyui: true }
-  it('offers Nano Banana, the newest Seedream, the newest GPT Image and a model on this computer', () => {
+  it('offers both Nano Bananas, the newest Seedream, the newest GPT Image, Ideogram Character, Wan and a model on this computer', () => {
     const labels = quickEngines(catalog, keys, true).map((o) => o.label)
-    expect(labels).toEqual(['Nano Banana 2.1', 'Seedream 5.0 Pro', 'GPT Image 2.5', 'On this computer: SDXL keyframes'])
+    expect(labels).toEqual(['Nano Banana 2.1', 'Nano Banana Pro', 'Seedream 5.0 Pro', 'GPT Image 2.5', 'Ideogram Character', 'Wan 2.7 Image Pro', 'On this computer: SDXL keyframes'])
+  })
+  it('lists Nano Banana whether the view used it before or not, so it can always be chosen again', () => {
+    const labels = quickEngines(catalog, keys, false).map((o) => o.label)
+    expect(labels[0]).toBe('Nano Banana 2.1')
+    expect(quickEngines(catalog, { kie: true }, false)[0]).toMatchObject({ provider: 'kie', model: 'google/nanobanana-2-1', available: true })
   })
   it('picks the image-to-image variant when the view is built from the approved front, and text-to-image otherwise', () => {
     const withRef = quickEngines(catalog, keys, true)
@@ -47,6 +52,7 @@ describe('quick engines for a view that must be made again', () => {
   it('says when a key is missing, and what is lost on an engine that cannot take references', () => {
     const none = quickEngines(catalog, {}, true)
     expect(none.every((o) => !o.available)).toBe(true)
+    expect(none.find((o) => o.label === 'Nano Banana Pro')?.note).toMatch(/Google key/)
     expect(none.find((o) => o.label === 'Seedream 5.0 Pro')?.note).toMatch(/Kie\.ai key/)
     const local = quickEngines(catalog, keys, true).find((o) => o.provider === 'comfyui')!
     expect(local.available).toBe(true)

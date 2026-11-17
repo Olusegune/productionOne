@@ -12,10 +12,11 @@ const options = [
 ]
 
 describe('choosing another engine for a view', () => {
-  it('lists the engines inline, leaves out the one already in use, and disables those that are not ready, with the reason visible', () => {
+  it('lists every engine inline, keeps the one used before (marked), and disables those that are not ready, with the reason visible', () => {
     render(<EngineSwitch options={options} current={{ provider: 'google', model: 'nano' }} onUse={() => {}} />)
     const radios = screen.getAllByRole('radio') as HTMLInputElement[]
-    expect(radios.map((r) => r.value)).toEqual(['kie|seed', 'openai|gpt', 'comfyui|sdxl'])
+    expect(radios.map((r) => r.value)).toEqual(['google|nano', 'kie|seed', 'openai|gpt', 'comfyui|sdxl'])
+    expect(screen.getByText(/used before/)).toBeTruthy()
     expect(radios.find((r) => r.value === 'openai|gpt')?.disabled).toBe(true)
     expect(screen.getByText('needs an OpenAI key')).toBeTruthy()
     expect(document.querySelector('select')).toBeNull()
@@ -30,10 +31,16 @@ describe('choosing another engine for a view', () => {
     expect(onUse).toHaveBeenCalledTimes(1)
     expect(onUse.mock.calls[0][0]).toMatchObject({ provider: 'comfyui', model: 'sdxl' })
   })
-  it('selects the first ready engine by default', () => {
+  it('selects the first ready engine by default, which can be the one used before', () => {
     render(<EngineSwitch options={options} current={{ provider: 'google', model: 'nano' }} onUse={() => {}} />)
-    expect((screen.getByRole('radio', { name: /Seedream 5.0 Pro/ }) as HTMLInputElement).checked).toBe(true)
-    expect(screen.getByRole('button', { name: 'Use Seedream 5.0 Pro' })).toBeTruthy()
+    expect((screen.getByRole('radio', { name: /Nano Banana 2.1/ }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByRole('button', { name: 'Use Nano Banana 2.1' })).toBeTruthy()
+  })
+  it('can use the engine it used before again', () => {
+    const onUse = vi.fn()
+    render(<EngineSwitch options={options} current={{ provider: 'google', model: 'nano' }} onUse={onUse} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Use Nano Banana 2.1' }))
+    expect(onUse.mock.calls[0][0]).toMatchObject({ provider: 'google', model: 'nano' })
   })
   it('does not let a disabled engine be used', () => {
     const onUse = vi.fn()
