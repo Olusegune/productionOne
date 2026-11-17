@@ -190,8 +190,16 @@ pub struct KieFile { pub bytes: Vec<u8>, pub extension: &'static str }
 pub async fn run(api_key: &str, doc_id: &str, prompt: &str, aspect: &str, references: &[(String, String, String)], duration: Option<u32>, wait_secs: u64) -> Result<KieFile, String> {
     if !valid_doc_id(doc_id) { return Err("That Kie model id is not valid".into()); }
     let http = client(120)?;
-    let md = http.get(format!("https://docs.kie.ai/market/{doc_id}.md")).send().await.map_err(|e| format!("Could not read Kie's model page: {}", e.without_url()))?;
-    if !md.status().is_success() { return Err(format!("Kie has no model page called {doc_id} (it may have been renamed). Press Refresh models.")); }
+    let page_url = format!("https://docs.kie.ai/market/{doc_id}.md");
+    // Kie's documentation site sometimes answers a first request with a hiccup (a 5xx or 429, or a dropped connection). Try once more before blaming the model id; only a 404 means the page is gone.
+    let mut md = http.get(&page_url).send().await;
+    if md.as_ref().map(|r| r.status().as_u16() == 429 || r.status().is_server_error()).unwrap_or(true) {
+        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+        md = http.get(&page_url).send().await;
+    }
+    let md = md.map_err(|e| format!("Could not read Kie's model page: {}", e.without_url()))?;
+    if md.status().as_u16() == 404 { return Err(format!("Kie has no model page called {doc_id} (it may have been renamed). Press Refresh models.")); }
+    if !md.status().is_success() { return Err(format!("Kie's documentation site answered {} for {doc_id}. This is usually temporary: try again in a moment.", md.status().as_u16())); }
     let schema = parse_kie_doc(&md.text().await.map_err(|e| e.to_string())?)?;
     let mut urls = Vec::new();
     if !references.is_empty() && schema.image.is_none() { return Err("This Kie model takes no reference images. Choose an image-to-image or edit model, or one that lists an image input.".into()); }

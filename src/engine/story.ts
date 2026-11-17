@@ -56,8 +56,9 @@ export interface ParsedStory {
   warnings: string[]
 }
 
-const TIMES = 'DAY|NIGHT|DAWN|DUSK|MORNING|EVENING|AFTERNOON|SUNSET|SUNRISE|TWILIGHT|MIDNIGHT|NOON|LATER|CONTINUOUS|MOMENTS LATER|SAME|SAME TIME|DAYBREAK|EARLY MORNING|LATE NIGHT'
-const SLUG = /^(?:\.(?=[A-Za-z])|(INT\.?\s*\/\s*EXT|EXT\.?\s*\/\s*INT|I\s*\/\s*E|INT|EXT)[.\s])\s*(.+)$/i
+const TIMES = 'DAY|NIGHT|TIMELESS|DAWN|DUSK|MORNING|EVENING|AFTERNOON|SUNSET|SUNRISE|TWILIGHT|MIDNIGHT|NOON|LATER|CONTINUOUS|MOMENTS LATER|SAME|SAME TIME|DAYBREAK|EARLY MORNING|LATE NIGHT'
+// Also accepts a numbered heading ("SCENE 3 — INT. OFFICE — NIGHT"), which many writers and AI drafts use: without this the whole script was read as a shot list and no dialogue was found.
+const SLUG = /^(?:\.(?=[A-Za-z])|(?:SCENE\s+\d+[A-Za-z]?\s*[-–—:.]\s*)?(INT\.?\s*\/\s*EXT|EXT\.?\s*\/\s*INT|I\s*\/\s*E|INT|EXT)[.\s])\s*(.+)$/i
 const SEP = /\s+[-–—]+\s+|\s*[–—]\s*/
 const TRANSITION = /^(?:FADE (?:IN|OUT|TO)|CUT TO|DISSOLVE TO|SMASH CUT|MATCH CUT|JUMP CUT|WIPE TO|IRIS (?:IN|OUT)|BACK TO|THE END)\b.*[:.]?$|.*\bTO:$/
 const CUE = /^(@)?([A-Z][A-Z0-9 .'’-]{0,34})(\s*\((?:V\.?O\.?|O\.?S\.?|O\.?C\.?|CONT'?D|CONT’D|FILTERED|ON PHONE|PRE-LAP)\))*\s*(\^)?$/
@@ -125,6 +126,7 @@ function colonSpeaker(t: string, counts: Map<string, number>): { name: string; p
   const name = m[2].trim()
   const words = name.split(/\s+/)
   if (words.length > 4 || LABELS.has(name.toUpperCase()) || SLUG.test(t) || /^\d/.test(name)) return null
+  if (/^[\d.,\s]+$/.test(m[4])) return null // on-screen text such as 'TICKET: 8,004,119.', 'NOW SERVING: 6.' or 'EPHESIANS 2:8.' is not a speaker
   const allCaps = name === name.toUpperCase()
   if (!allCaps && (counts.get(name.toUpperCase()) ?? 0) < 2) return null
   if (allCaps && name.length < 2) return null
@@ -298,7 +300,7 @@ const DAMAGE = /\b(broken|cracked|shattered|torn|burned|burnt|rusted|rusty|bent|
 /** Words that end an object phrase: "a microphone out of habit" is a microphone. */
 const PROP_FILLER = new Set(['out', 'though', 'but', 'by', 'up', 'down', 'about', 'again', 'like', 'so', 'around', 'away', 'back', 'off', 'single', 'few', 'couple'])
 /** Tangible things a scene often needs to show. They are found with or without a verb ("a brass stamp", "an umbrella in one hand"). Words such as glass, light or file are left out: they are mostly not objects. */
-const OBJECT_NOUNS = 'stamp|umbrella|folio|folder|ledger|briefcase|suitcase|satchel|knife|dagger|sword|gun|pistol|rifle|pen|pencil|cane|staff|lantern|lamp|torch|key|keys|phone|radio|camera|ring|necklace|medallion|watch|compass|map|letter|envelope|book|notebook|diary|photograph|photo|painting|mask|crown|trophy|microphone|guitar|violin|drum|bottle|cup|mug|cigar|candle|backpack|bag|chest|coin|coins|badge|clipboard|contract|scroll|parcel|package|laptop|tablet|headphones|glasses|sunglasses|bouquet|flag|rope|shovel|axe|hammer|wrench|lighter|ticket|passport|wallet|purse|basket|tray|teapot|kettle'
+const OBJECT_NOUNS = 'stamp|umbrella|folio|folder|ledger|briefcase|suitcase|satchel|knife|dagger|sword|gun|pistol|rifle|pen|pencil|cane|staff|lantern|lamp|torch|key|keys|phone|radio|camera|ring|necklace|medallion|watch|compass|map|letter|envelope|book|notebook|diary|photograph|photo|painting|mask|crown|trophy|microphone|guitar|violin|drum|bottle|cup|mug|cigar|candle|backpack|bag|chest|coin|coins|badge|clipboard|contract|scroll|parcel|package|laptop|tablet|headphones|glasses|sunglasses|bouquet|flag|rope|shovel|axe|hammer|wrench|lighter|ticket|passport|wallet|purse|basket|tray|teapot|kettle|typewriter|recorder|cheque|blotter'
 const OBJECT_RX = new RegExp(String.raw`\b(?:an?|the|his|her|their|its)\s+((?:[a-z][a-z'-]*\s+){0,2}?)(${OBJECT_NOUNS})s?\b`, 'gi')
 
 function addProps(scenes: StoryScene[]): StoryProp[] {
@@ -440,6 +442,12 @@ export function parseStory(input: string): ParsedStory {
   else if (format === 'shotlist') readShotlist(lines, b)
   else if (format === 'lyrics') readLyrics(lines, b)
   else if (format === 'prose') readProse(lines, b)
+
+  // "INT. OFFICE - THE ACCOUNT" and "INT. OFFICE - THE REBRAND" are beats in one location, not new sets: fold them into the plain location when it also appears on its own.
+  if (format === 'screenplay') for (const sc of b.scenes) {
+    const head = sc.setting.split(' - ')[0].trim()
+    if (head && head !== sc.setting && b.scenes.some((o) => o !== sc && o.setting.toUpperCase() === head.toUpperCase())) sc.setting = head
+  }
 
   if (format === 'prose' && b.scenes.length === 1 && !/^\[|^ACT\b/i.test(b.scenes[0].heading)) b.warnings.push('No scene headings were found, so this was read as prose. Add INT./EXT. headings for the most accurate result.')
   if (format === 'screenplay' && lines.some((l, i) => i < lines.findIndex((x) => SLUG.test(clean(x).trim())) && clean(l).trim() && !/^\s*(?:title|credit|author|authors|source|draft date|date|contact|copyright|notes?)\s*:/i.test(clean(l)))) b.warnings.push('Text before the first scene heading (title page or notes) was not treated as story.')

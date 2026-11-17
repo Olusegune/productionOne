@@ -115,7 +115,9 @@ export function mergeCatalog(discovered: DiscoveredCatalog, local: CatalogModel[
 
 export function mergeVideoModels(discovered: DiscoveredCatalog) {
   const merged = [...demoVideoModels]
-  for (const m of discovered['kie-video']?.models ?? []) if (!merged.some((x) => x.id === m.id)) merged.push({ id: m.id, name: m.name, note: 'Listed by Kie.ai. Price and limits are not verified here.' })
+  // The motion demo starts from an approved picture, so text-to-video models (which take no picture) are left out of the list.
+  const textOnly = (m: { id: string; name: string }) => /text[-\s_]?to[-\s_]?video/i.test(m.id) || /text[-\s_]?to[-\s_]?video/i.test(m.name)
+  for (const m of discovered['kie-video']?.models ?? []) if (!textOnly(m) && !merged.some((x) => x.id === m.id)) merged.push({ id: m.id, name: m.name, note: 'Listed by Kie.ai. Price and limits are not verified here.' })
   return merged
 }
 

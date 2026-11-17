@@ -28,6 +28,8 @@ describe('image catalog', () => {
     for (const id of ['bytedance/seedance-2-5', 'kling/v4-reference-to-video', 'wan/3-0-video', 'happyhorse-1-1/image-to-video', 'minimax-h3/image-to-video', 'pixverse/image-to-video']) expect(ids).toContain(id)
     expect(new Set(ids).size).toBe(ids.length)
     expect(mergeVideoModels({ 'kie-video': { fetchedAt: 1, models: [{ id: 'hailuo/2-3-image-to-video-standard', name: 'Hailuo' }, { id: 'wan/3-0-video', name: 'dup' }] } })).toHaveLength(ids.length + 1)
+    // text-to-video models take no picture, so they are not offered for the picture-based motion demo
+    expect(mergeVideoModels({ 'kie-video': { fetchedAt: 1, models: [{ id: 'kling/2-6-text-to-video', name: 'Kling 2.6 Text to Video' }, { id: 'grok-imagine/text-to-video', name: 'Grok Imagine Text to Video' }] } })).toHaveLength(ids.length)
   })
 })
 
