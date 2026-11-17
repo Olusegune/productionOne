@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
+import { keepShotsAfterReading, buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
 import { addSupplied, emptyQueue, enqueue, type QueueState } from './generationQueue'
 import { analyzeScript } from './productionStudio'
 import { defaultStyleBible } from './visualDevelopment'
@@ -134,5 +134,19 @@ describe('voices that are heard, not seen', () => {
     expect(names).toContain('FLEX')
     expect(names).toContain('VENOMSPUR')
     expect(names).not.toContain('PA VOICE')
+  })
+})
+
+describe('reading the script again', () => {
+  it('leaves a planned storyboard where it is: every shot keeps its scene, cast and frame', () => {
+    const after = keepShotsAfterReading(shots, analysis)
+    expect(after).toEqual(shots)
+    expect(new Set(after.map((s) => s.sceneId)).size).toBe(new Set(shots.map((s) => s.sceneId)).size)
+  })
+  it('moves only a shot whose scene is no longer in the script', () => {
+    const orphan = { ...shots[0], sceneId: 'SCENE-999' }
+    const after = keepShotsAfterReading([orphan, shots[1]], analysis)
+    expect(after[0].sceneId).toBe(analysis.scenes[0].id)
+    expect(after[1]).toEqual(shots[1])
   })
 })

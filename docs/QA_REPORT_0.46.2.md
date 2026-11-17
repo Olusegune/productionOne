@@ -6,7 +6,7 @@ Scope: props that show something use the script's description; planning a scene 
 | Check | Result |
 |---|---|
 | Types: `npx tsc -b` | Pass |
-| JS tests | 584 pass (4 more: propDescriptions.test.ts, replan test) |
+| JS tests | 586 pass (6 more: propDescriptions.test.ts, replan test, reading-again tests) |
 | Rust tests | 84 pass (no Rust change) |
 | clippy, `npm audit`, Playwright and Python suites, `rafter secrets` | Not run in this pass (no Rust or dependency change) |
 
@@ -17,8 +17,10 @@ Scope: props that show something use the script's description; planning a scene 
 | Description in the prop sheet prompt, the insert shot action and the prop line of shot prompts | propDescriptions.test.ts | Pass (as above) |
 | Replan keeps approved shots once and refreshes their action and cast | direct.test.ts | Partly: on a project made before 0.46.1 the new plan's titles differ from the old ones (e.g. "Master: PA VOICE and FLEX" vs "Master: FLEX and VENOMSPUR"), so those shots were added as new ones (65 -> 75). Not harmful but untidy. |
 
+## Analyze script bug (found in this pass, fixed)
+Pressing Analyze script on a project opened from a file moved nearly every shot into scene 1 (59 shots in scene 1, one in each other scene). Cause: `analyze` in App.tsx re-assigned every shot to the scene at its position in the shot list (a leftover from the first placeholder shots). Fix: `keepShotsAfterReading` leaves a shot whose scene still exists alone. Real app: the saved 65-shot project showed 7/12/11/10/10/9/6 shots per scene before and after pressing Analyze script (the file was not saved over).
+
 ## Findings not fixed
-- **Analyze script on a project opened from a file** moved nearly every shot into scene 1 (59 shots in scene 1, one in each other scene). The saved file itself is intact: reopening it without re-analysing showed 7/12/11/10/10/9/6 shots. Cause not found. Do not press Analyze script on an opened project until fixed.
 - A regenerate failed once at the provider with no reason shown, and worked on retry.
 - Props are still read from a noun list; an unusual object may be missed.
 

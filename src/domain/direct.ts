@@ -151,6 +151,18 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
   return drafts.map((d, i) => toShot(d, legacy, scene, slugId(firstNumber + i), firstOrder + i))
 }
 
+/**
+ * After the script is read again, a shot whose scene is still in the script is left exactly as it is (scene, cast, frame). Only a shot whose scene is gone is moved, to the scene at its
+ * position in the list, as the first placeholder shots were. Moving every shot by its position put most of a planned storyboard into scene 1.
+ */
+export function keepShotsAfterReading(shots: ShotRecord[], analysis: AnalysisResult): ShotRecord[] {
+  return shots.map((shot, index) =>
+    analysis.scenes.some((s) => s.id === shot.sceneId)
+      ? shot
+      : { ...shot, sceneId: analysis.scenes[index]?.id ?? analysis.scenes[0]?.id ?? shot.sceneId, assetIds: analysis.assets.filter((a) => a.sceneIds.includes(analysis.scenes[index]?.id ?? '')).map((a) => a.id) },
+  )
+}
+
 export function planCoverage(analysis: AnalysisResult, only?: string): ShotRecord[] {
   const story = analysis.story
   if (!story) return []
