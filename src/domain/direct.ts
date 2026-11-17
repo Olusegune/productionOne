@@ -66,6 +66,8 @@ export interface ShotDraft {
   composition?: string[]
   sound?: string
   setAsset?: ExtractedAsset
+  /** Costumes and props that belong in the frame, besides the people and the set. */
+  extras?: ExtractedAsset[]
   looks?: Record<string, string>
   evidenceLine?: number
 }
@@ -75,7 +77,7 @@ function toShot(draft: ShotDraft, scene: ScriptScene, story: StoryScene | undefi
   const [face, body] = FACE[emotion.emotion]
   const lens = defaultLens[draft.size]
   return {
-    id, sceneId: scene.id, order, duration: draft.duration ?? 4, assetIds: [...draft.characters, ...(draft.setAsset ? [draft.setAsset] : [])].map((a) => a.id), action: draft.action,
+    id, sceneId: scene.id, order, duration: draft.duration ?? 4, assetIds: [...new Set([...draft.characters, ...(draft.setAsset ? [draft.setAsset] : []), ...(draft.extras ?? [])].map((a) => a.id))], action: draft.action,
     dialogue: draft.dialogue?.text ?? '', speaker: draft.dialogue?.speaker ?? '', emotionalObjective: emotion.emotion === 'neutral' ? 'Observation' : `${emotion.emotion} (${emotion.intensity}/10)`,
     facialActing: face, bodyLanguage: body, microAnimation: emotion.intensity >= 7 ? 'Held breath, tiny tremor, one slow blink' : 'One blink, slow breath, slight weight shift',
     cameraFraming: sizeLabels[draft.size], cameraMovement: movementLabels[draft.movement], lighting: lightingFor(scene.timeOfDay, story?.intExt ?? 'UNSPECIFIED'),
@@ -100,10 +102,15 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
   const looksFor = (chars: ExtractedAsset[]) => Object.fromEntries(chars.map((c) => [c.id, story.variants.find((v) => v.character.toUpperCase() === c.name.toUpperCase() && v.sceneId === scene.id && v.kind !== 'age')?.value ?? story.variants.find((v) => v.character.toUpperCase() === c.name.toUpperCase() && v.sceneId === scene.id)?.value ?? 'Canonical']))
   const drafts: ShotDraft[] = []
   const place = scene.setting.toLowerCase()
+  // What people wear (their costume asset) and the props the script puts near a moment, so the frame can keep them consistent.
+  const costumesOf = (chars: ExtractedAsset[]) => chars.map((c) => analysis.assets.find((a) => a.type === 'costume' && a.name.toUpperCase() === `${c.name} costume`.toUpperCase())).filter((a): a is ExtractedAsset => !!a)
+  const propAsset = (name: string) => analysis.assets.find((a) => a.type === 'prop' && a.name === name)
+  const propsNear = (line: number, radius: number) => story.props.filter((p) => p.sceneIds.includes(scene.id) && p.evidence.some((e) => Math.abs(e.line - line) <= radius)).map((p) => propAsset(p.name)).filter((a): a is ExtractedAsset => !!a).slice(0, 2)
+  const sceneProps = story.props.filter((p) => p.sceneIds.includes(scene.id)).sort((a, b) => b.sceneIds.length - a.sceneIds.length).map((p) => propAsset(p.name)).filter((a): a is ExtractedAsset => !!a).slice(0, 3)
   if (setAsset && scene.setting !== previousSetting) {
     drafts.push({ coverage: 'establishing', size: scene.intExt === 'EXT' ? 'EWS' : 'WS', angle: scene.intExt === 'EXT' ? 'high' : 'eye-level', movement: scene.intExt === 'EXT' ? 'crane' : 'static', title: `Establishing: ${place}`, characters: [], setAsset, action: `Establish ${place}, ${scene.timeOfDay.toLowerCase()}.`, duration: 4, composition: ['depth layers', 'leading lines'], sound: `${place} ambience` })
   }
-  if (here.length) drafts.push({ coverage: 'master', size: here.length > 1 ? 'WS' : 'MWS', angle: 'eye-level', movement: 'static', title: `Master: ${here.map((c) => c.name).join(' and ')}`, characters: here, setAsset, looks: looksFor(here), action: `${here.map((c) => c.name).join(' and ')} in ${place}.`, duration: 5, composition: ['rule of thirds', 'depth layers'], screenDir: 'neutral' })
+  if (here.length) drafts.push({ coverage: 'master', size: here.length > 1 ? 'WS' : 'MWS', angle: 'eye-level', movement: 'static', title: `Master: ${here.map((c) => c.name).join(' and ')}`, characters: here, setAsset, extras: [...costumesOf(here), ...sceneProps], looks: looksFor(here), action: `${here.map((c) => c.name).join(' and ')} in ${place}.`, duration: 5, composition: ['rule of thirds', 'depth layers'], screenDir: 'neutral' })
   // Dialogue: group same-speaker lines, then cover alternating speakers over the shoulder, keeping each speaker on one side of the line.
   const sideOf = new Map<string, ScreenDir>()
   const speakers = [...new Set(scene.dialogue.filter((d) => d.speaker !== 'LYRIC' && !unseen(d.speaker)).map((d) => d.speaker.toUpperCase()))]
@@ -123,7 +130,7 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
     const pair = here.length > 1
     drafts.push({
       coverage: pair && !strong ? 'ots' : 'single', size: strong ? 'CU' : pair ? 'MCU' : 'MS', angle: pair && !strong ? 'ots' : 'eye-level', movement: strong && reading!.intensity >= 8 ? 'push-in' : 'static',
-      title: `${g.speaker}: ${g.text.slice(0, 32)}${g.text.length > 32 ? '…' : ''}`, characters: pair ? here : who ? [who] : [], focus: who, setAsset, looks: looksFor(who ? [who] : []), screenDir: sideOf.get(g.speaker) ?? 'neutral',
+      title: `${g.speaker}: ${g.text.slice(0, 32)}${g.text.length > 32 ? '…' : ''}`, characters: pair ? here : who ? [who] : [], extras: [...costumesOf(pair ? here : who ? [who] : []), ...propsNear(g.line, 8)], focus: who, setAsset, looks: looksFor(who ? [who] : []), screenDir: sideOf.get(g.speaker) ?? 'neutral',
       action: `${g.speaker} speaks${g.parenthetical ? ` (${g.parenthetical})` : ''}.`, dialogue: { speaker: g.speaker, text: g.text, parenthetical: g.parenthetical }, emotion: reading ? { emotion: reading.emotion, intensity: reading.intensity } : undefined,
       duration: estimateDuration(g.text), composition: strong ? ['negative space'] : ['rule of thirds'], evidenceLine: g.line,
     })
@@ -136,7 +143,8 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
     }
   }
   // Props that carry meaning (a stated condition) get an insert.
-  for (const p of story.props.filter((x) => x.sceneIds.includes(scene.id) && x.condition).slice(0, 2)) {
+  // A prop that returns in two or more scenes (the typewriter, the photograph) gets an insert where it first appears, as well as one with a stated condition.
+  for (const p of story.props.filter((x) => x.sceneIds.includes(scene.id) && (x.condition || (x.sceneIds.length >= 2 && x.sceneIds[0] === scene.id))).slice(0, 2)) {
     const asset = analysis.assets.find((a) => a.type === 'prop' && a.name === p.name)
     drafts.push({ coverage: 'insert', size: 'ECU', angle: 'eye-level', movement: 'rack-focus', title: `Insert: ${p.name}`, characters: [], action: `Close on the ${p.name}${p.condition ? `, ${p.condition}` : ''}.`, duration: 2, composition: ['negative space'], setAsset: asset })
   }
@@ -226,8 +234,8 @@ export function shotReferences(shot: ShotRecord, analysis: AnalysisResult, queue
     const look = shot.looks?.[id] ?? 'Canonical'
     const pick = (variant: string) => queue.jobs.filter((j) => j.assetId === id && j.variant === variant && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey)).sort((a, b) => b.revision - a.revision)[0]
     const job = pick(look) ?? pick('Canonical') ?? queue.jobs.filter((j) => j.assetId === id && j.approved && j.outputPath && primaryViewKeys.includes(j.viewKey)).sort((a, b) => b.revision - a.revision)[0]
-    if (job?.outputPath) out.push({ label: asset.name, path: job.outputPath, kind: asset.type === 'character' ? 'character' : asset.type === 'prop' ? 'prop' : 'set' })
-    else if (assetRefs[id]?.[0]) out.push({ label: `${asset.name} (your photo)`, path: assetRefs[id][0], kind: asset.type === 'character' ? 'character' : asset.type === 'prop' ? 'prop' : 'set' })
+    if (job?.outputPath) out.push({ label: asset.name, path: job.outputPath, kind: asset.type === 'character' || asset.type === 'costume' ? 'character' : asset.type === 'prop' ? 'prop' : 'set' })
+    else if (assetRefs[id]?.[0]) out.push({ label: `${asset.name} (your photo)`, path: assetRefs[id][0], kind: asset.type === 'character' || asset.type === 'costume' ? 'character' : asset.type === 'prop' ? 'prop' : 'set' })
   }
   return out.slice(0, 8)
 }
@@ -240,6 +248,8 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     `Cinematic storyboard frame, ${aspect}. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${shot.lens ?? 40}mm lens${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.` : '',
+    names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',
+    names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.name).join(', ')}.` : '',
     `Action: ${shot.action}`,
     shot.emotion && shot.emotion !== 'neutral' ? `Feeling: ${shot.emotion}. Face: ${shot.facialActing}. Body: ${shot.bodyLanguage}.` : '',
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',

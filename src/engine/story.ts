@@ -43,6 +43,9 @@ export interface StoryCharacter {
 
 export interface StoryProp { name: string; sceneIds: string[]; evidence: Evidence[]; condition?: string }
 
+/** What a character wears, read from the script's own description of them (clothes and accessories), so the wardrobe can be designed and kept the same in every shot. */
+export interface StoryCostume { character: string; items: string[]; sceneIds: string[]; evidence: Evidence[] }
+
 export type VariantKind = 'age' | 'wardrobe' | 'injury' | 'state'
 export interface StoryVariant { character: string; kind: VariantKind; value: string; sceneId: string; evidence: Evidence }
 
@@ -52,6 +55,8 @@ export interface ParsedStory {
   scenes: StoryScene[]
   characters: StoryCharacter[]
   props: StoryProp[]
+  /** Optional so older saved readings still load. */
+  costumes?: StoryCostume[]
   variants: StoryVariant[]
   warnings: string[]
 }
@@ -289,10 +294,10 @@ function inferFromProse(scenes: StoryScene[], known: string[]): StoryCharacter[]
   return candidates.filter((item) => !candidates.some((other) => other !== item && other.shown.length > item.shown.length && other.shown.toUpperCase().includes(item.shown.toUpperCase()))).map((item) => ({ name: item.shown.toUpperCase(), sceneIds: [...item.scenes].sort(), firstSceneId: [...item.scenes].sort()[0], dialogueCount: 0, mentionCount: item.count, fromAction: true }))
 }
 
-const NOT_PROPS = new Set(['hand', 'hands', 'arm', 'arms', 'head', 'eyes', 'eye', 'face', 'hair', 'breath', 'gaze', 'distance', 'horizon', 'moment', 'time', 'way', 'step', 'steps', 'it', 'him', 'her', 'them', 'back', 'side', 'air', 'silence', 'room', 'floor', 'ground', 'place', 'voice', 'mouth', 'lip', 'lips', 'fist', 'fists', 'finger', 'fingers', 'leg', 'legs', 'foot', 'feet', 'shoulder', 'shoulders', 'chest', 'heart', 'door', 'window', 'wall', 'table'])
+const NOT_PROPS = new Set(['rings', 'chimes', 'ticks', 'knocks', 'squeaks', 'passes', 'answers', 'hand', 'hands', 'arm', 'arms', 'head', 'eyes', 'eye', 'face', 'hair', 'breath', 'gaze', 'distance', 'horizon', 'moment', 'time', 'way', 'step', 'steps', 'it', 'him', 'her', 'them', 'back', 'side', 'air', 'silence', 'room', 'floor', 'ground', 'place', 'voice', 'mouth', 'lip', 'lips', 'fist', 'fists', 'finger', 'fingers', 'leg', 'legs', 'foot', 'feet', 'shoulder', 'shoulders', 'chest', 'heart', 'door', 'window', 'wall', 'table'])
 const PROP_VERB = '(?:holds?|holding|carries|carrying|picks? up|places?|placing|opens?|uses?|using|grabs?|draws?|wields?|clutches|clutching|raises?|lifts?|sets? down|puts? down|pulls? out|throws?|drops?|unfolds?|unrolls?|reads?|checks?|studies|inspects?|cradles?|tucks?|slides?)'
 /** A prop phrase never starts with these (a preposition or auxiliary means the match is a clause, not an object) and never contains them. */
-const NOT_PHRASE_START = new Set(['on', 'in', 'at', 'by', 'of', 'off', 'up', 'out', 'down', 'over', 'under', 'with', 'without', 'for', 'from', 'into', 'onto', 'to', 'toward', 'towards', 'against', 'across', 'through', 'near', 'beside', 'behind', 'around', 'as', 'while', 'when', 'and', 'but', 'or', 'then', 'so', 'not', 'no', 'never', 'is', 'are', 'was', 'were', 'be', 'it', 'that', 'this', 'there', 'here'])
+const NOT_PHRASE_START = new Set(['passes', 'rings', 'somewhere', 'nearby', 'on', 'in', 'at', 'by', 'of', 'off', 'up', 'out', 'down', 'over', 'under', 'with', 'without', 'for', 'from', 'into', 'onto', 'to', 'toward', 'towards', 'against', 'across', 'through', 'near', 'beside', 'behind', 'around', 'as', 'while', 'when', 'and', 'but', 'or', 'then', 'so', 'not', 'no', 'never', 'is', 'are', 'was', 'were', 'be', 'it', 'that', 'this', 'there', 'here'])
 const AUX = /\b(?:doesn't|don't|didn't|isn't|aren't|wasn't|won't|can't|cannot|does|do|did|is|are|was|were|will|would|could|should|has|have|had|not|never|shake|shakes|shaking|trembles?|tremble|feels?)\b/i
 const PROP_RX = new RegExp(`\\b${PROP_VERB}\\s+(?:(?:an?|the|his|her|their|its|some|one)\\s+)?([a-z][a-z'-]*(?:\\s+[a-z][a-z'-]*){0,3}?)(?=\\s+(?:and|on|in|at|to|with|from|into|onto|beside|toward|towards|against|for|as|while|then|before|after|over|under)\\b|[,.;:!?]|$)`, 'gi')
 const DAMAGE = /\b(broken|cracked|shattered|torn|burned|burnt|rusted|rusty|bent|chipped|damaged|weathered|worn|frayed|dented|scratched|stained|bloodied|charred|snapped)\b/i
@@ -324,6 +329,9 @@ function addProps(scenes: StoryScene[]): StoryProp[] {
       for (const m of act.text.matchAll(OBJECT_RX)) {
         const adj = m[1].trim().split(/\s+/).filter(Boolean)
         if (adj.some((w) => NOT_PHRASE_START.has(w.toLowerCase()) || PROP_FILLER.has(w.toLowerCase()) || AUX.test(w))) continue
+        // "a bell rings" is a sound, and "holds it like a trophy" is a comparison: neither is a prop in the scene.
+        if (/^(?:bell|phone|alarm|doorbell)$/i.test(adj[adj.length - 1] ?? '') && /^s$/i.test(m[0].slice(-1)) && /^(?:ring)$/i.test(m[2])) continue
+        if (/\b(?:like|as|than)\s*$/i.test(act.text.slice(0, m.index ?? 0))) continue
         note(scene, act, [...adj, m[2]].join(' '), m[2].toLowerCase())
       }
       for (const m of act.text.matchAll(PROP_RX)) {
@@ -347,6 +355,10 @@ function addProps(scenes: StoryScene[]): StoryProp[] {
       }
     }
   }
+  // "the photograph" and later "the picture" are one object: fold the vaguer word into the clearer one.
+  const photo = props.get('photograph') ?? props.get('photo')
+  const pic = props.get('picture')
+  if (photo && pic) { for (const id of pic.sceneIds) if (!photo.sceneIds.includes(id)) photo.sceneIds.push(id); photo.evidence.push(...pic.evidence); props.delete('picture') }
   return [...props.values()]
 }
 
@@ -361,6 +373,8 @@ export function ageFromWords(text: string): number | undefined {
 const AGE_WORDS = 'young|teenage|teen|child|little|elderly|older|old|aged|adult|middle-aged|baby|infant'
 const WEAR = /\b(?:wears?|wearing|dressed in|clad in|in|puts? on|slips? into|changes? into)\s+(?:(?:an?|the|his|her|their)\s+)?([a-z][a-z'-]*(?:\s+[a-z][a-z'-]*){0,3}?)(?=\s+(?:and|with|over|under|that|which|as|while|,)|[,.;:!?]|$)/i
 const GARMENT = /\b(jacket|coat|dress|gown|suit|uniform|robe|shirt|blouse|tunic|cloak|cape|hoodie|sweater|armor|armour|vest|skirt|trousers|pants|jeans|scarf|hat|cap|helmet|boots|shoes|apron|poncho|kimono|sari|saree|gele|dashiki|overalls|costume|wetsuit|lab coat|jumpsuit|clothes|clothing|outfit|attire|tuxedo|tailcoat|puffer|bomber|parka|tracksuit|jersey|t-shirt)s?\b/i
+const WORN = /\b(jacket|coat|dress|gown|suit|uniform|robe|shirt|blouse|tunic|cloak|cape|hoodie|sweater|armor|armour|vest|waistcoat|skirt|trousers|pants|jeans|scarf|hat|cap|helmet|boots?|shoes|trainers|sneakers|apron|poncho|kimono|tuxedo|tailcoat|puffer|bomber|parka|tracksuit|jersey|bow tie|tie|cravat|pocket square|chains?|necklace|bracelet|earrings?|rings?|watch|glasses|sunglasses|spectacles|gloves?|belt|medallion|jewellery|jewelry|torso|tattoos?|tattooed)s?\b/i
+const WORN_CUT = /\b(?:conceal\w*|frames?|framing|hang\w*|rests?|resting|covers?|hides?|catch\w*|flash\w*|glow\w*\s+(?:in|against))\b.*$/i
 const INJURY = /\b(wounded|injured|bleeding|bandaged|bandage|limping|limps?|bruised|scarred|burned|burnt|cut|gash|broken arm|broken leg|black eye|stitches|crutch|sling|cast)\b/i
 const STATE = /\b(disguised as|disguised|in disguise|transforms?|transformed|becomes|turns into|possessed|glowing|ghostly|drenched|soaked|muddy|covered in (?:dust|mud|blood|ash|soot))\b/i
 
@@ -408,6 +422,44 @@ function addVariants(scenes: StoryScene[], characters: string[]): StoryVariant[]
     }
   }
   return out
+}
+
+/**
+ * Clothes and accessories described for a character: "KING FLEX stands ...: oversized coral-red puffer jacket, layered gold chains, black cargo trousers, and trainers ..." and the fragments that
+ * follow it ("Black three-piece suit. Fitted tailcoat, red bow tie."). One costume per character, needing at least two worn items so a passing "in a coat" is not a wardrobe.
+ */
+function addCostumes(scenes: StoryScene[], characters: string[]): StoryCostume[] {
+  const out = new Map<string, StoryCostume>()
+  for (const scene of scenes) {
+    let subject: string | undefined
+    let lastLine = 0
+    for (const act of scene.action) {
+      if (subject && act.line - lastLine > 6) subject = undefined
+      for (const sentence of act.text.split(/(?<=[.!?])\s+/)) {
+        const named = characters.filter((c) => new RegExp(`\\b${escapeRx(c)}\\b`, 'i').test(sentence))
+        let who: string | undefined
+        let part = sentence
+        if (named.length) {
+          who = [...named].sort((a, b) => sentence.search(new RegExp(`\\b${escapeRx(a)}\\b`, 'i')) - sentence.search(new RegExp(`\\b${escapeRx(b)}\\b`, 'i')))[0]
+          const at = sentence.search(new RegExp(`\\b${escapeRx(who)}\\b`, 'i'))
+          part = sentence.slice(at + who.length)
+          subject = who
+          lastLine = act.line
+        } else if (subject && sentence.split(/\s+/).length <= 8 && WORN.test(sentence) && !/\b(?:is|are|was|were|has|have|then|but)\b/i.test(sentence)) { who = subject; lastLine = act.line }
+        else if (subject && !/\b(?:is|are|was|were|has|have)\b/i.test(sentence) && sentence.split(/\s+/).length > 12) subject = undefined
+        if (!who) continue
+        const items = part.split(/\s*[,;:]\s*|\s+and\s+|\s+with\s+|\s+in\s+/).map((x) => x.replace(WORN_CUT, '').replace(/^(?:an?|the|his|her|their|and|a pair of)\s+/i, '').replace(/[.!?]+$/, '').trim()).filter((x) => x && x.split(/\s+/).length <= 6 && (WORN.test(x.split(/\s+/).pop() ?? '') || /\b(?:bow tie|pocket square)$/i.test(x)) && !/^(?:stands?|wears?|sits?|removes?|takes?|puts?|slips?|places?|sets?|leaves?|retrieves?|holds?|catches?|smooths?|touches?|adjusts?|pushes?|lifts?)\b/i.test(x))
+        if (!items.length) continue
+        const key = who.toUpperCase()
+        const cur = out.get(key) ?? { character: who, items: [], sceneIds: [], evidence: [] }
+        for (const it of items) if (!cur.items.some((x) => x.toLowerCase() === it.toLowerCase())) cur.items.push(it)
+        if (!cur.sceneIds.includes(scene.id)) cur.sceneIds.push(scene.id)
+        if (cur.evidence.length < 4) cur.evidence.push({ line: act.line, text: sentence })
+        out.set(key, cur)
+      }
+    }
+  }
+  return [...out.values()].filter((c) => c.items.length >= 2).map((c) => ({ ...c, items: c.items.slice(0, 8) }))
 }
 
 const COMMON = new Set('The She He They It As When Then After Before With Her His Their This That These Those There Here And But Soon Now Inside Outside Suddenly Later Meanwhile Behind Above Below Across Around Beside Beyond During While Still Just Every Each Both Some Many One Two Three All Any Not Yes Please Thank Finally Slowly Quietly Beneath Under Over Through Into Onto From For About Against Between Among Toward Towards Until Upon Within Without Also Even Only Once Maybe Perhaps Close Cut Fade Day Night Morning Evening Afternoon Dawn Dusk Monday Tuesday Wednesday Thursday Friday Saturday Sunday January February March April May June July August September October November December God Lord Mr Mrs Ms Dr We You Your Our Its What Who Why How Which Where Whose Like Let Maybe Okay Well Oh Hey Look See Come Go Take Get Make Put Use Give Tell Ask Keep Hold Stand Sit Turn Walk Run Wait Stop Start Begin End Open Shut Pull Push Reach Raise Lower Hear Feel Think Know Want Need Try Help Find Leave Stay Move Bring Carry Pick Place Set Hands Eyes Her Him Them Us Me My Mine'.split(' '))
@@ -481,7 +533,7 @@ export function parseStory(input: string): ParsedStory {
   const props = addProps(b.scenes)
   const variants = addVariants(b.scenes, uniqueCharacters.map((c) => c.name))
   if (!b.scenes.length && input.trim()) b.warnings.push('No scenes could be read from this text.')
-  return { format, title: titleOf(lines), scenes: b.scenes, characters: uniqueCharacters, props, variants, warnings: b.warnings }
+  return { format, title: titleOf(lines), scenes: b.scenes, characters: uniqueCharacters, props, costumes: addCostumes(b.scenes, uniqueCharacters.map((c) => c.name)), variants, warnings: b.warnings }
 }
 
 function titleOf(lines: string[]): string | undefined {
