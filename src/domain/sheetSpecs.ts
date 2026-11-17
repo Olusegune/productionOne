@@ -148,7 +148,7 @@ export interface PromptInput {
   /** The model id the prompt is for. Used only to tailor artifact guidance. */
   model?: string
   style: StyleBible
-  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role' | 'never'>>
+  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role' | 'never' | 'prompt'>>
   variant: string
   sheetType: SheetType
   view: ViewSpec
@@ -176,6 +176,8 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
     view.instruction,
     identityFacts(asset),
+    // A costume made from the script's own description of a character keeps those words in every view.
+    asset.type === 'costume' && asset.prompt?.startsWith('Costume worn by') ? asset.prompt : '',
     anchored ? anchoredPromptLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,
