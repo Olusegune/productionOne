@@ -12,7 +12,8 @@
 - **Sets are drawn full frame.** A set's establishing view was asked for on a flat grey field, which put grey bars above and below the room (and carried them into storyboard frames). A set or environment now asks for the place edge to edge.
 - **A voice on a loudspeaker or a recording is not cast in the picture.** `PA VOICE`, narrators, announcers and `RECORDED ...` speakers are heard, not seen: they no longer appear in master shots or take a side of the line (a PA VOICE had been drawn as a uniformed person in the foreground).
 - **Seedance 2.5 works from a picture.** Kie.ai accepts only `adaptive` as the shape of a video that starts from a picture for this model; the app sent an explicit ratio and got a 422. It now sends `adaptive` whenever the model lists it and a picture starts the clip.
-- Tests: 572 JS (32 more), 84 Rust.
+- **Video models by price class.** The motion demo's model list starts on a lower-cost model (Kling 2.6) and groups the rest as **Lower cost (usually)**, **Premium (usually costs more)** (Seedance 2.5, Kling 4.0, Wan 3.0, Hailuo 2.3 Pro and the reference-to-video models) and **Other models on Kie.ai**. Every model stays available. The classes come from the model family, not a price list: Kie.ai sets the real price.
+- Tests: 573 JS (33 more), 84 Rust.
 
 ## 0.45.1 (2026-11-16): Nano Banana stays in the engine list, and there are more image models
 - **Fixed: Nano Banana vanished from the engine choice.** In 0.44.0 the list on a failed or waiting view left out the engine the view had used before, which for most views was Nano Banana 2.1, so the Nano Banana series seemed to have been removed. Every engine is now always listed; the one used before is marked "used before" and can be chosen again (that is how a view is simply tried once more).

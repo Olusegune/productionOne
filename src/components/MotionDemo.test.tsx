@@ -19,6 +19,12 @@ describe('Motion audition video model', () => {
     const names = Array.from(select.options).map((o) => o.textContent)
     for (const n of ['Seedance 2.5', 'Kling 4.0 · reference to video', 'Wan 3.0', 'HappyHorse 1.1 · image to video', 'MiniMax H3 · image to video', 'PixVerse V6 · image to video']) expect(names).toContain(n)
     expect(names.at(-1)).toMatch(/Another model id/)
+    // starts on a lower-cost model; the premium ones are still there, in their own labelled group
+    expect(select.value).toBe('kling/image-to-video')
+    const groups = Array.from(select.querySelectorAll('optgroup')).map((g) => g.label)
+    expect(groups[0]).toMatch(/Lower cost/)
+    expect(groups[1]).toMatch(/Premium/)
+    expect(Array.from(select.querySelectorAll('optgroup')[1].querySelectorAll('option')).map((o) => o.textContent)).toContain('Seedance 2.5')
     expect(screen.queryByLabelText('Video model id')).toBeNull()
     fireEvent.change(select, { target: { value: '__other' } })
     const box = screen.getByLabelText('Video model id') as HTMLInputElement

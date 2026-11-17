@@ -98,3 +98,15 @@ describe('quick engines for a view that must be made again', () => {
     expect(out.at(-1)?.note).toMatch(/Local AI/)
   })
 })
+
+describe('video models by price class', () => {
+  it('starts on an economy model, keeps the premium ones available, and puts unknown Kie models in their own class', () => {
+    const list = mergeVideoModels({ 'kie-video': { fetchedAt: 1, models: [{ id: 'vidu-q4/image-to-video', name: 'Vidu Q4' }] } })
+    expect(list[0].tier).toBe('economy')
+    expect(list.find((m) => m.id === 'bytedance/seedance-2-5')?.tier).toBe('premium')
+    expect(list.find((m) => m.id === 'kling/v4-reference-to-video')?.tier).toBe('premium')
+    expect(list.find((m) => m.id === 'minimax-h3/image-to-video')?.tier).toBe('economy')
+    expect(list.find((m) => m.id === 'vidu-q4/image-to-video')?.tier).toBe('other')
+    expect(list.filter((m) => m.tier === 'economy').length).toBeGreaterThanOrEqual(5)
+  })
+})

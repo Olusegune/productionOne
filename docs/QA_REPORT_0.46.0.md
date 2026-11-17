@@ -9,7 +9,7 @@ Go for the changes below. One real paid generation was run (Nano Banana Pro). Th
 | Check | Result |
 |---|---|
 | Types: `npx tsc -b` | Pass |
-| JS tests | 572 pass in 85 files (32 more; 4 tests that encoded old behaviour were rewritten) |
+| JS tests | 573 pass in 85 files (33 more; 4 tests that encoded old behaviour were rewritten) |
 | Rust tests | 84 pass, 1 ignored; `cargo clippy --all-targets -D warnings` clean (kie.rs: retry the model page once; adaptive aspect) |
 | `npm audit` | 0 vulnerabilities |
 | `cargo clippy`, `cargo audit`, Playwright and Python suites, `rafter secrets` | Not run in this pass (no Rust, dependency or engine change); run before release |

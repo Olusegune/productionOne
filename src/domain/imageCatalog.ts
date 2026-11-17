@@ -79,23 +79,25 @@ export const builtInModels: CatalogModel[] = [
 ]
 
 /** Video models for the motion demo (turnaround, walk, pose). The full Kie video list is read live; these are the starting choices. */
-export const demoVideoModels: Array<{ id: string; name: string; note: string }> = [
-  { id: 'kling/image-to-video', name: 'Kling 2.6 · image to video', note: 'Kie.ai. FilmCrafter has run this model against Kie.' },
-  { id: 'bytedance/seedance-2-fast', name: 'Seedance 2.0 Fast', note: 'Kie.ai. Faster and lower cost than full Seedance 2.0.' },
-  { id: 'bytedance/seedance-2-5', name: 'Seedance 2.5', note: 'Kie.ai. The newest Seedance.' },
-  { id: 'bytedance/seedance-2-5-flash', name: 'Seedance 2.5 Flash', note: 'Kie.ai. A faster, lower-cost Seedance 2.5.' },
-  { id: 'kling/v3-turbo-image-to-video', name: 'Kling 3.0 Turbo · image to video', note: 'Kie.ai.' },
-  { id: 'kling/v4-keyframe-to-video', name: 'Kling 4.0 · keyframe to video', note: 'Kie.ai. Starts and ends on pictures you give it.' },
-  { id: 'kling/v4-reference-to-video', name: 'Kling 4.0 · reference to video', note: 'Kie.ai. Keeps a character from reference images.' },
-  { id: 'wan/3-0-video', name: 'Wan 3.0', note: 'Kie.ai. The newest Wan.' },
-  { id: 'wan/2-7-image-to-video', name: 'Wan 2.7 · image to video', note: 'Kie.ai.' },
-  { id: 'happyhorse-1-1/image-to-video', name: 'HappyHorse 1.1 · image to video', note: 'Kie.ai.' },
-  { id: 'happyhorse-1-1/reference-to-video', name: 'HappyHorse 1.1 · reference to video', note: 'Kie.ai.' },
-  { id: 'minimax-h3/image-to-video', name: 'MiniMax H3 · image to video', note: 'Kie.ai.' },
-  { id: 'minimax-h3/reference-to-video', name: 'MiniMax H3 · reference to video', note: 'Kie.ai.' },
-  { id: 'hailuo/2-3-image-to-video-pro', name: 'Hailuo 2.3 Pro · image to video', note: 'Kie.ai.' },
-  { id: 'pixverse/image-to-video', name: 'PixVerse V6 · image to video', note: 'Kie.ai.' },
-  { id: 'grok-imagine/image-to-video', name: 'Grok Imagine · image to video', note: 'Kie.ai.' },
+/** Rough price class, from the model's family and tier, not from a price list: Kie.ai sets the real price, so check it before a long or high-resolution clip. The default is always an economy model. */
+export type VideoTier = 'economy' | 'premium' | 'other'
+export const demoVideoModels: Array<{ id: string; name: string; note: string; tier: VideoTier }> = [
+  { id: 'kling/image-to-video', name: 'Kling 2.6 · image to video', note: 'Kie.ai. FilmCrafter has run this model against Kie.', tier: 'economy' },
+  { id: 'bytedance/seedance-2-fast', name: 'Seedance 2.0 Fast', note: 'Kie.ai. Faster and lower cost than full Seedance 2.0.', tier: 'economy' },
+  { id: 'bytedance/seedance-2-5', name: 'Seedance 2.5', note: 'Kie.ai. The newest Seedance.', tier: 'premium' },
+  { id: 'bytedance/seedance-2-5-flash', name: 'Seedance 2.5 Flash', note: 'Kie.ai. A faster, lower-cost Seedance 2.5.', tier: 'economy' },
+  { id: 'kling/v3-turbo-image-to-video', name: 'Kling 3.0 Turbo · image to video', note: 'Kie.ai.', tier: 'economy' },
+  { id: 'kling/v4-keyframe-to-video', name: 'Kling 4.0 · keyframe to video', note: 'Kie.ai. Starts and ends on pictures you give it.', tier: 'premium' },
+  { id: 'kling/v4-reference-to-video', name: 'Kling 4.0 · reference to video', note: 'Kie.ai. Keeps a character from reference images.', tier: 'premium' },
+  { id: 'wan/3-0-video', name: 'Wan 3.0', note: 'Kie.ai. The newest Wan.', tier: 'premium' },
+  { id: 'wan/2-7-image-to-video', name: 'Wan 2.7 · image to video', note: 'Kie.ai.', tier: 'economy' },
+  { id: 'happyhorse-1-1/image-to-video', name: 'HappyHorse 1.1 · image to video', note: 'Kie.ai.', tier: 'economy' },
+  { id: 'happyhorse-1-1/reference-to-video', name: 'HappyHorse 1.1 · reference to video', note: 'Kie.ai.', tier: 'premium' },
+  { id: 'minimax-h3/image-to-video', name: 'MiniMax H3 · image to video', note: 'Kie.ai.', tier: 'economy' },
+  { id: 'minimax-h3/reference-to-video', name: 'MiniMax H3 · reference to video', note: 'Kie.ai.', tier: 'premium' },
+  { id: 'hailuo/2-3-image-to-video-pro', name: 'Hailuo 2.3 Pro · image to video', note: 'Kie.ai.', tier: 'premium' },
+  { id: 'pixverse/image-to-video', name: 'PixVerse V6 · image to video', note: 'Kie.ai.', tier: 'economy' },
+  { id: 'grok-imagine/image-to-video', name: 'Grok Imagine · image to video', note: 'Kie.ai.', tier: 'economy' },
 ]
 
 export interface DiscoveredEntry { id: string; name: string }
@@ -113,11 +115,11 @@ export function mergeCatalog(discovered: DiscoveredCatalog, local: CatalogModel[
   return merged
 }
 
-export function mergeVideoModels(discovered: DiscoveredCatalog) {
+export function mergeVideoModels(discovered: DiscoveredCatalog): Array<{ id: string; name: string; note: string; tier: VideoTier }> {
   const merged = [...demoVideoModels]
   // The motion demo starts from an approved picture, so text-to-video models (which take no picture) are left out of the list.
   const textOnly = (m: { id: string; name: string }) => /text[-\s_]?to[-\s_]?video/i.test(m.id) || /text[-\s_]?to[-\s_]?video/i.test(m.name)
-  for (const m of discovered['kie-video']?.models ?? []) if (!textOnly(m) && !merged.some((x) => x.id === m.id)) merged.push({ id: m.id, name: m.name, note: 'Listed by Kie.ai. Price and limits are not verified here.' })
+  for (const m of discovered['kie-video']?.models ?? []) if (!textOnly(m) && !merged.some((x) => x.id === m.id)) merged.push({ id: m.id, name: m.name, note: 'Listed by Kie.ai. Price and limits are not verified here.', tier: 'other' })
   return merged
 }
 

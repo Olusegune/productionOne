@@ -87,7 +87,10 @@ export function MotionDemo(props: {
               </select></label>
             {where === "kie" && <label><span>Video model (Kie.ai)</span>
               <select value={models.some((m) => m.id === model) ? model : "__other"} onChange={(e) => setModel(e.target.value === "__other" ? "" : e.target.value)} aria-label="Video model">
-                {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {([["economy", "Lower cost (usually)"], ["premium", "Premium (usually costs more)"], ["other", "Other models on Kie.ai"]] as const).map(([tier, label]) => {
+                  const group = models.filter((m) => m.tier === tier);
+                  return group.length ? <optgroup key={tier} label={label}>{group.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup> : null;
+                })}
                 <option value="__other">Another model id…</option>
               </select>
               {!models.some((m) => m.id === model) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g. vendor/model-name" aria-label="Video model id" />}</label>}
