@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.46.3 (2026-11-17): no extra people in a frame, and a described prop shows only what it describes
+- **Only the cast appears in a shot that has a cast.** The shot prompt now says that only the listed people appear: no other people, creatures, crowd or bystanders, not even small or in the background. A master shot of two people in the concourse had drawn demons in the background that the script never mentions. An establishing shot is exempt: a place may be busy.
+- **A described prop shows exactly its description and nothing more.** The photograph of the boy at a birthday cake had also drawn a woman beside him. The prompt now says that what such a prop shows is exactly what the script describes, with no other people or objects added.
+- The sheet of a described prop (its reference picture) asks the same: the photograph's own picture had drawn a woman beside the boy, and every shot copied her from it.
+- Tests: 589 JS (3 more), 84 Rust.
+
 ## 0.46.2 (2026-11-17): props that show something use the script's description
 - **A photograph looks like what the script says it shows.** A prop that carries an image or text (photograph, picture, painting, portrait, map, letter, notebook, diary, poster, projection, scroll, contract, ledger) now keeps the lines that describe it: for "A photograph slips from the file. A modest kitchen. A small boy sitting behind a birthday cake." the photograph is a boy behind a birthday cake in a modest kitchen. The description goes into the prop's sheet prompt, into its insert shot (which now says what it shows) and into the prop line of every shot prompt it is in. Before, the insert of that photograph was a framed picture of a horned figure.
 - Ordinary objects are unchanged: their name already carries their look, and the lines after them are about the room.

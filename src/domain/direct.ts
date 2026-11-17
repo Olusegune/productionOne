@@ -264,9 +264,9 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
   const lines = [
     `Cinematic storyboard frame, ${aspect}. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${shot.lens ?? 40}mm lens${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
-    chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.` : '',
+    chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.${shot.coverage === 'establishing' ? '' : ' Only these people appear in the frame: no other people, creatures, crowd or bystanders, not even small or in the background.'}` : '',
     names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',
-    names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.prompt?.startsWith('As the script describes it') ? `${n.name} (${n.prompt.replace('As the script describes it: ', '')})` : n.name).join(', ')}.` : '',
+    names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.prompt?.startsWith('As the script describes it') ? `${n.name} (${n.prompt.replace('As the script describes it: ', '')})` : n.name).join(', ')}.${names.some((n) => n.type === 'prop' && n.prompt?.startsWith('As the script describes it')) ? ' What a described prop shows is exactly what its description says and nothing more: add no other people or objects to it.' : ''}` : '',
     `Action: ${shot.action}`,
     shot.emotion && shot.emotion !== 'neutral' ? `Feeling: ${shot.emotion}. Face: ${shot.facialActing}. Body: ${shot.bodyLanguage}.` : '',
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',
