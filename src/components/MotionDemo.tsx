@@ -86,8 +86,11 @@ export function MotionDemo(props: {
                 <option value="kie">Kie.ai (cloud)</option>
               </select></label>
             {where === "kie" && <label><span>Video model (Kie.ai)</span>
-              <input list="video-models" value={model} onChange={(e) => setModel(e.target.value)} aria-label="Video model id" />
-              <datalist id="video-models">{models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</datalist></label>}
+              <select value={models.some((m) => m.id === model) ? model : "__other"} onChange={(e) => setModel(e.target.value === "__other" ? "" : e.target.value)} aria-label="Video model">
+                {models.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                <option value="__other">Another model id…</option>
+              </select>
+              {!models.some((m) => m.id === model) && <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="e.g. vendor/model-name" aria-label="Video model id" />}</label>}
             <label><span>Length (seconds)</span>
               <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>{[5, 8, 10].map((d) => <option key={d}>{d}</option>)}</select></label>
           </div>

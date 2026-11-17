@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, X } from "lucide-react";
+import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, Undo2, X } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -8,6 +8,7 @@ import {
   betterTake,
   addSupplied,
   approve,
+  reconsider,
   cancel,
   cancelAllWaiting,
   enqueue,
@@ -100,6 +101,7 @@ export function SheetStudio(props: {
   desktop: boolean;
   providersVersion: number;
   onApproved: (job: ImageJob, primary: boolean) => void;
+  onUnapproved: (job: ImageJob) => void;
   notify: (message: string) => void;
   openProviders: () => void;
   openLocal?: () => void;
@@ -118,7 +120,7 @@ export function SheetStudio(props: {
   /** When given, the sheet's controls (look, sheet, model, generate, notes) are drawn there, for example in the side inspector, and only the pictures stay in this panel. */
   controlsSlot?: HTMLElement | null;
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, notify, openProviders, openLocal, controlRef, controlsSlot, refs, setRefs, focusSheetType } = props;
+  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, onUnapproved, notify, openProviders, openLocal, controlRef, controlsSlot, refs, setRefs, focusSheetType } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
@@ -259,7 +261,8 @@ export function SheetStudio(props: {
   const waiting = stats.queued + stats.pending;
   const viewItems: LightboxItem[] = views.flatMap((v) => { const j = jobFor(v.key); return j?.outputPath ? [{ job: j, label: v.label }] : []; });
   const doApprove = (job: ImageJob) => { setQueue((q) => approve(q, job.id)); onApproved(job, primaryViewKeys.includes(job.viewKey)); };
-  const doReject = (job: ImageJob) => setQueue((q) => reject(q, job.id));
+  const doReject = (job: ImageJob) => { setQueue((q) => reject(q, job.id)); if (job.approved) onUnapproved(job); };
+  const doReconsider = (job: ImageJob) => { setQueue((q) => reconsider(q, job.id)); if (job.approved) onUnapproved(job); };
 
   if (!asset) return <section className="panel sheet-studio"><EmptyState icon={Sparkles} title="Analyze a script first" tone="gold">Sheets are planned per character, prop and set once your script has been analyzed.</EmptyState></section>;
 
@@ -466,6 +469,12 @@ export function SheetStudio(props: {
                       <button className="primary" onClick={() => doApprove(job)}><Check size={14} /> Approve</button>
                       <button className="secondary" onClick={() => doReject(job)}><X size={14} /> Reject</button>
                     </>)}
+                    {job?.status === "completed" && job.outputPath && (<>
+                      {!job.approved && <button className="primary" onClick={() => doApprove(job)}><Check size={14} /> Approve</button>}
+                      {job.approved && <button className="secondary" onClick={() => doReconsider(job)} title="Takes the approval back. The picture goes back to waiting for your decision."><Undo2 size={14} /> Undo approval</button>}
+                      {!job.rejected && <button className="secondary" onClick={() => doReject(job)}><X size={14} /> Reject</button>}
+                      {job.rejected && <button className="secondary" onClick={() => doReconsider(job)} title="Takes the rejection back. The picture goes back to waiting for your decision."><Undo2 size={14} /> Undo reject</button>}
+                    </>)}
                     {job && (job.status === "failed" || job.status === "cancelled") && job.source !== "supplied" && job.prompt && <button className="secondary" onClick={() => setQueue((q) => retry(q, job.id))}>Retry</button>}
                     {job && job.status === "queued" && <button className="secondary" onClick={() => setQueue((q) => cancel(q, job.id))}>Cancel</button>}
                     {job && job.status === "completed" && job.rejected && <button className="secondary" onClick={() => generate(false, [view.key], true)}>Regenerate</button>}
@@ -490,7 +499,7 @@ export function SheetStudio(props: {
           onSaved={(from, file) => { const out = addCleaned(queue, from, file); setQueue(() => out.state); if (out.job.approved) onApproved(out.job, primaryViewKeys.includes(out.job.viewKey)); }} />
       )}
       {lightbox !== null && viewItems.length > 0 && (
-        <Lightbox items={viewItems} index={Math.min(lightbox, viewItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={doApprove} onReject={doReject} />
+        <Lightbox items={viewItems} index={Math.min(lightbox, viewItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={doApprove} onReject={doReject} onReconsider={doReconsider} />
       )}
       {controlsSlot && createPortal(<div className="ss-controls" role="group" aria-label="Sheet controls">{headActions}{bar}{more}{sheetSettings}</div>, controlsSlot)}
     </section>

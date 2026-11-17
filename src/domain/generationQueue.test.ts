@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ImageJob } from './generationQueue'
 import {
   addSupplied, anchorFor, dropMissing, shouldAnchor, approve, attemptsSent, cancel, classifyError, committedUsd, emptyQueue, enqueue, markFailed, markGenerating, markValidated, markValidating,
-  reassignModel, recover, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
+  reassignModel, reconsider, recover, wouldEnqueue, reject, retry, spendGate, startable, summarize, type JobRequest, type QueueState,
 } from './generationQueue'
 
 const req = (viewKey: string, extra: Partial<JobRequest> = {}): JobRequest => ({
@@ -293,5 +293,50 @@ describe('switching a view to another engine', () => {
     const failed = failedFor({ useAnchor: true, references: ['C:/ref.png'] })
     const out = reassignModel(failed, [failed.jobs[0].id], 'openai', 'gpt-image-1.5', 5, false).jobs[0]
     expect(out).toMatchObject({ provider: 'openai', status: 'queued', useAnchor: false, references: [] })
+  })
+})
+
+describe('changing your mind about a picture', () => {
+  const done = (): { s: QueueState; id: string } => {
+    let s = enqueue(emptyQueue(), [{ assetId: 'a', variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', prompt: 'p', aspect: '3:4', fullBody: true, provider: 'kie', model: 'm', references: [], outputName: () => 'o' } as unknown as JobRequest], 1).state
+    const id = s.jobs[0].id
+    s = markValidated(markValidating(markGenerating(s, id), id, { path: 'a.png', width: 1, height: 1 }), id, [])
+    return { s, id }
+  }
+  it('a rejected picture can be approved directly', () => {
+    let { s, id } = done()
+    s = reject(s, id)
+    expect(s.jobs[0]).toMatchObject({ rejected: true, approved: false })
+    s = approve(s, id)
+    expect(s.jobs[0]).toMatchObject({ rejected: false, approved: true, status: 'completed' })
+  })
+  it('an approved picture can be rejected, which takes the approval back', () => {
+    let { s, id } = done()
+    s = approve(s, id)
+    s = reject(s, id)
+    expect(s.jobs[0]).toMatchObject({ rejected: true, approved: false })
+  })
+  it('reconsider puts an approved or rejected picture back to waiting, keeping the file, and leaves other pictures alone', () => {
+    let { s, id } = done()
+    s = reconsider(s, id) // waiting already: unchanged
+    expect(s.jobs[0].status).toBe('needs-review')
+    s = approve(s, id)
+    s = reconsider(s, id)
+    expect(s.jobs[0]).toMatchObject({ status: 'needs-review', approved: false, rejected: false, outputPath: 'a.png' })
+    s = reject(s, id)
+    s = reconsider(s, id)
+    expect(s.jobs[0]).toMatchObject({ status: 'needs-review', approved: false, rejected: false })
+  })
+  it('a picture whose file is gone cannot be approved', () => {
+    let { s, id } = done()
+    s = { ...s, jobs: s.jobs.map((j) => ({ ...j, outputPath: undefined })) }
+    s = approve(s, id)
+    expect(s.jobs[0].approved).toBe(false)
+  })
+  it('a view whose approval was taken back is generated again like any other undecided view only after rejection, never silently', () => {
+    let { s, id } = done()
+    s = approve(s, id)
+    s = reconsider(s, id)
+    expect(wouldEnqueue(s.jobs[0])).toBe(false)
   })
 })

@@ -26,7 +26,7 @@ export function modelTakesReferences(provider: ProviderKey, id: string): boolean
   return providerSendsReferences[provider]
 }
 
-export const BUILT_IN_CHECKED = '2026-10-21'
+export const BUILT_IN_CHECKED = '2026-11-17'
 
 const kie = (id: string, name: string, note = ''): CatalogModel => ({ provider: 'kie', id, name, source: 'built-in', references: modelTakesReferences('kie', id), note: note || 'From Kie.ai\'s published model index. Price is set by Kie; enter your own figure in the spending limit.' })
 
@@ -35,12 +35,23 @@ export const builtInModels: CatalogModel[] = [
   kie('google/nanobanana-2-1', 'Nano Banana 2.1', 'Takes up to 10 reference images: the best fit for keeping a character consistent.'),
   kie('google/pro-image-to-image', 'Nano Banana Pro'),
   kie('google/nano-banana-edit', 'Nano Banana Edit'),
+  kie('google/nano-banana-2-lite', 'Nano Banana 2 Lite'),
+  kie('minimax-h3/text-to-image', 'MiniMax H3 · text to image'),
+  kie('minimax-h3/image-edit', 'MiniMax H3 · image edit'),
   kie('gpt/gpt-image-2-text-to-image', 'GPT Image 2 · text to image'),
   kie('gpt/gpt-image-2-image-to-image', 'GPT Image 2 · image to image'),
+  kie('gpt/gpt-image-2-6-flare-text-to-image', 'GPT Image 2.6 Flare · text to image'),
+  kie('gpt/gpt-image-2-6-flare-image-to-image', 'GPT Image 2.6 Flare · image to image'),
+  kie('gpt/gpt-image-2-6-sunburst-text-to-image', 'GPT Image 2.6 Sunburst · text to image'),
+  kie('gpt/gpt-image-2-6-sunburst-image-to-image', 'GPT Image 2.6 Sunburst · image to image'),
+  kie('gpt/gpt-image-2-6-economy-text-to-image', 'GPT Image 2.6 Economy · text to image'),
+  kie('gpt/gpt-image-2-6-economy-image-to-image', 'GPT Image 2.6 Economy · image to image'),
   kie('gpt/gpt-image-2-5-flare-text-to-image', 'GPT Image 2.5 Flare · text to image'),
   kie('gpt/gpt-image-2-5-flare-image-to-image', 'GPT Image 2.5 Flare · image to image'),
   kie('gpt/gpt-image-2-5-sunburst-text-to-image', 'GPT Image 2.5 Sunburst · text to image'),
   kie('gpt/gpt-image-2-5-sunburst-image-to-image', 'GPT Image 2.5 Sunburst · image to image'),
+  kie('seedream/5-5-text-to-image', 'Seedream 5.5 · text to image'),
+  kie('seedream/5-5-image-to-image', 'Seedream 5.5 · image to image'),
   kie('seedream/5-pro-text-to-image', 'Seedream 5.0 Pro · text to image'),
   kie('seedream/5-pro-image-to-image', 'Seedream 5.0 Pro · image to image'),
   kie('seedream/5-lite-text-to-image', 'Seedream 5.0 Lite · text to image'),
@@ -71,6 +82,20 @@ export const builtInModels: CatalogModel[] = [
 export const demoVideoModels: Array<{ id: string; name: string; note: string }> = [
   { id: 'kling/image-to-video', name: 'Kling 2.6 · image to video', note: 'Kie.ai. FilmCrafter has run this model against Kie.' },
   { id: 'bytedance/seedance-2-fast', name: 'Seedance 2.0 Fast', note: 'Kie.ai. Faster and lower cost than full Seedance 2.0.' },
+  { id: 'bytedance/seedance-2-5', name: 'Seedance 2.5', note: 'Kie.ai. The newest Seedance.' },
+  { id: 'bytedance/seedance-2-5-flash', name: 'Seedance 2.5 Flash', note: 'Kie.ai. A faster, lower-cost Seedance 2.5.' },
+  { id: 'kling/v3-turbo-image-to-video', name: 'Kling 3.0 Turbo · image to video', note: 'Kie.ai.' },
+  { id: 'kling/v4-keyframe-to-video', name: 'Kling 4.0 · keyframe to video', note: 'Kie.ai. Starts and ends on pictures you give it.' },
+  { id: 'kling/v4-reference-to-video', name: 'Kling 4.0 · reference to video', note: 'Kie.ai. Keeps a character from reference images.' },
+  { id: 'wan/3-0-video', name: 'Wan 3.0', note: 'Kie.ai. The newest Wan.' },
+  { id: 'wan/2-7-image-to-video', name: 'Wan 2.7 · image to video', note: 'Kie.ai.' },
+  { id: 'happyhorse-1-1/image-to-video', name: 'HappyHorse 1.1 · image to video', note: 'Kie.ai.' },
+  { id: 'happyhorse-1-1/reference-to-video', name: 'HappyHorse 1.1 · reference to video', note: 'Kie.ai.' },
+  { id: 'minimax-h3/image-to-video', name: 'MiniMax H3 · image to video', note: 'Kie.ai.' },
+  { id: 'minimax-h3/reference-to-video', name: 'MiniMax H3 · reference to video', note: 'Kie.ai.' },
+  { id: 'hailuo/2-3-image-to-video-pro', name: 'Hailuo 2.3 Pro · image to video', note: 'Kie.ai.' },
+  { id: 'pixverse/image-to-video', name: 'PixVerse V6 · image to video', note: 'Kie.ai.' },
+  { id: 'grok-imagine/image-to-video', name: 'Grok Imagine · image to video', note: 'Kie.ai.' },
 ]
 
 export interface DiscoveredEntry { id: string; name: string }
@@ -104,38 +129,54 @@ export interface EngineOption {
   takesReferences: boolean
   /** Why it cannot be used yet, or what is lost by using it. */
   note: string
+  /** `latest` = the newest of each family, shown first; `other` = every other image model the catalog knows. */
+  group: 'latest' | 'other'
 }
 
 const PROVIDER_NEEDS: Record<ProviderKey, string> = { kie: 'needs a Kie.ai key', google: 'needs a Google key', openai: 'needs an OpenAI key', openrouter: 'needs an OpenRouter key', fal: 'needs a fal.ai key', comfyui: 'start ComfyUI from Local AI' }
 
+/** Models that are not picture generators for a view (upscalers, background removers, segmenters, callbacks) or need other inputs. */
+const NOT_A_VIEW_MAKER = /upscale|remove-background|layer-decomposition|segment|callback|remix|character-edit|crisp/i
+
 /**
- * The engines worth offering on a view that must be made again: Nano Banana (2.1 and Pro), the newest Seedream, the newest GPT Image, Ideogram Character, Wan 2.7 Image Pro, and a model on this computer.
+ * The engine choice for a view that must be made again. First the newest of each family, in order of preference (the first one the catalog has wins, so a
+ * retired id never appears and a newer id is used as soon as the catalog lists it): Nano Banana 2.1, Nano Banana Pro, Seedream (5.5, else 5.0 Pro), GPT Image
+ * (2.6 Flare, else 2.5 Flare), Ideogram Character, Wan 2.7 Image Pro, MiniMax H3, and a model on this computer. Then every other image model in the catalog (`group: other`).
  * Every engine is always listed, including the one the view used before: choosing it again is how a view is simply tried once more.
  * `needsReferences` is true when the view is built from the approved front (identity lock): then the image-to-image variant is chosen, and an engine that cannot
- * take references says so, because using it drops the lock. Only models in `catalog` are offered, so a retired id never appears.
+ * take references says so, because using it drops the lock.
  */
 export function quickEngines(catalog: CatalogModel[], configured: Record<string, boolean>, needsReferences: boolean): EngineOption[] {
   const has = (provider: ProviderKey, id: string) => catalog.find((m) => m.provider === provider && m.id === id)
+  const make = (m: CatalogModel, label: string, group: 'latest' | 'other'): EngineOption => {
+    const available = !!configured[m.provider]
+    const lost = needsReferences && !m.references
+    return { key: `${m.provider}|${m.id}`, provider: m.provider, model: m.id, label, available, takesReferences: m.references, group, note: !available ? PROVIDER_NEEDS[m.provider] : lost ? 'no identity lock: it cannot use the approved front as a reference' : '' }
+  }
   const option = (provider: ProviderKey, id: string, label: string): EngineOption | null => {
     const m = has(provider, id)
-    if (!m) return null
-    const available = !!configured[provider]
-    const lost = needsReferences && !m.references
-    return { key: `${provider}|${id}`, provider, model: id, label, available, takesReferences: m.references, note: !available ? PROVIDER_NEEDS[provider] : lost ? 'no identity lock: it cannot use the approved front as a reference' : '' }
+    return m ? make(m, label, 'latest') : null
   }
   const pick = (...choices: Array<EngineOption | null>) => choices.find((c) => c && c.available) ?? choices.find((c) => !!c) ?? null
-  const kieOr = (kieId: string, label: string, fallback: EngineOption | null) => pick(option('kie', kieId, label), fallback)
+  const first = (...choices: Array<EngineOption | null>) => choices.find((c) => !!c) ?? null
+  const kieVariant = (stem: string, label: string) => option('kie', `${stem}-${needsReferences ? 'image-to-image' : 'text-to-image'}`, label)
   const out: Array<EngineOption | null> = [
     pick(option('google', 'gemini-nano-banana-2.1', 'Nano Banana 2.1'), option('kie', 'google/nanobanana-2-1', 'Nano Banana 2.1')),
-    option('google', 'gemini-3-pro-image', 'Nano Banana Pro'),
-    kieOr(needsReferences ? 'seedream/5-pro-image-to-image' : 'seedream/5-pro-text-to-image', 'Seedream 5.0 Pro', option('openrouter', 'bytedance-seed/seedream-4.5', 'Seedream 4.5')),
-    kieOr(needsReferences ? 'gpt/gpt-image-2-5-flare-image-to-image' : 'gpt/gpt-image-2-5-flare-text-to-image', 'GPT Image 2.5', option('openai', 'gpt-image-1.5', 'GPT Image 1.5')),
+    pick(option('google', 'gemini-3-pro-image', 'Nano Banana Pro'), option('kie', 'google/pro-image-to-image', 'Nano Banana Pro')),
+    first(kieVariant('seedream/5-5', 'Seedream 5.5'), kieVariant('seedream/5-pro', 'Seedream 5.0 Pro'), option('openrouter', 'bytedance-seed/seedream-4.5', 'Seedream 4.5')),
+    first(kieVariant('gpt/gpt-image-2-6-flare', 'GPT Image 2.6'), kieVariant('gpt/gpt-image-2-5-flare', 'GPT Image 2.5'), option('openai', 'gpt-image-1.5', 'GPT Image 1.5')),
     option('kie', 'ideogram/character', 'Ideogram Character'),
     option('kie', 'wan/2-7-image-pro', 'Wan 2.7 Image Pro'),
+    option('kie', needsReferences ? 'minimax-h3/image-edit' : 'minimax-h3/text-to-image', 'MiniMax H3'),
   ]
   const local = catalog.filter((m) => m.provider === 'comfyui')
   const localModel = (needsReferences ? local.find((m) => m.references) : undefined) ?? local[0]
   if (localModel) out.push(option('comfyui', localModel.id, `On this computer: ${localModel.name}`))
-  else out.push({ key: 'comfyui|none', provider: 'comfyui', model: '', label: 'On this computer (ComfyUI)', available: false, takesReferences: false, note: PROVIDER_NEEDS.comfyui })
-  return out.filter((o): o is EngineOption => !!o)
+  else out.push({ key: 'comfyui|none', provider: 'comfyui', model: '', label: 'On this computer (ComfyUI)', available: false, takesReferences: false, group: 'latest', note: PROVIDER_NEEDS.comfyui })
+  const latest = out.filter((o): o is EngineOption => !!o)
+  const taken = new Set(latest.map((o) => o.key))
+  const others = catalog
+    .filter((m) => !taken.has(`${m.provider}|${m.id}`) && !NOT_A_VIEW_MAKER.test(m.id) && (!needsReferences || m.references || m.provider === 'comfyui'))
+    .map((m) => make(m, `${providerLabels[m.provider].replace(/ \(.*\)/, '')}: ${m.name}`, 'other'))
+  return [...latest, ...others]
 }

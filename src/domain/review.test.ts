@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyQueue, MISSING_FILE_ERROR, type ImageJob, type QueueState } from './generationQueue'
 import type { AnalysisResult } from './productionStudio'
-import { approvedReference, awaitingReview, defaultCompareTarget, deliveryChecklist, keepRevision, otherRevisions, packageKind, revisionsOfView, turnedDown } from './review'
+import { approvedPictures, approvedReference, awaitingReview, defaultCompareTarget, deliveryChecklist, keepRevision, otherRevisions, packageKind, revisionsOfView, turnedDown } from './review'
 
 const job = (over: Partial<ImageJob>): ImageJob => ({
   id: 'j', key: 'k', assetId: 'A1', variant: 'base', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', prompt: '', aspect: '3:4', fullBody: true, provider: 'kie', model: 'm', references: [], useAnchor: false,
@@ -114,5 +114,12 @@ describe('checklist advice for takes whose picture is gone', () => {
     const gone = job({ id: 'g', key: 'k1', status: 'failed', error: MISSING_FILE_ERROR })
     const items = deliveryChecklist({ ...base, queue: queue([gone, job({ id: 'n', key: 'k1', revision: 2, status: 'queued' })]) })
     expect(items.some((i) => i.id === 'gone')).toBe(false)
+  })
+})
+
+describe('approved pictures', () => {
+  it('lists approved pictures with a file, newest first, and not rejected or file-less ones', () => {
+    const q = queue([job({ id: 'a', approved: true, outputPath: 'a.png', updatedAt: 1 }), job({ id: 'b', approved: true, outputPath: 'b.png', updatedAt: 9 }), job({ id: 'c', approved: true }), job({ id: 'd', rejected: true, outputPath: 'd.png' })])
+    expect(approvedPictures(q).map((j) => j.id)).toEqual(['b', 'a'])
   })
 })

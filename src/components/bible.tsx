@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
 import { Box, ImagePlus, Mountain, Shirt, Users, X, type LucideIcon } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
+import { newAssetKinds, type NewAssetKind } from "../domain/readingActions";
 import { isSuperseded, type QueueState } from "../domain/generationQueue";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
@@ -33,38 +34,41 @@ const typeIcon: Record<string, LucideIcon> = { character: Users, costume: Shirt,
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
-export function BibleTree({ assets, story, queue, selected, onSelect, onAddCharacter }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; onAddCharacter?: (name: string, gender: string) => void }) {
+export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean) => void }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState("");
+  const [newKind, setNewKind] = useState<NewAssetKind>("character");
   const arcs = useMemo(() => new Map<string, CharacterArc>((story ? characterArcs(story) : []).map((a) => [a.character.toUpperCase(), a])), [story]);
   const groups: Array<[string, ExtractedAsset["type"][]]> = [["Characters", ["character"]], ["Costumes", ["costume"]], ["Props", ["prop"]], ["Sets", ["set", "environment"]]];
   const approved = assets.filter((a) => a.status === "approved").length;
   return (
     <aside className="po-bible" aria-label="Production bible">
       <div className="po-bible-head"><span className="eyebrow">PRODUCTION BIBLE</span><small>{approved} of {assets.length} approved</small></div>
-      {onAddCharacter && <button className="secondary add-asset-open" onClick={() => setAdding(true)} title="Start a character from an image you already have"><ImagePlus size={14} aria-hidden="true" /> Add character from image</button>}
-      {adding && onAddCharacter && createPortal(
+      {onAddAsset && <button className="secondary add-asset-open" onClick={() => setAdding(true)} title="Add a character, costume, prop or set, with or without an image you already have"><ImagePlus size={14} aria-hidden="true" /> Add to the bible</button>}
+      {adding && onAddAsset && createPortal(
         <div className="modal-backdrop" role="presentation" onClick={() => setAdding(false)}>
-          <section className="sheet add-dialog" role="dialog" aria-modal="true" aria-label="Add a character from an image" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === "Escape") setAdding(false); }}>
-            <div className="panel-heading"><h3>Add a character from an image</h3><button className="icon-button" aria-label="Close" onClick={() => setAdding(false)}><X size={16} /></button></div>
-            <p className="helper">Choose an image you already have (for example from Midjourney). It becomes the approved front view, and every other sheet is built from it.</p>
-        <form className="add-character" onSubmit={(e) => { e.preventDefault(); if (!newName.trim()) return; onAddCharacter(newName, newGender); setNewName(""); setNewGender(""); setAdding(false); }}>
-          <label><span>Have a character image? Start from it</span><input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Character name" aria-label="Name for the new character" /></label>
-          <label><span>Gender (optional, helps pick a voice)</span><select value={newGender} onChange={(e) => setNewGender(e.target.value)} aria-label="Gender for the new character"><option value="">Not set</option><option value="female">Female</option><option value="male">Male</option></select></label>
-          <button className="secondary" type="submit" disabled={!newName.trim()} title="Choose an image (for example from Midjourney). It becomes the approved front view; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
-        </form>
+          <section className="sheet add-dialog" role="dialog" aria-modal="true" aria-label="Add to the production bible" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === "Escape") setAdding(false); }}>
+            <div className="panel-heading"><h3>Add to the production bible</h3><button className="icon-button" aria-label="Close" onClick={() => setAdding(false)}><X size={16} /></button></div>
+            <p className="helper">Add a character, costume, prop or set the script did not list, or one you already have an image of (for example from Midjourney). With an image, it becomes the approved reference and every other sheet is built from it. Without one, its sheets are planned and you generate the first picture yourself.</p>
+            <form className="add-character" onSubmit={(e) => e.preventDefault()}>
+              <label><span>What is it?</span><select value={newKind} onChange={(e) => setNewKind(e.target.value as NewAssetKind)} aria-label="Type of the new asset">{newAssetKinds.map((k) => <option key={k.kind} value={k.kind}>{k.label}</option>)}</select></label>
+              <label><span>Name</span><input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={newKind === "set" ? "Location name" : `${newAssetKinds.find((k) => k.kind === newKind)?.label} name`} aria-label="Name for the new asset" /></label>
+              {newKind === "character" && <label><span>Gender (optional, helps pick a voice)</span><select value={newGender} onChange={(e) => setNewGender(e.target.value)} aria-label="Gender for the new character"><option value="">Not set</option><option value="female">Female</option><option value="male">Male</option></select></label>}
+              <button className="secondary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", true); setNewName(""); setNewGender(""); setAdding(false); }} title="Choose an image. It becomes the approved reference; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
+              <button className="tertiary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false); setNewName(""); setNewGender(""); setAdding(false); }} title="Plan its sheets now and generate the first picture yourself.">Add without image</button>
+            </form>
           </section>
         </div>,
         document.body,
       )}
-      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here. Or start a character from an image you already have.</EmptyState>}
+      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here. Or add a character, prop or set yourself with the button above.</EmptyState>}
       {groups.map(([label, types]) => {
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
-        if (!items.length) return null;
         return (
           <section key={label}>
             <h4>{(() => { const Icon = typeIcon[types[0]] ?? Box; return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
+            {!items.length && <p className="helper po-none">None yet.{onAddAsset ? " Use Add to the bible, or analyze a script that has them." : ""}</p>}
             <ul>
               {items.map(({ a, i }) => {
                 const dot = dotFor(a, queue);

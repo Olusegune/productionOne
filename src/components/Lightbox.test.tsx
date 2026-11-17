@@ -14,9 +14,9 @@ const job = (id: string, status: ImageJob['status']): ImageJob => ({
 })
 const items: LightboxItem[] = [{ job: job('front', 'needs-review'), label: 'Front' }, { job: job('side', 'completed'), label: 'Side' }, { job: job('rear', 'needs-review'), label: 'Rear' }]
 
-function Harness({ onApprove = () => {}, onReject = () => {}, onClose = () => {} }) {
+function Harness({ onApprove = () => {}, onReject = () => {}, onClose = () => {}, onReconsider = undefined as undefined | (() => void), list = items }) {
   const [i, setI] = useState(0)
-  return <Lightbox items={items} index={i} onIndex={setI} onClose={onClose} onApprove={onApprove} onReject={onReject} />
+  return <Lightbox items={list} index={i} onIndex={setI} onClose={onClose} onApprove={onApprove} onReject={onReject} onReconsider={onReconsider} />
 }
 
 describe('Lightbox', () => {
@@ -38,7 +38,23 @@ describe('Lightbox', () => {
     fireEvent.click(screen.getByLabelText('Fit to screen'))
     expect(screen.getByText('100%')).toBeTruthy()
   })
-  it('approves and rejects only an image that is waiting for review, and closes with Escape', () => {
+  it('can take a decision back: approved or rejected pictures show Take back / Not decided (and U), waiting ones do not', () => {
+    const back = vi.fn()
+    const decided: LightboxItem[] = [{ job: { ...job('a', 'completed'), approved: true }, label: 'Approved one' }, { job: { ...job('b', 'completed'), rejected: true }, label: 'Rejected one' }, { job: job('c', 'needs-review'), label: 'Waiting one' }]
+    render(<Harness list={decided} onReconsider={back} />)
+    expect(screen.getByText('Take back approval')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Approve A/ })).toBeNull()
+    fireEvent.keyDown(window, { key: 'u' })
+    expect(back).toHaveBeenCalledTimes(1)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(screen.getByText('Not decided')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Approve A/ })).toBeTruthy() // a rejected picture can be approved directly
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(screen.queryByText('Not decided')).toBeNull()
+    fireEvent.keyDown(window, { key: 'u' })
+    expect(back).toHaveBeenCalledTimes(1)
+  })
+  it('approves and rejects an image that is waiting or already decided, and closes with Escape', () => {
     const approve = vi.fn()
     const reject = vi.fn()
     const close = vi.fn()
@@ -47,9 +63,9 @@ describe('Lightbox', () => {
     expect(approve).toHaveBeenCalledTimes(1)
     fireEvent.keyDown(window, { key: 'r' })
     expect(reject).toHaveBeenCalledTimes(1)
-    fireEvent.keyDown(window, { key: 'ArrowRight' }) // Side is already completed
+    fireEvent.keyDown(window, { key: 'ArrowRight' }) // Side is completed but undecided: it can still be approved
     fireEvent.keyDown(window, { key: 'a' })
-    expect(approve).toHaveBeenCalledTimes(1)
+    expect(approve).toHaveBeenCalledTimes(2)
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(close).toHaveBeenCalled()
   })

@@ -12,14 +12,14 @@ const job = (over: Partial<ImageJob>): ImageJob => ({
 const analysis = { scenes: [], assets: [{ id: 'A1', name: 'MARA', type: 'character', sceneIds: [], status: 'planned' }] } as unknown as AnalysisResult
 const start = (jobs: ImageJob[]): QueueState => ({ ...emptyQueue(), jobs })
 
-function Harness({ initial, spies }: { initial: QueueState; spies: { onApproved: () => void; openAsset: (id: string, sheet: string) => void; notify: () => void } }) {
+function Harness({ initial, spies }: { initial: QueueState; spies: { onApproved: () => void; onUnapproved: () => void; openAsset: (id: string, sheet: string) => void; notify: () => void } }) {
   const [queue, setQueue] = useState(initial)
   return <>
-    <ReviewView analysis={analysis} queue={queue} setQueue={(u) => setQueue(u)} onApproved={spies.onApproved} openAsset={spies.openAsset} openDesign={() => {}} notify={spies.notify} />
+    <ReviewView analysis={analysis} queue={queue} setQueue={(u) => setQueue(u)} onApproved={spies.onApproved} onUnapproved={spies.onUnapproved} openAsset={spies.openAsset} openDesign={() => {}} notify={spies.notify} />
     <output data-testid="states">{queue.jobs.map((j) => `${j.id}:${j.approved ? 'approved' : j.rejected ? 'rejected' : j.status}`).join(',')}</output>
   </>
 }
-const spies = () => ({ onApproved: vi.fn(), openAsset: vi.fn(), notify: vi.fn() })
+const spies = () => ({ onApproved: vi.fn(), onUnapproved: vi.fn(), openAsset: vi.fn(), notify: vi.fn() })
 const states = () => screen.getByTestId('states').textContent
 
 describe('Review workspace', () => {
@@ -35,7 +35,7 @@ describe('Review workspace', () => {
   it('approving records the approval, tells the app, and moves on', () => {
     const s = spies()
     render(<Harness initial={start(waiting)} spies={s} />)
-    fireEvent.click(screen.getByRole('button', { name: /Approve/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Approve$/ }))
     expect(states()).toMatch(/new:approved/)
     expect(s.onApproved).toHaveBeenCalledTimes(1)
     expect(screen.getByText(/All caught up/)).toBeTruthy()
@@ -63,6 +63,45 @@ describe('Review workspace', () => {
   it('is calm when nothing is waiting', () => {
     render(<Harness initial={start([])} spies={spies()} />)
     expect(screen.getByText(/All caught up/)).toBeTruthy()
+  })
+})
+
+describe('Review: changing your mind', () => {
+  const decided = [
+    job({ id: 'ok', viewKey: 'front', approved: true, outputPath: 'ok.png', updatedAt: 5 }),
+    job({ id: 'no', viewKey: 'profile', label: 'Profile', rejected: true, outputPath: 'no.png', updatedAt: 6 }),
+  ]
+  it('a picture turned down by mistake can be approved straight from Turned down', () => {
+    const s = spies()
+    render(<Harness initial={start(decided)} spies={s} />)
+    fireEvent.click(screen.getByRole('button', { name: /Turned down \(1\)/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Approve$/ }))
+    expect(states()).toMatch(/no:approved/)
+    expect(s.onApproved).toHaveBeenCalledTimes(1)
+  })
+  it('a rejection can be taken back: the picture returns to Waiting, undecided', () => {
+    render(<Harness initial={start(decided)} spies={spies()} />)
+    fireEvent.click(screen.getByRole('button', { name: /Turned down \(1\)/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Not decided/ }))
+    expect(states()).toMatch(/no:needs-review/)
+    expect(screen.getByRole('button', { name: /Waiting \(1\)/ })).toBeTruthy()
+  })
+  it('lists approved pictures and takes an approval back, telling the app so the asset can lose its Approved label', () => {
+    const s = spies()
+    render(<Harness initial={start(decided)} spies={s} />)
+    fireEvent.click(screen.getByRole('button', { name: /^Approved \(1\)/ }))
+    expect(screen.getByText(/Approved · revision 1/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Take back approval/ }))
+    expect(states()).toMatch(/ok:needs-review/)
+    expect(s.onUnapproved).toHaveBeenCalledTimes(1)
+  })
+  it('rejecting an approved picture also tells the app the approval is gone', () => {
+    const s = spies()
+    render(<Harness initial={start(decided)} spies={s} />)
+    fireEvent.click(screen.getByRole('button', { name: /^Approved \(1\)/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Reject/ }))
+    expect(states()).toMatch(/ok:rejected/)
+    expect(s.onUnapproved).toHaveBeenCalledTimes(1)
   })
 })
 

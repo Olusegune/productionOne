@@ -18,6 +18,7 @@ import type { AnalysisResult, GenerationJob } from "../domain/productionStudio";
 import type { DemoClip } from "../domain/demoClips";
 import type { ImageJob, QueueState } from "../domain/generationQueue";
 import type { SheetType, StyleBible } from "../domain/visualDevelopment";
+import type { NewAssetKind } from "../domain/readingActions";
 import type { Dispatch, SetStateAction, RefObject } from "react";
 
 /** The Design workspace. Extracted from App.tsx; everything it needs arrives as props. */
@@ -37,8 +38,9 @@ export interface DesignViewProps {
   importAsset: (file: File) => Promise<void>;
   jobs: GenerationJob[];
   modelRecommendations: (ImageModelRecord & { score: number; reason: string; })[];
-  onAddCharacter: (name: string, gender: string) => void;
+  onAddAsset: (kind: NewAssetKind, name: string, gender: string, withImage: boolean) => void;
   onSheetApproved: (job: ImageJob, primary: boolean) => void;
+  onSheetUnapproved: (job: ImageJob) => void;
   openAiConfigured: boolean;
   plannedSheets: SheetPlan[];
   promptMode: keyof PromptPackage;
@@ -97,10 +99,10 @@ export function DesignView(p: DesignViewProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const wide = useWide();
   const inInspector = wide && section === "sheets";
-  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddCharacter, onSheetApproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible } = p;
+  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible } = p;
   return (
 <div className="po-design">
-            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddCharacter={onAddCharacter} />
+            <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} />
             <div className="po-canvas design-workspace">
             <ArtDirectionBar
               style={styleBible}
@@ -133,6 +135,7 @@ export function DesignView(p: DesignViewProps) {
               desktop={isTauri}
               providersVersion={Number(providersOpen)}
               onApproved={onSheetApproved}
+              onUnapproved={onSheetUnapproved}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
               openLocal={() => setLocalOpen(true)}
