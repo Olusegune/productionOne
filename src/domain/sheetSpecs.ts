@@ -177,7 +177,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     view.instruction,
     identityFacts(asset),
     // A costume made from the script's own description of a character keeps those words in every view.
-    asset.type === 'costume' && asset.prompt?.startsWith('Costume worn by') ? asset.prompt : '',
+    (asset.type === 'costume' && asset.prompt?.startsWith('Costume worn by')) || (asset.type === 'prop' && asset.prompt?.startsWith('As the script describes it')) ? asset.prompt : '',
     anchored ? anchoredPromptLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style)}.`,

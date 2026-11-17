@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.46.2 (2026-11-17): props that show something use the script's description
+- **A photograph looks like what the script says it shows.** A prop that carries an image or text (photograph, picture, painting, portrait, map, letter, notebook, diary, poster, projection, scroll, contract, ledger) now keeps the lines that describe it: for "A photograph slips from the file. A modest kitchen. A small boy sitting behind a birthday cake." the photograph is a boy behind a birthday cake in a modest kitchen. The description goes into the prop's sheet prompt, into its insert shot (which now says what it shows) and into the prop line of every shot prompt it is in. Before, the insert of that photograph was a framed picture of a horned figure.
+- Ordinary objects are unchanged: their name already carries their look, and the lines after them are about the room.
+- **Planning a scene again no longer draws kept shots twice.** A shot with an approved frame is kept; the same shot in the new plan (same coverage and title) only refreshes its action and cast, so the new description reaches the next frame. Before, the whole new plan was added next to the kept shots (a scene with 10 framed shots gained 10 more).
+- **Analyze script no longer scrambles a planned storyboard.** Pressing it moved every shot to the scene at its position in the shot list, so a 65-shot storyboard ended with 59 shots in scene 1 and one in each other scene. A shot whose scene is still in the script now stays exactly as it is; only a shot whose scene is gone is moved.
+- Tests: 586 JS (6 more), 84 Rust.
+
 ## 0.46.1 (2026-11-17): costumes and props, found and used
 - **Costumes are read from the script.** What a character wears, as the script describes them in one sentence (`oversized coral-red puffer jacket, layered gold chains, black cargo trousers, trainers`) or in the short lines that follow (`Black three-piece suit. Fitted tailcoat. Red bow tie.`), becomes a **costume** for that character, with the script's own words as its description. Before, Costumes was always empty unless you added one by hand. A passing "in a coat" is not a wardrobe (two worn items are needed), and later actions such as "removes his glasses" are not clothes.
 - **Cleaner props.** A bell ringing, a lift passing, and a simile ("like a trophy") are no longer props; "the photograph" and "the picture" are one prop; typewriters, recorders, cheques and blotters are recognised.

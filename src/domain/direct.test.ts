@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
+import { keepShotsAfterReading, buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
 import { addSupplied, emptyQueue, enqueue, type QueueState } from './generationQueue'
 import { analyzeScript } from './productionStudio'
 import { defaultStyleBible } from './visualDevelopment'
@@ -101,6 +101,16 @@ describe('frames, references and prompts', () => {
     expect(new Set(again.map((s) => s.id)).size).toBe(again.length)
     expect(again.filter((s) => s.sceneId === 'SCENE-001').length).toBe(shots.filter((s) => s.sceneId === 'SCENE-001').length)
   })
+  it('replanning twice does not draw a kept shot a second time, and refreshes what is written about it', () => {
+    const kept = shots.filter((s) => s.sceneId === 'SCENE-002')
+    let q = emptyQueue()
+    for (const k of kept) q = addSupplied(q, { assetId: k.id, variant: 'Storyboard', sheetType: 'Storyboard', viewKey: 'frame', label: 'f', aspect: '16:9', fullBody: false, path: 'C:/f.png', width: 1, height: 1 }).state
+    const stale = shots.map((s) => (s.sceneId === 'SCENE-002' ? { ...s, action: 'old words' } : s))
+    const again = replanScene(stale, analysis, 'SCENE-002', q)
+    expect(again.filter((s) => s.sceneId === 'SCENE-002')).toHaveLength(kept.length)
+    expect(again.filter((s) => s.sceneId === 'SCENE-002').every((s) => s.action !== 'old words')).toBe(true)
+    expect(replanScene(again, analysis, 'SCENE-002', q)).toHaveLength(again.length)
+  })
 })
 
 describe('shot list exports', () => {
@@ -124,5 +134,19 @@ describe('voices that are heard, not seen', () => {
     expect(names).toContain('FLEX')
     expect(names).toContain('VENOMSPUR')
     expect(names).not.toContain('PA VOICE')
+  })
+})
+
+describe('reading the script again', () => {
+  it('leaves a planned storyboard where it is: every shot keeps its scene, cast and frame', () => {
+    const after = keepShotsAfterReading(shots, analysis)
+    expect(after).toEqual(shots)
+    expect(new Set(after.map((s) => s.sceneId)).size).toBe(new Set(shots.map((s) => s.sceneId)).size)
+  })
+  it('moves only a shot whose scene is no longer in the script', () => {
+    const orphan = { ...shots[0], sceneId: 'SCENE-999' }
+    const after = keepShotsAfterReading([orphan, shots[1]], analysis)
+    expect(after[0].sceneId).toBe(analysis.scenes[0].id)
+    expect(after[1]).toEqual(shots[1])
   })
 })

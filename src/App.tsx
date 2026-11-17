@@ -1,6 +1,7 @@
 import { toggleTheme } from "./data/theme";
 import { useLook, useProjectAccent } from "./data/appearance";
 import { looks } from "./domain/appearance";
+import { keepShotsAfterReading } from "./domain/direct";
 import { AppearanceMenu } from "./components/AppearanceMenu";
 import { addProductionAsset, addPropAsset, applyReadAge, newAssetKinds, ownImageSlot, type NewAssetKind } from "./domain/readingActions";
 import { hasWork, needsBackup } from "./domain/projectSafety";
@@ -357,15 +358,7 @@ export default function App() {
     setAnalysis(next);
     const named = titleFromScript(title, next.story?.title);
     if (named) setTitle(named);
-    setShots((current) =>
-      current.map((shot, index) => ({
-        ...shot,
-        sceneId: next.scenes[index]?.id ?? next.scenes[0]?.id ?? shot.sceneId,
-        assetIds: next.assets
-          .filter((a) => a.sceneIds.includes(next.scenes[index]?.id ?? ""))
-          .map((a) => a.id),
-      })),
-    );
+    setShots((current) => keepShotsAfterReading(current, next));
     setNotice(
       `Found ${next.scenes.length} scenes and ${next.assets.length} production assets.`,
     );

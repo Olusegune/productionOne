@@ -146,9 +146,21 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
   // A prop that returns in two or more scenes (the typewriter, the photograph) gets an insert where it first appears, as well as one with a stated condition.
   for (const p of story.props.filter((x) => x.sceneIds.includes(scene.id) && (x.condition || (x.sceneIds.length >= 2 && x.sceneIds[0] === scene.id))).slice(0, 2)) {
     const asset = analysis.assets.find((a) => a.type === 'prop' && a.name === p.name)
-    drafts.push({ coverage: 'insert', size: 'ECU', angle: 'eye-level', movement: 'rack-focus', title: `Insert: ${p.name}`, characters: [], action: `Close on the ${p.name}${p.condition ? `, ${p.condition}` : ''}.`, duration: 2, composition: ['negative space'], setAsset: asset })
+    drafts.push({ coverage: 'insert', size: 'ECU', angle: 'eye-level', movement: 'rack-focus', title: `Insert: ${p.name}`, characters: [], action: `Close on the ${p.name}${p.condition ? `, ${p.condition}` : ''}.${p.description ? ` What it shows, as the script describes it: ${p.description}` : ''}`, duration: 2, composition: ['negative space'], setAsset: asset })
   }
   return drafts.map((d, i) => toShot(d, legacy, scene, slugId(firstNumber + i), firstOrder + i))
+}
+
+/**
+ * After the script is read again, a shot whose scene is still in the script is left exactly as it is (scene, cast, frame). Only a shot whose scene is gone is moved, to the scene at its
+ * position in the list, as the first placeholder shots were. Moving every shot by its position put most of a planned storyboard into scene 1.
+ */
+export function keepShotsAfterReading(shots: ShotRecord[], analysis: AnalysisResult): ShotRecord[] {
+  return shots.map((shot, index) =>
+    analysis.scenes.some((s) => s.id === shot.sceneId)
+      ? shot
+      : { ...shot, sceneId: analysis.scenes[index]?.id ?? analysis.scenes[0]?.id ?? shot.sceneId, assetIds: analysis.assets.filter((a) => a.sceneIds.includes(analysis.scenes[index]?.id ?? '')).map((a) => a.id) },
+  )
 }
 
 export function planCoverage(analysis: AnalysisResult, only?: string): ShotRecord[] {
@@ -174,7 +186,12 @@ export function replanScene(existing: ShotRecord[], analysis: AnalysisResult, sc
   const arcs = characterArcs(story)
   const idx = story.scenes.indexOf(scene)
   const planned = planScene(story, scene, analysis, arcs, idx > 0 ? story.scenes[idx - 1].setting : undefined, nextShotNumber(keep), 1)
-  return sortShots([...keep, ...planned], analysis)
+  // A shot that already has an approved frame is kept, not drawn twice: the same shot in the new plan (same coverage and title) only refreshes what is written about it, so a script
+  // change or a better reading reaches the next frame without losing this one.
+  const sameShot = (a: ShotRecord, b: ShotRecord) => a.sceneId === b.sceneId && a.coverage === b.coverage && a.title === b.title
+  const refreshed = keep.map((k) => { const p = k.sceneId === sceneId ? planned.find((x) => sameShot(k, x)) : undefined; return p ? { ...k, action: p.action, assetIds: p.assetIds } : k })
+  const fresh = planned.filter((p) => !keep.some((k) => k.sceneId === sceneId && sameShot(k, p)))
+  return sortShots([...refreshed, ...fresh], analysis)
 }
 
 export function sortShots(shots: ShotRecord[], analysis: AnalysisResult): ShotRecord[] {
@@ -249,7 +266,7 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.` : '',
     names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',
-    names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.name).join(', ')}.` : '',
+    names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.prompt?.startsWith('As the script describes it') ? `${n.name} (${n.prompt.replace('As the script describes it: ', '')})` : n.name).join(', ')}.` : '',
     `Action: ${shot.action}`,
     shot.emotion && shot.emotion !== 'neutral' ? `Feeling: ${shot.emotion}. Face: ${shot.facialActing}. Body: ${shot.bodyLanguage}.` : '',
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',

@@ -105,7 +105,12 @@ export function analyzeScript(text: string): AnalysisResult {
   }
   for (const scene of scenes) addAsset(scene.setting, scene.setting === 'Unspecified' ? 'environment' : 'set', [scene.id])
   for (const c of story.characters) addAsset(c.name, 'character', c.sceneIds)
-  for (const p of story.props) addAsset(p.name, 'prop', p.sceneIds)
+  for (const p of story.props) {
+    addAsset(p.name, 'prop', p.sceneIds)
+    // A prop that shows something (a photograph) keeps what the script says it shows, so its picture and every shot of it match.
+    const made = assets.get(`prop:${slug(p.name)}`)
+    if (made && p.description && !made.prompt) made.prompt = `As the script describes it: ${p.description}`
+  }
   // What each character wears, read from the script's description of them: one costume per character, its items kept as the prompt so the wardrobe sheet starts from the script's own words.
   for (const c of story.costumes ?? []) {
     const name = `${c.character} costume`
