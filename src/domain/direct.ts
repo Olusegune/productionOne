@@ -94,7 +94,9 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
   if (!legacy) return []
   const byName = (name: string) => analysis.assets.find((a) => a.type === 'character' && a.name.toUpperCase() === name.toUpperCase().replace(/^(?:YOUNG|OLD|ELDER|LITTLE)\s+/, ''))
   const setAsset = analysis.assets.find((a) => (a.type === 'set' || a.type === 'environment') && a.name.toUpperCase() === scene.setting.toUpperCase())
-  const here = story.characters.filter((c) => c.sceneIds.includes(scene.id)).map((c) => byName(c.name)).filter((a): a is ExtractedAsset => !!a)
+  // A voice on a loudspeaker, a narrator or a recording is heard, not seen: it is not cast in the picture.
+  const unseen = (name: string) => /(?:^|\s)(?:VOICE|ANNOUNCER|NARRATOR|INTERCOM)$|^RECORDED\s/i.test(name.trim())
+  const here = story.characters.filter((c) => c.sceneIds.includes(scene.id) && !unseen(c.name)).map((c) => byName(c.name)).filter((a): a is ExtractedAsset => !!a)
   const looksFor = (chars: ExtractedAsset[]) => Object.fromEntries(chars.map((c) => [c.id, story.variants.find((v) => v.character.toUpperCase() === c.name.toUpperCase() && v.sceneId === scene.id && v.kind !== 'age')?.value ?? story.variants.find((v) => v.character.toUpperCase() === c.name.toUpperCase() && v.sceneId === scene.id)?.value ?? 'Canonical']))
   const drafts: ShotDraft[] = []
   const place = scene.setting.toLowerCase()
@@ -104,7 +106,7 @@ export function planScene(story: ParsedStory, scene: StoryScene, analysis: Analy
   if (here.length) drafts.push({ coverage: 'master', size: here.length > 1 ? 'WS' : 'MWS', angle: 'eye-level', movement: 'static', title: `Master: ${here.map((c) => c.name).join(' and ')}`, characters: here, setAsset, looks: looksFor(here), action: `${here.map((c) => c.name).join(' and ')} in ${place}.`, duration: 5, composition: ['rule of thirds', 'depth layers'], screenDir: 'neutral' })
   // Dialogue: group same-speaker lines, then cover alternating speakers over the shoulder, keeping each speaker on one side of the line.
   const sideOf = new Map<string, ScreenDir>()
-  const speakers = [...new Set(scene.dialogue.filter((d) => d.speaker !== 'LYRIC').map((d) => d.speaker.toUpperCase()))]
+  const speakers = [...new Set(scene.dialogue.filter((d) => d.speaker !== 'LYRIC' && !unseen(d.speaker)).map((d) => d.speaker.toUpperCase()))]
   speakers.slice(0, 2).forEach((s, i) => sideOf.set(s, i === 0 ? 'L>R' : 'R>L'))
   const groups: Array<{ speaker: string; text: string; parenthetical?: string; line: number }> = []
   for (const d of scene.dialogue) {

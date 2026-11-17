@@ -9,7 +9,10 @@
 - **Scripts with numbered headings are read properly.** A heading such as `SCENE 2 — INT. OFFICE — NIGHT` was not recognised as a screenplay heading, so the whole script was read as a shot list: no one was found speaking, and every beat (`INT. OFFICE — THE ACCOUNT`) became its own set. Now the script is read as a screenplay, speakers and lines are found, beats after a dash fold into the plain location (one room, one set), `TIMELESS` is a time of day, and on-screen text such as `TICKET: 8,004,119.` or a verse reference is no longer a speaker. Typewriters, recorders, cheques and blotters are recognised as props.
 - **Motion demo lists only models that start from a picture.** Text-to-video models Kie.ai lists are left out of the picture-based list.
 - **A hiccup on Kie's documentation site is no longer reported as a missing model.** The model page is asked for twice, and only a 404 says the model was renamed; any other answer shows its status and says to try again.
-- Tests: 570 JS (30 more), 83 Rust.
+- **Sets are drawn full frame.** A set's establishing view was asked for on a flat grey field, which put grey bars above and below the room (and carried them into storyboard frames). A set or environment now asks for the place edge to edge.
+- **A voice on a loudspeaker or a recording is not cast in the picture.** `PA VOICE`, narrators, announcers and `RECORDED ...` speakers are heard, not seen: they no longer appear in master shots or take a side of the line (a PA VOICE had been drawn as a uniformed person in the foreground).
+- **Seedance 2.5 works from a picture.** Kie.ai accepts only `adaptive` as the shape of a video that starts from a picture for this model; the app sent an explicit ratio and got a 422. It now sends `adaptive` whenever the model lists it and a picture starts the clip.
+- Tests: 572 JS (32 more), 84 Rust.
 
 ## 0.45.1 (2026-11-16): Nano Banana stays in the engine list, and there are more image models
 - **Fixed: Nano Banana vanished from the engine choice.** In 0.44.0 the list on a failed or waiting view left out the engine the view had used before, which for most views was Nano Banana 2.1, so the Nano Banana series seemed to have been removed. Every engine is now always listed; the one used before is marked "used before" and can be chosen again (that is how a view is simply tried once more).

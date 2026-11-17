@@ -9,6 +9,7 @@
 - **More video models:** Seedance 2.5, Kling 4.0, Wan 3.0, HappyHorse 1.1, MiniMax H3, PixVerse V6 and Grok Imagine 1.5 (marked not verified until run), in Deliver and in the motion demo.
 
 ## Fixed
+- Set pictures fill the frame (no grey bars); voice-only characters such as a PA VOICE are not drawn in storyboard shots; Seedance 2.5 now runs from a picture.
 - Scripts with headings like `SCENE 2 — INT. OFFICE — NIGHT` are now read as screenplays: speakers and lines are found, and beats in one room no longer become separate sets.
 - The picture-based motion demo no longer lists text-to-video models; a hiccup on Kie's documentation site is no longer reported as a missing model.
 - The Dark / Light switch is no longer squashed; the sheet controls no longer scroll in a box of their own; the Shape setting is no longer squeezed to nothing.

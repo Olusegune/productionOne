@@ -105,7 +105,9 @@ pub fn build_input(schema: &KieSchema, prompt: &str, aspect: &str, image_urls: &
     let mut input = Map::new();
     input.insert("prompt".into(), json!(prompt));
     if let Some(key) = &schema.aspect_key {
-        let chosen = if schema.aspect_values.is_empty() { Some(aspect.to_string()) } else { nearest_aspect(aspect, &schema.aspect_values) };
+        // Models such as Seedance 2.5 accept only "adaptive" when the video starts from a picture: the picture sets the shape.
+        let adaptive = !image_urls.is_empty() && schema.aspect_values.iter().any(|v| v == "adaptive");
+        let chosen = if adaptive { Some("adaptive".to_string()) } else if schema.aspect_values.is_empty() { Some(aspect.to_string()) } else { nearest_aspect(aspect, &schema.aspect_values) };
         if let Some(v) = chosen { input.insert(key.clone(), json!(v)); }
     }
     match (&schema.image, image_urls.is_empty()) {
@@ -303,6 +305,15 @@ mod tests {
         let mut s = parse_kie_doc(DOC).unwrap();
         s.image = None;
         assert!(build_input(&s, "p", "1:1", &["https://x.example/a.png".to_string()], None).unwrap_err().contains("no reference images"));
+    }
+
+    #[test]
+    fn a_video_from_a_picture_uses_adaptive_when_the_model_lists_it() {
+        let schema = KieSchema { model: "m".into(), prompt_max: None, aspect_key: Some("aspect_ratio".into()), aspect_values: vec!["16:9".into(), "9:16".into(), "adaptive".into()], image: Some(ImageField { key: "first_frame_url".into(), array: false, max: 1, required: false }), duration_key: None, duration_values: vec![], duration_is_number: false, fixed: vec![], audio_key: None };
+        let with_picture = build_input(&schema, "p", "3:4", &["https://x/y.png".to_string()], None).unwrap();
+        assert_eq!(with_picture["aspect_ratio"], "adaptive");
+        let without = build_input(&schema, "p", "9:16", &[], None).unwrap();
+        assert_eq!(without["aspect_ratio"], "9:16");
     }
 
     #[test]
