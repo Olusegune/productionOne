@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.46.5 (2026-11-18): an illustrated walkthrough
+- **New: `docs/GETTING_STARTED.md`.** A step-by-step guide from a pasted script to a saved storyboard, with 15 fresh screenshots of the real app (Projects, Story, Cast, Reading, Design for a character, a costume, a prop and a set, Review, Direct, Deliver, the command palette). It says where sets and props appear and why a project started from a character image has none, how to keep a set the same across scenes, how naming and saving work, what costs money, and what the app does not do yet.
+- The README and the user guide point to it first.
+- No code change.
+
 ## 0.46.4 (2026-11-18): renaming a file renames the project, and every frame keeps the same set
 - **Save As with a new file name renames the production.** The title bar kept saying "Untitled production" after a project was saved under another name. The title now takes the file name, and the file is saved with that title, so reopening it shows the same name. Renaming in Project settings is unchanged.
 - **Set consistency is stated in every frame prompt.** A frame whose set has a picture now says: keep this exact place, with the same layout, walls, floor, furniture, doors and windows, colours, materials and light sources; show only the part the camera sees; do not redesign it.
