@@ -14,6 +14,7 @@ import { ProjectsView } from "./views/ProjectsView";
 import { StoryView } from "./views/StoryView";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { DeliveryCenter } from "./components/DeliveryCenter";
+import { DEFAULT_FORMAT, cleanFormat, videoAspectFor } from "./domain/formats";
 import { convertScript, type ScriptKind } from "./engine/importers";
 import { 
   Check,
@@ -135,6 +136,8 @@ export default function App() {
     [animaticPlaying, setAnimaticPlaying] = useState(false),
     [animaticTime, setAnimaticTime] = useState(0);
   const [styleBible, setStyleBible] = useState<StyleBible>(defaultStyleBible);
+  const [format, setFormatState] = useState<string>(DEFAULT_FORMAT);
+  const setFormat = (next: string) => setFormatState(cleanFormat(next));
   const { look, setLook } = useLook();
   useProjectAccent(look, styleBible.palette);
   const [focusSheetType, setFocusSheetType] = useState<SheetType | undefined>();
@@ -184,8 +187,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -264,6 +267,7 @@ export default function App() {
           setModel(studio.model);
           setAssetOutputs(studio.assetOutputs ?? {});
           setStyleBible(studio.styleBible ?? defaultStyleBible);
+          setFormat(studio.format ?? DEFAULT_FORMAT);
         }
         setHydrated(true);
       },
@@ -836,7 +840,7 @@ export default function App() {
         {
           model: videoPresets[model].apiModel,
           prompt: compiled.prompt,
-          aspectRatio: "16:9",
+          aspectRatio: videoAspectFor(format, videoPresets[model].aspectRatios),
           duration: [4, 5, 6, 8, 10, 12].reduce(
             (best, value) =>
               Math.abs(value - shots[0].duration) <
@@ -982,6 +986,7 @@ export default function App() {
     setModel(s.model);
     setAssetOutputs(s.assetOutputs ?? {});
     setStyleBible(s.styleBible ?? defaultStyleBible);
+    setFormat(s.format ?? DEFAULT_FORMAT);
     setGraph(file.graph);
     setQueueState(recover(s.queue ?? emptyQueue()));
     setClipsState(s.clips ?? []);
@@ -1013,7 +1018,7 @@ export default function App() {
     applyProject(
       buildProjectFile("Untitled production", { schemaVersion: 1, nodes: [], edges: [] }, {
         script: "", analysis: { scenes: [], assets: [] }, shots: [], jobs: [], storyboardsEnabled: false,
-        model: "Seedance 2.0", assetOutputs: {}, styleBible: defaultStyleBible,
+        model: "Seedance 2.0", assetOutputs: {}, styleBible: defaultStyleBible, format: DEFAULT_FORMAT,
       }),
       null,
     );
@@ -1375,7 +1380,7 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} />
+          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
         )}
         {workspace === "Story" && (
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
@@ -1387,7 +1392,7 @@ export default function App() {
           <ReviewView analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Direct" && (
-          <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} />
+          <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
         )}
         {workspace === "Deliver" && (
           <DeliveryCenter
@@ -1410,6 +1415,7 @@ export default function App() {
             openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }}
             openShot={(id) => { const i = shots.findIndex((x) => x.id === id); if (i >= 0) setSelectedShot(i); setWorkspace(storyboardsEnabled ? "Direct" : "Design"); }}
             notify={setNotice}
+            format={format}
             styleLocked={styleBible.locked}
             openProviders={() => setProvidersOpen(true)} openDesign={() => setWorkspace("Design")} onFix={(fix) => { if (fix.kind === "review") setWorkspace("Review"); else if (fix.kind === "script") setWorkspace("Story"); else if (fix.kind === "asset" && fix.assetId) { const i = analysis.assets.findIndex((x) => x.id === fix.assetId); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); } else setWorkspace("Design"); }}
           />

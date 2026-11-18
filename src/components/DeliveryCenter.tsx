@@ -1,3 +1,4 @@
+import { DEFAULT_FORMAT, videoAspectFor } from "../domain/formats";
 import { useEffect, useMemo, useState } from "react";
 import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, ArrowRight, Check, Compass, ShieldCheck, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
@@ -21,6 +22,8 @@ type Audit = { ready: boolean; missingAssets: string[]; incompleteShots: string[
 
 /** Deliver: what is ready, what is not and where to fix it, the shot compiler with an editable prompt, and the three ways to hand the work on. */
 export function DeliveryCenter(props: {
+  /** The project's shape (for example 9:16). The video default follows it. */
+  format?: string;
   analysis: AnalysisResult;
   shots: ShotRecord[];
   audit: Audit;
@@ -48,8 +51,9 @@ export function DeliveryCenter(props: {
 }) {
   const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix, openProviders, openDesign } = props;
   const [videoPurpose, setVideoPurpose] = useState<VideoPurpose>("acting");
-  const [videoAspect, setVideoAspect] = useState("16:9");
   const preset = videoPresets[model];
+  const [videoPick, setVideoAspect] = useState<string | null>(null);
+  const videoAspect = videoPick && preset.aspectRatios.includes(videoPick) ? videoPick : videoAspectFor(props.format ?? DEFAULT_FORMAT, preset.aspectRatios);
   const name = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id;
   const kind = (id: string) => analysis.assets.find((a) => a.id === id)?.type ?? "asset";
   const sceneName = (id: string) => analysis.scenes.find((s) => s.id === id)?.heading ?? id;

@@ -37,10 +37,12 @@ export interface DirectViewProps {
   styleBible: StyleBible;
   title: string;
   totalAnimaticDuration: number;
+  format: string;
+  setFormat: (aspect: string) => void;
 }
 
 export function DirectView(p: DirectViewProps) {
-  const { activeShot, addShot, analysis, animaticPlaying, animaticTime, assetRefs, deleteShot, duplicateShot, moveShot, patchShot, providersOpen, queue, selectedShot, setAnimaticPlaying, setAnimaticTime, setLocalOpen, setNotice, setProvidersOpen, setQueue, setSelectedShot, setShots, setStoryboardsEnabled, shots, storyboardsEnabled, styleBible, title, totalAnimaticDuration } = p;
+  const { activeShot, addShot, analysis, animaticPlaying, animaticTime, assetRefs, deleteShot, duplicateShot, moveShot, patchShot, providersOpen, queue, selectedShot, setAnimaticPlaying, setAnimaticTime, setLocalOpen, setNotice, setProvidersOpen, setQueue, setSelectedShot, setShots, setStoryboardsEnabled, shots, storyboardsEnabled, styleBible, title, totalAnimaticDuration, format, setFormat } = p;
   return (
 <div className="dr-wrap">
             <DirectRoom
@@ -56,6 +58,8 @@ export function DirectView(p: DirectViewProps) {
               enabled={storyboardsEnabled}
               setEnabled={setStoryboardsEnabled}
               title={title}
+              format={format}
+              setFormat={setFormat}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}
               openLocal={() => setLocalOpen(true)}

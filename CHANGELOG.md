@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.47.0 (2026-11-18): choose your format first, and a clearer storyboard card
+Asked for by the owner: people making content for Instagram or TikTok need the shape from the start, the storyboard card was cramped, and the guide was thin.
+- **Project Format.** One choice for the whole project, saved in the `.pone` file and shown on the Projects screen under the name, and again in the Director's room: **Widescreen 16:9**, **Cinema 21:9**, **TikTok / Reels / Shorts 9:16**, **Instagram portrait 4:5**, **Square 1:1**, and **More shapes** (2.39:1, 2:1, 3:2, 4:3, 5:4, 3:4, 2:3). It replaces the small Canvas dropdown, which was not saved and reset to 16:9 each time.
+- **Everything follows it.** Storyboard frames are requested in that shape; cards and previews are drawn in it (9:16 shows tall cards); the video shape on Deliver and the Seedance request start from it, using the closest shape the video model offers when it cannot make the exact one.
+- **Changing it is safe.** Frames already made keep their shape. They get a **Made at 16:9** tag and the board says how many differ. Nothing is regenerated or paid for until you press Regenerate. Older projects open as Widescreen.
+- **Storyboard card redesigned.** Frame with number and status badge; the shot name on one line; one or two lines of action; small tags for coverage, size and lens, movement and time; the spoken line only when the name does not already say it. One main button per state (Generate frame, Approve with Reject, Regenerate); Undo approval, Undo reject, Regenerate, your own image, move, duplicate and delete are in the menu.
+- **Guide.** New section on choosing a format (table, notes on how wide and tall shapes are made, what is not affected), a rewritten Direct section for the new card, three new screenshots and a refreshed Direct screenshot; the user guide gets a Format section.
+- Not checked live: what each image provider returns at 9:16 or 21:9 (no paid image was made), and the light theme.
+- Tests: 611 JS (new: formats, Format picker, Direct room at 9:16 and shape marking, project file format), 86 Rust.
+
 ## 0.46.8 (2026-11-18): wide and tall storyboards, and smaller corners
 - **Storyboard shapes now work at every Canvas choice.** The Direct room already listed 21:9, 2.39:1, 2:1, 16:9, 3:2, 4:3, 5:4, 1:1, 4:5, 3:4, 2:3 and 9:16, but image models only make a few shapes. The app now asks each provider for the closest shape it accepts (OpenAI: square, landscape or portrait; fal.ai: its five; Google Gemini and OpenRouter: their ten) and trims the picture to exactly the ratio you chose. 2.39:1 used to be refused as a decimal. fal.ai used to refuse anything outside its five.
 - **Very wide or tall frames (2:1 and wider, 9:16 and taller)** add a line to the frame prompt asking for the people and important objects to sit in the middle, since the edges may be trimmed.
