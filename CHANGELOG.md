@@ -4,6 +4,7 @@
 - **"INT. OFFICE / CORRIDOR" is read as the office** when the office also appears on its own. Before, a heading with a slash made a second set, so scene 7 of the test film could not share the office picture with scenes 2 to 6. A place that never appears on its own stays as written.
 - **Merge sets.** In Story, select a set in the cast board and choose **Merge ... into** another set. The scenes and shots of the merged set then use the kept set, so they share its approved picture. Frames already made are not changed. Only sets can be merged, and only into another set.
 - Not covered: Analyze script run again can bring a merged set back if the headings still differ; use the same place text in every heading to avoid it.
+- Guide: a new section, *No script? Start from your own images*, for people who only want character sheets, poses and expressions from images they already have.
 - Tests: 598 JS (7 more), 84 Rust.
 
 ## 0.46.5 (2026-11-18): an illustrated walkthrough
