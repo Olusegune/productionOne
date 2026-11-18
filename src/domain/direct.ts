@@ -254,7 +254,9 @@ export function shotReferences(shot: ShotRecord, analysis: AnalysisResult, queue
     if (job?.outputPath) out.push({ label: asset.name, path: job.outputPath, kind: asset.type === 'character' || asset.type === 'costume' ? 'character' : asset.type === 'prop' ? 'prop' : 'set' })
     else if (assetRefs[id]?.[0]) out.push({ label: `${asset.name} (your photo)`, path: assetRefs[id][0], kind: asset.type === 'character' || asset.type === 'costume' ? 'character' : asset.type === 'prop' ? 'prop' : 'set' })
   }
-  return out.slice(0, 8)
+  // People first, then the set, then costumes and props: when there are more pictures than a model takes, the set is never the one dropped.
+  const rank = (r: ShotRef) => (r.kind === 'set' ? 1 : r.kind === 'character' && !/costume$/i.test(r.label) ? 0 : 2)
+  return out.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map((x) => x.r).slice(0, 8)
 }
 
 export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, style: StyleBible, refs: ShotRef[], aspect = '16:9', model = ''): string {
@@ -267,6 +269,7 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.${shot.coverage === 'establishing' ? '' : ' Only these people appear in the frame: no other people, creatures, crowd or bystanders, not even small or in the background.'}` : '',
     names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',
     names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.prompt?.startsWith('As the script describes it') ? `${n.name} (${n.prompt.replace('As the script describes it: ', '')})` : n.name).join(', ')}.${names.some((n) => n.type === 'prop' && n.prompt?.startsWith('As the script describes it')) ? ' What a described prop shows is exactly what its description says and nothing more: add no other people or objects to it.' : ''}` : '',
+    refs.some((r) => r.kind === 'set') ? `Set consistency: the picture labelled ${refs.filter((r) => r.kind === 'set').map((r) => `"${r.label}"`).join(', ')} is this exact place. Keep its layout, walls, floor, furniture, doors and windows, colours, materials and light sources identical, and show only the part of it this camera angle would see. Do not redesign, restyle or replace the set.` : '',
     `Action: ${shot.action}`,
     shot.emotion && shot.emotion !== 'neutral' ? `Feeling: ${shot.emotion}. Face: ${shot.facialActing}. Body: ${shot.bodyLanguage}.` : '',
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',

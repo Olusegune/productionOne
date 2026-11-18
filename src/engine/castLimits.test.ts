@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { analyzeScript } from '../domain/productionStudio'
-import { buildShotPrompt, planCoverage } from '../domain/direct'
+import { buildShotPrompt, planCoverage, shotReferences } from '../domain/direct'
 import { buildViewPrompt } from '../domain/sheetSpecs'
 import { defaultStyleBible } from '../domain/visualDevelopment'
 
@@ -26,6 +26,18 @@ describe('who and what may appear in a frame', () => {
     expect(buildShotPrompt(master, analysis, style, [])).toMatch(/Only these people appear in the frame: no other people, creatures, crowd or bystanders/)
     const establishing = shots.find((s) => s.coverage === 'establishing')!
     expect(buildShotPrompt(establishing, analysis, style, [])).not.toMatch(/Only these people appear/)
+  })
+  it('a shot with a set picture says to keep that exact set, and the set picture is never dropped by the reference cap', () => {
+    const master = shots.find((s) => s.sceneId === 'SCENE-001' && s.coverage === 'master')!
+    const p = buildShotPrompt(master, analysis, style, [{ label: 'PLATFORM', path: 'p.png', kind: 'set' }])
+    expect(p).toMatch(/Set consistency: the picture labelled "PLATFORM" is this exact place/)
+    expect(buildShotPrompt(master, analysis, style, [])).not.toMatch(/Set consistency/)
+    const queue = { jobs: analysis.assets.map((a, i) => ({ assetId: a.id, variant: 'Canonical', approved: true, outputPath: `${i}.png`, viewKey: 'front', revision: 1 })) } as never
+    const many = { ...master, assetIds: analysis.assets.map((a) => a.id) }
+    const refs = shotReferences(many, analysis, queue)
+    const setAsset = analysis.assets.find((a) => a.type === 'set' || a.type === 'environment')
+    if (setAsset) expect(refs.some((r) => r.kind === 'set')).toBe(true)
+    expect(refs.length).toBeLessThanOrEqual(8)
   })
   it('a described prop shows exactly what its description says and nothing added', () => {
     const insert = shots.find((s) => s.coverage === 'insert' && /photograph/.test(s.title))!
