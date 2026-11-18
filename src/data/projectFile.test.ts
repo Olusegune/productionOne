@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { demoGraph } from '../domain/demoGraph'
 import { analyzeScript } from '../domain/productionStudio'
 import { defaultStyleBible } from '../domain/visualDevelopment'
-import { buildProjectFile, parseProjectFile, suggestedFileName } from './projectFile'
+import { buildProjectFile, parseProjectFile, suggestedFileName, titleFromFilePath } from './projectFile'
+
+describe('naming the file names the production', () => {
+  it('a new file name becomes the title; an unchanged one does not', () => {
+    expect(titleFromFilePath('C:\\Users\\a\\Desktop\\No VIP in Hell.pone', 'Untitled production')).toBe('No VIP in Hell')
+    expect(titleFromFilePath('/home/a/Untitled production.pone', 'Untitled production')).toBeUndefined()
+    expect(titleFromFilePath('C:\\x\\.pone', 'T')).toBeUndefined()
+  })
+})
 
 const script = 'EXT. SAVANNA - DUSK\nAMINA\nWe are close.'
 const studio = () => ({ script, analysis: analyzeScript(script), shots: [], jobs: [], storyboardsEnabled: false, model: 'Seedance 2.0' as const, assetOutputs: {}, styleBible: defaultStyleBible })

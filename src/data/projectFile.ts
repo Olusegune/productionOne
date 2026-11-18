@@ -53,5 +53,17 @@ export function parseProjectFile(text: string): ParsedProject {
   return { ok: false, error: 'This file is not a Production One (.pone) or Production Guy (.pguy) project.' }
 }
 
+/**
+ * The name a person gave the project by naming its file. Save As with a new file name renames the production,
+ * so the title bar, the next save suggestion and the file's own title all agree. Undefined when the name is unchanged.
+ */
+export function titleFromFilePath(path: string, currentTitle: string): string | undefined {
+  const base = path.split(/[\\/]/).pop() ?? ''
+  const stem = base.replace(new RegExp(`\\.${PROJECT_EXTENSION}$`, 'i'), '').replace(/\s+/g, ' ').trim()
+  if (!stem) return undefined
+  if (suggestedFileName(currentTitle).replace(new RegExp(`\\.${PROJECT_EXTENSION}$`, 'i'), '') === stem) return undefined
+  return stem
+}
+
 export const suggestedFileName = (title: string) =>
   `${title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Untitled production'}.${PROJECT_EXTENSION}`

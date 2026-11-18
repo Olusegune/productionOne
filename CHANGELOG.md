@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.46.4 (2026-11-18): renaming a file renames the project, and every frame keeps the same set
+- **Save As with a new file name renames the production.** The title bar kept saying "Untitled production" after a project was saved under another name. The title now takes the file name, and the file is saved with that title, so reopening it shows the same name. Renaming in Project settings is unchanged.
+- **Set consistency is stated in every frame prompt.** A frame whose set has a picture now says: keep this exact place, with the same layout, walls, floor, furniture, doors and windows, colours, materials and light sources; show only the part the camera sees; do not redesign it.
+- **The set picture is never the one dropped.** A frame sends at most 8 pictures. They are now ordered people, then the set, then costumes and props, so the set stays when there are many.
+- Not changed: a set is still matched by its exact scene heading, so two headings for one room are two sets.
+- Tests: 591 JS (2 more), 84 Rust.
+
 ## 0.46.3 (2026-11-17): no extra people in a frame, and a described prop shows only what it describes
 - **Only the cast appears in a shot that has a cast.** The shot prompt now says that only the listed people appear: no other people, creatures, crowd or bystanders, not even small or in the background. A master shot of two people in the concourse had drawn demons in the background that the script never mentions. An establishing shot is exempt: a place may be busy.
 - **A described prop shows exactly its description and nothing more.** The photograph of the boy at a birthday cake had also drawn a woman beside him. The prompt now says that what such a prop shows is exactly what the script describes, with no other people or objects added.

@@ -92,7 +92,7 @@ import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
 import { ReviewView } from "./views/ReviewView";
-import { buildProjectFile, parseProjectFile, suggestedFileName, type ProjectFile } from "./data/projectFile";
+import { buildProjectFile, parseProjectFile, suggestedFileName, titleFromFilePath, type ProjectFile } from "./data/projectFile";
 
 const workspaces = [
   { name: "Projects", icon: FolderKanban },
@@ -1054,6 +1054,12 @@ export default function App() {
         ? await invoke<string>("save_project_path", { path: filePath, contents: text })
         : await invoke<string | null>("save_project_dialog", { suggested: suggestedFileName(title), contents: text });
       if (!saved) return false;
+      const renamed = filePath && !forceDialog ? undefined : titleFromFilePath(saved, title);
+      if (renamed) {
+        // The file was named something new: the production takes that name, and the saved file says so too.
+        setTitle(renamed);
+        await invoke<string>("save_project_path", { path: saved, contents: JSON.stringify(buildProjectFile(renamed, graph, studioNow), null, 2) });
+      }
       setFilePath(saved);
       markSaved();
       void refreshRecents();
