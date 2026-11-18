@@ -1229,7 +1229,9 @@ export default function App() {
     const current = { id: golden.next?.id ?? "done", index: index === -1 ? golden.steps.length : index };
     const before = prevStep.current;
     prevStep.current = current;
-    if (hydrated && before && current.index > before.index && current.id !== before.id) {
+    // A project started from your own images already said what happened ("added with your image"); only a script-first project gets the step-by-step notices.
+    const imageFirst = !goldenInput.hasScript && goldenInput.assetCount > 0 && golden.steps.slice(0, current.index).every((x) => x.id === "create" || x.id === "analyze" || x.state === "done") && current.index <= 2;
+    if (hydrated && before && !imageFirst && current.index > before.index && current.id !== before.id) {
       const done = golden.steps[current.index - 1];
       const finished = done ? `${done.label} complete (${done.detail.toLowerCase()})` : "Step complete";
       setNotice(golden.next ? `${finished}. Next: ${golden.next.action}.` : `${finished}. Your production is ready to deliver.`);

@@ -33,3 +33,16 @@ describe('heroSummary', () => {
     expect(b).toBeLessThanOrEqual(100)
   })
 })
+
+describe('goldenPath for a project with no script', () => {
+  it('says an empty project needs assets, not analyzed assets, and an image-only project is past Create and Analyze', async () => {
+    const { goldenPath } = await import('./goldenPath')
+    const empty = goldenPath({ ...base, hasScript: false, assetCount: 0 })
+    expect(empty.steps.find((s) => s.id === 'create')!.detail).toMatch(/add your own images/)
+    expect(empty.steps.find((s) => s.id === 'generate')!.detail).toMatch(/^Needs assets/)
+    const images = goldenPath({ ...base, hasScript: false, assetCount: 1 })
+    expect(images.steps.slice(0, 2).map((s) => s.state)).toEqual(['done', 'done'])
+    expect(images.steps[1].detail).toBe('1 asset added')
+    expect(images.next?.id).toBe('design')
+  })
+})

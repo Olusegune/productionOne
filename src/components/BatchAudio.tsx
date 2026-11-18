@@ -185,7 +185,7 @@ export function BatchAudio(props: {
             <td><input value={c.line ?? ''} onChange={(e) => patch(a, { line: e.target.value })} placeholder={first || 'type a line'} aria-label={`Line for ${a.name}`} /></td>
           </tr>
         })}</tbody></table>
-      {characters.length === 0 && <p className="helper">No characters yet. Analyze a script first.</p>}
+      {characters.length === 0 && <p className="helper">No characters yet. Analyze a script, or add one in Design with Add to the bible.</p>}
       {onAssetChange && characters.length > 0 && <div className="sheet-actions-row"><button className="secondary" onClick={rememberChosen}>Remember the chosen voices</button></div>}
     </> : <>
       <p className="helper">Themes come from each character's stated personality and role; scene scores from the scene heading and a character in it. Instrumental, about 45 seconds, Suno V6 Mini through Kie.ai. Nothing is written for you that the script does not state.</p>
