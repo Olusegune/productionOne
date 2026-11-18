@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addCharacterAsset, addProductionAsset, addPropAsset, applyReadAge, ownImageSlot } from './readingActions'
+import { addAssetsFromImages, nameFromFile, addCharacterAsset, addProductionAsset, addPropAsset, applyReadAge, ownImageSlot } from './readingActions'
 import type { ExtractedAsset } from './productionStudio'
 
 const base: ExtractedAsset[] = [
@@ -76,5 +76,25 @@ describe('adding any kind of asset', () => {
       expect(sheetTypesFor(kind)).toContain(slot.sheetType)
       expect(viewsFor(kind, slot.sheetType as never).some((v) => v.key === slot.viewKey)).toBe(true)
     }
+  })
+})
+
+describe('adding a folder of images at once', () => {
+  it('names each asset from its file, cutting long generated names and dropping codes', () => {
+    expect(nameFromFile('C:\\pics\\venomspur_front-view.png', [], 'character', 1)).toBe('Venomspur front view')
+    expect(nameFromFile('/a/b/a_tall_pale_man_in_a_black_suit_standing_in_a_neon_alley_3f2a9c1e-1b2c-4d3e-8f90-123456789abc.png', [], 'character', 1).length).toBeLessThanOrEqual(40)
+    expect(nameFromFile('/a/b/3f2a9c1e-1b2c-4d3e-8f90-123456789abc.webp', [], 'prop', 2)).toBe('Prop 2')
+    expect(nameFromFile('/a/b/0001.png', [], 'set', 3)).toBe('Set 3')
+    expect(nameFromFile('/a/b/silver microphone.JPG', [], 'prop', 1)).toBe('Silver microphone')
+  })
+  it('never repeats a name', () => {
+    expect(nameFromFile('/a/microphone.png', ['Microphone'], 'prop', 1)).toBe('Microphone 2')
+    expect(nameFromFile('/a/microphone.png', ['Microphone', 'microphone 2'], 'prop', 1)).toBe('Microphone 3')
+  })
+  it('adds one asset per image, in order, all of the chosen kind', () => {
+    const out = addAssetsFromImages([], 'prop', ['/x/pen.png', '/x/pen.png', '/x/lamp.png', '/x/12345.png'], 'SCENE-001')
+    expect(out.added.map((a) => a.name)).toEqual(['Pen', 'Pen 2', 'Lamp', 'Prop 4'])
+    expect(out.added.every((a) => a.type === 'prop' && a.status === 'planned')).toBe(true)
+    expect(new Set(out.assets.map((a) => a.id)).size).toBe(4)
   })
 })

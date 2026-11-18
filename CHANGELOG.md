@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.48.0 (2026-11-18): edit images without touching the original, enlarge them, and bring in many images at once
+Asked for by the owner: image editing (contrast, desaturate), an upscaler, and a way to bring in Midjourney images. The non-destructive editor already existed as **Image quality**; this release finishes it and puts it where it was missing.
+- **Brightness and Contrast** added to Image quality (about one stop each way). **Colour strength** all the way down is black and white (said in its hint). Every save still writes a new file and a new revision; the original is kept.
+- **Enlarge 2x or 4x.** A smooth (Lanczos) enlargement, never past 8192 pixels on the long edge. It does not add detail and is not an AI upscaler; the panel says so. It works on its own or together with the other adjustments.
+- **Image quality in the Director's room.** It opens on the scene's storyboard frames (it was only on Design sheets). A corrected copy keeps the frame's approval.
+- **Add several images at once.** In Add to the bible, choose the kind and pick up to 24 images: one item per image, named from the file name (long generated names are cut, hex codes and numbers dropped, repeats get 2, 3), each image the approved reference. This is the way in for a folder of Midjourney images: Midjourney has no public connection, and unofficial ones break its terms, so none was added.
+- Not included, on purpose: an AI upscaler (Magnific, Topaz or Real-ESRGAN) and another image model. Each needs your key or a local install, and a decision about cost; they can be added once you choose.
+- Not checked: how good a 4x enlargement looks on real frames beyond one 2x test, the light theme, and the picker for many images on a path with spaces.
+- Tests: 625 JS (8 new), 88 Rust (2 new: contrast and exposure, enlarging).
+
 ## 0.47.1 (2026-11-18): quieter type, category icons, the art style applied in full, and new frames show up for review
 - **Art style applied properly.** A storyboard frame was only sent the style's name, description and rendering, and ended with "Photographic frame", which pushes painted, illustrated and animated styles toward photo-realism. Frames now carry the whole style (also materials, lighting, animation approach, world, shape, surface, line treatment, camera and detail), near the top of the prompt and again as a closing "match the art style exactly" line, and the word "photographic" is gone. The copy-prompt and export-all-prompts text also carries the whole style, not four fields. Reference sheets already did.
 - **Quieter, sleeker type.** One clean sans (Inter) for titles in every look; smaller, lighter headings (600, not 700 or a heavy serif); calmer eyebrows. Colours and layout are unchanged. The Cinematic look keeps its warm colours but no longer uses the serif for titles.

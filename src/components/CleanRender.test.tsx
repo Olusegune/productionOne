@@ -57,6 +57,34 @@ describe('CleanRender', () => {
   })
 })
 
+describe('brightness, contrast and enlarging', () => {
+  it('offers brightness and contrast, and sends them with the preview', async () => {
+    render(<CleanRender items={[job('front')]} index={0} onIndex={() => {}} onClose={() => {}} notify={() => {}} onSaved={() => {}} />)
+    await screen.findByText(/lean strongly yellow/)
+    const contrast = screen.getByText('Contrast').closest('label')!.querySelector('input') as HTMLInputElement
+    expect(screen.getByText('Brightness')).toBeTruthy()
+    fireEvent.change(contrast, { target: { value: '40' } })
+    await waitFor(() => expect(calls.some((c) => c.cmd === 'clean_preview' && (c.args.params as { contrast: number }).contrast === 40 && c.args.original === false)).toBe(true))
+    expect((screen.getByRole('button', { name: /save corrected revision/i }) as HTMLButtonElement).disabled).toBe(false)
+  })
+  it('enlarges 2x or 4x on its own, says it is not AI, and saves with the factor', async () => {
+    const saved: string[] = []
+    render(<CleanRender items={[job('front')]} index={0} onIndex={() => {}} onClose={() => {}} notify={() => {}} onSaved={(j) => saved.push(j.id)} />)
+    await screen.findByText(/lean strongly yellow/)
+    const save = screen.getByRole('button', { name: /save corrected revision/i }) as HTMLButtonElement
+    expect(save.disabled).toBe(true)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge' }), { target: { value: '2' } })
+    expect(save.disabled).toBe(false)
+    expect(screen.getByText(/without adding detail/)).toBeTruthy()
+    fireEvent.click(save)
+    await waitFor(() => expect(saved).toEqual(['front']))
+    expect((calls.find((c) => c.cmd === 'clean_save')?.args.params as { enlarge: number }).enlarge).toBe(2)
+  })
+  it('a suggestion never changes the enlarge choice', () => {
+    expect(mergeSuggestion({ ...neutral, enlarge: 4 }, { ...neutral, temperature: -30 }).enlarge).toBe(4)
+  })
+})
+
 describe('corrected revisions in the queue', () => {
   it('adds a new revision that keeps the approval and leaves the earlier image in the history', () => {
     const state: QueueState = { jobs: [job('front')], paused: false } as unknown as QueueState

@@ -72,8 +72,14 @@ On a character's **Identity** tab: age, gender, race, ethnicity and role go into
 ### Choosing a look
 On the Design screen press **Browse styles**. The gallery has a picture for every one of the 117 styles, all showing the same scene so you compare styles, not subjects. Search (every word must match), filter by family, star favourites (kept on this computer), and click a style to see its description, palette, materials, rendering and lighting. **Use this style** applies it without locking it; lock it on the Design screen when you are happy. The gallery cannot be opened while the style is locked.
 
-### Image quality (CleanRender)
-Open **Image quality** in the sheet header. It measures the image and suggests fixes in plain language, for example "the mid-tones lean strongly yellow". **Try this** sets sliders; the split view shows original and corrected live. **Save corrected revision** writes a new file and a new revision; the original is never changed. **Apply to all** uses the same settings on every image of the sheet. It cannot fix faces, hands, likeness or plastic-looking skin; for those it says to regenerate, use a reference photo, or retouch.
+### Image quality (CleanRender): editing that never touches the original
+Open **Image quality** in the sheet header, or in the Director's room above the cards (it works on that scene's storyboard frames). It measures the image and suggests fixes in plain language, for example "the mid-tones lean strongly yellow". **Try this** sets sliders; the split view shows original and corrected live. **Save corrected revision** writes a new file and a new revision; the original is never changed. **Apply to all** uses the same settings on every image of the sheet. 
+The controls: **Brightness** and **Contrast** (about one stop each way), **Temperature**, **Tint**, **Colour strength** (all the way down is black and white), **Highlight recovery**, **Bloom reduction**, **Noise reduction**, **Texture kept**, **Sharpness**, and **Overall strength**. **Enlarge** makes the picture 2x or 4x bigger with a smooth filter (never past 8192 pixels on the long edge). It does **not** add detail and it is not an AI upscaler; for real detail regenerate at a higher quality or use a dedicated upscaler.
+
+Every save writes a new file (`name_clean_01.png`) and a new revision. The original stays, and you can go back to it. It cannot fix faces, hands, likeness or plastic-looking skin; for those it says to regenerate, use a reference photo, or retouch.
+
+### Bringing in images from Midjourney (or anywhere)
+Midjourney has no public connection, so the way in is your files. In **Add to the bible** choose the kind, then either **Add from image** (one item, you name it) or **Add several images at once** (up to 24: one item per image, named from the file names, each image the approved reference). Rename any item in the Identity tab.
 
 ### Motion and voice
 On an asset's **Motion** tab, choose a clip (turntable, idle, walk, run, speaks to camera, emotion beat, your own description), a video model and a length, then **Generate motion demo**. The turntable asks for one full 360 degree turn from the approved front view.

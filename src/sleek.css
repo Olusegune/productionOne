@@ -48,3 +48,6 @@ html:root[data-look][data-look][data-look] h4 { color: color-mix(in srgb, var(--
 /* Category icons next to the words that name a kind of thing */
 .cat-tag { display: inline-flex; align-items: center; gap: 5px; }
 .cat-icon { flex: none; opacity: .85; }
+
+.add-many { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--stroke); }
+.add-many small { color: var(--text-3); font-size: 12px; line-height: 1.45; }
