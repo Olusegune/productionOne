@@ -28,6 +28,8 @@ export function StoryView(props: {
   outputs?: Record<string, string>;
   /** Opens an asset where its sheets are made. */
   onOpenAsset?: (assetId: string) => void;
+  /** Folds one set into another. */
+  onMergeSets?: (keepId: string, dropId: string) => void;
 }) {
   const { script, analysis, notify } = props;
   const [tab, setTab] = useState<Tab>("assets");
@@ -82,7 +84,7 @@ export function StoryView(props: {
             ))}
           </div>
           <div id="sv-panel" role="tabpanel" aria-labelledby={`sv-tab-${tab}`} className="sv-panel">
-            {tab === "assets" && <CastBoard analysis={analysis} onChange={props.setAnalysis} onAdd={props.onAddAsset} onJump={props.onJump} outputs={props.outputs} onOpenAsset={props.onOpenAsset} />}
+            {tab === "assets" && <CastBoard analysis={analysis} onChange={props.setAnalysis} onAdd={props.onAddAsset} onJump={props.onJump} outputs={props.outputs} onOpenAsset={props.onOpenAsset} onMergeSets={props.onMergeSets} />}
             {tab === "questions" && <ReadingPanel bare part="questions" story={story} onJump={props.onJump} desktop={props.desktop} notify={notify} />}
             {tab === "reading" && <ReadingPanel bare part="reading" story={story} onJump={props.onJump} desktop={props.desktop} onStory={(next) => props.setAnalysis((a) => ({ ...a, story: next }))} notify={notify} onAddProp={props.onAddProp} onUseAge={props.onUseAge} />}
           </div>

@@ -11,6 +11,28 @@ This is a walkthrough. It follows one real project, the short film **No VIP in H
 
 ---
 
+## No script? Start from your own images
+
+You do not need a story. If you only have pictures (a character from Midjourney, a costume, a prop, a location) and want character sheets, turnarounds, poses and expressions, work like this:
+
+1. Open **Design**. In the bible press **Add to the bible**.
+2. Choose what it is: **Character, Costume, Prop** or **Set or location**. Type a name. For a character you may choose a gender (it only helps pick a voice).
+3. Press **Add from image** and choose your picture. It becomes the **approved reference** (a character's front view, a prop's front, a set's establishing view) and the identity lock turns on. Or press **Add without image** to plan the sheets and make the first picture in the app.
+4. Pick a **Look** (style) at the top and **Lock style** so every sheet matches.
+5. Select the item and choose a **Sheet**: for a character, Identity, Turnaround, Expressions, Poses, Wardrobe, Detail. Press **Generate N views**. Every view is made from your approved picture, so the person stays the same.
+6. Approve the good ones in **Design** or **Review**. **Export sheet as one image** puts a whole sheet in one labelled PNG (files go to `Documents\Production One\Sheets`).
+7. Add more characters or props the same way. Save the project (**Ctrl+S**).
+
+You can skip Story, Direct and Deliver entirely. The Projects screen and the sidebar's next-step button talk about a script because most people start with one; ignore them if you do not. Sets and props normally come from a script, so a project built from images has only what you add yourself.
+
+**Tips for the best sheets**
+- Give a clean, evenly lit, front-facing picture on a plain background if you can. Add side or back pictures under **Reference photos** on the right; they go with every request.
+- Use the **Notes** box for what must never change ("scar over the left eye, gold tooth").
+- The **Never** list on the Identity tab stops drift ("never a smile showing teeth").
+- Try one view first (**Test one first**) before generating a whole sheet, to see if the likeness is right and what it costs.
+
+---
+
 ## 1. The Projects screen: where you are
 
 ![Projects screen](screenshots/guide/projects.png)
@@ -59,7 +81,7 @@ Every character, costume, prop and set has a card. Choose **Cast** (cards) or **
 
 ![Reading tab](screenshots/guide/story-reading.png)
 
-**Keeping a set the same across scenes.** A set is matched by the *exact text* of the scene heading's place. `INT. VENOMSPUR'S OFFICE - NIGHT` and `INT. VENOMSPUR'S OFFICE - LATER` are the same set (the time is not part of the name). But `VENOMSPUR'S OFFICE / CORRIDOR` becomes a **second** set, as in the picture above. If you want one room, use the same place text in every heading. (A way to merge two sets inside the app is not there yet.)
+**Keeping a set the same across scenes.** A set is matched by the *text* of the place in the scene heading (the time is not part of it). `INT. VENOMSPUR'S OFFICE - NIGHT` and `INT. VENOMSPUR'S OFFICE - LATER` are one set, and from 0.46.6 `INT. VENOMSPUR'S OFFICE / CORRIDOR` is read as the office too, when the office also appears on its own. If two sets are really one room, select one in the cast board and choose **Merge ... into** the other: its scenes and shots then use the kept set and its approved picture. Frames already made are not changed; regenerate them to use the set picture. Run **Analyze script** again only if you must: if the headings still differ, the second set can come back.
 
 ---
 
@@ -100,7 +122,7 @@ A set gets an establishing view first. Every shot in that location is given this
 
 **Set consistency in practice**
 - Approve one good establishing view of each set *before* you generate frames. A frame with no set picture has nothing to copy from.
-- Keep the same place text in every scene heading for the same room.
+- Keep the same place text in every scene heading for the same room, or merge the two sets in Story.
 - Put fixed details in the set's Notes ("the desk is under the window, the lamp is green").
 - If a frame drifts, press **Regenerate** on that frame. The prompt and the set picture stay the same; a new take is made.
 - A model can still ignore the rule. The rule makes drift less likely; it does not forbid it. Check frames next to each other.
@@ -177,7 +199,7 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 ![Command palette](screenshots/guide/palette.png)
 
 ## 10. What this version does not do yet
-- No way to merge two sets inside the app.
+- A merged set can come back if you run Analyze script again while the headings still differ.
 - The reason a frame failed is not shown on the frame.
 - Props are recognised from a list of object nouns, so an unusual prop may be missed; add it with **Add asset**.
 - Installers are not code-signed, so Windows SmartScreen may warn.

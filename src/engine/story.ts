@@ -526,7 +526,8 @@ export function parseStory(input: string): ParsedStory {
 
   // "INT. OFFICE - THE ACCOUNT" and "INT. OFFICE - THE REBRAND" are beats in one location, not new sets: fold them into the plain location when it also appears on its own.
   if (format === 'screenplay') for (const sc of b.scenes) {
-    const head = sc.setting.split(' - ')[0].trim()
+    // "INT. OFFICE / CORRIDOR" is the same place with a second spot in it: it is the office when the office also appears on its own.
+    const head = sc.setting.split(/\s+-\s+|\s*\/\s*/)[0].trim()
     if (head && head !== sc.setting && b.scenes.some((o) => o !== sc && o.setting.toUpperCase() === head.toUpperCase())) sc.setting = head
   }
 
