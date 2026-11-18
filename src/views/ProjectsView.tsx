@@ -1,3 +1,4 @@
+import { FormatPicker } from "../components/FormatPicker";
 import { History, X } from "lucide-react";
 import { recentName } from "../appHelpers";
 import { Eyebrow } from "../components/Eyebrow";
@@ -26,12 +27,18 @@ export function ProjectsView(props: {
   onKeys: () => void;
   onWorkspace: (name: string) => void;
   onNext: (step: GoldenStep) => void;
+  format: string;
+  onFormat: (aspect: string) => void;
 }) {
   const { title, filePath, analysis, golden, recents } = props;
   const count = (...types: string[]) => analysis.assets.filter((a) => types.includes(a.type)).length;
   return (
     <section className="po-launch">
       <ProjectHero title={title} filePath={filePath} style={props.style} golden={golden} counts={{ scenes: analysis.scenes.length, characters: count("character"), props: count("prop"), sets: count("set", "environment") }} onNew={props.onNew} onOpen={props.onOpen} onSave={props.onSave} onContinue={props.onNext} onWorkspace={props.onWorkspace} />
+      <section className="panel po-format" aria-label="Format">
+        <div className="po-format-head"><h3>Format</h3><small>Pick the shape first: it sets your storyboard frames and your video.</small></div>
+        <FormatPicker value={props.format} onChange={props.onFormat} />
+      </section>
       <FirstRun onKeys={props.onKeys} onStory={() => props.onWorkspace("Story")} />
       <GoldenPath input={golden} onGo={props.onWorkspace} onNext={props.onNext} />
       {recents.length > 0 && (

@@ -28,13 +28,14 @@ const amina = analysis.assets.find((a) => a.name === 'AMINA')!
 let latest: { shots: ShotRecord[]; queue: QueueState } = { shots: [], queue: emptyQueue() }
 const notes: string[] = []
 
-function Harness({ enabled = true }: { enabled?: boolean }) {
+function Harness({ enabled = true, startFormat = '16:9' }: { enabled?: boolean; startFormat?: string }) {
+  const [format, setFormat] = useState(startFormat)
   const [shots, setShots] = useState<ShotRecord[]>([])
   const [queue, setQueue] = useState<QueueState>(() => addSupplied(emptyQueue(), { assetId: amina.id, variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', aspect: '3:4', fullBody: true, path: 'C:/amina.png', width: 1, height: 1 }).state)
   const [on, setOn] = useState(enabled)
   latest = { shots, queue }
   useImageQueue(queue, (u) => setQueue(u), true)
-  return <DirectRoom analysis={analysis} shots={shots} setShots={(u) => setShots(u)} queue={queue} setQueue={(u) => setQueue(u)} style={defaultStyleBible} assetRefs={{}} desktop providersVersion={0} enabled={on} setEnabled={setOn} title="The Last Horizon" notify={(m) => notes.push(m)} openProviders={() => {}} />
+  return <DirectRoom analysis={analysis} shots={shots} setShots={(u) => setShots(u)} queue={queue} setQueue={(u) => setQueue(u)} style={defaultStyleBible} assetRefs={{}} desktop providersVersion={0} enabled={on} setEnabled={setOn} title="The Last Horizon" notify={(m) => notes.push(m)} openProviders={() => {}} format={format} setFormat={setFormat} />
 }
 
 describe('Directors room', () => {
@@ -69,5 +70,35 @@ describe('Directors room', () => {
     expect(String(first.args.outputName)).toMatch(/^SHOT-\d+_storyboard_v01$/)
     await waitFor(() => expect(latest.queue.jobs.some((j) => j.sheetType === 'Storyboard' && j.status === 'needs-review')).toBe(true))
     expect(screen.getByLabelText('Animatic')).toBeTruthy()
+  })
+
+  it('makes frames in the project format: 9:16 for a phone story', async () => {
+    calls.length = 0
+    render(<Harness startFormat="9:16" />)
+    fireEvent.click(screen.getByRole('button', { name: /plan all scenes/i }))
+    await waitFor(() => expect(latest.shots.length).toBeGreaterThan(8))
+    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?$/i }))
+    await waitFor(() => expect(calls.some((c) => c.name === 'generate_image')).toBe(true))
+    const first = calls.find((c) => c.name === 'generate_image')!
+    expect(first.args.aspect).toBe('9:16')
+    expect(String(first.args.prompt)).toContain('storyboard frame, 9:16')
+    expect(screen.getByRole('button', { name: /TikTok/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(document.querySelector('.dr-cards.portrait')).toBeTruthy()
+  })
+
+  it('marks frames made at another shape when the format changes, and does not spend anything', async () => {
+    calls.length = 0
+    render(<Harness />)
+    fireEvent.click(screen.getByRole('button', { name: /plan all scenes/i }))
+    await waitFor(() => expect(latest.shots.length).toBeGreaterThan(8))
+    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?$/i }))
+    await waitFor(() => expect(latest.queue.jobs.some((j) => j.sheetType === 'Storyboard' && j.outputPath)).toBe(true))
+    await waitFor(() => expect(latest.queue.jobs.filter((j) => j.sheetType === 'Storyboard').every((j) => !['queued', 'generating', 'validating'].includes(j.status))).toBe(true), { timeout: 5000 })
+    const made = calls.filter((c) => c.name === 'generate_image').length
+    expect(screen.queryByRole('status')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /TikTok/ }))
+    expect((await screen.findByRole('status')).textContent).toMatch(/made at another shape/)
+    expect(screen.getAllByText('Made at 16:9').length).toBeGreaterThan(0)
+    expect(calls.filter((c) => c.name === 'generate_image').length).toBe(made)
   })
 })

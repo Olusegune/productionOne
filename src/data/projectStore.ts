@@ -25,6 +25,8 @@ export interface StudioState {
   sheetNotes?: Record<string, string>
   /** Choices made per sheet: the shape under asset|sheet and the backdrop under asset|sheet|backdrop. */
   sheetSettings?: Record<string, string>
+  /** The shape of the finished frames and video, chosen once for the project (for example 9:16 for TikTok). */
+  format?: string
 }
 
 export const projectStore = {

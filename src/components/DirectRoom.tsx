@@ -18,7 +18,8 @@ import { Fold } from "./Fold";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { ModelPicker } from "./ModelPicker";
 
-import { aspectRatios } from "../domain/sheetSpecs";
+import { FormatPicker } from "./FormatPicker";
+import { formatName, isPortrait, ratioOf, sameShape } from "../domain/formats";
 
 /** The Director's room: plan the coverage of each scene, edit every shot like a director would, make storyboard frames from your approved references, check continuity and play the animatic. */
 export function DirectRoom(props: {
@@ -37,8 +38,12 @@ export function DirectRoom(props: {
   notify: (message: string) => void;
   openProviders: () => void;
   openLocal?: () => void;
+  /** The project's shape, for example 9:16. */
+  format?: string;
+  setFormat?: (aspect: string) => void;
 }) {
   const { analysis, shots, setShots, queue, setQueue, style, assetRefs, desktop, providersVersion, enabled, setEnabled, title, notify, openProviders, openLocal } = props;
+  const aspect = props.format ?? "16:9";
   const choice = useModelChoice(desktop, providersVersion);
   const [sceneId, setSceneId] = useState(analysis.scenes[0]?.id ?? "");
   const [selected, setSelected] = useState<string | null>(null);
@@ -46,7 +51,6 @@ export function DirectRoom(props: {
   const [view, setView] = useState<"grid" | "list" | "large">("grid");
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const [aspect, setAspect] = useState<string>("16:9");
   const [inspW, setInspW] = useState<number>(() => { try { return Number(localStorage.getItem("po.inspW")) || 380; } catch { return 380; } });
   useEffect(() => { try { localStorage.setItem("po.inspW", String(inspW)); } catch { /* storage may be unavailable */ } }, [inspW]);
   const scene = analysis.scenes.find((s) => s.id === sceneId) ?? analysis.scenes[0];
@@ -142,6 +146,7 @@ export function DirectRoom(props: {
   const lbItems: LightboxItem[] = sceneShots.flatMap((s) => { const j = frameForShot(queue, s.id); return j?.outputPath ? [{ job: j, label: s.title ?? s.id }] : []; });
   const sceneFindings = findings.filter((f) => !f.shotId || sceneShots.some((s) => s.id === f.shotId));
   const needFrames = sceneShots.filter((s) => !frameJobs(queue, s.id).some((j) => j.approved || j.status === "queued" || j.status === "generating" || j.status === "validating" || j.status === "needs-review"));
+  const wrongShape = sceneShots.filter((s) => { const f = frameForShot(queue, s.id); return !!f?.outputPath && !sameShape(f.aspect, aspect); });
   const frameCount = shots.filter((s) => frameForShot(queue, s.id)).length;
 
   return (
@@ -157,9 +162,10 @@ export function DirectRoom(props: {
           <button className="secondary" onClick={() => void exportList("csv")} disabled={!shots.length}><Download size={14} /> CSV</button>
           <button className="secondary" onClick={() => void exportList("md")} disabled={!shots.length}><Download size={14} /> Markdown</button>
           <button className="secondary" onClick={() => setEnabled(false)} title="Hide the Director's room. Your shots are kept.">Turn off</button>
-          <label className="dr-aspect" title="Wide and tall shapes: the image model makes the closest shape it supports and the app trims the picture to exactly this."><span>Canvas</span><select aria-label="Storyboard aspect ratio" value={aspect} onChange={(e) => setAspect(e.target.value)}>{aspectRatios.map((ratio) => <option key={ratio}>{ratio}</option>)}</select></label>
         </div>
       </div>
+
+      {props.setFormat && <div className="dr-format"><span className="dr-format-label">Format</span><FormatPicker value={aspect} onChange={props.setFormat} compact /></div>}
 
       <div className="dr-grid">
         <nav className="dr-scenes panel" aria-label="Scenes">
@@ -185,6 +191,7 @@ export function DirectRoom(props: {
                 <button className={view === "list" ? "on" : ""} aria-pressed={view === "list"} aria-label="List" title="List" onClick={() => setView("list")}><List size={15} /></button>
                 <button className={view === "large" ? "on" : ""} aria-pressed={view === "large"} aria-label="Large storyboard" title="Large storyboard" onClick={() => setView("large")}><Square size={15} /></button>
               </div>
+              {wrongShape.length > 0 && <span className="dr-shape-note" role="status">{wrongShape.length} frame{wrongShape.length === 1 ? " was" : "s were"} made at another shape ({formatName(aspect)} is {aspect} now). Regenerate to remake.</span>}
               <button className="secondary" onClick={planScene} disabled={!scene}><Wand2 size={14} /> Plan this scene</button>
               <button className="secondary" onClick={addShot} disabled={!scene}>Add shot</button>
               <button className="secondary" disabled={!needFrames.length} onClick={() => makeFrames(needFrames, false, true)} title="Make one frame first to check the look">Test one first</button>
@@ -192,7 +199,7 @@ export function DirectRoom(props: {
             </div>
           </div>
           {sceneShots.length === 0 && <div className="dr-empty"><p>No shots in this scene yet.</p><button className="primary" onClick={planScene} disabled={!scene}><Wand2 size={15} /> Plan the coverage for this scene</button></div>}
-          <div className={`dr-cards ${view}`} onKeyDown={(e) => {
+          <div className={`dr-cards ${view}${isPortrait(aspect) ? " portrait" : ""}`} onKeyDown={(e) => {
             if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key) || (e.target as HTMLElement).closest("input, textarea, select")) return;
             const i = sceneShots.findIndex((x) => x.id === shot?.id); if (i < 0) return;
             const j = Math.max(0, Math.min(sceneShots.length - 1, i + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1)));
@@ -207,7 +214,7 @@ export function DirectRoom(props: {
               const at = lbItems.findIndex((it) => it.job.id === frame?.id);
               return (
                 <article key={s.id} className={`dr-card${s.id === shot?.id ? " on" : ""}${dragOver === s.id ? " drop" : ""}`} data-shot={s.id} draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", s.id); e.dataTransfer.effectAllowed = "move"; }} onDragOver={(e) => { e.preventDefault(); if (dragOver !== s.id) setDragOver(s.id); }} onDragLeave={() => setDragOver((d) => (d === s.id ? null : d))} onDrop={(e) => { e.preventDefault(); setDragOver(null); reorderTo(e.dataTransfer.getData("text/plain"), s.id); }}>
-                  <button className="dr-thumb" onClick={() => setSelected(s.id)} onDoubleClick={() => at >= 0 && setLightbox(at)} aria-label={`Select ${s.title ?? s.id}`}>
+                  <button className="dr-thumb" style={{ aspectRatio: String(ratioOf(aspect) || 16 / 9) }} onClick={() => setSelected(s.id)} onDoubleClick={() => at >= 0 && setLightbox(at)} aria-label={`Select ${s.title ?? s.id}`}>
                     {frame?.outputPath ? <img src={convertFileSrc(frame.outputPath)} alt={`Frame for ${s.title ?? s.id}`} /> : <FramePreview shot={s} aspect={aspect} />}
                     <span className="dr-num">{i + 1}</span>
                     <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.status === "needs-review" ? "Needs review" : frame.status === "failed" && !frame.outputPath ? "Picture missing" : "Frame") : mine.some((j) => j.status === "failed" && /no longer on this computer/.test(j.error ?? "")) ? "Picture missing" : "No frame"}</span>
@@ -215,23 +222,32 @@ export function DirectRoom(props: {
                     {at >= 0 && <span className="dr-zoom" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setLightbox(at); }} onKeyDown={(e) => { if (e.key === "Enter") setLightbox(at); }} aria-label="Open full size"><Maximize2 size={14} /></span>}
                   </button>
                   <div className="dr-meta">
-                    <div className="dr-title"><b>{s.title ?? s.id}</b><small>{s.coverage ? coverageLabels[s.coverage] : "Shot"}</small></div>
-                    <dl className="dr-specs"><div><dt>Size</dt><dd>{s.size}</dd></div><div><dt>Lens</dt><dd>{s.lens}mm</dd></div><div><dt>Move</dt><dd>{s.movement ? movementLabels[s.movement] : "Static"}</dd></div><div><dt>Time</dt><dd>{s.duration}s</dd></div></dl>
-                    {s.dialogue && <q>{s.speaker}: {s.dialogue}</q>}
+                    <b className="dr-name" title={s.title ?? s.id}>{s.title ?? s.id}</b>
+                    <p className="dr-line">{s.action}</p>
+                    <div className="dr-chips">
+                      <i>{s.coverage ? coverageLabels[s.coverage] : "Shot"}</i>
+                      <i>{s.size} · {s.lens}mm</i>
+                      <i>{s.movement ? movementLabels[s.movement] : "Static"}</i>
+                      <i>{s.duration}s</i>
+                      {frame?.outputPath && !sameShape(frame.aspect, aspect) && <i className="off" title={`Made at ${frame.aspect}; the project is ${aspect}`}>Made at {frame.aspect}</i>}
+                    </div>
+                    {s.dialogue && !(s.title ?? "").includes(s.dialogue.slice(0, 24)) && <q>{s.speaker}: {s.dialogue}</q>}
                   </div>
                   <div className="dr-actions">
-                    {frame?.status === "completed" && frame.outputPath && !live && (<>
-                      {frame.approved ? <button className="secondary" onClick={() => undoFrame(frame)} title="Takes the approval back"><Undo2 size={13} /> Undo approval</button> : <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
-                      {frame.rejected ? <button className="secondary" onClick={() => undoFrame(frame)} title="Takes the rejection back"><Undo2 size={13} /> Undo reject</button> : <button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button>}
-                    </>)}
-                    {frame?.status === "needs-review" && (<><button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button><button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button></>)}
-                    {!live && frame?.status !== "needs-review" && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
+                    {frame?.status === "completed" && frame.outputPath && !live && !frame.approved && <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
+                    {frame?.status === "needs-review" && <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
+                    {!live && frame?.status !== "needs-review" && (!frame || frame.approved) && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
+                    {!live && frame && !frame.approved && frame.status === "completed" && frame.outputPath && !frame.rejected && <button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button>}
                     {live && <span className="dr-busy">{live.status}…</span>}
                     {mine.some((j) => j.status === "failed" && j.source !== "supplied" && j.prompt) && !live && <button className="secondary" onClick={() => { const j = mine.find((x) => x.status === "failed" && x.source !== "supplied" && x.prompt); if (j) setQueue((q) => retry(q, j.id)); }}>Retry</button>}
                     <div className="dr-more">
                       <button className="icon-mini" aria-haspopup="menu" aria-expanded={menuFor === s.id} aria-label="More actions" onClick={() => setMenuFor((m) => (m === s.id ? null : s.id))}><MoreHorizontal size={16} /></button>
                       {menuFor === s.id && (
                         <div className="dr-menu" role="menu" onMouseLeave={() => setMenuFor(null)}>
+                          {frame?.approved && !live && <button role="menuitem" onClick={() => { setMenuFor(null); undoFrame(frame); }}><Undo2 size={14} /> Undo approval</button>}
+                          {frame?.approved && !live && <button role="menuitem" onClick={() => { setMenuFor(null); rejectFrame(frame); }}><X size={14} /> Reject this frame</button>}
+                          {frame?.rejected && !live && <button role="menuitem" onClick={() => { setMenuFor(null); undoFrame(frame); }}><Undo2 size={14} /> Undo reject</button>}
+                          {frame && !frame.approved && !live && frame.status !== "needs-review" && <button role="menuitem" onClick={() => { setMenuFor(null); makeFrames([s], true); }}><Sparkles size={14} /> Regenerate</button>}
                           {desktop && <button role="menuitem" onClick={() => { setMenuFor(null); void useOwnFrame(s); }}><ImagePlus size={14} /> Use my own image</button>}
                           <button role="menuitem" onClick={() => { setMenuFor(null); move(s.id, -1); }}><ArrowUp size={14} /> Move earlier</button>
                           <button role="menuitem" onClick={() => { setMenuFor(null); move(s.id, 1); }}><ArrowDown size={14} /> Move later</button>

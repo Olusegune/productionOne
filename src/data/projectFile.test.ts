@@ -47,4 +47,12 @@ describe('project files', () => {
     expect(suggestedFileName('A/B: "Film"?')).toBe('A B Film.pone')
     expect(suggestedFileName('   ')).toBe('Untitled production.pone')
   })
+
+  it('keeps the project format (for example 9:16) through a save and an open, and reads older projects as widescreen', () => {
+    const studio = { script: '', analysis: analyzeScript('Title: T'), shots: [], jobs: [], storyboardsEnabled: false, model: 'Seedance 2.0' as const, styleBible: defaultStyleBible, format: '9:16' }
+    const parsed = parseProjectFile(JSON.stringify(buildProjectFile('Reel', structuredClone(demoGraph), studio)))
+    expect(parsed.ok && parsed.file.studio.format).toBe('9:16')
+    const older = parseProjectFile(JSON.stringify(buildProjectFile('Old', structuredClone(demoGraph), { ...studio, format: undefined })))
+    expect(older.ok && older.file.studio.format).toBeUndefined()
+  })
 })

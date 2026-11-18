@@ -33,6 +33,31 @@ You can skip Story, Direct and Deliver entirely. On an empty project the Project
 
 ---
 
+## Choose your format first (Instagram, TikTok, cinema)
+
+The **shape** of your pictures and video is a project setting, and it is the first thing on the **Projects** screen, under the project name:
+
+![The Format choices on the Projects screen](screenshots/guide/format.png)
+
+| Choice | Shape | Use it for |
+|---|---|---|
+| **Widescreen** | 16:9 | YouTube, TV, most films and trailers (the default) |
+| **Cinema** | 21:9 | The wide cinematic look |
+| **TikTok / Reels / Shorts** | 9:16 | Full-screen phone video |
+| **Instagram portrait** | 4:5 | Instagram feed posts |
+| **Square** | 1:1 | Feed posts and thumbnails |
+| **More shapes** | 2.39:1, 2:1, 3:2, 4:3, 5:4, 3:4, 2:3 | Anything else |
+
+- **It is saved with the project.** Close the project and open it again: the choice is still there.
+- **Everything follows it.** Storyboard frames are made in this shape, the frame previews and cards are drawn in it, and the video shape on the Deliver screen starts from it (if the video model cannot make that exact shape, the closest one it can make is used and the Deliver screen says which).
+- **You can change it at any time**, here or in the Director's room (the **Format** row above the cards). Frames you already made keep their old shape. They are **marked** ("Made at 16:9") and a note says how many; nothing is regenerated or paid for until you press **Regenerate**.
+- **How wide and tall shapes are made.** Image models only make a few shapes, so the app asks for the closest one the model offers and then trims the picture to exactly your shape. For very wide or tall frames the prompt also asks for people and important objects to sit in the middle, so a trim does not cut them off. A 3:2 picture trimmed to 21:9 loses about a third of its height.
+- **Character sheets are separate.** Turnarounds, poses and expressions use their own shapes (tall for a body, square for a face), whatever the project format.
+
+**Making content for TikTok or Instagram?** Pick the format before you plan shots. Then add your characters, plan the scenes, and every frame comes out tall (or square) from the first one.
+
+---
+
 ## 1. The Projects screen: where you are
 
 ![Projects screen](screenshots/guide/projects.png)
@@ -142,9 +167,13 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 ![Direct, large layout](screenshots/guide/direct-large.png)
 
 1. Turn on the **Director's room** and press **Plan all scenes**. The app plans an establishing shot per new location, a master shot, a close-up for each line of dialogue, and an insert shot for a prop that returns.
-2. Each shot card shows the frame, size, lens, movement and the line spoken.
-3. **Generate frame** makes the picture. It is sent the approved pictures of the people in the shot, their costumes, the props near that moment, and the set.
-4. **Regenerate**, **Approve**, **Reject** and the **...** menu (your own image, move, duplicate, delete) are on each card.
+2. The **Format** row above the cards sets the shape (see [Choose your format first](#choose-your-format-first-instagram-tiktok-cinema)). The cards are drawn in that shape, so 9:16 shows tall cards.
+3. Each shot card shows, top to bottom: the frame (with its number, and a status badge: *No frame*, *Needs review*, *Approved*), the **shot name**, one or two lines of the **action**, small tags for coverage, size and lens, movement and duration, and the line spoken when it is not already the name.
+4. **Generate frame** makes the picture. It is sent the approved pictures of the people in the shot, their costumes, the props near that moment, and the set.
+5. Each card shows the one button you most likely want next: **Generate frame** when there is no picture, **Approve** (with **Reject**) when a picture is waiting, **Regenerate** once approved. The **...** menu holds the rest: Undo approval, Undo reject, Regenerate, use your own image, move earlier or later, duplicate and delete.
+6. A tag like **Made at 16:9** means the frame was made before you changed the format.
+
+![The same board in 9:16 for TikTok: tall cards, and a note that existing frames were made at another shape](screenshots/guide/direct-vertical.png)
 
 ![A shot selected](screenshots/guide/direct-inspector.png)
 
