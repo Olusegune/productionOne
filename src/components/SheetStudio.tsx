@@ -1,3 +1,4 @@
+import { sheetHints, sheetIconFor } from "../domain/categoryIcons";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, Undo2, X } from "lucide-react";
@@ -320,8 +321,10 @@ export function SheetStudio(props: {
       <div className="ss-bar">
         <label><span>Look</span>
           <select value={activeVariant} onChange={(e) => setVariant(e.target.value)}>{variants.map((v) => <option key={v}>{v}</option>)}</select></label>
-        <label><span>Sheet</span>
-          <select value={activeType} onChange={(e) => setSheetType(e.target.value as SheetType)}>{sheetTypes.map((t) => <option key={t}>{t}</option>)}</select></label>
+        <div className="ss-sheets" role="group" aria-label="Sheet">
+          <span>Sheet</span>
+          <div className="ss-sheet-row">{sheetTypes.map((t) => { const Icon = sheetIconFor(t); return <button key={t} type="button" className={`ss-sheet${t === activeType ? " on" : ""}`} aria-pressed={t === activeType} title={sheetHints[t] ?? t} onClick={() => setSheetType(t)}><Icon size={15} aria-hidden="true" /><span>{t}</span></button>; })}</div>
+        </div>
         {asset.type === "character" && activeType === "Expressions" && plan && plan.length > 1 && (
           <label><span>Expressions</span>
             <select value={fromStory ? "story" : "full"} onChange={(e) => setFromStory(e.target.value === "story")}>

@@ -115,12 +115,14 @@ Every character, costume, prop and set has a card. Choose **Cast** (cards) or **
 ![Design room](screenshots/guide/design.png)
 
 **Left: the production bible.** Characters, Costumes, Props and Sets, each with a count and a status dot (green means an approved reference exists).
-**Top: the look of the film.** Pick a style (117 presets; **Browse styles**), then **Lock style** so every picture uses it.
+**Top: the look of the film.** Pick a style (117 presets; **Browse styles**), then **Lock style** so every picture uses it. The *whole* style is sent with every picture: its name, description, rendering, materials, lighting, animation approach, world, shape, surface and line treatment, camera behaviour and level of detail. Storyboard frames carry it at the top of the prompt and again as a closing reminder, and they no longer ask for a "photographic" frame, so painted, illustrated and animated styles stay that way.
+
+**Icons.** Each kind of item has one icon wherever it appears: a person (character), a shirt (costume), a box (prop), a mountain (set). Each sheet has its own too (Identity, Turnaround, Expressions, Poses, Wardrobe, Detail, Multi-view, Functional, Establishing, Interior, Exterior, Layout, Lighting).
 **Centre: the sheets** of the selected item. **Right: the controls** (Look, Sheet, Shape and model, **Generate N views**, reference photos, notes, identity lock).
 
 ### The steps for any item
 1. Select it in the bible.
-2. Choose the **Sheet** (for a set: Establishing, Interior, Exterior, Layout, Lighting).
+2. Choose the **Sheet** with the buttons that each have an icon and a name (for a set: Establishing, Interior, Exterior, Layout, Lighting). Hover a button for what that sheet is.
 3. Press **Generate N views**. The line under it says how many images that is. Nothing runs before you press it.
 4. Approve what is right (**Approve**) or **Reject**. **Undo approval** is always there.
 5. Or press **Use my image** on a view to use a picture you already have (for example from Midjourney). It is kept exactly as it came.
@@ -172,6 +174,7 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 4. **Generate frame** makes the picture. It is sent the approved pictures of the people in the shot, their costumes, the props near that moment, and the set.
 5. Each card shows the one button you most likely want next: **Generate frame** when there is no picture, **Approve** (with **Reject**) when a picture is waiting, **Regenerate** once approved. The **...** menu holds the rest: Undo approval, Undo reject, Regenerate, use your own image, move earlier or later, duplicate and delete.
 6. A tag like **Made at 16:9** means the frame was made before you changed the format.
+7. **Regenerate** on a frame you already approved makes a new picture and shows it on the card with **Needs review**, **Approve** and **Reject**. The old approved picture stays safe: reject the new one and it comes back; approve the new one and it becomes the frame.
 
 ![The same board in 9:16 for TikTok: tall cards, and a note that existing frames were made at another shape](screenshots/guide/direct-vertical.png)
 

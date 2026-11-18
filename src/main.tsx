@@ -10,6 +10,7 @@ import App from './App'
 import './refresh.css'
 import './polish.css'
 import './looks.css'
+import './sleek.css'
 import { applyTheme, savedTheme } from './data/theme'
 import { startLook } from './data/appearance'
 
