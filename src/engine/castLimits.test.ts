@@ -51,3 +51,14 @@ describe('who and what may appear in a frame', () => {
     expect(p).toMatch(/shows exactly this and nothing more: add no other people, figures or objects/)
   })
 })
+
+describe('a place written two ways is one set', () => {
+  it('"OFFICE / CORRIDOR" folds into the office when the office also appears on its own', () => {
+    const a = analyzeScript(['SCENE 1 — INT. OFFICE — NIGHT', '', 'FLEX', 'Hi.', '', 'SCENE 2 — INT. OFFICE / CORRIDOR — LATER', '', 'FLEX', 'Bye.'].join(nl))
+    expect(a.assets.filter((x) => x.type === 'set').map((x) => x.name)).toEqual(['OFFICE'])
+  })
+  it('stays separate when the office never appears on its own', () => {
+    const a = analyzeScript(['SCENE 1 — INT. OFFICE / CORRIDOR — NIGHT', '', 'FLEX', 'Hi.'].join(nl))
+    expect(a.assets.filter((x) => x.type === 'set').map((x) => x.name)).toEqual(['OFFICE / CORRIDOR'])
+  })
+})

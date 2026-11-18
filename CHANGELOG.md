@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.46.6 (2026-11-18): one place is one set
+- **"INT. OFFICE / CORRIDOR" is read as the office** when the office also appears on its own. Before, a heading with a slash made a second set, so scene 7 of the test film could not share the office picture with scenes 2 to 6. A place that never appears on its own stays as written.
+- **Merge sets.** In Story, select a set in the cast board and choose **Merge ... into** another set. The scenes and shots of the merged set then use the kept set, so they share its approved picture. Frames already made are not changed. Only sets can be merged, and only into another set.
+- Not covered: Analyze script run again can bring a merged set back if the headings still differ; use the same place text in every heading to avoid it.
+- Tests: 598 JS (7 more), 84 Rust.
+
 ## 0.46.5 (2026-11-18): an illustrated walkthrough
 - **New: `docs/GETTING_STARTED.md`.** A step-by-step guide from a pasted script to a saved storyboard, with 15 fresh screenshots of the real app (Projects, Story, Cast, Reading, Design for a character, a costume, a prop and a set, Review, Direct, Deliver, the command palette). It says where sets and props appear and why a project started from a character image has none, how to keep a set the same across scenes, how naming and saving work, what costs money, and what the app does not do yet.
 - The README and the user guide point to it first.

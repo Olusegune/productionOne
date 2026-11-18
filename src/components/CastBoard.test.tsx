@@ -98,3 +98,20 @@ describe('cast board', () => {
     expect(s.onAdd).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('merging sets', () => {
+  it('offers to merge a selected set into another set, and not for a character', () => {
+    const onMergeSets = vi.fn()
+    const a = analyzeScript(SCRIPT)
+    const sets = a.assets.filter((x) => x.type === 'set')
+    expect(sets.length).toBeGreaterThan(1)
+    render(<CastBoard analysis={a} onChange={() => {}} onAdd={() => {}} onMergeSets={onMergeSets} />)
+    const cards = within(screen.getByRole('list', { name: 'Cast board' })).getAllByRole('button')
+    fireEvent.click(cards[a.assets.findIndex((x) => x.id === sets[0].id)])
+    const select = screen.getByLabelText(`Merge ${sets[0].name} into`)
+    fireEvent.change(select, { target: { value: sets[1].id } })
+    expect(onMergeSets).toHaveBeenCalledWith(sets[1].id, sets[0].id)
+    fireEvent.click(cards[a.assets.findIndex((x) => x.type === 'character')])
+    expect(screen.queryByLabelText(/^Merge .* into$/)).toBeNull()
+  })
+})

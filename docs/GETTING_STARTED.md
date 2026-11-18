@@ -59,7 +59,7 @@ Every character, costume, prop and set has a card. Choose **Cast** (cards) or **
 
 ![Reading tab](screenshots/guide/story-reading.png)
 
-**Keeping a set the same across scenes.** A set is matched by the *exact text* of the scene heading's place. `INT. VENOMSPUR'S OFFICE - NIGHT` and `INT. VENOMSPUR'S OFFICE - LATER` are the same set (the time is not part of the name). But `VENOMSPUR'S OFFICE / CORRIDOR` becomes a **second** set, as in the picture above. If you want one room, use the same place text in every heading. (A way to merge two sets inside the app is not there yet.)
+**Keeping a set the same across scenes.** A set is matched by the *text* of the place in the scene heading (the time is not part of it). `INT. VENOMSPUR'S OFFICE - NIGHT` and `INT. VENOMSPUR'S OFFICE - LATER` are one set, and from 0.46.6 `INT. VENOMSPUR'S OFFICE / CORRIDOR` is read as the office too, when the office also appears on its own. If two sets are really one room, select one in the cast board and choose **Merge ... into** the other: its scenes and shots then use the kept set and its approved picture. Frames already made are not changed; regenerate them to use the set picture. Run **Analyze script** again only if you must: if the headings still differ, the second set can come back.
 
 ---
 
@@ -100,7 +100,7 @@ A set gets an establishing view first. Every shot in that location is given this
 
 **Set consistency in practice**
 - Approve one good establishing view of each set *before* you generate frames. A frame with no set picture has nothing to copy from.
-- Keep the same place text in every scene heading for the same room.
+- Keep the same place text in every scene heading for the same room, or merge the two sets in Story.
 - Put fixed details in the set's Notes ("the desk is under the window, the lamp is green").
 - If a frame drifts, press **Regenerate** on that frame. The prompt and the set picture stay the same; a new take is made.
 - A model can still ignore the rule. The rule makes drift less likely; it does not forbid it. Check frames next to each other.
@@ -177,7 +177,7 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 ![Command palette](screenshots/guide/palette.png)
 
 ## 10. What this version does not do yet
-- No way to merge two sets inside the app.
+- A merged set can come back if you run Analyze script again while the headings still differ.
 - The reason a frame failed is not shown on the frame.
 - Props are recognised from a list of object nouns, so an unusual prop may be missed; add it with **Add asset**.
 - Installers are not code-signed, so Windows SmartScreen may warn.

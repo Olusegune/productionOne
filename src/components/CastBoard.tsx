@@ -23,8 +23,10 @@ export function CastBoard(props: {
   outputs?: Record<string, string>
   /** Opens the asset where its sheets are made. */
   onOpenAsset?: (assetId: string) => void
+  /** Folds one set into another (the dropped set's scenes and shots then use the kept one). */
+  onMergeSets?: (keepId: string, dropId: string) => void
 }) {
-  const { analysis, onChange, onAdd, onJump, outputs = {}, onOpenAsset } = props
+  const { analysis, onChange, onAdd, onJump, outputs = {}, onOpenAsset, onMergeSets } = props
   const [view, setView] = useState<View>(readView)
   const [selectedId, setSelectedId] = useState<string | null>(() => analysis.assets[0]?.id ?? null)
   const cards = useRef<Array<HTMLButtonElement | null>>([])
@@ -134,7 +136,16 @@ export function CastBoard(props: {
 
                 </details>
 
-                <div className="cb-actions"><button className="tertiary" onClick={() => remove(selected.id)} title={`Remove ${selected.name}`}><Trash2 size={14} aria-hidden="true" /> Remove {selected.name}</button></div>
+                <div className="cb-actions">
+                  {onMergeSets && (selected.type === 'set' || selected.type === 'environment') && analysis.assets.some((a) => a.id !== selected.id && (a.type === 'set' || a.type === 'environment')) && (
+                    <label className="cb-merge"><span>Same place as another set?</span>
+                      <select aria-label={`Merge ${selected.name} into`} value="" onChange={(e) => { if (e.target.value) onMergeSets(e.target.value, selected.id) }}>
+                        <option value="">Merge {selected.name} into...</option>
+                        {analysis.assets.filter((a) => a.id !== selected.id && (a.type === 'set' || a.type === 'environment')).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
+                    </label>
+                  )}
+                  <button className="tertiary" onClick={() => remove(selected.id)} title={`Remove ${selected.name}`}><Trash2 size={14} aria-hidden="true" /> Remove {selected.name}</button></div>
               </div>
             </article>
           )}
