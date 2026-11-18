@@ -157,7 +157,7 @@ export function DirectRoom(props: {
           <button className="secondary" onClick={() => void exportList("csv")} disabled={!shots.length}><Download size={14} /> CSV</button>
           <button className="secondary" onClick={() => void exportList("md")} disabled={!shots.length}><Download size={14} /> Markdown</button>
           <button className="secondary" onClick={() => setEnabled(false)} title="Hide the Director's room. Your shots are kept.">Turn off</button>
-          <label className="dr-aspect"><span>Canvas</span><select aria-label="Storyboard aspect ratio" value={aspect} onChange={(e) => setAspect(e.target.value)}>{aspectRatios.map((ratio) => <option key={ratio}>{ratio}</option>)}</select></label>
+          <label className="dr-aspect" title="Wide and tall shapes: the image model makes the closest shape it supports and the app trims the picture to exactly this."><span>Canvas</span><select aria-label="Storyboard aspect ratio" value={aspect} onChange={(e) => setAspect(e.target.value)}>{aspectRatios.map((ratio) => <option key={ratio}>{ratio}</option>)}</select></label>
         </div>
       </div>
 

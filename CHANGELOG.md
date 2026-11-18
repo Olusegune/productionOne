@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.46.8 (2026-11-18): wide and tall storyboards, and smaller corners
+- **Storyboard shapes now work at every Canvas choice.** The Direct room already listed 21:9, 2.39:1, 2:1, 16:9, 3:2, 4:3, 5:4, 1:1, 4:5, 3:4, 2:3 and 9:16, but image models only make a few shapes. The app now asks each provider for the closest shape it accepts (OpenAI: square, landscape or portrait; fal.ai: its five; Google Gemini and OpenRouter: their ten) and trims the picture to exactly the ratio you chose. 2.39:1 used to be refused as a decimal. fal.ai used to refuse anything outside its five.
+- **Very wide or tall frames (2:1 and wider, 9:16 and taller)** add a line to the frame prompt asking for the people and important objects to sit in the middle, since the edges may be trimmed.
+- **Smaller corners** on cards, buttons, boxes, fields and dialogs across the app (about half the old radius; round pills and dots are unchanged).
+- Not checked live: what each image provider returns at these ratios. Trimming a 3:2 picture to 21:9 loses about a third of its height.
+- Tests: 601 JS, 86 Rust.
+
 ## 0.46.7 (2026-11-18): a project started from images is no longer treated as script-first
 Found by testing the image-only flow (new project, add a character, costume, prop and set from images, generate a view, save, reopen). The flow worked; the guidance around it assumed a script.
 - **Projects screen:** an empty project now has a **Start from images** button beside the script button, and says "No script yet. Paste or import one, or start from your own images." The Golden Path steps say "Needs assets" (not "analyzed assets") and the Create step mentions images.

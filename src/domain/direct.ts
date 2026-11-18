@@ -259,12 +259,20 @@ export function shotReferences(shot: ShotRecord, analysis: AnalysisResult, queue
   return out.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || a.i - b.i).map((x) => x.r).slice(0, 8)
 }
 
+/** A shape far from the 3:2 and 4:3 most image models make, so the picture is trimmed to it. */
+export function extremeShape(aspect: string): boolean {
+  const [w, h] = aspect.split(':').map(Number)
+  const r = w / h
+  return Number.isFinite(r) && (r >= 1.9 || r <= 0.6)
+}
+
 export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, style: StyleBible, refs: ShotRef[], aspect = '16:9', model = ''): string {
   const scene = analysis.scenes.find((s) => s.id === shot.sceneId)
   const names = shot.assetIds.map((id) => analysis.assets.find((a) => a.id === id)).filter((a): a is ExtractedAsset => !!a)
   const chars = names.filter((a) => a.type === 'character')
   const lines = [
     `Cinematic storyboard frame, ${aspect}. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${shot.lens ?? 40}mm lens${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
+    extremeShape(aspect) ? `The picture may be trimmed to ${aspect} afterwards: keep every person and important object in the middle of the frame and leave the top and bottom (or the sides) free of anything that matters.` : '',
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.${shot.coverage === 'establishing' ? '' : ' Only these people appear in the frame: no other people, creatures, crowd or bystanders, not even small or in the background.'}` : '',
     names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',

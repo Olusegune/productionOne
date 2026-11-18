@@ -1,11 +1,11 @@
 /* ===== Style gallery (0.32) ===== */
 .sg-backdrop { align-items: center; padding: 24px; }
-.sg { width: min(1180px, 100%); max-height: calc(100vh - 48px); display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); gap: 12px; padding: 20px; background: var(--panel-1); border: 1px solid var(--line-1); border-radius: 16px; box-shadow: 0 28px 80px #000a; overflow: hidden; }
+.sg { width: min(1180px, 100%); max-height: calc(100vh - 48px); display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); gap: 12px; padding: 20px; background: var(--panel-1); border: 1px solid var(--line-1); border-radius: 6px; box-shadow: 0 28px 80px #000a; overflow: hidden; }
 .sg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .sg-head h2 { margin: 0; font: 600 26px/1.15 var(--display); }
 .sg-head p { margin: 4px 0 0; color: var(--text-2); font-size: 14px; }
 .sg-tools { display: flex; gap: 10px; align-items: center; }
-.sg-search { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line-1); color: var(--text-2); }
+.sg-search { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line-1); color: var(--text-2); }
 .sg-search:focus-within { border-color: var(--blue); }
 .sg-search input { all: unset; flex: 1; font-size: 15px; color: var(--text); }
 .sg-fav-toggle, .sg-families button { all: unset; cursor: pointer; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; height: 36px; border-radius: 999px; font-size: 14px; color: var(--text-2); border: 1px solid var(--line-1); background: transparent; white-space: nowrap; }
@@ -16,7 +16,7 @@
 .sg-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; min-height: 0; overflow: hidden; }
 .sg-grid { list-style: none; margin: 0; padding: 2px; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; overflow-y: auto; align-content: start; max-height: 100%; }
 .sg-grid li { position: relative; }
-.sg-card { all: unset; cursor: pointer; box-sizing: border-box; position: relative; display: block; width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 2px solid transparent; background: var(--bg); }
+.sg-card { all: unset; cursor: pointer; box-sizing: border-box; position: relative; display: block; width: 100%; aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 2px solid transparent; background: var(--bg); }
 .sg-card.on { border-color: var(--gold-2); }
 .sg-card img, .sg-swatch { width: 100%; height: 100%; object-fit: cover; display: block; }
 .sg-name { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 8px; font-size: 14px; font-weight: 600; color: #fff; background: linear-gradient(transparent, rgba(8, 10, 14, .88)); }
@@ -26,12 +26,12 @@
 .sg-star.on svg { fill: currentColor; }
 .sg-none { grid-column: 1; margin: 12px 0; color: var(--text-2); }
 .sg-detail { overflow-y: auto; display: grid; gap: 10px; align-content: start; padding-right: 4px; }
-.sg-detail img, .sg-swatch.big { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: cover; }
+.sg-detail img, .sg-swatch.big { width: 100%; aspect-ratio: 1; border-radius: 6px; object-fit: cover; }
 .sg-detail h3 { margin: 0; font-size: 20px; }
 .sg-detail p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
 .sg-fam { font-size: 13px !important; color: var(--text-3) !important; }
 .sg-palette { display: flex; gap: 6px; }
-.sg-palette span { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line-1); }
+.sg-palette span { width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--line-1); }
 .sg-detail dl { margin: 0; display: grid; gap: 8px; font-size: 13px; }
 .sg-detail dt { color: var(--text-3); }
 .sg-detail dd { margin: 2px 0 0; color: var(--text); }
