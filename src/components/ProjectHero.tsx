@@ -1,4 +1,4 @@
-import { ArrowRight, Download, FilePlus2, FolderOpen } from "lucide-react";
+import { ArrowRight, Download, FilePlus2, FolderOpen, ImagePlus } from "lucide-react";
 import { StatTiles } from "./StatTiles";
 import type { GoldenPathInput, GoldenStep } from "../domain/goldenPath";
 import { heroSummary } from "../domain/projectHero";
@@ -35,6 +35,7 @@ export function ProjectHero({ title, filePath, style, golden, counts, onNew, onO
         <small className="ph-percent">{percent}% of the way to a delivery package</small>
         <div className="ph-actions">
           <button className="primary ph-go" onClick={() => (next ? onContinue(next) : onWorkspace("Deliver"))}>{button} <ArrowRight size={16} aria-hidden="true" /></button>
+          {!golden.hasScript && golden.assetCount === 0 && <button className="secondary" onClick={() => onWorkspace("Design")} title="No script needed: add a character, costume, prop or set from an image you already have and build its sheets, poses and expressions"><ImagePlus size={15} /> Start from images</button>}
           <button className="secondary" onClick={onNew}><FilePlus2 size={15} /> New</button>
           <button className="secondary" onClick={onOpen}><FolderOpen size={15} /> Open…</button>
           <button className="secondary" onClick={onSave}><Download size={15} /> Save</button>

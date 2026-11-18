@@ -264,7 +264,7 @@ export function SheetStudio(props: {
   const doReject = (job: ImageJob) => { setQueue((q) => reject(q, job.id)); if (job.approved) onUnapproved(job); };
   const doReconsider = (job: ImageJob) => { setQueue((q) => reconsider(q, job.id)); if (job.approved) onUnapproved(job); };
 
-  if (!asset) return <section className="panel sheet-studio"><EmptyState icon={Sparkles} title="Analyze a script first" tone="gold">Sheets are planned per character, prop and set once your script has been analyzed.</EmptyState></section>;
+  if (!asset) return <section className="panel sheet-studio"><EmptyState icon={Sparkles} title="Nothing to make sheets for yet" tone="gold">Sheets are planned per character, costume, prop and set. Analyze a script in Story, or use Add to the bible to start from an image you already have.</EmptyState></section>;
 
   const newKeys = views.filter((v) => wouldEnqueue(jobFor(v.key))).map((v) => v.key);
   const redoKeys = views.filter((v) => { const j = jobFor(v.key); return !!j && !j.approved && wouldEnqueue(j, true) && !wouldEnqueue(j); }).map((v) => v.key);

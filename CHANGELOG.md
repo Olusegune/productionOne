@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.46.7 (2026-11-18): a project started from images is no longer treated as script-first
+Found by testing the image-only flow (new project, add a character, costume, prop and set from images, generate a view, save, reopen). The flow worked; the guidance around it assumed a script.
+- **Projects screen:** an empty project now has a **Start from images** button beside the script button, and says "No script yet. Paste or import one, or start from your own images." The Golden Path steps say "Needs assets" (not "analyzed assets") and the Create step mentions images.
+- **After adding from an image** the message you read is "added with your image as the approved front view", not "Analyze complete (1 asset added)". Step notices now come only to script-first projects until the style step.
+- **No more "Deliver complete" the moment one image is approved.** The small pill says "Ready to export".
+- **Empty states** (sheets, batch voices) say to analyze a script or use Add to the bible.
+- **Dialogs are opaque.** The Add to the bible dialog (and other sheets) no longer show the page behind their text.
+- Tests: 600 JS (2 more), 84 Rust.
+
 ## 0.46.6 (2026-11-18): one place is one set
 - **"INT. OFFICE / CORRIDOR" is read as the office** when the office also appears on its own. Before, a heading with a slash made a second set, so scene 7 of the test film could not share the office picture with scenes 2 to 6. A place that never appears on its own stays as written.
 - **Merge sets.** In Story, select a set in the cast board and choose **Merge ... into** another set. The scenes and shots of the merged set then use the kept set, so they share its approved picture. Frames already made are not changed. Only sets can be merged, and only into another set.

@@ -23,7 +23,7 @@ You do not need a story. If you only have pictures (a character from Midjourney,
 6. Approve the good ones in **Design** or **Review**. **Export sheet as one image** puts a whole sheet in one labelled PNG (files go to `Documents\Production One\Sheets`).
 7. Add more characters or props the same way. Save the project (**Ctrl+S**).
 
-You can skip Story, Direct and Deliver entirely. The Projects screen and the sidebar's next-step button talk about a script because most people start with one; ignore them if you do not. Sets and props normally come from a script, so a project built from images has only what you add yourself.
+You can skip Story, Direct and Deliver entirely. On an empty project the Projects screen has a **Start from images** button, and once you add an item the next step becomes *Approve a visual style*. The Golden Path still lists the script steps; you can ignore them. Sets and props normally come from a script, so a project built from images has only what you add yourself.
 
 **Tips for the best sheets**
 - Give a clean, evenly lit, front-facing picture on a plain background if you can. Add side or back pictures under **Reference photos** on the right; they go with every request.

@@ -38,7 +38,7 @@ export function TopBar(props: {
     const fresh = newlyDone(before, doneIds);
     if (!fresh.length) return;
     const step = steps.find((s) => s.id === fresh[fresh.length - 1]);
-    setCheer(`${step?.label ?? "Step"} complete`);
+    setCheer(step?.id === "deliver" ? "Ready to export" : `${step?.label ?? "Step"} complete`);
     const timer = window.setTimeout(() => setCheer(""), 3600);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
