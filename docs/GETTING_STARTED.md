@@ -226,6 +226,7 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 | Use my own picture for a character, set or prop | Design > **Add to the bible** > **Add from image**, or **Use my image** on a view |
 | Add a whole folder of Midjourney images | Design > **Add to the bible** > pick the kind > **Add several images at once** (up to 24; named from the file names) |
 | Make a picture brighter, flatter, black and white, or bigger | **Image quality** (Design sheet header, or Direct above the cards). Brightness, Contrast, Colour strength, Enlarge 2x/4x. The original is always kept |
+| Upscale with real AI (Topaz, Magnific, or free Real-ESRGAN) | **Image quality** > Enlarge > **Enlarge with**. Topaz and Magnific cost money and run only when you press their button. See the User guide for setup |
 | Make a room look the same in every shot | Approve its establishing view first; same place text in every heading; describe it in Notes |
 | Stop extra people in a frame | They are asked not to appear. If one does, **Regenerate** the frame |
 | Find any command | *Ctrl+K* |

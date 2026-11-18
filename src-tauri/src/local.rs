@@ -271,6 +271,19 @@ pub fn plan_templates(info: &Value) -> Vec<Template> {
     if wv.is_none() { wan_missing.push("wan2.2_vae.safetensors (vae, 1.4 GB)".into()); }
     let wan_ready = wan_missing.is_empty();
     out.push(Template { id: "wan22-5b-video".into(), title: "Video: Wan 2.2 5B (from your approved image)".into(), kind: "video".into(), ready: wan_ready, uses: [wu.clone(), wc.clone(), wv.clone()].into_iter().flatten().collect::<Vec<_>>().join(", "), missing: wan_missing, takes_reference: true, note: "Runs on ordinary graphics cards. Made for clips of about 5 seconds. FilmCrafter has run this workflow.".into(), graph: if wan_ready { Some(wan22_template(&wu.unwrap(), &wc.unwrap(), &wv.unwrap())) } else { None } });
+    // Real-ESRGAN (and similar 4x models): a picture in, a picture four times larger out. Free and local.
+    let up_models = options(info, "UpscaleModelLoader", "model_name");
+    let up = pick(&up_models, &["realesrgan", "esrgan", "4x", "ultrasharp", "swinir"]);
+    let mut up_missing = Vec::new();
+    for n in ["LoadImage", "UpscaleModelLoader", "ImageUpscaleWithModel", "SaveImage"] { if info.get(n).is_none() { up_missing.push(format!("a newer ComfyUI (missing the {n} node)")); break; } }
+    if up.is_none() { up_missing.push("an upscale model such as RealESRGAN_x4plus.pth in models/upscale_models".into()); }
+    let up_ready = up_missing.is_empty();
+    out.push(Template { id: "upscale-esrgan".into(), title: "Upscale: Real-ESRGAN (4x, from a picture)".into(), kind: "upscale".into(), ready: up_ready, uses: up.clone().unwrap_or_default(), missing: up_missing, takes_reference: true, note: "Free. Makes a picture four times larger and cleaner on your own computer. Used by Image quality > Enlarge.".into(), graph: up.map(|m| json!({
+        "1": {"class_type": "LoadImage", "inputs": {"image": "{{image}}"}},
+        "2": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": m}},
+        "3": {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": ["2", 0], "image": ["1", 0]}},
+        "4": {"class_type": "SaveImage", "inputs": {"images": ["3", 0], "filename_prefix": "production_one_upscale"}}
+    })).filter(|_| up_ready) });
     out
 }
 
@@ -492,6 +505,7 @@ mod tests {
             "CLIPLoader": {"input": {"required": {"clip_name": [["umt5_xxl_fp8_e4m3fn_scaled.safetensors"]]}}},
             "VAELoader": {"input": {"required": {"vae_name": [["ae.safetensors", "wan2.2_vae.safetensors"]]}}},
             "FluxGuidance": {}, "BasicGuider": {}, "SamplerCustomAdvanced": {}, "EmptySD3LatentImage": {},
+            "UpscaleModelLoader": {"input": {"required": {"model_name": [["RealESRGAN_x4plus.pth", "4x-UltraSharp.pth"]]}}}, "ImageUpscaleWithModel": {}, "SaveImage": {}, "LoadImage": {},
             "Wan22ImageToVideoLatent": {}, "CreateVideo": {}, "SaveVideo": {}, "ModelSamplingSD3": {}
         })
     }
@@ -506,6 +520,11 @@ mod tests {
         assert!(!bare[1].ready && bare[1].missing.iter().any(|m| m.contains("flux1-dev")));
         assert!(!bare[2].ready && bare[2].missing.iter().any(|m| m.contains("wan2.2_ti2v_5B")));
         assert!(bare[2].graph.is_none());
+        let up = t.iter().find(|x| x.id == "upscale-esrgan").expect("the upscale workflow is listed");
+        assert!(up.ready && up.uses == "RealESRGAN_x4plus.pth" && up.takes_reference && up.graph.is_some());
+        let none = plan_templates(&json!({}));
+        let up = none.iter().find(|x| x.id == "upscale-esrgan").unwrap();
+        assert!(!up.ready && up.graph.is_none() && up.missing.iter().any(|m| m.contains("RealESRGAN")));
     }
 
     #[test]

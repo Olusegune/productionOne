@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.49.0 (2026-11-18): real upscalers: Real-ESRGAN, Topaz and Magnific
+Asked for by the owner ("All"). **Image quality > Enlarge > Enlarge with** now offers four methods.
+- **Smooth** (as before): free and instant, no new detail.
+- **Real-ESRGAN**: free, on your computer through ComfyUI (needs ComfyUI running and `RealESRGAN_x4plus.pth` in `models/upscale_models`; Local AI lists it as a ready-made workflow once those are there). 2x is made from its 4x result.
+- **Topaz**: Topaz Image Upscale through the Kie.ai key you already have. Paid, billed by Kie.
+- **Magnific**: Precision V2 upscaler, styles Photo, Sublime and Photo with noise removed. Paid, billed by Magnific. Needs its own key (Provider Settings, "Magnific (image upscaler)").
+- **Spending is guarded.** A paid method works on one picture, runs only when its button (which says "(paid)") is pressed, shows a cost warning first, and refuses a result over 25 million pixels before anything is sent. Adjustments you set are saved first, then the upscaler works on that copy. The result is a new file (`name_up_01.png`) and a new revision; the original stays.
+- **Results and errors now show inside the Image quality panel.** The app's own notice sits behind that panel, so a failure used to be invisible.
+- **Untested, said so in the app and the guide.** In the one real test, Kie's Topaz service answered "ConnectException: Operation timed out" on every try (three tries; the app showed Kie's message). Magnific was built from its published documentation and no key was available to try it. Real-ESRGAN's workflow is tested only as a template (no ComfyUI with the model was available).
+- Tests: 630 JS (5 new), 96 Rust (8 new: request building, result reading, size limits, file naming, the ComfyUI template).
+
 ## 0.48.0 (2026-11-18): edit images without touching the original, enlarge them, and bring in many images at once
 Asked for by the owner: image editing (contrast, desaturate), an upscaler, and a way to bring in Midjourney images. The non-destructive editor already existed as **Image quality**; this release finishes it and puts it where it was missing.
 - **Brightness and Contrast** added to Image quality (about one stop each way). **Colour strength** all the way down is black and white (said in its hint). Every save still writes a new file and a new revision; the original is kept.

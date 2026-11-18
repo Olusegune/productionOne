@@ -9,6 +9,15 @@ export interface CleanSuggestion { id: string; severity: "info" | "suggest" | "w
 export interface CleanReport { width: number; height: number; warmCast: number; clippedHighlights: number; clippedShadows: number; noise: number; edgeOvershoot: number; bloom: number; skinFraction: number; skinDetail: number; suggestions: CleanSuggestion[] }
 export interface CleanSaved { path: string; width: number; height: number }
 
+/** How a picture is made bigger: a smooth filter on this computer, or an upscaler. Topaz and Magnific cost money and are only used when their button is pressed. */
+export type EnlargeMethod = "smooth" | "local" | "topaz" | "magnific";
+export const enlargeMethods: Array<{ id: EnlargeMethod; label: string; paid: boolean; name: string; cost: string }> = [
+  { id: "smooth", label: "Smooth (free, instant, no new detail)", paid: false, name: "a smooth filter", cost: "" },
+  { id: "local", label: "Real-ESRGAN (free, needs ComfyUI)", paid: false, name: "Real-ESRGAN", cost: "" },
+  { id: "topaz", label: "Topaz (paid, uses your Kie credits, untested)", paid: true, name: "Topaz", cost: "Billed by Kie.ai from your credits; see your Kie dashboard for the price." },
+  { id: "magnific", label: "Magnific (paid, about €0.10 to €0.50, untested)", paid: true, name: "Magnific", cost: "Billed by Magnific per picture; about €0.10 for a 2x of a small frame, more for larger ones." },
+];
+
 export const neutral: CleanParams = { temperature: 0, tint: 0, saturation: 0, denoise: 0, highlights: 0, bloom: 0, sharpen: 0, texture: 50, intensity: 100, exposure: 0, contrast: 0, enlarge: 1 };
 
 /** Adds a suggestion's changes on top of the current settings. Controls the suggestion does not touch stay as they are. */
@@ -53,6 +62,11 @@ export function CleanRender(props: {
   const [after, setAfter] = useState<string | null>(null);
   const [split, setSplit] = useState(50);
   const [busy, setBusy] = useState(false);
+  const [method, setMethod] = useState<EnlargeMethod>("smooth");
+  /** What just happened, shown inside this panel: the app's own notice sits behind it. */
+  const [status, setStatus] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const say = (kind: "ok" | "error", text: string) => { setStatus({ kind, text }); notify(text); };
+  const [flavor, setFlavor] = useState<"photo" | "sublime" | "photo_denoiser">("photo");
   const stage = useRef<HTMLDivElement>(null);
   const history = useRef<CleanParams[]>([]);
 
@@ -67,6 +81,9 @@ export function CleanRender(props: {
 
   const changed = useMemo(() => (Object.keys(neutral) as Array<keyof CleanParams>).some((k) => k !== "texture" && k !== "intensity" && k !== "enlarge" && params[k] !== 0), [params]);
   const enlarging = params.enlarge > 1;
+  const chosen = enlargeMethods.find((m) => m.id === method)!;
+  /** An upscaler (not the smooth filter) is doing the enlarging. */
+  const remote = enlarging && method !== "smooth";
   useEffect(() => {
     if (!job?.outputPath) return;
     if (!changed) { setAfter(null); return; }
@@ -93,7 +110,19 @@ export function CleanRender(props: {
   const save = async (all: boolean) => {
     if (!changed && !enlarging) return;
     setBusy(true);
+    setStatus(null);
     try {
+      if (remote) {
+        // One picture at a time: a paid upscale is never run across a whole sheet. Adjustments are saved first, and the upscaler works on that copy.
+        if (!job.outputPath) return;
+        let path = job.outputPath;
+        if (changed) path = (await invoke<CleanSaved>("clean_save", { path, params: { ...params, enlarge: 1 } })).path;
+        const file = await invoke<CleanSaved>("upscale_image", { method, path, factor: params.enlarge, flavor: method === "magnific" ? flavor : null });
+        onSaved(job, file);
+        say("ok", `Saved a ${params.enlarge}× copy made with ${chosen.name} (${file.width}×${file.height}). The original is kept.`);
+        setParams(neutral); history.current = [];
+        return;
+      }
       const targets = all ? items : [job];
       let n = 0;
       for (const t of targets) {
@@ -101,9 +130,9 @@ export function CleanRender(props: {
         const file = await invoke<CleanSaved>("clean_save", { path: t.outputPath, params });
         onSaved(t, file); n += 1;
       }
-      notify(`Saved ${n} corrected revision${n === 1 ? "" : "s"}. The originals are kept.`);
+      say("ok", `Saved ${n} corrected revision${n === 1 ? "" : "s"}. The originals are kept.`);
       if (!all) { setParams(neutral); history.current = []; }
-    } catch (e) { notify(String(e)); } finally { setBusy(false); }
+    } catch (e) { say("error", String(e)); } finally { setBusy(false); }
   };
 
   const dragSplit = (e: React.PointerEvent) => {
@@ -161,12 +190,29 @@ export function CleanRender(props: {
                 <option value={1}>Keep the size</option><option value={2}>2× (smooth)</option><option value={4}>4× (smooth)</option>
               </select>
             </label>
-            {enlarging && <p className="cr-note"><Info size={14} /> A smooth enlargement makes the picture bigger without adding detail. For real detail, regenerate at a higher quality or use a dedicated upscaler.</p>}
+            {enlarging && (
+              <label className="cr-slider"><span>Enlarge with</span>
+                <select aria-label="Enlarge method" value={method} onChange={(e) => setMethod(e.target.value as EnlargeMethod)}>
+                  {enlargeMethods.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </select>
+              </label>
+            )}
+            {enlarging && method === "magnific" && (
+              <label className="cr-slider"><span>Magnific style</span>
+                <select aria-label="Magnific style" value={flavor} onChange={(e) => setFlavor(e.target.value as typeof flavor)}>
+                  <option value="photo">Photo</option><option value="sublime">Sublime (illustration, art)</option><option value="photo_denoiser">Photo, noise removed</option>
+                </select>
+              </label>
+            )}
+            {enlarging && !chosen.paid && method === "smooth" && <p className="cr-note"><Info size={14} /> A smooth enlargement makes the picture bigger without adding detail. For real detail choose an upscaler above, or regenerate at a higher quality.</p>}
+            {enlarging && method === "local" && <p className="cr-note"><Info size={14} /> Runs on your computer through ComfyUI with a Real-ESRGAN model (RealESRGAN_x4plus.pth in models/upscale_models). It needs ComfyUI running. 2x is made from its 4x result.</p>}
+            {remote && chosen.paid && <p className="cr-note warn"><AlertTriangle size={14} /> {chosen.name} costs money. {chosen.cost} It runs only when you press the button below, on this one picture. It cannot be undone, and the result is kept as a new copy.</p>}
             {changed && <p className="cr-note"><Info size={14} /> Corrections change how the image looks. A warm or grainy look can be intentional: check faces and costume colours before saving.</p>}
           </section>
+          {status && <p className={`cr-note${status.kind === "error" ? " warn" : ""}`} role={status.kind === "error" ? "alert" : "status"}>{status.kind === "error" ? <AlertTriangle size={14} /> : <Check size={14} />} {status.text}</p>}
           <div className="cr-actions">
-            <button className="primary" disabled={(!changed && !enlarging) || busy} onClick={() => void save(false)}><Check size={15} /> {busy ? "Saving…" : "Save corrected revision"}</button>
-            {items.length > 1 && <button className="secondary" disabled={(!changed && !enlarging) || busy} onClick={() => void save(true)}>Apply to all {items.length} images</button>}
+            <button className="primary" disabled={(!changed && !enlarging) || busy} onClick={() => void save(false)}><Check size={15} /> {busy ? (remote ? "Working…" : "Saving…") : remote ? `Upscale ${params.enlarge}× with ${chosen.name}${chosen.paid ? " (paid)" : ""} and save` : "Save corrected revision"}</button>
+            {items.length > 1 && !remote && <button className="secondary" disabled={(!changed && !enlarging) || busy} onClick={() => void save(true)}>Apply to all {items.length} images</button>}
             <div className="cr-row"><button className="tertiary" disabled={!history.current.length} onClick={undo}>Undo</button><button className="tertiary" disabled={!changed && !enlarging} onClick={reset}><RotateCcw size={13} /> Reset</button></div>
           </div>
         </aside>

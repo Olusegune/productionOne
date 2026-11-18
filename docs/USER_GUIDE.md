@@ -74,7 +74,16 @@ On the Design screen press **Browse styles**. The gallery has a picture for ever
 
 ### Image quality (CleanRender): editing that never touches the original
 Open **Image quality** in the sheet header, or in the Director's room above the cards (it works on that scene's storyboard frames). It measures the image and suggests fixes in plain language, for example "the mid-tones lean strongly yellow". **Try this** sets sliders; the split view shows original and corrected live. **Save corrected revision** writes a new file and a new revision; the original is never changed. **Apply to all** uses the same settings on every image of the sheet. 
-The controls: **Brightness** and **Contrast** (about one stop each way), **Temperature**, **Tint**, **Colour strength** (all the way down is black and white), **Highlight recovery**, **Bloom reduction**, **Noise reduction**, **Texture kept**, **Sharpness**, and **Overall strength**. **Enlarge** makes the picture 2x or 4x bigger with a smooth filter (never past 8192 pixels on the long edge). It does **not** add detail and it is not an AI upscaler; for real detail regenerate at a higher quality or use a dedicated upscaler.
+The controls: **Brightness** and **Contrast** (about one stop each way), **Temperature**, **Tint**, **Colour strength** (all the way down is black and white), **Highlight recovery**, **Bloom reduction**, **Noise reduction**, **Texture kept**, **Sharpness**, and **Overall strength**. **Enlarge** makes the picture 2x or 4x bigger. Choose **Enlarge with**:
+
+| Method | Cost | What it does |
+|---|---|---|
+| **Smooth** (default) | Free, instant | A smooth filter. Bigger, but no new detail. Never past 8192 pixels on the long edge. |
+| **Real-ESRGAN** | Free | A real AI upscaler running on your computer through ComfyUI. Needs ComfyUI running and `RealESRGAN_x4plus.pth` in ComfyUI's `models/upscale_models` folder (Local AI shows when it is ready). It makes 4x; 2x is that result brought back down. |
+| **Topaz** | Paid, from your Kie credits | Topaz Image Upscale through the Kie.ai key you already have. Billed by Kie; see your Kie dashboard for the price. **Untested:** in the one real test Kie's Topaz service answered with a timeout error twice (the app shows Kie's message in the panel). |
+| **Magnific** | Paid, by Magnific (about €0.10 to €0.50 a picture) | Magnific Precision V2. Needs its own key: Tools, Provider Settings, choose *Magnific (image upscaler)*, paste the key. Styles: Photo, Sublime (illustration and art), Photo with noise removed. **Untested:** built from Magnific's published documentation; no key was available to try it. |
+
+A paid method works on **one picture** at a time, runs **only when you press its button** (which says *(paid)*), and cannot be undone once started. Any other adjustments you set are saved first, then the upscaler works on that copy. The result is always a new file (`name_up_01.png`) and a new revision; the original stays. The output is limited to 25 million pixels (and 8192 on the long edge for Real-ESRGAN); a result that would be bigger is refused **before** anything is spent.
 
 Every save writes a new file (`name_clean_01.png`) and a new revision. The original stays, and you can go back to it. It cannot fix faces, hands, likeness or plastic-looking skin; for those it says to regenerate, use a reference photo, or retouch.
 

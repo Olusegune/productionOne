@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addCleaned, type ImageJob, type QueueState } from '../domain/generationQueue'
 import { CleanRender, mergeSuggestion, neutral } from './CleanRender'
 
+let failUpscale = false
 const calls: Array<{ cmd: string; args: Record<string, unknown> }> = []
 const report = { width: 1024, height: 1024, warmCast: 0.3, clippedHighlights: 0, clippedShadows: 0, noise: 2, edgeOvershoot: 0, bloom: 0, skinFraction: 0, skinDetail: 0, suggestions: [
   { id: 'warm-cast', severity: 'suggest', message: 'The mid-tones lean strongly yellow or orange (30% more red than blue).', remedy: 'Cooling shifts the whole image.', params: { ...neutral, temperature: -30 } },
@@ -14,6 +15,7 @@ vi.mock('@tauri-apps/api/core', () => ({
     calls.push({ cmd, args })
     if (cmd === 'clean_analyze') return report
     if (cmd === 'clean_preview') return 'data:image/jpeg;base64,AAAA'
+    if (cmd === 'upscale_image') { if (failUpscale) throw new Error('Kie.ai request failed (402): insufficient credits'); return { path: 'C:/assets/front_up_01.png', width: 2048, height: 2048 } }
     if (cmd === 'clean_save') return { path: 'C:/assets/front_clean_01.png', width: 1024, height: 1024 }
     return undefined
   },
@@ -24,7 +26,7 @@ const job = (id: string, approved = true): ImageJob => ({
   outputName: `${id}_v01`, revision: 1, status: 'completed', attempts: 1, maxAttempts: 3, outputPath: `C:/assets/${id}.png`, width: 1024, height: 1024, qaNotes: [], approved, rejected: false, createdAt: 0, updatedAt: 0,
 })
 
-beforeEach(() => { calls.length = 0 })
+beforeEach(() => { calls.length = 0; failUpscale = false })
 
 describe('CleanRender', () => {
   it('shows measured suggestions, applies one as slider values and saves a new revision without touching the original', async () => {
@@ -82,6 +84,71 @@ describe('brightness, contrast and enlarging', () => {
   })
   it('a suggestion never changes the enlarge choice', () => {
     expect(mergeSuggestion({ ...neutral, enlarge: 4 }, { ...neutral, temperature: -30 }).enlarge).toBe(4)
+  })
+})
+
+describe('upscalers', () => {
+  const open = (items = [job('front')], onSaved: (j: ImageJob, f: { path: string }) => void = () => {}) => render(<CleanRender items={items} index={0} onIndex={() => {}} onClose={() => {}} notify={() => {}} onSaved={onSaved} />)
+  const choose = (value: string) => fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge method' }), { target: { value } })
+  it('offers the four ways to enlarge only once enlarging is on, smooth first', async () => {
+    open()
+    await screen.findByText(/lean strongly yellow/)
+    expect(screen.queryByRole('combobox', { name: 'Enlarge method' })).toBeNull()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge' }), { target: { value: '2' } })
+    const options = Array.from((screen.getByRole('combobox', { name: 'Enlarge method' }) as HTMLSelectElement).options).map((o) => o.value)
+    expect(options).toEqual(['smooth', 'local', 'topaz', 'magnific'])
+    expect((screen.getByRole('combobox', { name: 'Enlarge method' }) as HTMLSelectElement).value).toBe('smooth')
+  })
+  it('says a paid upscaler costs money, names the button for it, and spends nothing until it is pressed', async () => {
+    open([job('front'), job('side')])
+    await screen.findByText(/lean strongly yellow/)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge' }), { target: { value: '4' } })
+    choose('topaz')
+    expect(screen.getByText(/Topaz costs money/)).toBeTruthy()
+    expect(screen.getByText(/Billed by Kie.ai/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Upscale 4× with Topaz \(paid\) and save/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /apply to all/i })).toBeNull()
+    expect(calls.some((c) => c.cmd === 'upscale_image')).toBe(false)
+    choose('magnific')
+    expect(screen.getByText(/Magnific costs money/)).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Magnific style' })).toBeTruthy()
+  })
+  it('sends the chosen method, factor and picture, and saves the result as a copy', async () => {
+    const saved: string[] = []
+    open([job('front')], (_, f) => saved.push(f.path))
+    await screen.findByText(/lean strongly yellow/)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge' }), { target: { value: '2' } })
+    choose('topaz')
+    fireEvent.click(screen.getByRole('button', { name: /Upscale 2× with Topaz/ }))
+    await waitFor(() => expect(saved).toEqual(['C:/assets/front_up_01.png']))
+    expect(calls.filter((c) => c.cmd === 'upscale_image')).toHaveLength(1)
+    expect(calls.find((c) => c.cmd === 'upscale_image')?.args).toMatchObject({ method: 'topaz', path: 'C:/assets/front.png', factor: 2 })
+    expect(calls.some((c) => c.cmd === 'clean_save')).toBe(false)
+  })
+  it('shows a failure inside the panel (the notice behind it cannot be seen), and a success too', async () => {
+    failUpscale = true
+    open()
+    await screen.findByText(/lean strongly yellow/)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge' }), { target: { value: '2' } })
+    choose('topaz')
+    fireEvent.click(screen.getByRole('button', { name: /Upscale 2× with Topaz/ }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/insufficient credits/)
+    failUpscale = false
+    fireEvent.click(screen.getByRole('button', { name: /Upscale 2× with Topaz/ }))
+    expect(await screen.findByText(/Saved a 2× copy made with Topaz \(2048×2048\)/)).toBeTruthy()
+  })
+  it('applies the adjustments first, without enlarging them, then upscales that copy', async () => {
+    open()
+    await screen.findByText(/lean strongly yellow/)
+    fireEvent.change(screen.getByText('Contrast').closest('label')!.querySelector('input') as HTMLInputElement, { target: { value: '30' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Enlarge' }), { target: { value: '2' } })
+    choose('local')
+    fireEvent.click(screen.getByRole('button', { name: /Upscale 2× with Real-ESRGAN and save/ }))
+    await waitFor(() => expect(calls.some((c) => c.cmd === 'upscale_image')).toBe(true))
+    const order = calls.filter((c) => c.cmd === 'clean_save' || c.cmd === 'upscale_image')
+    expect(order.map((c) => c.cmd)).toEqual(['clean_save', 'upscale_image'])
+    expect(order[0].args.params).toMatchObject({ contrast: 30, enlarge: 1 })
+    expect(order[1].args).toMatchObject({ method: 'local', path: 'C:/assets/front_clean_01.png', factor: 2 })
   })
 })
 
