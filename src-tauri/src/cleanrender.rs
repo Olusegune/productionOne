@@ -33,15 +33,23 @@ pub struct CleanParams {
     pub texture: f32,
     /// 0..100 master strength applied to every control above
     pub intensity: f32,
+    /// -100 darker .. +100 brighter (about one stop each way)
+    pub exposure: f32,
+    /// -100 flatter .. +100 more contrast
+    pub contrast: f32,
+    /// 1 = keep the size, 2 or 4 = a smooth enlargement (not AI). Applied only when saving.
+    pub enlarge: f32,
 }
 
 impl Default for CleanParams {
-    fn default() -> Self { CleanParams { temperature: 0.0, tint: 0.0, saturation: 0.0, denoise: 0.0, highlights: 0.0, bloom: 0.0, sharpen: 0.0, texture: 50.0, intensity: 100.0 } }
+    fn default() -> Self { CleanParams { temperature: 0.0, tint: 0.0, saturation: 0.0, denoise: 0.0, highlights: 0.0, bloom: 0.0, sharpen: 0.0, texture: 50.0, intensity: 100.0, exposure: 0.0, contrast: 0.0, enlarge: 1.0 } }
 }
 
 impl CleanParams {
-    fn is_neutral(&self) -> bool { self.temperature == 0.0 && self.tint == 0.0 && self.saturation == 0.0 && self.denoise == 0.0 && self.highlights == 0.0 && self.bloom == 0.0 && self.sharpen == 0.0 }
-    fn scaled(&self) -> CleanParams { let k = (self.intensity / 100.0).clamp(0.0, 1.0); CleanParams { temperature: self.temperature * k, tint: self.tint * k, saturation: self.saturation * k, denoise: self.denoise * k, highlights: self.highlights * k, bloom: self.bloom * k, sharpen: self.sharpen * k, texture: self.texture, intensity: 100.0 } }
+    fn is_neutral(&self) -> bool { self.temperature == 0.0 && self.tint == 0.0 && self.saturation == 0.0 && self.denoise == 0.0 && self.highlights == 0.0 && self.bloom == 0.0 && self.sharpen == 0.0 && self.exposure == 0.0 && self.contrast == 0.0 }
+    /// The enlargement factor actually used: 1, 2 or 4.
+    fn factor(&self) -> u32 { if self.enlarge >= 3.0 { 4 } else if self.enlarge >= 1.5 { 2 } else { 1 } }
+    fn scaled(&self) -> CleanParams { let k = (self.intensity / 100.0).clamp(0.0, 1.0); CleanParams { temperature: self.temperature * k, tint: self.tint * k, saturation: self.saturation * k, denoise: self.denoise * k, highlights: self.highlights * k, bloom: self.bloom * k, sharpen: self.sharpen * k, texture: self.texture, intensity: 100.0, exposure: self.exposure * k, contrast: self.contrast * k, enlarge: self.enlarge } }
 }
 
 struct Plane { w: usize, h: usize, d: Vec<f32> }
@@ -87,6 +95,13 @@ pub fn apply(img: &RgbImage, params: &CleanParams) -> RgbImage {
     let mut plane = to_plane(img);
     let (w, h) = (plane.w, plane.h);
     let longest = w.max(h) as f32;
+
+    // 0. Light: exposure as a gain (about one stop at the ends), contrast as a stretch around mid-grey.
+    if p.exposure != 0.0 || p.contrast != 0.0 {
+        let gain = (p.exposure / 100.0).exp2();
+        let stretch = (1.0 + p.contrast / 100.0).clamp(0.0, 2.0);
+        for v in plane.d.iter_mut() { *v = (((*v * gain) - 0.5) * stretch + 0.5).clamp(0.0, 1.0); }
+    }
 
     // 1. Colour: temperature and tint as gentle channel gains, then saturation.
     if p.temperature != 0.0 || p.tint != 0.0 || p.saturation != 0.0 {
@@ -294,6 +309,16 @@ fn load(path: &Path, max_edge: Option<u32>) -> Result<RgbImage, String> {
     Ok(img.to_rgb8())
 }
 
+/// A smooth enlargement (Lanczos) by 2 or 4, never beyond 8192 pixels on the long edge. It makes the picture bigger, it does not invent detail.
+fn enlarge(img: RgbImage, factor: u32) -> RgbImage {
+    if factor <= 1 { return img; }
+    let long = img.width().max(img.height());
+    let mut f = factor;
+    while f > 1 && long.saturating_mul(f) > 8192 { f /= 2; }
+    if f <= 1 { return img; }
+    image::imageops::resize(&img, img.width() * f, img.height() * f, FilterType::Lanczos3)
+}
+
 /// Next free `<name>_clean_NN.png` beside the original.
 fn revision_path(original: &Path) -> PathBuf {
     let stem = original.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "image".into());
@@ -330,9 +355,9 @@ pub async fn clean_preview(app: tauri::AppHandle, path: String, params: CleanPar
 pub async fn clean_save(app: tauri::AppHandle, path: String, params: CleanParams) -> Result<Saved, String> {
     let file = crate::providers::inside_assets(&app, &path)?;
     tauri::async_runtime::spawn_blocking(move || {
-        if params.is_neutral() { return Err("Nothing to apply: every control is at zero.".to_string()); }
+        if params.is_neutral() && params.factor() == 1 { return Err("Nothing to apply: every control is at zero.".to_string()); }
         let img = load(&file, None)?;
-        let out = apply(&img, &params);
+        let out = enlarge(apply(&img, &params), params.factor());
         let dest = revision_path(&file);
         out.save(&dest).map_err(|e| e.to_string())?;
         Ok(Saved { path: dest.to_string_lossy().into_owned(), width: out.width(), height: out.height() })
@@ -352,6 +377,34 @@ mod tests {
         RgbImage::from_fn(w, h, |_, _| { seed = seed.wrapping_mul(1664525).wrapping_add(1013904223); let n = ((seed >> 16) % (2 * amp as u32 + 1)) as i32 - amp; let v = (128 + n).clamp(0, 255) as u8; Rgb([v, v, v]) })
     }
     fn noise_of(img: &RgbImage) -> f32 { analyze(img).noise }
+
+    #[test]
+    fn contrast_and_exposure_move_the_tones_the_right_way() {
+        let ramp = RgbImage::from_fn(64, 8, |x, _| { let v = (x * 4) as u8; Rgb([v, v, v]) });
+        let spread = |i: &RgbImage| { let (mut lo, mut hi) = (255u8, 0u8); for p in i.pixels() { lo = lo.min(p[0]); hi = hi.max(p[0]); } hi as i32 - lo as i32 };
+        let mean = |i: &RgbImage| i.pixels().map(|p| p[0] as f32).sum::<f32>() / (i.width() * i.height()) as f32;
+        let more = apply(&ramp, &CleanParams { contrast: 60.0, ..CleanParams::default() });
+        let less = apply(&ramp, &CleanParams { contrast: -60.0, ..CleanParams::default() });
+        assert!(spread(&more) > spread(&ramp) - 1 && more.get_pixel(10, 0)[0] < ramp.get_pixel(10, 0)[0] && more.get_pixel(50, 0)[0] > ramp.get_pixel(50, 0)[0]);
+        assert!(spread(&less) < spread(&ramp));
+        assert!(mean(&apply(&ramp, &CleanParams { exposure: 50.0, ..CleanParams::default() })) > mean(&ramp));
+        assert!(mean(&apply(&ramp, &CleanParams { exposure: -50.0, ..CleanParams::default() })) < mean(&ramp));
+        assert!(!CleanParams { contrast: 5.0, ..CleanParams::default() }.is_neutral());
+        assert!(CleanParams { enlarge: 2.0, ..CleanParams::default() }.is_neutral());
+    }
+
+    #[test]
+    fn enlarging_is_two_or_four_times_and_capped() {
+        assert_eq!((CleanParams::default().factor(), CleanParams { enlarge: 2.0, ..CleanParams::default() }.factor(), CleanParams { enlarge: 4.0, ..CleanParams::default() }.factor(), CleanParams { enlarge: 3.0, ..CleanParams::default() }.factor()), (1, 2, 4, 4));
+        let small = grey(30, 20, 100);
+        let two = enlarge(small.clone(), 2);
+        assert_eq!((two.width(), two.height()), (60, 40));
+        assert_eq!(enlarge(small.clone(), 4).width(), 120);
+        assert_eq!(enlarge(small.clone(), 1).width(), 30);
+        let big = grey(5000, 4, 100);
+        assert_eq!(enlarge(big.clone(), 4).width(), 5000, "4x would pass 8192 and 2x would too: left alone");
+        assert_eq!(enlarge(grey(3000, 4, 100), 4).width(), 6000, "capped to the largest factor that fits");
+    }
 
     #[test]
     fn neutral_params_return_the_same_pixels() {

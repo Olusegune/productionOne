@@ -4,8 +4,8 @@ import { BibleTree } from './bible'
 import { emptyQueue } from '../domain/generationQueue'
 import type { ExtractedAsset } from '../domain/productionStudio'
 
-const setup = (onAddAsset = vi.fn(), assets: ExtractedAsset[] = []) => {
-  render(<BibleTree assets={assets} queue={emptyQueue()} selected={0} onSelect={() => {}} onAddAsset={onAddAsset} />)
+const setup = (onAddAsset = vi.fn(), assets: ExtractedAsset[] = [], onAddMany?: (kind: string) => void) => {
+  render(<BibleTree assets={assets} queue={emptyQueue()} selected={0} onSelect={() => {}} onAddAsset={onAddAsset} onAddMany={onAddMany as never} />)
   return onAddAsset
 }
 const openDialog = () => fireEvent.click(screen.getByRole('button', { name: /Add to the bible/ }))
@@ -61,5 +61,22 @@ describe('Add to the production bible', () => {
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(add).not.toHaveBeenCalled()
+  })
+  it('adds several images at once of the chosen kind, without needing a name', () => {
+    const many = vi.fn()
+    setup(vi.fn(), [], many)
+    openDialog()
+    fireEvent.change(screen.getByLabelText('Type of the new asset'), { target: { value: 'prop' } })
+    const button = screen.getByRole('button', { name: /Add several images at once/ }) as HTMLButtonElement
+    expect(button.disabled).toBe(false)
+    expect(screen.getByText(/One prop per image/)).toBeTruthy()
+    fireEvent.click(button)
+    expect(many).toHaveBeenCalledWith('prop')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+  it('does not offer it when the app cannot add many', () => {
+    setup()
+    openDialog()
+    expect(screen.queryByRole('button', { name: /Add several images at once/ })).toBeNull()
   })
 })

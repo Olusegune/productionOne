@@ -70,6 +70,7 @@ describe('Directors room', () => {
     expect(String(first.args.outputName)).toMatch(/^SHOT-\d+_storyboard_v01$/)
     await waitFor(() => expect(latest.queue.jobs.some((j) => j.sheetType === 'Storyboard' && j.status === 'needs-review')).toBe(true))
     expect(screen.getByLabelText('Animatic')).toBeTruthy()
+    expect((screen.getByRole('button', { name: /Image quality/ }) as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('makes frames in the project format: 9:16 for a phone story', async () => {

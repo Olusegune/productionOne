@@ -20,8 +20,9 @@ You do not need a story. If you only have pictures (a character from Midjourney,
 3. Press **Add from image** and choose your picture. It becomes the **approved reference** (a character's front view, a prop's front, a set's establishing view) and the identity lock turns on. Or press **Add without image** to plan the sheets and make the first picture in the app.
 4. Pick a **Look** (style) at the top and **Lock style** so every sheet matches.
 5. Select the item and choose a **Sheet**: for a character, Identity, Turnaround, Expressions, Poses, Wardrobe, Detail. Press **Generate N views**. Every view is made from your approved picture, so the person stays the same.
-6. Approve the good ones in **Design** or **Review**. **Export sheet as one image** puts a whole sheet in one labelled PNG (files go to `Documents\Production One\Sheets`).
-7. Add more characters or props the same way. Save the project (**Ctrl+S**).
+6. Want to adjust a picture (brighter, more contrast, black and white, bigger)? Open **Image quality**: it saves a corrected copy and keeps the original.
+7. Approve the good ones in **Design** or **Review**. **Export sheet as one image** puts a whole sheet in one labelled PNG (files go to `Documents\Production One\Sheets`).
+8. Add more characters or props the same way. Save the project (**Ctrl+S**).
 
 You can skip Story, Direct and Deliver entirely. On an empty project the Projects screen has a **Start from images** button, and once you add an item the next step becomes *Approve a visual style*. The Golden Path still lists the script steps; you can ignore them. Sets and props normally come from a script, so a project built from images has only what you add yourself.
 
@@ -223,6 +224,8 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 | See sets and props | Analyze a script in Story; then look in Design's bible, or the Projects tiles |
 | Rename the project | Project > Settings, or Save As with a new file name |
 | Use my own picture for a character, set or prop | Design > **Add to the bible** > **Add from image**, or **Use my image** on a view |
+| Add a whole folder of Midjourney images | Design > **Add to the bible** > pick the kind > **Add several images at once** (up to 24; named from the file names) |
+| Make a picture brighter, flatter, black and white, or bigger | **Image quality** (Design sheet header, or Direct above the cards). Brightness, Contrast, Colour strength, Enlarge 2x/4x. The original is always kept |
 | Make a room look the same in every shot | Approve its establishing view first; same place text in every heading; describe it in Notes |
 | Stop extra people in a frame | They are asked not to appear. If one does, **Regenerate** the frame |
 | Find any command | *Ctrl+K* |

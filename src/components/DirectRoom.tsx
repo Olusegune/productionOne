@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { Eyebrow } from "./Eyebrow";
-import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Undo2, Wand2, X } from "lucide-react";
+import { AlertTriangle, SlidersHorizontal, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Undo2, Wand2, X } from "lucide-react";
 import {
   angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, cardFrame, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
   shotReferences, shotSizes, sizeLabels, sortShots, type CameraAngle, type Movement, type ScreenDir, type ShotSize,
 } from "../domain/direct";
-import { addSupplied, approve, enqueue, reconsider, reject, retry, type ImageJob, type QueueState } from "../domain/generationQueue";
+import { addCleaned, addSupplied, approve, enqueue, reconsider, reject, retry, type ImageJob, type QueueState } from "../domain/generationQueue";
 import { modelTakesReferences } from "../domain/imageCatalog";
 import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
 import type { StyleBible } from "../domain/visualDevelopment";
@@ -16,6 +16,7 @@ import { Animatic } from "./Animatic";
 import { FramePreview } from "./FramePreview";
 import { Fold } from "./Fold";
 import { Lightbox, type LightboxItem } from "./Lightbox";
+import { CleanRender } from "./CleanRender";
 import { ModelPicker } from "./ModelPicker";
 
 import { FormatPicker } from "./FormatPicker";
@@ -48,6 +49,7 @@ export function DirectRoom(props: {
   const [sceneId, setSceneId] = useState(analysis.scenes[0]?.id ?? "");
   const [selected, setSelected] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [quality, setQuality] = useState<number | null>(null);
   const [view, setView] = useState<"grid" | "list" | "large">("grid");
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -192,6 +194,7 @@ export function DirectRoom(props: {
                 <button className={view === "large" ? "on" : ""} aria-pressed={view === "large"} aria-label="Large storyboard" title="Large storyboard" onClick={() => setView("large")}><Square size={15} /></button>
               </div>
               {wrongShape.length > 0 && <span className="dr-shape-note" role="status">{wrongShape.length} frame{wrongShape.length === 1 ? " was" : "s were"} made at another shape ({formatName(aspect)} is {aspect} now). Regenerate to remake.</span>}
+              {desktop && <button className="secondary" disabled={lbItems.length === 0} onClick={() => setQuality(0)} title="Brightness, contrast, colour, noise and size for this scene's frames. The original is kept; a corrected copy is saved beside it."><SlidersHorizontal size={14} /> Image quality</button>}
               <button className="secondary" onClick={planScene} disabled={!scene}><Wand2 size={14} /> Plan this scene</button>
               <button className="secondary" onClick={addShot} disabled={!scene}>Add shot</button>
               <button className="secondary" disabled={!needFrames.length} onClick={() => makeFrames(needFrames, false, true)} title="Make one frame first to check the look">Test one first</button>
@@ -323,6 +326,10 @@ export function DirectRoom(props: {
       </div>
 
       <Animatic shots={shots} queue={queue} scenes={analysis.scenes} />
+      {quality !== null && lbItems.length > 0 && (
+        <CleanRender items={lbItems.map((it) => it.job)} index={Math.min(quality, lbItems.length - 1)} onIndex={setQuality} onClose={() => setQuality(null)} notify={notify}
+          onSaved={(from, file) => { const out = addCleaned(queue, from, file); setQueue(() => out.state); if (out.job.approved) update(out.job.assetId, { storyboardStatus: "approved" }); }} />
+      )}
       {lightbox !== null && lbItems.length > 0 && <Lightbox items={lbItems} index={Math.min(lightbox, lbItems.length - 1)} onIndex={setLightbox} onClose={() => setLightbox(null)} onApprove={approveFrame} onReject={rejectFrame} onReconsider={undoFrame} />}
     </div>
   );

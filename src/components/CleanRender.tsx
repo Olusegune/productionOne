@@ -4,25 +4,27 @@ import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle, Check, Info, RotateCcw, Wand2, X } from "lucide-react";
 import type { ImageJob } from "../domain/generationQueue";
 
-export interface CleanParams { temperature: number; tint: number; saturation: number; denoise: number; highlights: number; bloom: number; sharpen: number; texture: number; intensity: number }
+export interface CleanParams { temperature: number; tint: number; saturation: number; denoise: number; highlights: number; bloom: number; sharpen: number; texture: number; intensity: number; exposure: number; contrast: number; /** 1, 2 or 4: a smooth enlargement made when saving */ enlarge: number }
 export interface CleanSuggestion { id: string; severity: "info" | "suggest" | "warn"; message: string; remedy: string; params: CleanParams | null }
 export interface CleanReport { width: number; height: number; warmCast: number; clippedHighlights: number; clippedShadows: number; noise: number; edgeOvershoot: number; bloom: number; skinFraction: number; skinDetail: number; suggestions: CleanSuggestion[] }
 export interface CleanSaved { path: string; width: number; height: number }
 
-export const neutral: CleanParams = { temperature: 0, tint: 0, saturation: 0, denoise: 0, highlights: 0, bloom: 0, sharpen: 0, texture: 50, intensity: 100 };
+export const neutral: CleanParams = { temperature: 0, tint: 0, saturation: 0, denoise: 0, highlights: 0, bloom: 0, sharpen: 0, texture: 50, intensity: 100, exposure: 0, contrast: 0, enlarge: 1 };
 
 /** Adds a suggestion's changes on top of the current settings. Controls the suggestion does not touch stay as they are. */
 export function mergeSuggestion(current: CleanParams, s: CleanParams): CleanParams {
   const out = { ...current };
-  (Object.keys(neutral) as Array<keyof CleanParams>).forEach((k) => { if (k !== "texture" && k !== "intensity" && s[k] !== 0) out[k] = s[k]; });
+  (Object.keys(neutral) as Array<keyof CleanParams>).forEach((k) => { if (k !== "texture" && k !== "intensity" && k !== "enlarge" && s[k] !== 0) out[k] = s[k]; });
   if (s.texture !== neutral.texture) out.texture = s.texture;
   return out;
 }
 
 const sliders: Array<{ key: keyof CleanParams; label: string; min: number; max: number; hint: string }> = [
+  { key: "exposure", label: "Brightness", min: -100, max: 100, hint: "Darker to brighter (about one stop each way)" },
+  { key: "contrast", label: "Contrast", min: -100, max: 100, hint: "Flatter to more contrast" },
   { key: "temperature", label: "Temperature", min: -100, max: 100, hint: "Cooler to warmer" },
   { key: "tint", label: "Tint", min: -100, max: 100, hint: "Greener to more magenta" },
-  { key: "saturation", label: "Colour strength", min: -100, max: 100, hint: "Muted to vivid" },
+  { key: "saturation", label: "Colour strength", min: -100, max: 100, hint: "Muted to vivid. All the way down is black and white" },
   { key: "highlights", label: "Highlight recovery", min: 0, max: 100, hint: "Tone down blown-out whites" },
   { key: "bloom", label: "Bloom reduction", min: 0, max: 100, hint: "Less glow around lights" },
   { key: "denoise", label: "Noise reduction", min: 0, max: 100, hint: "Smooth grain, keep edges" },
@@ -63,7 +65,8 @@ export function CleanRender(props: {
     return () => { live = false; };
   }, [job?.id, job?.outputPath]);
 
-  const changed = useMemo(() => (Object.keys(neutral) as Array<keyof CleanParams>).some((k) => k !== "texture" && k !== "intensity" && params[k] !== 0), [params]);
+  const changed = useMemo(() => (Object.keys(neutral) as Array<keyof CleanParams>).some((k) => k !== "texture" && k !== "intensity" && k !== "enlarge" && params[k] !== 0), [params]);
+  const enlarging = params.enlarge > 1;
   useEffect(() => {
     if (!job?.outputPath) return;
     if (!changed) { setAfter(null); return; }
@@ -88,7 +91,7 @@ export function CleanRender(props: {
   });
 
   const save = async (all: boolean) => {
-    if (!changed) return;
+    if (!changed && !enlarging) return;
     setBusy(true);
     try {
       const targets = all ? items : [job];
@@ -152,12 +155,19 @@ export function CleanRender(props: {
             ))}
             <label className="cr-slider"><span>Overall strength<output>{Math.round(params.intensity)}%</output></span>
               <input type="range" min={0} max={100} value={params.intensity} onChange={(e) => setParams({ ...params, intensity: Number(e.target.value) })} onPointerDown={() => history.current.push(params)} /></label>
+            <label className="cr-slider" title="Makes the picture bigger with a smooth filter. It does not add detail: it is not an AI upscaler.">
+              <span>Enlarge<output>{params.enlarge > 1 ? `${params.enlarge}×` : "off"}</output></span>
+              <select aria-label="Enlarge" value={params.enlarge} onChange={(e) => set({ ...params, enlarge: Number(e.target.value) })}>
+                <option value={1}>Keep the size</option><option value={2}>2× (smooth)</option><option value={4}>4× (smooth)</option>
+              </select>
+            </label>
+            {enlarging && <p className="cr-note"><Info size={14} /> A smooth enlargement makes the picture bigger without adding detail. For real detail, regenerate at a higher quality or use a dedicated upscaler.</p>}
             {changed && <p className="cr-note"><Info size={14} /> Corrections change how the image looks. A warm or grainy look can be intentional: check faces and costume colours before saving.</p>}
           </section>
           <div className="cr-actions">
-            <button className="primary" disabled={!changed || busy} onClick={() => void save(false)}><Check size={15} /> {busy ? "Saving…" : "Save corrected revision"}</button>
-            {items.length > 1 && <button className="secondary" disabled={!changed || busy} onClick={() => void save(true)}>Apply to all {items.length} images</button>}
-            <div className="cr-row"><button className="tertiary" disabled={!history.current.length} onClick={undo}>Undo</button><button className="tertiary" disabled={!changed} onClick={reset}><RotateCcw size={13} /> Reset</button></div>
+            <button className="primary" disabled={(!changed && !enlarging) || busy} onClick={() => void save(false)}><Check size={15} /> {busy ? "Saving…" : "Save corrected revision"}</button>
+            {items.length > 1 && <button className="secondary" disabled={(!changed && !enlarging) || busy} onClick={() => void save(true)}>Apply to all {items.length} images</button>}
+            <div className="cr-row"><button className="tertiary" disabled={!history.current.length} onClick={undo}>Undo</button><button className="tertiary" disabled={!changed && !enlarging} onClick={reset}><RotateCcw size={13} /> Reset</button></div>
           </div>
         </aside>
       </div>

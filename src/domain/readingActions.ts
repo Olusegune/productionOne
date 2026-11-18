@@ -34,6 +34,39 @@ export function addProductionAsset(assets: ExtractedAsset[], kind: NewAssetKind,
   return { assets: [...assets, asset], added: true, asset }
 }
 
+/**
+ * A readable name from an image's file name: "Venom_spur-front.png" -> "Venom spur front". Long generated names (a prompt, then a code) are cut at a word,
+ * hex codes and pure numbers are dropped, and an empty result becomes "Character 1", "Prop 2" and so on. Never repeats a name already in use.
+ */
+export function nameFromFile(path: string, taken: string[], kind: NewAssetKind, n: number): string {
+  const file = path.split(/[\\/]/).pop() ?? ''
+  let stem = file.replace(/\.[A-Za-z0-9]{2,5}$/, '')
+  stem = stem.replace(/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}/gi, ' ').replace(/[0-9a-f]{16,}/gi, ' ')
+  stem = stem.replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const words = stem.split(' ').filter((w) => w && !/^\d+$/.test(w))
+  let name = ''
+  for (const w of words) { if ((name + ' ' + w).trim().length > 40) break; name = (name + ' ' + w).trim() }
+  const noun = newAssetKinds.find((k) => k.kind === kind)?.label.split(' ')[0] ?? 'Asset'
+  if (name.length < 2) name = `${noun} ${n}`
+  name = name.charAt(0).toUpperCase() + name.slice(1)
+  const used = new Set(taken.map((t) => t.trim().toLowerCase()))
+  let out = name; let i = 2
+  while (used.has(out.toLowerCase())) out = `${name} ${i++}`
+  return out
+}
+
+/** Adds one asset of the same kind for each image, named from its file. Returns the new list and the assets in the order of the images. */
+export function addAssetsFromImages(assets: ExtractedAsset[], kind: NewAssetKind, paths: string[], sceneId: string, now = Date.now()): { assets: ExtractedAsset[]; added: ExtractedAsset[] } {
+  let list = assets
+  const added: ExtractedAsset[] = []
+  paths.forEach((path, i) => {
+    const name = nameFromFile(path, list.map((a) => a.name), kind, i + 1)
+    const result = addProductionAsset(list, kind, name, sceneId, now + i)
+    if (result.added && result.asset) { list = result.assets; added.push(result.asset) }
+  })
+  return { assets: list, added }
+}
+
 /** Add a character that comes from an image the person already has. Never duplicates a name. */
 export function addCharacterAsset(assets: ExtractedAsset[], name: string, sceneId: string, now = Date.now(), gender = '') {
   return addProductionAsset(assets, 'character', name, sceneId, now, gender)
