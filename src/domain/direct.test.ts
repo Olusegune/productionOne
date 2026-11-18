@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keepShotsAfterReading, buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
+import { extremeShape, keepShotsAfterReading, buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
 import { addSupplied, emptyQueue, enqueue, type QueueState } from './generationQueue'
 import { analyzeScript } from './productionStudio'
 import { defaultStyleBible } from './visualDevelopment'
@@ -86,6 +86,15 @@ describe('frames, references and prompts', () => {
     expect(prompt).toMatch(/Feeling: fear/)
     expect(prompt).toMatch(/faces left/)
     expect(prompt).toContain('No text')
+  })
+  it('tells the image model a very wide or tall frame may be trimmed, and says nothing for the usual shapes', () => {
+    const marcus = shots.find((s) => s.speaker === 'MARCUS')!
+    const wide = buildShotPrompt(marcus, analysis, defaultStyleBible, [], '21:9')
+    expect(wide).toContain('trimmed to 21:9')
+    expect(buildShotPrompt(marcus, analysis, defaultStyleBible, [], '2.39:1')).toContain('trimmed to 2.39:1')
+    expect(buildShotPrompt(marcus, analysis, defaultStyleBible, [], '9:16')).toContain('trimmed to 9:16')
+    expect(buildShotPrompt(marcus, analysis, defaultStyleBible, [], '16:9')).not.toContain('trimmed')
+    expect([extremeShape('3:2'), extremeShape('4:5'), extremeShape('2:1'), extremeShape('2:3')]).toEqual([false, false, true, false])
   })
   it('shows the approved frame in the animatic, else the newest image', () => {
     let q = enqueue(emptyQueue(), [{ assetId: 'SHOT-001', variant: 'Storyboard', sheetType: 'Storyboard', viewKey: 'frame', label: 'f', prompt: 'p', aspect: '16:9', fullBody: false, provider: 'kie', model: 'm', references: [], outputName: (r) => `s${r}` }]).state

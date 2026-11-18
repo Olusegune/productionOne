@@ -8,22 +8,22 @@
 .po-shell .po-wordmark { font: 600 17px/1.1 var(--display); letter-spacing: -.01em; color: var(--text); }
 .po-shell .po-wordmark b { font-weight: 600; color: var(--gold-2); }
 
-.po-shell .po-project { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line-1); }
-.po-shell .po-project .po-title { max-width: none; font: 600 15px var(--ui); padding: 2px 0; border-radius: 4px; }
+.po-shell .po-project { display: grid; gap: 2px; padding: 10px 12px; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line-1); }
+.po-shell .po-project .po-title { max-width: none; font: 600 15px var(--ui); padding: 2px 0; border-radius: 2px; }
 .po-shell .po-project .po-title:hover { background: transparent; text-decoration: underline; text-underline-offset: 3px; }
 .po-shell .po-project .po-save { font-size: 13px; color: var(--text-2); }
 .po-shell .po-project .po-save.unsaved { color: var(--gold-2); }
 .po-shell .po-cheer { font-size: 13px; color: var(--text-2); }
 
 .po-shell .po-tabs { display: grid; gap: 2px; padding: 0; background: none; border: 0; border-radius: 0; }
-.po-shell .po-tabs button { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border-bottom: 0; font-size: 15px; font-weight: 500; color: var(--text-2); background: transparent; box-shadow: none; }
+.po-shell .po-tabs button { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 5px; border-bottom: 0; font-size: 15px; font-weight: 500; color: var(--text-2); background: transparent; box-shadow: none; }
 .po-shell .po-tabs button:hover { color: var(--text); background: rgba(255, 255, 255, .05); }
 .po-shell .po-tabs button.active { color: var(--text); background: var(--panel-2); box-shadow: inset 3px 0 var(--blue); }
 .po-shell .po-tabs button.active::after { display: none; }
 .po-shell .po-tabs button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 .po-shell .po-tabs em { margin-left: auto; font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--text-3); opacity: 1; }
 
-.po-shell .po-next { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line-1); }
+.po-shell .po-next { display: grid; gap: 8px; padding: 12px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line-1); }
 .po-shell .po-next small { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
 .po-shell .po-next p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-2); }
 .po-shell .po-next .primary { width: 100%; justify-content: center; height: 42px; color: #15120d; background: var(--gold-2); }

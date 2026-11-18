@@ -15,25 +15,54 @@ use super::{credential, inspect_image_file, safe_package_name, ImportedAsset};
 
 const ENGINE: base64::engine::GeneralPurpose = base64::engine::general_purpose::STANDARD;
 
-pub fn aspect_ratio_value(aspect: &str) -> Option<(u32, u32)> {
+/// Width over height. Accepts a decimal such as 2.39:1.
+pub fn aspect_ratio_f(aspect: &str) -> Option<f64> {
     let (w, h) = aspect.split_once(':')?;
-    let (w, h) = (w.parse::<u32>().ok()?, h.parse::<u32>().ok()?);
-    (w > 0 && h > 0 && w <= 32 && h <= 32).then_some((w, h))
+    let (w, h) = (w.trim().parse::<f64>().ok()?, h.trim().parse::<f64>().ok()?);
+    (w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0 && w <= 32.0 && h <= 32.0).then_some(w / h)
+}
+
+/// The listed ratio closest in shape to the one asked for. The picture is cropped to the exact shape afterwards.
+pub fn nearest_listed(aspect: &str, listed: &[&'static str]) -> &'static str {
+    let want = aspect_ratio_f(aspect).unwrap_or(16.0 / 9.0);
+    listed.iter().copied().min_by(|a, b| {
+        let da = (aspect_ratio_f(a).unwrap_or(1.0) / want).ln().abs();
+        let db = (aspect_ratio_f(b).unwrap_or(1.0) / want).ln().abs();
+        da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
+    }).unwrap_or("16:9")
+}
+
+/// The ratios Google Gemini and OpenRouter image models accept.
+const GEMINI_ASPECTS: [&str; 10] = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"];
+const FAL_ASPECTS: [&str; 5] = ["1:1", "4:3", "3:4", "16:9", "9:16"];
+
+/// Centre-crops a picture to the shape asked for when the provider could only give a nearby one. Returns None when it already matches (within 3%).
+pub fn crop_to_aspect(bytes: &[u8], aspect: &str) -> Option<Vec<u8>> {
+    let want = aspect_ratio_f(aspect)?;
+    let img = image::load_from_memory(bytes).ok()?;
+    let (w, h) = (img.width() as f64, img.height() as f64);
+    if h == 0.0 || (w / h / want - 1.0).abs() <= 0.03 { return None; }
+    let (cw, ch) = if w / h > want { ((h * want).round(), h) } else { (w, (w / want).round()) };
+    let (cw, ch) = (cw.max(1.0) as u32, ch.max(1.0) as u32);
+    let cropped = img.crop_imm((img.width() - cw) / 2, (img.height() - ch) / 2, cw, ch);
+    let mut out = std::io::Cursor::new(Vec::new());
+    cropped.write_to(&mut out, image::ImageFormat::Png).ok()?;
+    Some(out.into_inner())
 }
 
 fn openai_size(aspect: &str) -> Result<&'static str, String> {
-    let (w, h) = aspect_ratio_value(aspect).ok_or("Unsupported aspect ratio")?;
-    Ok(match w.cmp(&h) { std::cmp::Ordering::Equal => "1024x1024", std::cmp::Ordering::Greater => "1536x1024", std::cmp::Ordering::Less => "1024x1536" })
+    let r = aspect_ratio_f(aspect).ok_or("Unsupported aspect ratio")?;
+    Ok(if (r - 1.0).abs() < 0.05 { "1024x1024" } else if r > 1.0 { "1536x1024" } else { "1024x1536" })
 }
 
 fn fal_size(aspect: &str) -> Result<&'static str, String> {
-    Ok(match aspect {
+    aspect_ratio_f(aspect).ok_or("Unsupported aspect ratio")?;
+    Ok(match nearest_listed(aspect, &FAL_ASPECTS) {
         "1:1" => "square_hd",
         "4:3" => "landscape_4_3",
         "3:4" => "portrait_4_3",
-        "16:9" => "landscape_16_9",
         "9:16" => "portrait_16_9",
-        _ => return Err("fal.ai supports the aspect ratios 1:1, 4:3, 3:4, 16:9 and 9:16".into()),
+        _ => "landscape_16_9",
     })
 }
 
@@ -63,13 +92,13 @@ pub fn openai_body(model: &str, prompt: &str, aspect: &str, quality: &str) -> Re
 pub fn gemini_body(prompt: &str, aspect: &str, references: &[(String, String)]) -> Value {
     let mut parts = vec![json!({ "text": prompt })];
     for (mime, data) in references { parts.push(json!({ "inline_data": { "mime_type": mime, "data": data } })); }
-    json!({ "contents": [{ "parts": parts }], "generationConfig": { "responseModalities": ["TEXT", "IMAGE"], "imageConfig": { "aspectRatio": aspect } } })
+    json!({ "contents": [{ "parts": parts }], "generationConfig": { "responseModalities": ["TEXT", "IMAGE"], "imageConfig": { "aspectRatio": nearest_listed(aspect, &GEMINI_ASPECTS) } } })
 }
 
 pub fn openrouter_body(model: &str, prompt: &str, aspect: &str, references: &[(String, String)]) -> Value {
     let mut content = vec![json!({ "type": "text", "text": prompt })];
     for (mime, data) in references { content.push(json!({ "type": "image_url", "image_url": { "url": format!("data:{mime};base64,{data}") } })); }
-    json!({ "model": model, "messages": [{ "role": "user", "content": content }], "modalities": ["image", "text"], "image_config": { "aspect_ratio": aspect } })
+    json!({ "model": model, "messages": [{ "role": "user", "content": content }], "modalities": ["image", "text"], "image_config": { "aspect_ratio": nearest_listed(aspect, &GEMINI_ASPECTS) } })
 }
 
 pub fn fal_body(prompt: &str, aspect: &str) -> Result<Value, String> {
@@ -92,7 +121,7 @@ pub fn uses_interactions(model: &str) -> bool { model.starts_with("gemini-nano-b
 pub fn interactions_body(model: &str, prompt: &str, aspect: &str, references: &[(String, String)]) -> Value {
     let mut input = vec![json!({ "type": "text", "text": prompt })];
     for (mime, data) in references { input.push(json!({ "type": "image", "mime_type": mime, "data": data })); }
-    json!({ "model": model, "input": input, "response_format": { "type": "image", "mime_type": "image/jpeg", "aspect_ratio": aspect } })
+    json!({ "model": model, "input": input, "response_format": { "type": "image", "mime_type": "image/jpeg", "aspect_ratio": nearest_listed(aspect, &GEMINI_ASPECTS) } })
 }
 
 pub fn extract_interactions(body: &Value) -> Result<Vec<u8>, String> {
@@ -225,6 +254,7 @@ pub async fn generate_image(app: tauri::AppHandle, provider: String, model: Stri
         _ => return Err("Image generation is not available for this provider".into()),
     };
     if bytes.len() > 60 * 1024 * 1024 { return Err("The provider returned an image larger than 60 MB".into()); }
+    let bytes = crop_to_aspect(&bytes, &aspect).filter(|_| provider != "comfyui").unwrap_or(bytes);
     let ext = match image::guess_format(&bytes).map_err(|error| format!("The provider did not return a readable image: {error}"))? {
         image::ImageFormat::Png => "png",
         image::ImageFormat::Jpeg => "jpg",
@@ -553,6 +583,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn wide_and_decimal_ratios_reach_each_provider_as_one_it_accepts() {
+        assert_eq!(openai_body("gpt-image-1", "p", "2.39:1", "low").unwrap()["size"], "1536x1024");
+        assert_eq!(openai_body("gpt-image-1", "p", "21:9", "low").unwrap()["size"], "1536x1024");
+        assert_eq!(openai_body("gpt-image-1", "p", "9:16", "low").unwrap()["size"], "1024x1536");
+        assert_eq!(fal_body("p", "21:9").unwrap()["image_size"], "landscape_16_9");
+        assert_eq!(fal_body("p", "2:3").unwrap()["image_size"], "portrait_4_3");
+        assert!(fal_body("p", "wide").is_err());
+        assert_eq!(gemini_body("p", "21:9", &[])["generationConfig"]["imageConfig"]["aspectRatio"], "21:9");
+        assert_eq!(gemini_body("p", "2.39:1", &[])["generationConfig"]["imageConfig"]["aspectRatio"], "21:9");
+        assert_eq!(gemini_body("p", "2:1", &[])["generationConfig"]["imageConfig"]["aspectRatio"], "16:9");
+        assert_eq!(openrouter_body("m", "p", "2.39:1", &[])["image_config"]["aspect_ratio"], "21:9");
+        assert_eq!(aspect_ratio_f("2.39:1").map(|r| (r * 100.0).round()), Some(239.0));
+        assert!(aspect_ratio_f("0:1").is_none());
+    }
+
+    #[test]
+    fn crops_a_nearby_shape_to_the_one_asked_for_and_leaves_a_match_alone() {
+        let mut png = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(1536, 1024).write_to(&mut png, image::ImageFormat::Png).unwrap();
+        let png = png.into_inner();
+        let out = crop_to_aspect(&png, "21:9").expect("a 3:2 picture is cropped to 21:9");
+        let img = image::load_from_memory(&out).unwrap();
+        assert_eq!(img.width(), 1536);
+        assert!((img.height() as i32 - 658).abs() <= 1);
+        let tall = crop_to_aspect(&png, "9:16").unwrap();
+        let t = image::load_from_memory(&tall).unwrap();
+        assert_eq!(t.height(), 1024);
+        assert!((t.width() as i32 - 576).abs() <= 1);
+        assert!(crop_to_aspect(&png, "3:2").is_none());
+        assert!(crop_to_aspect(&png, "nonsense").is_none());
+    }
+
+    #[test]
     fn builds_provider_bodies_from_the_documented_shapes() {
         assert_eq!(openai_body("gpt-image-1", "p", "3:4", "high").unwrap()["size"], "1024x1536");
         assert_eq!(openai_body("gpt-image-1", "p", "16:9", "low").unwrap()["size"], "1536x1024");
@@ -565,7 +628,7 @@ mod tests {
         assert_eq!(router["modalities"][0], "image");
         assert!(router["messages"][0]["content"][1]["image_url"]["url"].as_str().unwrap().starts_with("data:image/png;base64,"));
         assert_eq!(fal_body("p", "9:16").unwrap()["image_size"], "portrait_16_9");
-        assert!(fal_body("p", "5:7").is_err());
+        assert!(fal_body("p", "nonsense").is_err());
     }
 
     #[test]

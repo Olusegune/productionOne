@@ -9,7 +9,7 @@ use std::time::Duration;
 use serde::Serialize;
 use serde_json::{json, Map, Value};
 
-use super::providers::{aspect_ratio_value, DiscoveredModel};
+use super::providers::{aspect_ratio_f, DiscoveredModel};
 
 const IMAGE_KEYS: [&str; 7] = ["image_input", "image_urls", "input_urls", "image_url", "first_frame_url", "reference_image_urls", "image"];
 const ASPECT_KEYS: [&str; 2] = ["aspect_ratio", "image_size"];
@@ -85,8 +85,7 @@ pub fn parse_kie_doc(md: &str) -> Result<KieSchema, String> {
 }
 
 fn ratio(value: &str) -> Option<f64> {
-    let (w, h) = aspect_ratio_value(value)?;
-    Some(w as f64 / h as f64)
+    aspect_ratio_f(value)
 }
 
 /// The listed aspect value closest in shape to the one asked for.

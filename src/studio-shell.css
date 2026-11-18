@@ -5,20 +5,20 @@ body { min-width: 1100px; }
 .po-top { background: rgba(12, 15, 18, .97); border-bottom: 1px solid #242b32; }
 .po-bar { display: grid; grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr); align-items: center; gap: 16px; padding: 10px 22px 6px; }
 .po-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.po-title { all: unset; cursor: pointer; font: 600 16px Manrope, "DM Sans", sans-serif; color: var(--ivory); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 6px; padding: 4px 6px; }
+.po-title { all: unset; cursor: pointer; font: 600 16px Manrope, "DM Sans", sans-serif; color: var(--ivory); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 3px; padding: 4px 6px; }
 .po-title:hover { background: #1a2025; }
 .po-title:focus-visible { outline: 2px solid var(--blue); }
 .po-save { font-size: 12px; color: #87bfa6; white-space: nowrap; }
 .po-save.unsaved { color: var(--gold); }
 .po-tabs { display: flex; gap: 4px; }
-.po-tabs button { all: unset; cursor: pointer; padding: 8px 14px; font-size: 14px; color: #98a2aa; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; display: inline-flex; gap: 7px; align-items: baseline; }
+.po-tabs button { all: unset; cursor: pointer; padding: 8px 14px; font-size: 14px; color: #98a2aa; border-bottom: 2px solid transparent; border-radius: 3px 3px 0 0; display: inline-flex; gap: 7px; align-items: baseline; }
 .po-tabs button:hover { color: var(--ivory); background: #151a1f; }
 .po-tabs button.active { color: var(--ivory); border-bottom-color: var(--gold); }
 .po-tabs button:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .po-tabs em { font-style: normal; font-size:13px; color: #9aa5ae; text-transform: uppercase; letter-spacing: .08em; }
 .po-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 .po-steps { list-style: none; display: flex; align-items: center; gap: 4px; margin: 0; padding: 0 22px 8px; font-size: 12px; }
-.po-steps li button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 8px; color: #9aa5ae; }
+.po-steps li button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 4px; color: #9aa5ae; }
 .po-steps li button:hover { background: #151a1f; color: var(--ivory); }
 .po-steps li button:focus-visible { outline: 2px solid var(--blue); }
 .po-step-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #3a444d; display: inline-grid; place-items: center; color: #15120d; }
@@ -39,12 +39,12 @@ body { min-width: 1100px; }
 .po-design { display: grid; grid-template-columns: minmax(300px, 24vw) minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
 .rails-hidden .po-design { grid-template-columns: minmax(0, 1fr); }
 .rails-hidden .po-bible, .rails-hidden .po-inspector { display: none; }
-.po-bible, .po-inspector { position: sticky; top: 0; max-height: calc(100vh - 190px); overflow-y: auto; overflow-x: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+.po-bible, .po-inspector { position: sticky; top: 0; max-height: calc(100vh - 190px); overflow-y: auto; overflow-x: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px; }
 .po-bible-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
 .po-bible-head small { color: #9aa5ae; font-size: 12px; }
 .po-bible h4, .po-inspector h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: #8d969f; display: flex; justify-content: space-between; font-weight: 500; }
 .po-bible ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.po-bible li button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 8px 9px; border-radius: 6px; font-size: 14px; color: #cdd3d8; }
+.po-bible li button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 8px 9px; border-radius: 3px; font-size: 14px; color: #cdd3d8; }
 .po-bible li button:hover { background: #1a2025; }
 .po-bible li button.on { background: #20262d; box-shadow: inset 2px 0 var(--gold); color: var(--ivory); }
 .po-bible li button:focus-visible { outline: 2px solid var(--blue); }
@@ -57,7 +57,7 @@ body { min-width: 1100px; }
 .po-dot.failed { background: #d9806b; }
 @keyframes po-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .po-dot.busy, .po-dock-dot.busy { animation: none; } }
-.po-emotion { font-size:13px; border: 1px solid; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
+.po-emotion { font-size:13px; border: 1px solid; border-radius: 3px; padding: 1px 7px; white-space: nowrap; }
 .po-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 0; }
 .po-canvas { min-width: 0; }
 .po-canvas .sheet-studio { margin-top: 14px; }
@@ -67,7 +67,7 @@ body { min-width: 1100px; }
 .po-plain q { color: #98a2aa; font-style: italic; quotes: none; border-left: 2px solid #3a444d; padding-left: 8px; font-size: 13px; }
 .po-plain small { color: #9aa5ae; font-size: 12px; }
 .po-arc { width: 100%; height: 70px; margin: 4px 0 8px; }
-.po-classic { margin-top: 18px; border: 1px solid var(--line); border-radius: 8px; background: #11161a; }
+.po-classic { margin-top: 18px; border: 1px solid var(--line); border-radius: 4px; background: #11161a; }
 .po-classic > summary { cursor: pointer; padding: 14px 18px; font-size: 15px; color: #cdd3d8; }
 .po-classic[open] > summary { border-bottom: 1px solid var(--line); }
 .po-classic > section { padding: 16px; }
@@ -82,10 +82,10 @@ body { min-width: 1100px; }
 
 /* Command palette */
 .po-palette-backdrop { align-items: flex-start; padding-top: 14vh; }
-.po-palette { width: min(620px, calc(100vw - 48px)); background: #12171c; border: 1px solid #36404a; border-radius: 8px; box-shadow: 0 28px 80px #000b; overflow: hidden; }
+.po-palette { width: min(620px, calc(100vw - 48px)); background: #12171c; border: 1px solid #36404a; border-radius: 4px; box-shadow: 0 28px 80px #000b; overflow: hidden; }
 .po-palette input { width: 100%; box-sizing: border-box; background: transparent; border: 0; border-bottom: 1px solid var(--line); color: var(--ivory); padding: 16px 18px; font-size: 16px; outline: none; }
 .po-palette ul { list-style: none; margin: 0; padding: 6px; max-height: 340px; overflow: auto; }
-.po-palette li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; color: #cdd3d8; }
+.po-palette li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 3px; cursor: pointer; font-size: 14px; color: #cdd3d8; }
 .po-palette li.on { background: #20262d; color: var(--ivory); }
 .po-palette li small { color: #9aa5ae; }
 .po-palette li.empty { cursor: default; color: #9aa5ae; }
@@ -108,11 +108,11 @@ body { min-width: 1100px; }
 .po-dock-body li em.failed { color: #d9806b; }
 @media (max-width: 1280px) { .po-design { grid-template-columns: minmax(260px, 28vw) minmax(0, 1fr); } .po-inspector { display: none; } }
 
-.real-empty { display: grid; place-items: center; text-align: center; min-height: 160px; padding: 24px; border: 1px dashed #36404a; border-radius: 6px; color: #9aa5ae; font-size: 14px; }
+.real-empty { display: grid; place-items: center; text-align: center; min-height: 160px; padding: 24px; border: 1px dashed #36404a; border-radius: 3px; color: #9aa5ae; font-size: 14px; }
 
 .motion-demo { margin-top: 18px; }
 .clip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 14px; }
-.clip-grid figure { margin: 0; background: #151a1f; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.clip-grid figure { margin: 0; background: #151a1f; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .clip-grid video { width: 100%; display: block; background: #0f1317; }
 .clip-grid figcaption { padding: 8px 12px; display: grid; gap: 2px; font-size: 14px; }
 .clip-grid small { color: #9aa5ae; font-size: 12px; }

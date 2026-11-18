@@ -10,11 +10,11 @@
 .cr-handle { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--gold); transform: translateX(-1px); }
 .cr-handle::after { content: "↔"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: #17140e; display: grid; place-items: center; font-weight: 700; }
 .cr-handle:focus-visible { outline: 2px solid #fff; }
-.cr-tag { position: absolute; top: 14px; padding: 4px 10px; border-radius: 4px; background: rgba(10,12,15,.8); font-size: 13px; pointer-events: none; } .cr-tag.l { left: 14px; } .cr-tag.r { right: 14px; }
+.cr-tag { position: absolute; top: 14px; padding: 4px 10px; border-radius: 2px; background: rgba(10,12,15,.8); font-size: 13px; pointer-events: none; } .cr-tag.l { left: 14px; } .cr-tag.r { right: 14px; }
 .cr-wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-3); }
 .cr-side { overflow: auto; padding: 16px 18px; border-left: 1px solid var(--stroke); display: grid; gap: 18px; align-content: start; }
 .cr-side h4 { margin: 0 0 8px; font-size: 15px; }
-.cr-sug { padding: 11px 12px; border: 1px solid var(--stroke); border-radius: 6px; display: grid; gap: 6px; margin-bottom: 8px; }
+.cr-sug { padding: 11px 12px; border: 1px solid var(--stroke); border-radius: 3px; display: grid; gap: 6px; margin-bottom: 8px; }
 .cr-sug p { margin: 0; font-size: 14px; line-height: 1.45; display: flex; gap: 8px; }
 .cr-sug p svg { flex-shrink: 0; margin-top: 3px; }
 .cr-sug small { color: var(--text-3); font-size: 13px; line-height: 1.45; }

@@ -3,17 +3,17 @@
 .rv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .rv-head h2 { margin: 0; font: 600 28px/1.15 var(--display); letter-spacing: -.01em; }
 .rv-head p { margin: 4px 0 0; color: var(--text-2); font-size: 15px; }
-.rv-filter { display: inline-flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel-1); border: 1px solid var(--line-1); }
-.rv-filter button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--text-2); }
+.rv-filter { display: inline-flex; gap: 4px; padding: 3px; border-radius: 5px; background: var(--panel-1); border: 1px solid var(--line-1); }
+.rv-filter button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 4px; font-size: 14px; color: var(--text-2); }
 .rv-filter button.on { background: var(--panel-2); color: var(--text); }
 .rv-filter button:focus-visible, .rv-list button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
-.rv-empty { display: grid; place-items: center; gap: 12px; text-align: center; min-height: 260px; border: 1px dashed var(--line-1); border-radius: 12px; color: var(--text-2); }
+.rv-empty { display: grid; place-items: center; gap: 12px; text-align: center; min-height: 260px; border: 1px dashed var(--line-1); border-radius: 6px; color: var(--text-2); }
 .rv-body { display: grid; grid-template-columns: 240px minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 .rv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: calc(100vh - 220px); overflow-y: auto; }
-.rv-list button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; border: 1px solid transparent; background: var(--panel-1); }
+.rv-list button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: center; padding: 8px; border-radius: 5px; border: 1px solid transparent; background: var(--panel-1); }
 .rv-list button:hover { background: var(--panel-2); }
 .rv-list button.on { background: var(--panel-2); border-color: var(--blue); }
-.rv-thumb { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: #0d1017; display: block; }
+.rv-thumb { width: 56px; height: 56px; border-radius: 4px; overflow: hidden; background: #0d1017; display: block; }
 .rv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .rv-thumb .real-empty { min-height: 0; height: 100%; padding: 0; font-size: 12px; border: 0; }
 .rv-meta { display: grid; gap: 2px; min-width: 0; }
@@ -24,10 +24,10 @@
 .rv-compare figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
 .rv-tag { padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line-1); font-size: 13px; font-weight: 600; }
 .rv-tag.ok { border-color: #4f9d7d; }
-.rv-image { background: #0d1017; border: 1px solid var(--line-1); border-radius: 12px; overflow: hidden; display: grid; place-items: center; min-height: 320px; }
+.rv-image { background: #0d1017; border: 1px solid var(--line-1); border-radius: 6px; overflow: hidden; display: grid; place-items: center; min-height: 320px; }
 .rv-image img { width: 100%; max-height: calc(100vh - 260px); object-fit: contain; display: block; }
 .rv-note { grid-column: 1 / -1; margin: 0; color: var(--text-2); font-size: 14px; }
-.rv-side { background: var(--panel-1); border: 1px solid var(--line-1); border-radius: 12px; padding: 16px; display: grid; gap: 10px; position: sticky; top: 0; }
+.rv-side { background: var(--panel-1); border: 1px solid var(--line-1); border-radius: 6px; padding: 16px; display: grid; gap: 10px; position: sticky; top: 0; }
 .rv-side h3 { margin: 0; font-size: 20px; }
 .rv-side h4 { margin: 8px 0 0; font-size: 14px; color: var(--text-2); font-weight: 600; }
 .rv-status { margin: 0; font-size: 14px; color: var(--gold-2); font-weight: 600; }
@@ -102,7 +102,7 @@
 .tl-next { justify-self: start; }
 .tl-next small { color: var(--text-3); font-size: 13px; }
 .tl-next .secondary { height: 32px; padding: 0 12px; font-size: 13px; }
-.tl-drawer { margin: 0 2px 10px; padding: 12px 14px; background: var(--panel-2); border-radius: 10px; font-size: 14px; }
+.tl-drawer { margin: 0 2px 10px; padding: 12px 14px; background: var(--panel-2); border-radius: 5px; font-size: 14px; }
 .tl-drawer p { margin: 0 0 8px; color: var(--text); }
 .tl-drawer dl { margin: 0; display: grid; gap: 6px; }
 .tl-drawer dl div { display: grid; grid-template-columns: 90px 1fr; gap: 10px; }
@@ -113,7 +113,7 @@
 .fg { margin: 0 0 14px; display: grid; gap: 10px; }
 .fg-title { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .fg-title small { color: var(--text-2); font-weight: 400; font-size: 13px; }
-.fg-group { border: 1px solid var(--line-1); border-radius: 12px; padding: 12px 14px; background: var(--panel-2); display: grid; gap: 8px; }
+.fg-group { border: 1px solid var(--line-1); border-radius: 6px; padding: 12px 14px; background: var(--panel-2); display: grid; gap: 8px; }
 .fg-head { display: flex; gap: 12px; align-items: center; }
 .fg-head > div { display: grid; gap: 2px; min-width: 0; }
 .fg-head small { color: var(--text-3); font-size: 13px; overflow-wrap: anywhere; }
@@ -131,7 +131,7 @@
 /* Revision compare (0.41) */
 .rv-center { display: grid; gap: 10px; min-width: 0; }
 .rv-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rv-mode > button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 14px; color: var(--text-2); border: 1px solid var(--line-1); background: var(--panel-1); }
+.rv-mode > button { all: unset; cursor: pointer; padding: 7px 14px; border-radius: 4px; font-size: 14px; color: var(--text-2); border: 1px solid var(--line-1); background: var(--panel-1); }
 .rv-mode > button.on { background: var(--panel-2); color: var(--text); border-color: var(--gold-2); }
 .rv-mode > button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 .rv-take { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 14px; color: var(--text-2); }
