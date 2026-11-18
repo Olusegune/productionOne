@@ -1,3 +1,4 @@
+import { CategoryIcon } from "./CategoryIcon";
 import { DEFAULT_FORMAT, videoAspectFor } from "../domain/formats";
 import { useEffect, useMemo, useState } from "react";
 import { Eyebrow } from "./Eyebrow";
@@ -128,7 +129,7 @@ export function DeliveryCenter(props: {
               <h4>{sceneName(s.sceneId)} <small>{s.videoReady ? "video ready" : `${s.verifiedAssets.length}/${s.requiredAssets.length} references · ${s.plannedShots.length} shots`}</small></h4>
               <ul>
                 {s.missingAssets.map((id) => (
-                  <li key={id} title={id}><span><b>{name(id)}</b><small>{kind(id)} · no approved sheet yet</small></span><button className="secondary" onClick={() => openAsset(id)}>Open sheet</button></li>
+                  <li key={id} title={id}><span><b>{name(id)}</b><small className="cat-tag"><CategoryIcon type={kind(id)} size={12} /> {kind(id)} · no approved sheet yet</small></span><button className="secondary" onClick={() => openAsset(id)}>Open sheet</button></li>
                 ))}
                 {s.incompleteShots.map((id) => (
                   <li key={id} title={id}><span><b>{shotName(id)}</b><small>storyboard frame not approved</small></span><button className="secondary" onClick={() => openShot(id)}>Review shot</button></li>
@@ -193,7 +194,7 @@ export function DeliveryCenter(props: {
             </Fold>
           )}
           <Fold title="References in this shot" hint={`${compiled.references.length}`}>
-            <ul className="dc-refs">{compiled.references.map((id) => <li key={id} title={id}>{name(id)} <small>{kind(id)}</small></li>)}{compiled.references.length === 0 && <li>None linked yet.</li>}</ul>
+            <ul className="dc-refs">{compiled.references.map((id) => <li key={id} title={id}>{name(id)} <small className="cat-tag"><CategoryIcon type={kind(id)} size={12} /> {kind(id)}</small></li>)}{compiled.references.length === 0 && <li>None linked yet.</li>}</ul>
           </Fold>
                 </details>
         ) : (
@@ -233,7 +234,7 @@ export function DeliveryCenter(props: {
             </Fold>
           )}
           <Fold title="References in this shot" hint={`${compiled.references.length}`}>
-            <ul className="dc-refs">{compiled.references.map((id) => <li key={id} title={id}>{name(id)} <small>{kind(id)}</small></li>)}{compiled.references.length === 0 && <li>None linked yet.</li>}</ul>
+            <ul className="dc-refs">{compiled.references.map((id) => <li key={id} title={id}>{name(id)} <small className="cat-tag"><CategoryIcon type={kind(id)} size={12} /> {kind(id)}</small></li>)}{compiled.references.length === 0 && <li>None linked yet.</li>}</ul>
           </Fold>
                   </div>
         )}

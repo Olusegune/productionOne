@@ -2,7 +2,7 @@ import type { AnalysisResult, ExtractedAsset, ScriptScene, ShotRecord } from './
 import { artifactGuidance } from './cleanGuidance'
 import type { ImageJob, QueueState } from './generationQueue'
 import { primaryViewKeys } from './sheetSpecs'
-import type { StyleBible } from './visualDevelopment'
+import { styleGuidance, type StyleBible } from './visualDevelopment'
 import { characterArcs, intensityBand, type CharacterArc, type Emotion } from '../engine/emotion'
 import type { ParsedStory, StoryScene } from '../engine/story'
 
@@ -205,6 +205,18 @@ export const frameApproved = (queue: QueueState, shotId: string) => frameJobs(qu
 /** The frame the animatic shows: the newest approved one, else the newest image that exists. */
 export const frameForShot = (queue: QueueState, shotId: string): ImageJob | undefined => frameJobs(queue, shotId).filter((j) => j.approved && j.outputPath).sort((a, b) => b.revision - a.revision)[0] ?? latestFrame(queue, shotId)
 
+/**
+ * A newer picture that is waiting for a decision. Regenerating an approved frame makes one: the card must show it (with Approve and Reject),
+ * not keep showing the old approved picture. Rejecting it brings the approved one back.
+ */
+export const pendingFrame = (queue: QueueState, shotId: string): ImageJob | undefined => {
+  const mine = frameJobs(queue, shotId).filter((j) => j.outputPath)
+  const approvedRev = Math.max(0, ...mine.filter((j) => j.approved).map((j) => j.revision))
+  return mine.filter((j) => !j.approved && !j.rejected && j.revision > approvedRev && (j.status === 'needs-review' || j.status === 'completed')).sort((a, b) => b.revision - a.revision)[0]
+}
+/** What a shot's card shows: a picture waiting for review if there is a newer one, else the frame the animatic uses. */
+export const cardFrame = (queue: QueueState, shotId: string): ImageJob | undefined => pendingFrame(queue, shotId) ?? frameForShot(queue, shotId)
+
 export interface Finding { level: 'warn' | 'info'; shotId?: string; message: string }
 
 /** Plain-rule continuity checks. They look at the plan and the approved references; they cannot see inside an image, and they say so by only claiming what the plan shows. */
@@ -271,7 +283,8 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
   const names = shot.assetIds.map((id) => analysis.assets.find((a) => a.id === id)).filter((a): a is ExtractedAsset => !!a)
   const chars = names.filter((a) => a.type === 'character')
   const lines = [
-    `Cinematic storyboard frame, ${aspect}. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${shot.lens ?? 40}mm lens${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
+    `Storyboard frame, ${aspect}, drawn in the project's art style. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${shot.lens ?? 40}mm lens${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
+    `Art style, applied to the whole picture (the people, the place and the light alike): ${styleGuidance(style)}.`,
     extremeShape(aspect) ? `The picture may be trimmed to ${aspect} afterwards: keep every person and important object in the middle of the frame and leave the top and bottom (or the sides) free of anything that matters.` : '',
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.${shot.coverage === 'establishing' ? '' : ' Only these people appear in the frame: no other people, creatures, crowd or bystanders, not even small or in the background.'}` : '',
@@ -283,10 +296,10 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',
     shot.composition?.length ? `Composition: ${shot.composition.join(', ')}.` : '',
     `Lighting: ${shot.lighting}.`,
-    `Style: ${style.name}. ${style.description} Rendering: ${style.rendering}.`,
     refs.length ? `Reference images are attached in this order: ${refs.map((r, i) => `${i + 1} = ${r.label}`).join('; ')}. Keep every person's face, hair, build and costume identical to their reference, and keep the set and props consistent.` : '',
     artifactGuidance(style, model, shot.lighting),
-    'No text, no captions, no borders, no watermark. Photographic frame, not a collage.',
+    `Match the art style exactly: ${style.name}. Do not drift toward a different look.`,
+    'No text, no captions, no borders, no watermark. One single frame, not a collage.',
   ]
   return lines.filter(Boolean).join('\n')
 }

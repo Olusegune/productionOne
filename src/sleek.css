@@ -1,0 +1,50 @@
+/* 0.47.1: quieter, sleeker type. One clean sans for titles in every look (the Cinematic look keeps its warm colours, not its serif),
+   smaller and lighter headings, calmer weights. Loaded last so it settles the older per-look rules; it changes no layout, only type. */
+:root[data-look] { --display: var(--ui); }
+
+html:root[data-look][data-look][data-look] h1,
+html:root[data-look][data-look][data-look] h2,
+html:root[data-look][data-look][data-look] .po-launch h2,
+html:root[data-look][data-look][data-look] .po-launch-head h2,
+html:root[data-look][data-look][data-look] .projects-intro h2,
+html:root[data-look][data-look][data-look] .sv-head h2,
+html:root[data-look][data-look][data-look] .rv-head h2,
+html:root[data-look][data-look][data-look] .sg-head h2 {
+  font-size: clamp(1.4rem, 1.2rem + .7vw, 1.8rem); font-weight: 600; letter-spacing: -.022em; line-height: 1.14;
+}
+html:root[data-look][data-look][data-look] h3,
+html:root[data-look][data-look][data-look] .panel h3,
+html:root[data-look][data-look][data-look] .golden-head h3,
+html:root[data-look][data-look][data-look] .ss-head h3,
+html:root[data-look][data-look][data-look] .asset-lab h3,
+html:root[data-look][data-look][data-look] .asset-lab-head h3,
+html:root[data-look][data-look][data-look] .tl-head h3,
+html:root[data-look][data-look][data-look] .sheet h3,
+html:root[data-look][data-look][data-look] .dc-chk h3 {
+  font-size: 1.05rem; font-weight: 600; letter-spacing: -.014em; line-height: 1.2;
+}
+html:root[data-look][data-look][data-look] h4,
+html:root[data-look][data-look][data-look] .po-title,
+html:root[data-look][data-look][data-look] .empty-state h4 { font-weight: 600; letter-spacing: -.008em; }
+html:root[data-look][data-look][data-look] .empty-state h4 { font-size: 1rem; }
+html:root[data-look][data-look][data-look] .lb-title b { font-size: 17px; font-weight: 600; }
+html:root[data-look][data-look][data-look] .stat-tiles b { font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; }
+html:root[data-look][data-look][data-look] .po-wordmark { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+html:root[data-look][data-look][data-look] .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; }
+html:root[data-look][data-look][data-look] h1,
+html:root[data-look][data-look][data-look] h2,
+html:root[data-look][data-look][data-look] h3,
+html:root[data-look][data-look][data-look] h4 { color: color-mix(in srgb, var(--text) 94%, transparent); }
+
+/* Reference-sheet buttons (an icon and a name for each kind of sheet) */
+.ss-sheets { display: grid; gap: 5px; min-width: 0; }
+.ss-sheets > span { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.ss-sheet-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ss-sheet { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border: 1px solid var(--stroke); border-radius: 4px; background: var(--surface); color: var(--text-2); cursor: pointer; }
+.ss-sheet:hover { border-color: var(--stroke-strong); color: var(--text); }
+.ss-sheet.on { border-color: color-mix(in srgb, var(--gold) 70%, transparent); background: color-mix(in srgb, var(--gold) 12%, transparent); color: var(--text); }
+.ss-sheet span { font-size: 13px; font-weight: 520; }
+
+/* Category icons next to the words that name a kind of thing */
+.cat-tag { display: inline-flex; align-items: center; gap: 5px; }
+.cat-icon { flex: none; opacity: .85; }

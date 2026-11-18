@@ -1,3 +1,4 @@
+import { CategoryIcon } from "../components/CategoryIcon";
 import { useEffect, useState } from "react";
 import { BibleTree, AssetInspector } from "../components/bible";
 import { ArtDirectionBar } from "../components/ArtDirectionBar";
@@ -110,7 +111,7 @@ export function DesignView(p: DesignViewProps) {
               sheetCount={plannedSheets.length}
             />
             <div className="as-head">
-              <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small>{analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
+              <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
                 {sections.map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>
@@ -203,7 +204,7 @@ export function DesignView(p: DesignViewProps) {
                     onClick={() => setSelectedAsset(index)}
                   >
                     <span className={`kind ${asset.type}`}>
-                      {asset.type.slice(0, 2)}
+                      <CategoryIcon type={asset.type} size={14} />
                     </span>
                     <span>
                       <b>{asset.name}</b>

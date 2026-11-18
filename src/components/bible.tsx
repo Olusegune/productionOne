@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
-import { Box, ImagePlus, Mountain, Shirt, Users, X, type LucideIcon } from "lucide-react";
+import { ImagePlus, Users, X } from "lucide-react";
+import { assetIconFor } from "../domain/categoryIcons";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { newAssetKinds, type NewAssetKind } from "../domain/readingActions";
 import { isSuperseded, type QueueState } from "../domain/generationQueue";
@@ -30,7 +31,6 @@ const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
   if (mine.some((j) => j.status === "needs-review")) return "review";
   return asset.status === "approved" ? "approved" : "planned";
 };
-const typeIcon: Record<string, LucideIcon> = { character: Users, costume: Shirt, prop: Box, set: Mountain, environment: Mountain };
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
@@ -67,7 +67,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         return (
           <section key={label}>
-            <h4>{(() => { const Icon = typeIcon[types[0]] ?? Box; return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
+            <h4>{(() => { const Icon = assetIconFor(types[0]); return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
             {!items.length && <p className="helper po-none">None yet.{onAddAsset ? " Use Add to the bible, or analyze a script that has them." : ""}</p>}
             <ul>
               {items.map(({ a, i }) => {
@@ -78,7 +78,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
                 return (
                   <li key={a.id}>
                     <button className={selected === i ? "on" : ""} onClick={() => onSelect(i)} aria-current={selected === i ? "true" : undefined}>
-                      <span className={`po-avatar kind-${a.type}`} aria-hidden="true">{(() => { const Icon = typeIcon[a.type] ?? Box; return <Icon size={14} />; })()}<i className={`po-dot ${dot}`} title={dotLabel[dot]} /></span>
+                      <span className={`po-avatar kind-${a.type}`} aria-hidden="true">{(() => { const Icon = assetIconFor(a.type); return <Icon size={14} />; })()}<i className={`po-dot ${dot}`} title={dotLabel[dot]} /></span>
                       <span className="po-name">{a.name}</span>
                       {variants > 0 && <small title="Story variants found in the script">{variants} look{variants === 1 ? "" : "s"}</small>}
                       {dominant && dominant.emotion !== "neutral" && <EmotionChip emotion={dominant.emotion} />}

@@ -3,7 +3,7 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Undo2, Wand2, X } from "lucide-react";
 import {
-  angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
+  angleLabels, angles, buildShotPrompt, checkContinuity, compositionRules, coverageLabels, defaultLens, cardFrame, frameForShot, frameJobs, movementLabels, movements, planCoverage, replanScene, shotListCsv, shotListMarkdown,
   shotReferences, shotSizes, sizeLabels, sortShots, type CameraAngle, type Movement, type ScreenDir, type ShotSize,
 } from "../domain/direct";
 import { addSupplied, approve, enqueue, reconsider, reject, retry, type ImageJob, type QueueState } from "../domain/generationQueue";
@@ -143,10 +143,10 @@ export function DirectRoom(props: {
     try { const saved = await invoke<string | null>("save_text_dialog", { suggested: name, contents: text, extension: kind }); if (saved) notify(`Saved ${saved}`); } catch (e) { notify(String(e)); }
   };
 
-  const lbItems: LightboxItem[] = sceneShots.flatMap((s) => { const j = frameForShot(queue, s.id); return j?.outputPath ? [{ job: j, label: s.title ?? s.id }] : []; });
+  const lbItems: LightboxItem[] = sceneShots.flatMap((s) => { const j = cardFrame(queue, s.id); return j?.outputPath ? [{ job: j, label: s.title ?? s.id }] : []; });
   const sceneFindings = findings.filter((f) => !f.shotId || sceneShots.some((s) => s.id === f.shotId));
   const needFrames = sceneShots.filter((s) => !frameJobs(queue, s.id).some((j) => j.approved || j.status === "queued" || j.status === "generating" || j.status === "validating" || j.status === "needs-review"));
-  const wrongShape = sceneShots.filter((s) => { const f = frameForShot(queue, s.id); return !!f?.outputPath && !sameShape(f.aspect, aspect); });
+  const wrongShape = sceneShots.filter((s) => { const f = cardFrame(queue, s.id); return !!f?.outputPath && !sameShape(f.aspect, aspect); });
   const frameCount = shots.filter((s) => frameForShot(queue, s.id)).length;
 
   return (
@@ -207,7 +207,7 @@ export function DirectRoom(props: {
             requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-shot="${sceneShots[j].id}"] .dr-thumb`)?.focus());
           }}>
             {sceneShots.map((s, i) => {
-              const frame = frameForShot(queue, s.id);
+              const frame = cardFrame(queue, s.id);
               const mine = frameJobs(queue, s.id);
               const live = mine.find((j) => ["queued", "generating", "validating"].includes(j.status));
               const warns = findings.filter((f) => f.shotId === s.id && f.level === "warn").length;
@@ -217,7 +217,7 @@ export function DirectRoom(props: {
                   <button className="dr-thumb" style={{ aspectRatio: String(ratioOf(aspect) || 16 / 9) }} onClick={() => setSelected(s.id)} onDoubleClick={() => at >= 0 && setLightbox(at)} aria-label={`Select ${s.title ?? s.id}`}>
                     {frame?.outputPath ? <img src={convertFileSrc(frame.outputPath)} alt={`Frame for ${s.title ?? s.id}`} /> : <FramePreview shot={s} aspect={aspect} />}
                     <span className="dr-num">{i + 1}</span>
-                    <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.status === "needs-review" ? "Needs review" : frame.status === "failed" && !frame.outputPath ? "Picture missing" : "Frame") : mine.some((j) => j.status === "failed" && /no longer on this computer/.test(j.error ?? "")) ? "Picture missing" : "No frame"}</span>
+                    <span className={`dr-state ${live ? "busy" : frame?.approved ? "ok" : frame ? "review" : ""}`}>{live ? live.status : frame?.approved ? "Approved" : frame ? (frame.rejected ? "Rejected" : frame.status === "needs-review" || (frame.status === "completed" && !frame.approved && frame.outputPath) ? "Needs review" : frame.status === "failed" && !frame.outputPath ? "Picture missing" : "Frame") : mine.some((j) => j.status === "failed" && /no longer on this computer/.test(j.error ?? "")) ? "Picture missing" : "No frame"}</span>
                     {warns > 0 && <span className="dr-warn" title="Continuity warnings"><AlertTriangle size={13} /> {warns}</span>}
                     {at >= 0 && <span className="dr-zoom" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setLightbox(at); }} onKeyDown={(e) => { if (e.key === "Enter") setLightbox(at); }} aria-label="Open full size"><Maximize2 size={14} /></span>}
                   </button>
@@ -237,7 +237,7 @@ export function DirectRoom(props: {
                     {frame?.status === "completed" && frame.outputPath && !live && !frame.approved && <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
                     {frame?.status === "needs-review" && <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
                     {!live && frame?.status !== "needs-review" && (!frame || frame.approved) && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
-                    {!live && frame && !frame.approved && frame.status === "completed" && frame.outputPath && !frame.rejected && <button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button>}
+                    {!live && frame && !frame.approved && (frame.status === "completed" || frame.status === "needs-review") && frame.outputPath && !frame.rejected && <button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button>}
                     {live && <span className="dr-busy">{live.status}…</span>}
                     {mine.some((j) => j.status === "failed" && j.source !== "supplied" && j.prompt) && !live && <button className="secondary" onClick={() => { const j = mine.find((x) => x.status === "failed" && x.source !== "supplied" && x.prompt); if (j) setQueue((q) => retry(q, j.id)); }}>Retry</button>}
                     <div className="dr-more">

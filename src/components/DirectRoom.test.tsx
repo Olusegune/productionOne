@@ -66,7 +66,7 @@ describe('Directors room', () => {
     await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image').length).toBeGreaterThan(0))
     const first = calls.find((c) => c.name === 'generate_image')!
     expect(first.args.aspect).toBe('16:9')
-    expect(String(first.args.prompt)).toContain('Cinematic storyboard frame')
+    expect(String(first.args.prompt)).toContain('Storyboard frame')
     expect(String(first.args.outputName)).toMatch(/^SHOT-\d+_storyboard_v01$/)
     await waitFor(() => expect(latest.queue.jobs.some((j) => j.sheetType === 'Storyboard' && j.status === 'needs-review')).toBe(true))
     expect(screen.getByLabelText('Animatic')).toBeTruthy()
@@ -81,7 +81,7 @@ describe('Directors room', () => {
     await waitFor(() => expect(calls.some((c) => c.name === 'generate_image')).toBe(true))
     const first = calls.find((c) => c.name === 'generate_image')!
     expect(first.args.aspect).toBe('9:16')
-    expect(String(first.args.prompt)).toContain('storyboard frame, 9:16')
+    expect(String(first.args.prompt)).toContain('Storyboard frame, 9:16')
     expect(screen.getByRole('button', { name: /TikTok/ }).getAttribute('aria-pressed')).toBe('true')
     expect(document.querySelector('.dr-cards.portrait')).toBeTruthy()
   })

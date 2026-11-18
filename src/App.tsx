@@ -60,6 +60,7 @@ import {
   defaultStyleBible,
   planAssetSheets,
   recommendModels,
+  styleGuidance,
   type SheetType,
   type StyleBible,
 } from "./domain/visualDevelopment";
@@ -240,7 +241,7 @@ export default function App() {
       analysis.assets[selectedAsset]
         ? compileAssetPrompt(
             analysis.assets[selectedAsset],
-            `${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`,
+            styleGuidance(styleBible),
           )
         : null,
     [analysis.assets, selectedAsset, styleBible],
@@ -525,7 +526,7 @@ export default function App() {
     }
     const prompt = compileAssetPrompt(
       asset,
-      `${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`,
+      styleGuidance(styleBible),
     );
     try {
       let outputPath = `download:${asset.id}-prompt.json`;
@@ -593,7 +594,7 @@ export default function App() {
     const entries = analysis.assets.flatMap((asset) => {
       const value = compileAssetPrompt(
         asset,
-        `${styleBible.description} ${styleBible.materials}. ${styleBible.rendering}. ${styleBible.lighting}.`,
+        styleGuidance(styleBible),
       );
       return Object.entries(value).map(([mode, prompt]) => ({
         name: `${asset.id}-${mode}.txt`,

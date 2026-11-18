@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.47.1 (2026-11-18): quieter type, category icons, the art style applied in full, and new frames show up for review
+- **Art style applied properly.** A storyboard frame was only sent the style's name, description and rendering, and ended with "Photographic frame", which pushes painted, illustrated and animated styles toward photo-realism. Frames now carry the whole style (also materials, lighting, animation approach, world, shape, surface, line treatment, camera and detail), near the top of the prompt and again as a closing "match the art style exactly" line, and the word "photographic" is gone. The copy-prompt and export-all-prompts text also carries the whole style, not four fields. Reference sheets already did.
+- **Quieter, sleeker type.** One clean sans (Inter) for titles in every look; smaller, lighter headings (600, not 700 or a heavy serif); calmer eyebrows. Colours and layout are unchanged. The Cinematic look keeps its warm colours but no longer uses the serif for titles.
+- **An icon for each kind of thing.** Character (person), costume (shirt), prop (box), set (mountain) wherever one is named: the bible, the asset header, the asset list and the Deliver checklist. The Sheet choice in Design is now a row of buttons, each with its own icon and a hover hint (Identity, Turnaround, Expressions, Poses, Wardrobe, Detail, Multi-view, Functional, Establishing, Interior, Exterior, Layout, Lighting).
+- **A regenerated frame is no longer hidden.** Regenerating an approved frame made a new picture that waited for review, but the card kept showing the old approved one, so the new one could not be seen or approved from the board. The card now shows it with Needs review, Approve and Reject. Rejecting it brings the approved one back; approving it makes it the frame.
+- Not checked: the new frame-waiting card in the running app (it is covered by tests, and checking it would have cost another image), the effect of the fuller style on real images, and the light theme.
+- Tests: 617 JS (6 new), 86 Rust (unchanged).
+
 ## 0.47.0 (2026-11-18): choose your format first, and a clearer storyboard card
 Asked for by the owner: people making content for Instagram or TikTok need the shape from the start, the storyboard card was cramped, and the guide was thin.
 - **Project Format.** One choice for the whole project, saved in the `.pone` file and shown on the Projects screen under the name, and again in the Director's room: **Widescreen 16:9**, **Cinema 21:9**, **TikTok / Reels / Shorts 9:16**, **Instagram portrait 4:5**, **Square 1:1**, and **More shapes** (2.39:1, 2:1, 3:2, 4:3, 5:4, 3:4, 2:3). It replaces the small Canvas dropdown, which was not saved and reset to 16:9 each time.

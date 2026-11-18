@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extremeShape, keepShotsAfterReading, buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
+import { cardFrame, pendingFrame, extremeShape, keepShotsAfterReading, buildShotPrompt, checkContinuity, estimateDuration, frameForShot, lightingFor, planCoverage, replanScene, shotListCsv, shotListMarkdown, shotReferences, sizeLabels } from './direct'
 import { addSupplied, emptyQueue, enqueue, type QueueState } from './generationQueue'
 import { analyzeScript } from './productionStudio'
 import { defaultStyleBible } from './visualDevelopment'
@@ -96,6 +96,15 @@ describe('frames, references and prompts', () => {
     expect(buildShotPrompt(marcus, analysis, defaultStyleBible, [], '16:9')).not.toContain('trimmed')
     expect([extremeShape('3:2'), extremeShape('4:5'), extremeShape('2:1'), extremeShape('2:3')]).toEqual([false, false, true, false])
   })
+  it('applies the whole art style to a frame, not just its name and rendering, and never asks for a photograph', () => {
+    const marcus = shots.find((s) => s.speaker === 'MARCUS')!
+    const painted = { ...defaultStyleBible, name: 'Hand-painted storybook', description: 'Soft gouache scenes', rendering: 'Painterly, visible brushwork', materials: 'Paper grain', animationApproach: 'Limited animation', shapeLanguage: 'Rounded, friendly', lineTreatment: 'Thin inked outlines', detailLevel: 'Simple, readable' }
+    const prompt = buildShotPrompt(marcus, analysis, painted, [])
+    for (const part of ['Hand-painted storybook', 'Soft gouache scenes', 'visible brushwork', 'Paper grain', 'Limited animation', 'Rounded, friendly', 'Thin inked outlines', 'Simple, readable']) expect(prompt, part).toContain(part)
+    expect(prompt).toContain('Match the art style exactly: Hand-painted storybook')
+    expect(prompt).not.toContain('Photographic frame')
+    expect(prompt.indexOf('Art style')).toBeLessThan(prompt.indexOf('Action:'))
+  })
   it('shows the approved frame in the animatic, else the newest image', () => {
     let q = enqueue(emptyQueue(), [{ assetId: 'SHOT-001', variant: 'Storyboard', sheetType: 'Storyboard', viewKey: 'frame', label: 'f', prompt: 'p', aspect: '16:9', fullBody: false, provider: 'kie', model: 'm', references: [], outputName: (r) => `s${r}` }]).state
     expect(frameForShot(q, 'SHOT-001')).toBeUndefined()
@@ -157,5 +166,28 @@ describe('reading the script again', () => {
     const after = keepShotsAfterReading([orphan, shots[1]], analysis)
     expect(after[0].sceneId).toBe(analysis.scenes[0].id)
     expect(after[1]).toEqual(shots[1])
+  })
+})
+
+describe('the card shows a picture that is waiting for a decision', () => {
+  const approved = addSupplied(emptyQueue(), { assetId: 'SHOT-001', variant: 'Storyboard', sheetType: 'Storyboard', viewKey: 'frame', label: 'f', aspect: '16:9', fullBody: false, path: 'C:/old.png', width: 1920, height: 1080 }).state
+  const old = approved.jobs[0]
+  const withNew = (patch: Record<string, unknown>) => ({ ...approved, jobs: [...approved.jobs, { ...old, id: 'IMG-new', revision: old.revision + 1, approved: false, rejected: false, status: 'needs-review', outputPath: 'C:/new.png', source: undefined, ...patch }] }) as typeof approved
+  it('shows the newer picture, not the old approved one, after a regenerate', () => {
+    const q = withNew({})
+    expect(frameForShot(q, 'SHOT-001')?.outputPath).toBe('C:/old.png')
+    expect(pendingFrame(q, 'SHOT-001')?.outputPath).toBe('C:/new.png')
+    expect(cardFrame(q, 'SHOT-001')?.outputPath).toBe('C:/new.png')
+  })
+  it('goes back to the approved picture when the new one is rejected, and once the new one is approved it is the frame', () => {
+    expect(cardFrame(withNew({ rejected: true, status: 'completed' }), 'SHOT-001')?.outputPath).toBe('C:/old.png')
+    const q = withNew({ approved: true, status: 'completed' })
+    expect(pendingFrame(q, 'SHOT-001')).toBeUndefined()
+    expect(cardFrame(q, 'SHOT-001')?.outputPath).toBe('C:/new.png')
+  })
+  it('does nothing when nothing is waiting, or while a picture is still being made', () => {
+    expect(cardFrame(approved, 'SHOT-001')?.outputPath).toBe('C:/old.png')
+    expect(cardFrame(withNew({ status: 'generating', outputPath: undefined }), 'SHOT-001')?.outputPath).toBe('C:/old.png')
+    expect(cardFrame(emptyQueue(), 'SHOT-001')).toBeUndefined()
   })
 })
