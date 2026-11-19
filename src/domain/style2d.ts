@@ -117,8 +117,9 @@ interface Input {
 
 /** Styles that were generated with a real image model and looked at. One test each: a character front view made from a description. Everything not listed here is unverified. */
 const LIVE = 'Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked.'
+const LIVE_SHEETS = LIVE + ' Clean digital cel animation was also taken through a whole in-app workflow with one model: a character made from a description, then her turnaround (5 views), 8 expressions, 8 poses and a costume sheet, a prop (6 views) and a place (4 views). Linework, palette, costume and identity held across views; weaknesses are listed in docs/2D_LIVE_TEST_2026-11-19.md.'
 const liveTests: Record<string, string> = {
-  '2d-clean-digital-cel': LIVE,
+  '2d-clean-digital-cel': LIVE_SHEETS,
   '2d-watercolor-storybook': LIVE,
   '2d-flat-vector': LIVE,
   '2d-graphic-novel': LIVE,
