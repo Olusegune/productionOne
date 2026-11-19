@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, BookText, ClipboardCheck, Clapperboard, FolderOpen, Command as CommandIcon, Check, PackageCheck, Palette, ChevronDown, ChevronUp, WandSparkles } from "lucide-react";
+import { ArrowRight, BookText, ClipboardCheck, Clapperboard, FolderOpen, Command as CommandIcon, Check, PackageCheck, Palette, ChevronDown, ChevronUp, WandSparkles , MessageCircle } from "lucide-react";
 import { BrandMark } from "./BrandMark";
 import { newlyDone } from "../domain/shortcuts";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
 import { spendGate, summarize, waitingForAnchor, type QueueState } from "../domain/generationQueue";
 
-const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Review: ClipboardCheck, Direct: Clapperboard, Deliver: PackageCheck } as const;
-/** Sidebar order. Alt+1 to Alt+5 keep their old meaning; Review is Alt+6. */
-export const workspaceNames = ["Projects", "Story", "Design", "Review", "Direct", "Deliver"] as const;
+const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Review: ClipboardCheck, Direct: Clapperboard, Deliver: PackageCheck, Assistant: MessageCircle } as const;
+/** Sidebar order. Alt+1 to Alt+5 keep their old meaning; Review is Alt+6, Assistant Alt+7. */
+export const workspaceNames = ["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"] as const;
 
 export function TopBar(props: {
   title: string;

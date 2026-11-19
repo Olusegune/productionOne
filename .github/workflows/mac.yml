@@ -1,0 +1,49 @@
+name: macOS build
+# Builds the macOS app (Apple silicon and Intel) and attaches the disk images to a release. Run it by hand: Actions > macOS build > Run workflow, with the release tag (for example v0.51.0).
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach the macOS builds to (for example v0.51.0). Leave empty to only build.
+        required: false
+        default: ""
+permissions:
+  contents: write
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, arch: arm64, target: aarch64-apple-darwin }
+          - { os: macos-15-intel, arch: x64, target: x86_64-apple-darwin }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: "${{ matrix.target }}" }
+      - run: npm ci
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --target ${{ matrix.target }}
+      - run: npx tauri build --target ${{ matrix.target }} --bundles dmg
+      - name: Name the disk image
+        id: dmg
+        run: |
+          set -e
+          f=$(ls src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg | head -n 1)
+          v=$(node -p "require('./package.json').version")
+          out="ProductionOne-${v}-mac-${{ matrix.arch }}.dmg"
+          cp "$f" "$out"
+          shasum -a 256 "$out" | tee "$out.sha256"
+          echo "file=$out" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: |
+            ${{ steps.dmg.outputs.file }}
+            ${{ steps.dmg.outputs.file }}.sha256
+      - name: Attach to the release
+        if: ${{ inputs.tag != '' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release upload "${{ inputs.tag }}" "${{ steps.dmg.outputs.file }}" "${{ steps.dmg.outputs.file }}.sha256" --clobber

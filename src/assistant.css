@@ -1,0 +1,46 @@
+/* The assistant: a friendly chat on the left, the plan and the run on the right */
+.asst { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; min-height: 0; }
+.asst-chat { display: grid; grid-template-rows: auto minmax(320px, 1fr) auto auto auto auto; gap: 10px; min-width: 0; }
+.asst-head h2 { margin: 0 0 4px; }
+.asst-head p { margin: 0; color: var(--text-2); font-size: 14px; }
+.asst-log { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--stroke); border-radius: 6px; background: var(--surface); max-height: 56vh; overflow: auto; }
+.asst-msg { display: flex; }
+.asst-msg.user { justify-content: flex-end; }
+.asst-bubble { max-width: 82%; padding: 10px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--stroke); }
+.asst-msg.user .asst-bubble { background: color-mix(in srgb, var(--gold) 16%, transparent); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
+.asst-bubble p { margin: 0; white-space: pre-wrap; line-height: 1.5; font-size: 14px; overflow-wrap: anywhere; }
+.asst-typing { color: var(--text-3); }
+.asst-files { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.asst-files span, .asst-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(255, 255, 255, .07); color: var(--text-2); }
+.asst-pill button { all: unset; cursor: pointer; display: inline-grid; place-items: center; color: var(--text-3); }
+.asst-pill.unsupported { color: #e0b27e; }
+.asst-choices, .asst-chips, .asst-pending { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.asst-chips, .asst-pending { margin-top: 0; }
+.asst-compose { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.asst-compose textarea { resize: vertical; min-height: 44px; padding: 10px 12px; font: inherit; }
+.asst-settings { font-size: 13px; color: var(--text-2); }
+.asst-settings summary { cursor: pointer; }
+.asst-settings label { display: grid; gap: 4px; margin: 8px 0; max-width: 320px; }
+.asst-settings small { color: var(--text-3); }
+.asst-plan { padding: 16px; display: grid; gap: 12px; position: sticky; top: 0; }
+.asst-plan h3 { margin: 0; }
+.asst-sum { margin: 0; font-size: 14px; color: var(--text-2); }
+.asst-sum b { color: var(--text); }
+.asst-opts { display: grid; gap: 10px; }
+.asst-opts .seg { display: grid; grid-template-columns: 1fr 1fr; }
+.asst-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.4; color: var(--text-2); }
+.asst-check small { color: var(--text-3); }
+.asst-money { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.asst-money label { display: grid; gap: 4px; font-size: 12px; color: var(--text-3); }
+.asst-model { color: var(--text-3); }
+.asst-steps { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+.asst-warn { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: 4px; background: rgba(224, 178, 126, .12); color: #e0b27e; font-size: 13px; }
+.asst-start { justify-content: center; }
+.asst-status { margin: 0; padding: 8px 10px; border-radius: 4px; background: var(--surface-2); font-size: 14px; }
+.asst-run { display: flex; flex-wrap: wrap; gap: 8px; }
+.asst-report ul { margin: 6px 0 12px; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+.asst-fail { color: #e0b27e; list-style: square; }
+@media (max-width: 1100px) { .asst { grid-template-columns: minmax(0, 1fr); } .asst-plan { position: static; } }
+
+.asst-cap { width: 56px; display: inline-block; margin: 0 4px; }
+.asst-agents { margin-top: 4px; }
