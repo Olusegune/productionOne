@@ -69,3 +69,54 @@ describe('art direction bar', () => {
     expect((screen.getByRole('button', { name: 'Choose a visual style' }) as HTMLButtonElement).disabled).toBe(true)
   })
 })
+
+describe('2D styles in the gallery', () => {
+  const open = (current = defaultStyleBible.name) => {
+    const onChoose = vi.fn()
+    render(<StyleGallery styles={stylePresets} current={current} onChoose={onChoose} onClose={() => {}} />)
+    return { onChoose }
+  }
+  const count2D = stylePresets.filter((s) => s.spec2d).length
+  it('has a clearly visible 2D filter that shows only 2D styles, and still shows everything under All', () => {
+    open()
+    fireEvent.click(screen.getByRole('button', { name: `2D (${count2D})` }))
+    expect(screen.getByRole('list', { name: 'Styles' }).querySelectorAll('li').length).toBe(count2D)
+    fireEvent.click(screen.getByRole('button', { name: `All (${stylePresets.length})` }))
+    expect(screen.getByRole('list', { name: 'Styles' }).querySelectorAll('li').length).toBe(stylePresets.length)
+  })
+  it('searches 2D styles by name and family, and shows a drawn preview instead of a stand-in picture', () => {
+    open()
+    fireEvent.click(screen.getByRole('button', { name: `2D (${count2D})` }))
+    fireEvent.change(screen.getByLabelText('Search styles'), { target: { value: 'pixel' } })
+    const cards = screen.getByRole('list', { name: 'Styles' }).querySelectorAll('li')
+    expect(cards.length).toBe(2)
+    expect(cards[0].querySelector('svg.s2d-preview')).toBeTruthy()
+    expect(cards[0].querySelector('img')).toBeNull()
+    fireEvent.change(screen.getByLabelText('Search styles'), { target: { value: 'storybook and painterly' } })
+    expect(screen.getByRole('list', { name: 'Styles' }).querySelectorAll('li').length).toBeGreaterThanOrEqual(7)
+  })
+  it('shows the selected style settings, what the app makes, the provider note and where the preview comes from, then chooses it', () => {
+    const { onChoose } = open()
+    fireEvent.click(screen.getByRole('button', { name: `2D (${count2D})` }))
+    fireEvent.click(screen.getByRole('button', { name: /^Flat vector$/ }))
+    const detail = screen.getByLabelText('Selected style')
+    expect(detail.textContent).toMatch(/Shading/)
+    expect(detail.textContent).toMatch(/Not vector artwork, not a layered file/i)
+    expect(detail.textContent).toMatch(/live-tested/)
+    expect(detail.textContent).toMatch(/One test only/)
+    expect(detail.textContent).toMatch(/not an example image made by a model/)
+    expect(detail.querySelector('svg.s2d-preview')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /use this style/i }))
+    expect(onChoose).toHaveBeenCalledTimes(1)
+    expect(onChoose.mock.calls[0][0].spec2d.id).toBe('2d-flat-vector')
+  })
+  it('keeps the drawn preview free of file paths, so a saved project stays portable', () => {
+    open()
+    fireEvent.click(screen.getByRole('button', { name: `2D (${count2D})` }))
+    const html = screen.getByRole('list', { name: 'Styles' }).innerHTML
+    expect(html).not.toMatch(/[A-Z]:[\/]/)
+    expect(html).not.toContain('file:')
+    // The few 2D styles that already had a bundled picture point at the app's own relative folder; none points at a file on this computer.
+    for (const m of html.matchAll(/ src="([^"]*)"/g)) expect(m[1].startsWith('/style-thumbs/')).toBe(true)
+  })
+})

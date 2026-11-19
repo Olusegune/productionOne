@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Search, Star, X } from 'lucide-react'
 import type { StyleBible } from '../domain/visualDevelopment'
-import { PROJECT_FAMILY, familyCounts, familyOf, filterStyles, hasOwnThumb, loadFavorites, saveFavorites, thumbFor } from '../domain/styleGallery'
+import { Style2DPreview } from './Style2DPreview'
+import { PROJECT_FAMILY, TWO_D, familyCounts, familyOf, filterStyles, hasOwnThumb, loadFavorites, saveFavorites, thumbFor } from '../domain/styleGallery'
 
 /** A visual gallery for choosing the film's look: search, families, favourites, and a detail panel. Choosing a style never locks it. */
 export function StyleGallery(props: { styles: StyleBible[]; current: string; onChoose: (style: StyleBible) => void; onClose: () => void }) {
@@ -18,6 +19,7 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
   useEffect(() => { search.current?.focus(); const back = opener.current; return () => { if (back instanceof HTMLElement) back.focus() } }, [])
   const shown = useMemo(() => filterStyles(styles, { query, family, onlyFavorites, favorites }), [styles, query, family, onlyFavorites, favorites])
   const families = useMemo(() => familyCounts(styles), [styles])
+  const count2D = useMemo(() => styles.filter((s) => s.spec2d).length, [styles])
   const detail = shown.find((s) => s.name === picked) ?? shown[0]
   const toggleFavorite = (name: string) => setFavorites((current) => { const next = new Set(current); if (next.has(name)) next.delete(name); else next.add(name); saveFavorites(next); return next })
 
@@ -34,6 +36,7 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
         </div>
         <div className="sg-families" role="group" aria-label="Style families">
           <button className={family === 'All' ? 'on' : ''} aria-pressed={family === 'All'} onClick={() => setFamily('All')}>All ({styles.length})</button>
+          {count2D > 0 && <button className={family === TWO_D ? 'on' : ''} aria-pressed={family === TWO_D} onClick={() => setFamily(TWO_D)}>2D ({count2D})</button>}
           {families.map((f) => <button key={f.family} className={family === f.family ? 'on' : ''} aria-pressed={family === f.family} onClick={() => setFamily(f.family)}>{f.family} ({f.count})</button>)}
         </div>
         <div className="sg-body">
@@ -43,7 +46,7 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
               return (
                 <li key={s.name}>
                   <button className={`sg-card${s.name === picked ? ' on' : ''}`} aria-pressed={s.name === picked} aria-label={`${s.name}${s.name === current ? ', current style' : ''}`} onClick={() => setPicked(s.name)} onDoubleClick={() => onChoose(s)}>
-                    {thumb ? <img src={thumb} alt="" loading="lazy" /> : <span className="sg-swatch" style={{ background: `linear-gradient(135deg, ${s.palette.join(', ')})` }} aria-hidden="true" />}
+                    {thumb ? <img src={thumb} alt="" loading="lazy" /> : s.spec2d ? <span className="sg-swatch s2d" aria-hidden="true"><Style2DPreview style={s} size={96} /></span> : <span className="sg-swatch" style={{ background: `linear-gradient(135deg, ${s.palette.join(', ')})` }} aria-hidden="true" />}
                     <span className="sg-name">{s.name}</span>
                     {s.name === current && <span className="sg-current" aria-hidden="true"><Check size={14} /></span>}
                   </button>
@@ -55,7 +58,7 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
           {shown.length === 0 && <p className="sg-none">No styles match. {onlyFavorites && favorites.size === 0 ? 'Star a style to keep it here.' : 'Try fewer words or another family.'}</p>}
           {detail && (
             <aside className="sg-detail" aria-label="Selected style">
-              {thumbFor(detail) ? <img src={thumbFor(detail)!} alt={`${detail.name}: the same scene in this style`} /> : <div className="sg-swatch big" style={{ background: `linear-gradient(135deg, ${detail.palette.join(', ')})` }} role="img" aria-label="Palette of this style" />}
+              {!thumbFor(detail) && detail.spec2d ? <div className="s2d-detail"><Style2DPreview style={detail} size={160} /></div> : thumbFor(detail) ? <img src={thumbFor(detail)!} alt={`${detail.name}: the same scene in this style`} /> : <div className="sg-swatch big" style={{ background: `linear-gradient(135deg, ${detail.palette.join(', ')})` }} role="img" aria-label="Palette of this style" />}
               <h3>{detail.name}</h3>
               <p className="sg-fam">{familyOf(detail)}{!hasOwnThumb(detail) && thumbFor(detail) ? ' · picture shows the family look' : ''}</p>
               <p>{detail.description}</p>
@@ -65,6 +68,22 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
                 <div><dt>Rendering</dt><dd>{detail.rendering}</dd></div>
                 <div><dt>Lighting</dt><dd>{detail.lighting}</dd></div>
               </dl>
+              {detail.spec2d && (
+                <dl className="sg-2d" aria-label="2D settings">
+                  <div><dt>Line</dt><dd>{detail.spec2d.line}</dd></div>
+                  <div><dt>Shape language</dt><dd>{detail.spec2d.shape}</dd></div>
+                  <div><dt>Proportions</dt><dd>{detail.spec2d.proportions}</dd></div>
+                  <div><dt>Palette</dt><dd>{detail.spec2d.palette}</dd></div>
+                  <div><dt>Shading</dt><dd>{detail.spec2d.shading}</dd></div>
+                  <div><dt>Texture</dt><dd>{detail.spec2d.texture}</dd></div>
+                  <div><dt>Edges and detail</dt><dd>{detail.spec2d.edges}. {detail.spec2d.detail}.</dd></div>
+                  <div><dt>Suits this animation approach</dt><dd>{detail.spec2d.animation}</dd></div>
+                  <div><dt>What the app makes</dt><dd>{detail.spec2d.output}</dd></div>
+                  {detail.spec2d.liveNote && <div><dt>What a real test found</dt><dd>{detail.spec2d.liveNote}</dd></div>}
+                  <div><dt>With image models</dt><dd>{detail.spec2d.providerNote} Visual quality: {detail.spec2d.visualStatus === 'live-tested' ? 'live-tested.' : 'not yet checked on any model.'}</dd></div>
+                </dl>
+              )}
+              {detail.spec2d && <p className="sg-hint">{detail.spec2d.preview.provenance}</p>}
               <button className="primary" onClick={() => onChoose(detail)}>{detail.name === current ? 'Keep this style' : 'Use this style'}</button>
               <p className="sg-hint">Choosing a style does not lock it. Lock it on the Design screen when you are happy.</p>
             </aside>

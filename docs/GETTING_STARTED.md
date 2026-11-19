@@ -59,6 +59,11 @@ The **shape** of your pictures and video is a project setting, and it is the fir
 
 ---
 
+## No script and no pictures? Start from an idea, in a 2D style
+You can build a whole character, prop or place inside the app from a description: Design > **Add to the bible** > choose the kind, type a name and a description (and, for a place, where things are) > **Add and make a first concept**. Approve the concept, then generate its sheets. To draw everything as 2D art, choose a style in **Browse styles** > **2D** first. See [USER_GUIDE.md](USER_GUIDE.md#2d-art-styles) and the [2D style catalog](STYLE_CATALOG_2D.md).
+
+---
+
 ## 1. The Projects screen: where you are
 
 ![Projects screen](screenshots/guide/projects.png)

@@ -24,13 +24,13 @@ const idPart: Record<NewAssetKind, string> = { character: 'CHAR', costume: 'COST
  * Add a character, costume, prop or set the script reading did not find, or that the person already has an image of (for example a Midjourney render).
  * Never duplicates a name. Sheets are planned for it exactly as for an asset found in the script.
  */
-export function addProductionAsset(assets: ExtractedAsset[], kind: NewAssetKind, name: string, sceneId: string, now = Date.now(), gender = ''): { assets: ExtractedAsset[]; added: boolean; asset?: ExtractedAsset; reason?: string } {
+export function addProductionAsset(assets: ExtractedAsset[], kind: NewAssetKind, name: string, sceneId: string, now = Date.now(), gender = '', extras: { description?: string; layout?: string } = {}): { assets: ExtractedAsset[]; added: boolean; asset?: ExtractedAsset; reason?: string } {
   const noun = newAssetKinds.find((k) => k.kind === kind)?.noun ?? 'asset'
   const label = clean(name)
   if (!label) return { assets, added: false, reason: `Type the ${noun}'s name first.` }
   if (assets.some((a) => a.name.trim().toLowerCase() === label.toLowerCase())) return { assets, added: false, reason: `${label} is already in the asset list.` }
   const id = `MANU-${idPart[kind]}-${String(assets.length + 1).padStart(3, '0')}-${now.toString(36).slice(-4).toUpperCase()}`
-  const asset: ExtractedAsset = { id, name: label, type: kind, sceneIds: [sceneId], status: 'planned', ...(kind === 'character' && clean(gender) ? { gender: clean(gender) } : {}) }
+  const asset: ExtractedAsset = { id, name: label, type: kind, sceneIds: [sceneId], status: 'planned', ...(kind === 'character' && clean(gender) ? { gender: clean(gender) } : {}), ...(clean(extras.description ?? '') ? { description: clean(extras.description ?? '') } : {}), ...((kind === 'set') && clean(extras.layout ?? '') ? { layout: clean(extras.layout ?? '') } : {}) }
   return { assets: [...assets, asset], added: true, asset }
 }
 
@@ -41,7 +41,7 @@ export function addProductionAsset(assets: ExtractedAsset[], kind: NewAssetKind,
 export function nameFromFile(path: string, taken: string[], kind: NewAssetKind, n: number): string {
   const file = path.split(/[\\/]/).pop() ?? ''
   let stem = file.replace(/\.[A-Za-z0-9]{2,5}$/, '')
-  stem = stem.replace(/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}/gi, ' ').replace(/[0-9a-f]{16,}/gi, ' ')
+  stem = stem.replace(/[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}/gi, ' ').replace(/\b[0-9a-f]{16,}\b/gi, ' ')
   stem = stem.replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim()
   const words = stem.split(' ').filter((w) => w && !/^\d+$/.test(w))
   let name = ''

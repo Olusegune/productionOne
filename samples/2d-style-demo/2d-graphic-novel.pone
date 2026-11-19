@@ -1,0 +1,109 @@
+{
+  "format": "production-one-project",
+  "version": 1,
+  "title": "2D style demo: Graphic novel",
+  "savedAt": "2026-11-19T00:00:00.000Z",
+  "graph": {
+    "schemaVersion": 1,
+    "nodes": [],
+    "edges": []
+  },
+  "studio": {
+    "script": "",
+    "analysis": {
+      "scenes": [],
+      "assets": [
+        {
+          "id": "DEMO-CHAR-001",
+          "name": "Mira",
+          "type": "character",
+          "sceneIds": [],
+          "status": "planned",
+          "age": "30s",
+          "gender": "female",
+          "role": "harbour pilot",
+          "description": "A weathered harbour pilot with a short grey-streaked braid, a long navy coat with brass buttons, a patched satchel and a small scar through her left eyebrow.",
+          "never": "never without the scar"
+        },
+        {
+          "id": "DEMO-PROP-001",
+          "name": "Brass lantern",
+          "type": "prop",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A squat brass storm lantern with a cracked blue glass shade, a looped leather handle and a dented base."
+        },
+        {
+          "id": "DEMO-SET-001",
+          "name": "Harbour office",
+          "type": "set",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A cramped harbour master's office above the quay: wood panelling, charts pinned to the walls, a big brass telescope.",
+          "layout": "The door is on the left wall. A large desk sits in the centre facing the door. A tall window with the quay behind it is directly behind the desk. A chart table runs along the right wall. The brass telescope stands in the right corner by the window."
+        }
+      ]
+    },
+    "shots": [],
+    "jobs": [],
+    "storyboardsEnabled": false,
+    "model": "Seedance 2.0",
+    "styleBible": {
+      "name": "Graphic novel",
+      "description": "Book-length ink drawing with considered colour: expressive line, textured shading and mood over polish.",
+      "palette": [
+        "#14171c",
+        "#a6573c",
+        "#58747c",
+        "#e8dfc9"
+      ],
+      "materials": "Ink and paper texture, subtle grain",
+      "rendering": "Flat 2D: Hatching, spot blacks and flat colour or wash tones; no airbrush",
+      "lighting": "Flat, even lighting that suits the style (no studio or cinematic light)",
+      "locked": false,
+      "revision": 1,
+      "family": "2D · Comics and ink",
+      "animationApproach": "Not an animation style; suits comic and storyboard frames",
+      "shapeLanguage": "Grounded, observed forms with strong shapes",
+      "surfaceTreatment": "Ink and paper texture, subtle grain",
+      "lineTreatment": "Expressive hand-inked line with strong weight variation and some dry-brush breaks",
+      "detailLevel": "Moderate to high in faces and places",
+      "spec2d": {
+        "id": "2d-graphic-novel",
+        "version": 1,
+        "family2d": "2D · Comics and ink",
+        "summary": "Book-length ink drawing with considered colour: expressive line, textured shading and mood over polish.",
+        "line": "Expressive hand-inked line with strong weight variation and some dry-brush breaks",
+        "shape": "Grounded, observed forms with strong shapes",
+        "proportions": "Natural, grounded, individual characters",
+        "palette": "Restrained, mood-driven colour, often with one dominant hue",
+        "shading": "Hatching, spot blacks and flat colour or wash tones; no airbrush",
+        "texture": "Ink and paper texture, subtle grain",
+        "perspective": "Drawn perspective chosen for drama; strong foreshortening allowed; no lens geometry",
+        "background": "Inked or toned background that supports the value design; negative space is deliberate",
+        "edges": "Mix of crisp ink and soft wash",
+        "detail": "Moderate to high in faces and places",
+        "technical": "Character-sheet clarity in ink: the subject alone on the plain field, even value structure, no cast shadow, no scenery, line weight readable.",
+        "scene": "An inked scene with deliberate value design and negative space; no photographic depth of field, grain or lens effects.",
+        "avoid": [
+          "clean vector uniformity",
+          "photographic or 3D look",
+          "glossy gradients",
+          "bright cartoon colour"
+        ],
+        "animation": "Not an animation style; suits comic and storyboard frames",
+        "output": "One flat 2D raster reference picture per view. Not vector artwork, not a layered file, not a rigged puppet, not an animation file, and not frame-by-frame animation.",
+        "intentionalTexture": true,
+        "providerNote": "Request construction is supported on every image provider here. Visual quality has not been checked on any model for this style: make one view first and look at it before generating a whole sheet.",
+        "visualStatus": "live-tested",
+        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked.",
+        "preview": {
+          "kind": "schematic",
+          "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."
+        }
+      }
+    },
+    "title": "2D style demo: Graphic novel",
+    "format": "16:9"
+  }
+}

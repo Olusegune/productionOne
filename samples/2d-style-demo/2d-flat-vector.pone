@@ -1,0 +1,109 @@
+{
+  "format": "production-one-project",
+  "version": 1,
+  "title": "2D style demo: Flat vector",
+  "savedAt": "2026-11-19T00:00:00.000Z",
+  "graph": {
+    "schemaVersion": 1,
+    "nodes": [],
+    "edges": []
+  },
+  "studio": {
+    "script": "",
+    "analysis": {
+      "scenes": [],
+      "assets": [
+        {
+          "id": "DEMO-CHAR-001",
+          "name": "Mira",
+          "type": "character",
+          "sceneIds": [],
+          "status": "planned",
+          "age": "30s",
+          "gender": "female",
+          "role": "harbour pilot",
+          "description": "A weathered harbour pilot with a short grey-streaked braid, a long navy coat with brass buttons, a patched satchel and a small scar through her left eyebrow.",
+          "never": "never without the scar"
+        },
+        {
+          "id": "DEMO-PROP-001",
+          "name": "Brass lantern",
+          "type": "prop",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A squat brass storm lantern with a cracked blue glass shade, a looped leather handle and a dented base."
+        },
+        {
+          "id": "DEMO-SET-001",
+          "name": "Harbour office",
+          "type": "set",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A cramped harbour master's office above the quay: wood panelling, charts pinned to the walls, a big brass telescope.",
+          "layout": "The door is on the left wall. A large desk sits in the centre facing the door. A tall window with the quay behind it is directly behind the desk. A chart table runs along the right wall. The brass telescope stands in the right corner by the window."
+        }
+      ]
+    },
+    "shots": [],
+    "jobs": [],
+    "storyboardsEnabled": false,
+    "model": "Seedance 2.0",
+    "styleBible": {
+      "name": "Flat vector",
+      "description": "Clean flat vector shapes: solid colour, crisp edges, no outlines or gradients needed.",
+      "palette": [
+        "#1f2937",
+        "#ef6b57",
+        "#3fb8af",
+        "#f4efe3"
+      ],
+      "materials": "None",
+      "rendering": "Flat 2D: Flat fills with at most one or two flat shadow tones; no gradients or textures",
+      "lighting": "Flat, even lighting that suits the style (no studio or cinematic light)",
+      "locked": false,
+      "revision": 1,
+      "family": "2D · Graphic and vector",
+      "animationApproach": "Motion-graphics style; suits simple rigged animation (not produced here)",
+      "shapeLanguage": "Clean geometric and rounded vector shapes, simplified",
+      "surfaceTreatment": "None",
+      "lineTreatment": "No outline, or a very thin uniform one; shapes are defined by colour",
+      "detailLevel": "Low",
+      "spec2d": {
+        "id": "2d-flat-vector",
+        "version": 1,
+        "family2d": "2D · Graphic and vector",
+        "summary": "Clean flat vector shapes: solid colour, crisp edges, no outlines or gradients needed.",
+        "line": "No outline, or a very thin uniform one; shapes are defined by colour",
+        "shape": "Clean geometric and rounded vector shapes, simplified",
+        "proportions": "Simplified, consistent, often slightly stylised",
+        "palette": "Flat, limited, harmonised palette of solid colours",
+        "shading": "Flat fills with at most one or two flat shadow tones; no gradients or textures",
+        "texture": "None",
+        "perspective": "Flattened or stylised perspective; depth by overlap, scale and colour layering instead of lens geometry",
+        "background": "Simple shapes and flat fields; the background is part of the same graphic system as the subject",
+        "edges": "Perfectly crisp and smooth",
+        "detail": "Low",
+        "technical": "Design-sheet clarity: the subject alone on the plain flat field, no cast shadow, no scenery, shapes crisp and readable.",
+        "scene": "A designed picture made of the same shapes and colours as the characters: clear composition, depth by layering, no photographic effects.",
+        "avoid": [
+          "gradients and soft shading",
+          "texture or grain",
+          "3D, glossy or photographic look",
+          "sketchy line"
+        ],
+        "animation": "Motion-graphics style; suits simple rigged animation (not produced here)",
+        "output": "One flat 2D raster reference picture per view. Not vector artwork, not a layered file, not a rigged puppet, not an animation file, and not frame-by-frame animation.",
+        "intentionalTexture": false,
+        "providerNote": "Request construction is supported on every image provider here. Visual quality has not been checked on any model for this style: make one view first and look at it before generating a whole sheet.",
+        "visualStatus": "live-tested",
+        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked.",
+        "preview": {
+          "kind": "schematic",
+          "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."
+        }
+      }
+    },
+    "title": "2D style demo: Flat vector",
+    "format": "16:9"
+  }
+}

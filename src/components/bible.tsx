@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
-import { ImagePlus, Users, X } from "lucide-react";
+import { ImagePlus, Sparkles, Users, X } from "lucide-react";
 import { assetIconFor } from "../domain/categoryIcons";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { newAssetKinds, type NewAssetKind } from "../domain/readingActions";
@@ -34,11 +34,15 @@ const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
-export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset, onAddMany }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean) => void; /** Adds one asset per chosen image, named from the file names. */ onAddMany?: (kind: NewAssetKind) => void }) {
+export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset, onAddMany }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean, extras?: { description?: string; layout?: string; makeConcept?: boolean }) => void; /** Adds one asset per chosen image, named from the file names. */ onAddMany?: (kind: NewAssetKind) => void }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState("");
   const [newKind, setNewKind] = useState<NewAssetKind>("character");
+  const [newDescription, setNewDescription] = useState("");
+  const [newLayout, setNewLayout] = useState("");
+  const extras = (makeConcept = false) => ({ description: newDescription, layout: newKind === "set" ? newLayout : "", makeConcept });
+  const reset = () => { setNewName(""); setNewGender(""); setNewDescription(""); setNewLayout(""); setAdding(false); };
   const arcs = useMemo(() => new Map<string, CharacterArc>((story ? characterArcs(story) : []).map((a) => [a.character.toUpperCase(), a])), [story]);
   const groups: Array<[string, ExtractedAsset["type"][]]> = [["Characters", ["character"]], ["Costumes", ["costume"]], ["Props", ["prop"]], ["Sets", ["set", "environment"]]];
   const approved = assets.filter((a) => a.status === "approved").length;
@@ -54,10 +58,13 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
             <form className="add-character" onSubmit={(e) => e.preventDefault()}>
               <label><span>What is it?</span><select value={newKind} onChange={(e) => setNewKind(e.target.value as NewAssetKind)} aria-label="Type of the new asset">{newAssetKinds.map((k) => <option key={k.kind} value={k.kind}>{k.label}</option>)}</select></label>
               <label><span>Name</span><input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={newKind === "set" ? "Location name" : `${newAssetKinds.find((k) => k.kind === newKind)?.label} name`} aria-label="Name for the new asset" /></label>
+              <label><span>Description (optional, your words)</span><textarea rows={3} value={newDescription} onChange={(e) => setNewDescription(e.target.value)} aria-label="Description of the new asset" placeholder={newKind === "character" ? "Who they are, what they look like, what they wear" : newKind === "set" ? "What the place is, its mood and materials" : "What it is, its shape, size and materials"} /></label>
+              {newKind === "set" && <label><span>Layout and landmarks (optional: kept the same in every view)</span><textarea rows={2} value={newLayout} onChange={(e) => setNewLayout(e.target.value)} aria-label="Layout of the new set" placeholder="For example: door on the left wall, desk in the centre, window behind the desk" /></label>}
               {newKind === "character" && <label><span>Gender (optional, helps pick a voice)</span><select value={newGender} onChange={(e) => setNewGender(e.target.value)} aria-label="Gender for the new character"><option value="">Not set</option><option value="female">Female</option><option value="male">Male</option></select></label>}
-              <button className="secondary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", true); setNewName(""); setNewGender(""); setAdding(false); }} title="Choose an image. It becomes the approved reference; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
+              <button className="secondary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", true, extras()); reset(); }} title="Choose an image. It becomes the approved reference; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
               {onAddMany && <div className="add-many"><button className="secondary" type="button" onClick={() => { onAddMany(newKind); setAdding(false); }} title="Choose several images at once. Each becomes its own item of the type above, named from its file name, with its image as the approved reference."><ImagePlus size={14} aria-hidden="true" /> Add several images at once…</button><small>One {newAssetKinds.find((k) => k.kind === newKind)?.label.toLowerCase()} per image, named from the file names (up to 24). Good for a folder of Midjourney images.</small></div>}
-              <button className="tertiary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false); setNewName(""); setNewGender(""); setAdding(false); }} title="Plan its sheets now and generate the first picture yourself.">Add without image</button>
+              <button className="primary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false, extras(true)); reset(); }} title="Adds it and makes one first picture from your description with the image model you have chosen (one image request). You then approve it, replace it with your own image, or refine the description and try again."><Sparkles size={14} aria-hidden="true" /> Add and make a first concept</button>
+              <button className="tertiary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false, extras()); reset(); }} title="Plan its sheets now and generate the first picture yourself.">Add without image</button>
             </form>
           </section>
         </div>,

@@ -51,3 +51,20 @@ html:root[data-look][data-look][data-look] h4 { color: color-mix(in srgb, var(--
 
 .add-many { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--stroke); }
 .add-many small { color: var(--text-3); font-size: 12px; line-height: 1.45; }
+
+/* 2D style gallery */
+.sg-swatch.s2d { display: grid; place-items: center; background: transparent !important; }
+.s2d-detail { padding: 4px 0 10px; }
+.s2d-detail .s2d-preview { display: block; width: 160px; height: 160px; }
+.s2d-preview { border-radius: 4px; border: 1px solid var(--stroke); max-width: 100%; height: auto; }
+.sg-2d { display: grid; gap: 8px; margin: 10px 0 0; }
+.sg-2d div { display: grid; gap: 2px; }
+.sg-2d dt { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.sg-2d dd { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); }
+
+/* Style row in the sheet bar */
+.ss-style { display: grid; gap: 4px; min-width: 0; }
+.ss-style > span { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.ss-style-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ss-2d-tag { font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: .06em; padding: 1px 6px; border-radius: 3px; border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent); color: var(--gold); }
+.ss-2d-note { color: var(--text-3); font-size: 12px; line-height: 1.45; max-width: 60ch; }

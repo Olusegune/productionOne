@@ -31,6 +31,8 @@ export function thumbFor(style: Pick<StyleBible, 'name' | 'family'>): string | n
 }
 
 export const PROJECT_FAMILY = 'Project presets'
+/** The filter chip that shows every 2D style, whatever its family. */
+export const TWO_D = '2D'
 
 export interface GalleryFilter { query: string; family: string; onlyFavorites: boolean; favorites: ReadonlySet<string> }
 
@@ -47,10 +49,11 @@ export function familyCounts(styles: StyleBible[]): Array<{ family: string; coun
 export function filterStyles(styles: StyleBible[], f: GalleryFilter): StyleBible[] {
   const words = f.query.toLowerCase().split(/\s+/).filter(Boolean)
   return styles.filter((s) => {
-    if (f.family !== 'All' && familyOf(s) !== f.family) return false
+    if (f.family === TWO_D) { if (!s.spec2d) return false }
+    else if (f.family !== 'All' && familyOf(s) !== f.family) return false
     if (f.onlyFavorites && !f.favorites.has(s.name)) return false
     if (!words.length) return true
-    const hay = `${s.name} ${s.description} ${familyOf(s)}`.toLowerCase()
+    const hay = `${s.name} ${s.description} ${familyOf(s)}${s.spec2d ? ` 2d ${s.spec2d.summary}` : ''}`.toLowerCase()
     return words.every((w) => hay.includes(w))
   })
 }
