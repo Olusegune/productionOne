@@ -10,8 +10,8 @@ const base = { query: '', family: 'All', onlyFavorites: false, favorites: none }
 
 describe('style gallery data', () => {
   it('has a picture on disk for every family that claims one, and none for project presets', () => {
-    // The 2D presets have no generated picture (they show a drawn schematic from their settings), so only the photo families are checked here.
-    const families = new Set(stylePresets.filter((s) => !s.spec2d || hasOwnThumb(s)).map((s) => s.family).filter(Boolean))
+    // The 2D families have no family picture (each 2D style has its own picture instead), so only the other families are checked here.
+    const families = new Set(stylePresets.filter((s) => !s.spec2d).map((s) => s.family).filter(Boolean))
     expect(families.size).toBeGreaterThanOrEqual(8)
     for (const family of families) {
       const url = thumbFor({ name: 'no own picture', family })

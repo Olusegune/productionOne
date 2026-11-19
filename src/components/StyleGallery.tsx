@@ -83,7 +83,7 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
                   <div><dt>With image models</dt><dd>{detail.spec2d.providerNote} Visual quality: {detail.spec2d.visualStatus === 'live-tested' ? 'live-tested.' : 'not yet checked on any model.'}</dd></div>
                 </dl>
               )}
-              {detail.spec2d && <p className="sg-hint">{detail.spec2d.preview.provenance}</p>}
+              {detail.spec2d && <p className="sg-hint">{thumbFor(detail) ? 'The picture is an example made with an image model: the same scene in this style. It shows the look, not a guarantee of what every model will make.' : detail.spec2d.preview.provenance}</p>}
               <button className="primary" onClick={() => onChoose(detail)}>{detail.name === current ? 'Keep this style' : 'Use this style'}</button>
               <p className="sg-hint">Choosing a style does not lock it. Lock it on the Design screen when you are happy.</p>
             </aside>
