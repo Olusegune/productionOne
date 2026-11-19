@@ -6,7 +6,7 @@ Scope: 2D style library, prompt compilation, gallery, asset style override, rein
 | Check | Result |
 |---|---|
 | tsc (`tsc -p tsconfig.app.json`) | Pass |
-| JS tests | 671 pass, 1 skipped (the file writer, run with WRITE_2D_DEMO=1) |
+| JS tests | 672 pass, 1 skipped (the file writer, run with WRITE_2D_DEMO=1) |
 | Rust tests | 89 pass (1 new: a compiled 2D prompt reaches every provider body unchanged) |
 | clippy -D warnings, npm run build, npm audit | see the PR checks and final report |
 
@@ -27,7 +27,14 @@ Scope: 2D style library, prompt compilation, gallery, asset style override, rein
 | Layout and description fields on the sheet controls | Pass |
 | Console errors | None |
 
+## Live test (real image model, 9 requests, 2026-11-19: see docs/2D_LIVE_TEST_2026-11-19.md)
+| Check | Result |
+|---|---|
+| One character front view in clean cel, watercolor, flat vector, graphic novel, pixel art | Pass: each clearly followed its style, flat neutral background, no photographic look; the scar was not drawn |
+| Style change marks the earlier picture "out of date", approval untouched | Pass |
+| Reinterpret in pixel art from the approved watercolour picture | Pass: new revision, original still approved, identity details kept |
+| Prop and place from descriptions, the place from a written layout | Pass on one picture each |
+
 ## Not checked
-- **No live generation.** No 2D preset was generated with any image model. Style adherence, identity, linework, palette and sheet consistency are unverified, and no model is claimed to do any style well.
-- Reinterpret and "Add and make a first concept" were not pressed in the real app (each costs an image request); they are tested with mocks.
+- 33 of the 38 presets; any model other than Kie.ai `google/pro-image-to-image`; turnaround views after the front, expressions, poses, costume sheets, several views of one place; true pixel-grid accuracy.
 - Pixel-art grid accuracy, the light theme, Playwright, installers on a clean machine.

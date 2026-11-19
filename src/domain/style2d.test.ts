@@ -13,6 +13,8 @@ import { buildShotPrompt, planCoverage } from './direct'
 import { defaultStyleBible, stylePresets, styleGuidance } from './visualDevelopment'
 
 const all2D = stylePresets.filter(is2D)
+/** The presets that were generated with a real model and looked at (2026-11-19). */
+const liveTested = ['2d-clean-digital-cel', '2d-watercolor-storybook', '2d-flat-vector', '2d-graphic-novel', '2d-pixel-low']
 const originalNames = ['Restrained Cinematic Realism', 'Watercolor Storybook', 'Stylized 3D Feature', 'Graphic Novel Noir', 'Documentary Naturalism', 'Family 3D Feature', 'Hand-Painted Fantasy Anime', 'Cel-Shaded Action', 'Stop-Motion Handmade', 'Graphic Ink and Gouache', 'Retro Futurist', 'Techno Industrial', 'Mythic Epic', 'Neon Graphic Future', 'Dark Fairy Tale', 'Architectural Visualization', 'Photographic Editorial']
 
 const words = (s: string) => new Set(s.toLowerCase().match(/[a-z]{4,}/g) ?? [])
@@ -72,7 +74,9 @@ describe('the 2D library', () => {
       expect(spec.output).toMatch(/not vector artwork/i)
       expect(spec.output).toMatch(/not an animation file/i)
       expect(spec.animation.length).toBeGreaterThan(8)
-      expect(spec.visualStatus).toBe('unverified')
+      expect(spec.visualStatus).toBe(liveTested.includes(spec.id) ? 'live-tested' : 'unverified')
+      if (spec.visualStatus === 'live-tested') expect(spec.liveNote).toMatch(/One test only/)
+      else expect(spec.liveNote).toBeUndefined()
       expect(spec.preview.provenance).toMatch(/not an example image/i)
       expect(spec.avoid.length).toBeGreaterThanOrEqual(3)
     }
@@ -359,7 +363,7 @@ describe('the demonstration project', () => {
         lines.push(`### ${r.assetName}: ${r.sheetType}, ${r.label}`, '', '```text', r.prompt, '```', '')
       }
     }
-    const cat = ['# 2D style catalog', '', `${all2D.length} presets in ${Object.keys(FAMILIES_2D).length} families. Written by \`src/domain/style2d.test.ts\` from \`src/domain/style2d.ts\` (the data is the source of truth; run the test with WRITE_2D_DEMO=1 to refresh this file).`, '', 'Every preset describes **how a picture looks**. The animation approach it suits is listed separately, and what Production One actually makes is always **one flat 2D raster reference picture per view**: not vector artwork, not a layered file, not a rigged puppet, not an animation file, not frame-by-frame animation. Visual quality of every preset on every image model is **unverified** until it has been generated and looked at; the preview shown in the app is a schematic swatch drawn from the settings, not a generated example.', '', 'Presets marked *existing* were already in the app; they keep their name, text and palette and only gain the structured 2D settings.', '']
+    const cat = ['# 2D style catalog', '', `${all2D.length} presets in ${Object.keys(FAMILIES_2D).length} families. Written by \`src/domain/style2d.test.ts\` from \`src/domain/style2d.ts\` (the data is the source of truth; run the test with WRITE_2D_DEMO=1 to refresh this file).`, '', 'Every preset describes **how a picture looks**. The animation approach it suits is listed separately, and what Production One actually makes is always **one flat 2D raster reference picture per view**: not vector artwork, not a layered file, not a rigged puppet, not an animation file, not frame-by-frame animation. Visual quality is **unverified** for every preset except five that were live-tested once (Clean digital cel animation, Watercolor Storybook, Flat vector, Graphic novel, Low-resolution pixel art: see `docs/2D_LIVE_TEST_2026-11-19.md`); the preview shown in the app is a schematic swatch drawn from the settings, not a generated example.', '', 'Presets marked *existing* were already in the app; they keep their name, text and palette and only gain the structured 2D settings.', '']
     for (const family of Object.values(FAMILIES_2D)) {
       cat.push(`## ${family.replace('2D · ', '')}`, '', '| Preset | Id | What it looks like | Line | Shading | Texture | Suits |', '|---|---|---|---|---|---|---|')
       for (const st of all2D.filter((x) => x.spec2d!.family2d === family)) {

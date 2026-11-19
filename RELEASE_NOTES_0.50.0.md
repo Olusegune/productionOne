@@ -11,9 +11,9 @@
 - A place's layout is repeated in every view and every storyboard shot set there.
 
 ## Be aware
-- No 2D preset has been tried on a real image model. Request construction is tested; how well each model draws each style is **not**. Make one view first.
+- Five styles were live-tested once (clean cel, watercolor, flat vector, graphic novel, pixel art; one model, one front view) and followed their style. The other 33 are untested, and so is every other model and every view after the front. Make one view first.
 - The gallery preview is a schematic swatch, not a generated example.
 - The app makes flat raster pictures: not vector files, layered files, rigs or animation.
 
 ## Not checked
-- Visual quality of any 2D style on any model, the light theme, and pixel-art grid accuracy.
+- 33 of the 38 presets, any model but one, whole sheets, and true pixel-grid accuracy; the light theme.

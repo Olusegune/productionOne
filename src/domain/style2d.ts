@@ -35,6 +35,8 @@ export interface Style2DSpec {
   intentionalTexture: boolean
   providerNote: string
   visualStatus: 'unverified' | 'live-tested'
+  /** What a real test found, when visualStatus is live-tested: the date, the model and what was and was not checked. */
+  liveNote?: string
   preview: { kind: 'schematic'; provenance: string }
 }
 
@@ -113,6 +115,16 @@ interface Input {
   providerNote?: string
 }
 
+/** Styles that were generated with a real image model and looked at. One test each: a character front view made from a description. Everything not listed here is unverified. */
+const LIVE = 'Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked.'
+const liveTests: Record<string, string> = {
+  '2d-clean-digital-cel': LIVE,
+  '2d-watercolor-storybook': LIVE,
+  '2d-flat-vector': LIVE,
+  '2d-graphic-novel': LIVE,
+  '2d-pixel-low': LIVE + ' The pixels looked coherent, but they are the model\'s own drawing, not a true pixel grid: clean-up in a pixel editor may be needed.',
+}
+
 const DEFAULT_PROVIDER_NOTE = 'Request construction is supported on every image provider here. Visual quality has not been checked on any model for this style: make one view first and look at it before generating a whole sheet.'
 
 function build(i: Input): { spec: Style2DSpec; style: StyleBible } {
@@ -121,7 +133,7 @@ function build(i: Input): { spec: Style2DSpec; style: StyleBible } {
     id: i.id, version: 1, family2d: i.family, summary: i.summary, line: i.line, shape: i.shape, proportions: i.proportions, palette: i.palette, shading: i.shading, texture: i.texture,
     perspective: i.perspective ?? f.perspective, background: i.background ?? f.background, edges: i.edges, detail: i.detail,
     technical: i.technical ?? f.technical, scene: i.scene ?? f.scene, avoid: i.avoid, animation: i.animation, output: OUTPUT_2D,
-    intentionalTexture: i.intentionalTexture ?? false, providerNote: i.providerNote ?? DEFAULT_PROVIDER_NOTE, visualStatus: 'unverified',
+    intentionalTexture: i.intentionalTexture ?? false, providerNote: i.providerNote ?? DEFAULT_PROVIDER_NOTE, visualStatus: liveTests[i.id] ? 'live-tested' : 'unverified', ...(liveTests[i.id] ? { liveNote: liveTests[i.id] } : {}),
     preview: { kind: 'schematic', provenance: 'A schematic swatch drawn by the app from this preset\'s settings. It is not an example image made by a model.' },
   }
   const style: StyleBible = {

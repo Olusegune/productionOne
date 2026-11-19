@@ -2,7 +2,7 @@
 
 38 presets in 6 families. Written by `src/domain/style2d.test.ts` from `src/domain/style2d.ts` (the data is the source of truth; run the test with WRITE_2D_DEMO=1 to refresh this file).
 
-Every preset describes **how a picture looks**. The animation approach it suits is listed separately, and what Production One actually makes is always **one flat 2D raster reference picture per view**: not vector artwork, not a layered file, not a rigged puppet, not an animation file, not frame-by-frame animation. Visual quality of every preset on every image model is **unverified** until it has been generated and looked at; the preview shown in the app is a schematic swatch drawn from the settings, not a generated example.
+Every preset describes **how a picture looks**. The animation approach it suits is listed separately, and what Production One actually makes is always **one flat 2D raster reference picture per view**: not vector artwork, not a layered file, not a rigged puppet, not an animation file, not frame-by-frame animation. Visual quality is **unverified** for every preset except five that were live-tested once (Clean digital cel animation, Watercolor Storybook, Flat vector, Graphic novel, Low-resolution pixel art: see `docs/2D_LIVE_TEST_2026-11-19.md`); the preview shown in the app is a schematic swatch drawn from the settings, not a generated example.
 
 Presets marked *existing* were already in the app; they keep their name, text and palette and only gain the structured 2D settings.
 

@@ -79,7 +79,8 @@ export function StyleGallery(props: { styles: StyleBible[]; current: string; onC
                   <div><dt>Edges and detail</dt><dd>{detail.spec2d.edges}. {detail.spec2d.detail}.</dd></div>
                   <div><dt>Suits this animation approach</dt><dd>{detail.spec2d.animation}</dd></div>
                   <div><dt>What the app makes</dt><dd>{detail.spec2d.output}</dd></div>
-                  <div><dt>With image models</dt><dd>{detail.spec2d.providerNote} Visual quality: {detail.spec2d.visualStatus === 'live-tested' ? 'live-tested' : 'not yet checked on any model'}.</dd></div>
+                  {detail.spec2d.liveNote && <div><dt>What a real test found</dt><dd>{detail.spec2d.liveNote}</dd></div>}
+                  <div><dt>With image models</dt><dd>{detail.spec2d.providerNote} Visual quality: {detail.spec2d.visualStatus === 'live-tested' ? 'live-tested.' : 'not yet checked on any model.'}</dd></div>
                 </dl>
               )}
               {detail.spec2d && <p className="sg-hint">{detail.spec2d.preview.provenance}</p>}

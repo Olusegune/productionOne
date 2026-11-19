@@ -95,7 +95,8 @@
         "output": "One flat 2D raster reference picture per view. Not vector artwork, not a layered file, not a rigged puppet, not an animation file, and not frame-by-frame animation.",
         "intentionalTexture": false,
         "providerNote": "Request construction is supported. Image models often draw soft or inconsistent pixels: check the pixel scale on one view first. A true pixel grid may need clean-up in a pixel editor.",
-        "visualStatus": "unverified",
+        "visualStatus": "live-tested",
+        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked. The pixels looked coherent, but they are the model's own drawing, not a true pixel grid: clean-up in a pixel editor may be needed.",
         "preview": {
           "kind": "schematic",
           "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."

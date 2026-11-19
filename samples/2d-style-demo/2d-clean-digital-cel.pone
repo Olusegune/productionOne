@@ -95,7 +95,8 @@
         "output": "One flat 2D raster reference picture per view. Not vector artwork, not a layered file, not a rigged puppet, not an animation file, and not frame-by-frame animation.",
         "intentionalTexture": false,
         "providerNote": "Request construction is supported on every image provider here. Visual quality has not been checked on any model for this style: make one view first and look at it before generating a whole sheet.",
-        "visualStatus": "unverified",
+        "visualStatus": "live-tested",
+        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked.",
         "preview": {
           "kind": "schematic",
           "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."
