@@ -4,7 +4,9 @@
 //! Flow (the shape FilmCrafter has run against Kie): upload reference images to Kie's file service, POST /api/v1/jobs/createTask, poll /api/v1/jobs/recordInfo,
 //! download the result. No Kie call has been made by this build yet: the parsers and builders are unit-tested, the network path is not.
 
-use std::time::Duration;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use serde_json::{json, Map, Value};
@@ -188,20 +190,54 @@ pub fn result_url(record: &Value) -> Result<Option<String>, String> {
 #[derive(Serialize)]
 pub struct KieFile { pub bytes: Vec<u8>, pub extension: &'static str }
 
+/// How long a model's documentation page is reused. Kie's docs site answers a burst of requests with a 403, and one sheet makes many requests for the same model.
+const PAGE_TTL: Duration = Duration::from_secs(6 * 60 * 60);
+
+/// Remembers fetched model pages for a while. A page that can no longer be fetched is still usable from here, so one blocked request cannot fail a whole sheet.
+pub struct PageCache { pages: HashMap<String, (Instant, String)> }
+
+impl PageCache {
+    pub fn new() -> Self { PageCache { pages: HashMap::new() } }
+    pub fn fresh(&self, id: &str, now: Instant) -> Option<String> { self.pages.get(id).filter(|(at, _)| now.duration_since(*at) < PAGE_TTL).map(|(_, text)| text.clone()) }
+    pub fn any(&self, id: &str) -> Option<String> { self.pages.get(id).map(|(_, text)| text.clone()) }
+    pub fn put(&mut self, id: &str, text: String, now: Instant) { if self.pages.len() > 200 { self.pages.clear(); } self.pages.insert(id.to_string(), (now, text)); }
+}
+
+fn page_cache() -> &'static Mutex<PageCache> {
+    static CACHE: OnceLock<Mutex<PageCache>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(PageCache::new()))
+}
+
+/// A status that usually clears if asked again later: rate limiting (429), the docs site's block on bursts (403) and server errors.
+pub fn worth_retrying(status: u16) -> bool { status == 429 || status == 403 || (500..600).contains(&status) }
+
+/// The model's documentation page: from memory if it was read in the last six hours, otherwise fetched (up to three tries with a growing pause when the site pushes back),
+/// and if the site still refuses, the last copy read, however old. Only a 404 means the page is gone.
+async fn model_page(http: &reqwest::Client, doc_id: &str) -> Result<String, String> {
+    if let Some(text) = page_cache().lock().ok().and_then(|c| c.fresh(doc_id, Instant::now())) { return Ok(text); }
+    let url = format!("https://docs.kie.ai/market/{doc_id}.md");
+    let mut last = String::new();
+    for attempt in 0..3u64 {
+        if attempt > 0 { tokio::time::sleep(Duration::from_millis(1500 * attempt)).await; }
+        match http.get(&url).send().await {
+            Ok(response) if response.status().is_success() => {
+                let text = response.text().await.map_err(|e| e.to_string())?;
+                if let Ok(mut c) = page_cache().lock() { c.put(doc_id, text.clone(), Instant::now()); }
+                return Ok(text);
+            }
+            Ok(response) if response.status().as_u16() == 404 => return Err(format!("Kie has no model page called {doc_id} (it may have been renamed). Press Refresh models.")),
+            Ok(response) => { last = format!("Kie's documentation site answered {} for {doc_id}. This is usually temporary: try again in a moment.", response.status().as_u16()); if !worth_retrying(response.status().as_u16()) { break; } }
+            Err(e) => last = format!("Could not read Kie's model page: {}", e.without_url()),
+        }
+    }
+    if let Some(text) = page_cache().lock().ok().and_then(|c| c.any(doc_id)) { return Ok(text); }
+    Err(last)
+}
+
 pub async fn run(api_key: &str, doc_id: &str, prompt: &str, aspect: &str, references: &[(String, String, String)], duration: Option<u32>, wait_secs: u64) -> Result<KieFile, String> {
     if !valid_doc_id(doc_id) { return Err("That Kie model id is not valid".into()); }
     let http = client(120)?;
-    let page_url = format!("https://docs.kie.ai/market/{doc_id}.md");
-    // Kie's documentation site sometimes answers a first request with a hiccup (a 5xx or 429, or a dropped connection). Try once more before blaming the model id; only a 404 means the page is gone.
-    let mut md = http.get(&page_url).send().await;
-    if md.as_ref().map(|r| r.status().as_u16() == 429 || r.status().is_server_error()).unwrap_or(true) {
-        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
-        md = http.get(&page_url).send().await;
-    }
-    let md = md.map_err(|e| format!("Could not read Kie's model page: {}", e.without_url()))?;
-    if md.status().as_u16() == 404 { return Err(format!("Kie has no model page called {doc_id} (it may have been renamed). Press Refresh models.")); }
-    if !md.status().is_success() { return Err(format!("Kie's documentation site answered {} for {doc_id}. This is usually temporary: try again in a moment.", md.status().as_u16())); }
-    let schema = parse_kie_doc(&md.text().await.map_err(|e| e.to_string())?)?;
+    let schema = parse_kie_doc(&model_page(&http, doc_id).await?)?;
     let mut urls = Vec::new();
     if !references.is_empty() && schema.image.is_none() { return Err("This Kie model takes no reference images. Choose an image-to-image or edit model, or one that lists an image input.".into()); }
     for (mime, data, name) in references.iter().take(schema.image.as_ref().map(|i| i.max.max(1)).unwrap_or(0)) {
@@ -323,6 +359,24 @@ mod tests {
         let d: Vec<String> = ["5", "10"].iter().map(|s| s.to_string()).collect();
         assert_eq!(nearest_duration(6, &d).as_deref(), Some("5"));
         assert_eq!(nearest_duration(9, &d).as_deref(), Some("10"));
+    }
+
+    #[test]
+    fn remembers_a_model_page_for_a_while_and_keeps_the_last_copy_for_emergencies() {
+        let mut cache = PageCache::new();
+        let t0 = Instant::now();
+        assert!(cache.fresh("google/pro-image-to-image", t0).is_none());
+        cache.put("google/pro-image-to-image", "page".into(), t0);
+        assert_eq!(cache.fresh("google/pro-image-to-image", t0 + Duration::from_secs(60)).as_deref(), Some("page"));
+        assert!(cache.fresh("google/pro-image-to-image", t0 + PAGE_TTL + Duration::from_secs(1)).is_none());
+        assert_eq!(cache.any("google/pro-image-to-image").as_deref(), Some("page"), "a stale copy still beats a failed request");
+        assert!(cache.fresh("other/model", t0).is_none());
+    }
+
+    #[test]
+    fn retries_the_statuses_that_clear_by_themselves_and_not_the_ones_that_do_not() {
+        for status in [403, 429, 500, 502, 503] { assert!(worth_retrying(status), "{status}"); }
+        for status in [400, 401, 404, 422] { assert!(!worth_retrying(status), "{status}"); }
     }
 
     #[test]

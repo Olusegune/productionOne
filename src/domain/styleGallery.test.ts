@@ -10,7 +10,8 @@ const base = { query: '', family: 'All', onlyFavorites: false, favorites: none }
 
 describe('style gallery data', () => {
   it('has a picture on disk for every family that claims one, and none for project presets', () => {
-    const families = new Set(stylePresets.map((s) => s.family).filter(Boolean))
+    // The 2D presets have no generated picture (they show a drawn schematic from their settings), so only the photo families are checked here.
+    const families = new Set(stylePresets.filter((s) => !s.spec2d || hasOwnThumb(s)).map((s) => s.family).filter(Boolean))
     expect(families.size).toBeGreaterThanOrEqual(8)
     for (const family of families) {
       const url = thumbFor({ name: 'no own picture', family })
@@ -23,9 +24,10 @@ describe('style gallery data', () => {
     const dir = resolve(process.cwd(), 'public/style-thumbs/styles')
     const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.webp')).map((f) => f.replace(/\.webp$/, '')).sort() : []
     expect([...styleThumbSlugs].sort()).toEqual(files)
-    const missing = stylePresets.filter((s) => !hasOwnThumb(s)).map((s) => s.name)
+    const photoStyles = stylePresets.filter((s) => !s.spec2d || hasOwnThumb(s))
+    const missing = photoStyles.filter((s) => !hasOwnThumb(s)).map((s) => s.name)
     expect(missing, `styles without their own picture: ${missing.join(', ')}`).toEqual([])
-    for (const s of stylePresets) {
+    for (const s of photoStyles) {
       const url = thumbFor(s)!
       expect(url).toBe(`/style-thumbs/styles/${styleSlug(s.name)}.webp`)
       const size = statSync(resolve(process.cwd(), 'public', url.slice(1))).size

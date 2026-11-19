@@ -1,6 +1,7 @@
 import type { ParsedStory } from '../engine/story'
 import type { ExtractedAsset, ScriptScene } from './productionStudio'
 import { styleLibrary } from './styleLibrary'
+import { compile2D, existing2DSpecs, styles2D, type Style2DSpec } from './style2d'
 
 export interface StyleBible {
   name: string
@@ -19,6 +20,8 @@ export interface StyleBible {
   lineTreatment?: string
   cameraBehavior?: string
   detailLevel?: string
+  /** Structured 2D art direction (see style2d.ts). Absent on every style that is not a 2D preset, and on every project saved before it existed. */
+  spec2d?: Style2DSpec
 }
 
 export const defaultStyleBible: StyleBible = {
@@ -32,7 +35,7 @@ export const defaultStyleBible: StyleBible = {
   revision: 1,
 }
 
-export const stylePresets: StyleBible[] = [
+const baseStylePresets: StyleBible[] = [
   defaultStyleBible,
   { name: 'Watercolor Storybook', description: 'Hand-painted storybook shapes, soft edges, visible pigment variation, and expressive simplified forms.', palette: ['#203447', '#d9b77b', '#91a9a3', '#efe1bd'], materials: 'Paper grain, watercolor wash, dry-brush edges', rendering: 'Hand-painted 2D watercolor illustration', lighting: 'Soft neutral reference light; preserve paper texture', locked: false, revision: 1 },
   { name: 'Stylized 3D Feature', description: 'Appealing stylized proportions, clear silhouettes, polished shapes, and controlled cinematic staging.', palette: ['#17202b', '#e2a75e', '#5d8791', '#e6d4b2'], materials: 'Painted resin, cloth, brushed metal, soft matte surfaces', rendering: 'Stylized 3D feature animation visual development', lighting: 'Neutral reference light with motivated story accents', locked: false, revision: 1 },
@@ -50,12 +53,23 @@ export const stylePresets: StyleBible[] = [
   { name: 'Dark Fairy Tale', description: 'Elegant menace, storybook silhouettes, strange beauty, and restrained surreal detail.', palette: ['#171820', '#725368', '#b4875d', '#d8c49a'], materials: 'Aged velvet, bark, tarnished brass, fog, wax and rough paper', rendering: 'Atmospheric dark-fantasy illustration with storybook texture', lighting: 'Moonlight, candlelight, mist and selective pools of illumination', locked: false, revision: 1 },
   { name: 'Architectural Visualization', description: 'Precise spatial design, believable materials, clear circulation, and disciplined camera language.', palette: ['#27313a', '#c9ad78', '#82959a', '#e2ded2'], materials: 'Concrete, glass, timber, stone, steel and fabric', rendering: 'High-fidelity architectural production visualization', lighting: 'Neutral daylight, practical interior sources and physically coherent bounce', locked: false, revision: 1 },
   { name: 'Photographic Editorial', description: 'Refined composition, authentic texture, controlled styling, and premium editorial restraint.', palette: ['#1c2024', '#b99b72', '#8e9a94', '#eee5d5'], materials: 'Natural skin, tailored cloth, paper, brushed metal and polished wood', rendering: 'Editorial photographic visual development', lighting: 'Large soft source, controlled contrast, neutral color and elegant highlights', locked: false, revision: 1 },
+]
+
+/**
+ * Every preset. The original project presets come first with their names and fields unchanged (five of them gain a structured 2D spec), then the 2D library, then the style library.
+ * Presets are identified by name, so no existing preset was renamed or removed.
+ */
+export const stylePresets: StyleBible[] = [
+  ...baseStylePresets.map((p) => (existing2DSpecs[p.name] ? { ...p, spec2d: existing2DSpecs[p.name] } : p)),
+  ...styles2D,
   ...styleLibrary,
 ]
 
 export { animationApproaches, worldTreatments } from './styleLibrary'
 
-export function styleGuidance(style: StyleBible): string {
+/** The style as text for an image request. A 2D style is compiled from its structured spec (and says what it is not: a 3D render, a photograph); any other style reads exactly as it always did. */
+export function styleGuidance(style: StyleBible, context: 'technical' | 'scene' = 'technical'): string {
+  if (style.spec2d) return compile2D(style, context)
   return [style.name, style.description, style.rendering, style.materials, style.lighting, style.animationApproach && `Animation: ${style.animationApproach}`, style.worldTreatment && `World: ${style.worldTreatment}`, style.shapeLanguage && `Shape language: ${style.shapeLanguage}`, style.surfaceTreatment && `Surface: ${style.surfaceTreatment}`, style.lineTreatment && `Line: ${style.lineTreatment}`, style.cameraBehavior && `Camera: ${style.cameraBehavior}`, style.detailLevel && `Detail: ${style.detailLevel}`].filter(Boolean).join('. ')
 }
 

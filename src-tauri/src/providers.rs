@@ -583,6 +583,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_compiled_2d_style_reaches_every_provider_request_unchanged() {
+        let prompt = "Production reference image: Front of the character Mira.
+2D art style \"Flat vector\" (Graphic and vector): Clean flat vector shapes. Line: none. Avoid: gradients and soft shading; 3D, glossy or photographic look.
+The background is one flat, uniform neutral mid-grey field.";
+        assert_eq!(openai_body("gpt-image-1", prompt, "3:4", "low").unwrap()["prompt"], prompt);
+        assert_eq!(fal_body(prompt, "3:4").unwrap()["prompt"], prompt);
+        let refs = vec![("image/png".to_string(), "QUJD".to_string())];
+        let gemini = gemini_body(prompt, "3:4", &refs);
+        assert_eq!(gemini["contents"][0]["parts"][0]["text"], prompt);
+        let router = openrouter_body("google/x", prompt, "3:4", &refs);
+        assert_eq!(router["messages"][0]["content"][0]["text"], prompt);
+        let inter = interactions_body("gemini-3", prompt, "3:4", &refs);
+        assert!(inter.to_string().contains("2D art style"), "{inter}");
+        assert!(inter.to_string().contains("Avoid: gradients"));
+    }
+
+    #[test]
     fn wide_and_decimal_ratios_reach_each_provider_as_one_it_accepts() {
         assert_eq!(openai_body("gpt-image-1", "p", "2.39:1", "low").unwrap()["size"], "1536x1024");
         assert_eq!(openai_body("gpt-image-1", "p", "21:9", "low").unwrap()["size"], "1536x1024");

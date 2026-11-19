@@ -3,6 +3,7 @@ import { artifactGuidance } from './cleanGuidance'
 import { styleGuidance, type SheetType, type StyleBible } from './visualDevelopment'
 import type { ExpressionNeed } from '../engine/emotion'
 import { anchoredPromptLine } from './identityAnchor'
+import { adaptViewFor2D, twoDAnchoredLine, twoDPhotoLine, twoDReinterpretLine } from './style2d'
 
 /** One separate image inside a reference sheet. Each view is generated and saved as its own original-resolution file. */
 export interface ViewSpec {
@@ -148,7 +149,7 @@ export interface PromptInput {
   /** The model id the prompt is for. Used only to tailor artifact guidance. */
   model?: string
   style: StyleBible
-  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role' | 'never' | 'prompt'>>
+  asset: Pick<ExtractedAsset, 'id' | 'name' | 'type'> & Partial<Pick<ExtractedAsset, 'age' | 'gender' | 'race' | 'ethnicity' | 'role' | 'never' | 'prompt' | 'description' | 'layout'>>
   variant: string
   sheetType: SheetType
   view: ViewSpec
@@ -159,6 +160,10 @@ export interface PromptInput {
   backdrop?: Backdrop
   /** For the 'front' backdrop: the colour read from the front view's own background, e.g. "#1e4a52". */
   backdropHex?: string
+  /** Reference photographs are attached. In a 2D style they are identity references only. */
+  photoRefs?: boolean
+  /** This view is a deliberate redraw of the attached approved picture in the selected 2D style (a new revision for review). */
+  reinterpret?: boolean
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -170,17 +175,23 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
   return [facts ? `Confirmed character identity: ${facts}.` : '', never ? `Must never drift: ${never}.` : ''].filter(Boolean).join(' ')
 }
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
+  const twoD = !!style.spec2d
+  const place = asset.type === 'set' || asset.type === 'environment'
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
-    view.instruction,
+    twoD ? adaptViewFor2D(view.instruction) : view.instruction,
     identityFacts(asset),
+    asset.description?.trim() ? `Description (the person's own words): ${asset.description.trim().replace(/\s+/g, ' ')}` : '',
+    place ? (asset.layout?.trim() ? `Fixed layout of this place, the same in every view: ${asset.layout.trim().replace(/\s+/g, ' ')}. Show the same place from a different position: do not move, add or remove these landmarks.` : 'Every view of this place shows the same architecture, layout, landmarks and prop positions as the others, seen from a different position or in different light.') : '',
     // A costume made from the script's own description of a character keeps those words in every view.
     (asset.type === 'costume' && asset.prompt?.startsWith('Costume worn by')) || (asset.type === 'prop' && asset.prompt?.startsWith('As the script describes it')) ? `${asset.prompt}${asset.type === 'prop' ? ' It shows exactly this and nothing more: add no other people, figures or objects to what it shows.' : ''}` : '',
-    anchored ? anchoredPromptLine : '',
+    anchored ? (twoD ? twoDAnchoredLine : anchoredPromptLine) : '',
+    twoD && photoRefs ? twoDPhotoLine : '',
+    twoD && reinterpret ? twoDReinterpretLine : '',
     notes ? `Production notes: ${notes}` : '',
-    `Visual style bible: ${styleGuidance(style)}.`,
+    `Visual style bible: ${styleGuidance(style, place ? 'scene' : 'technical')}.`,
     // A set or environment is a place, not a cut-out on a flat field: the place fills the frame edge to edge (a flat grey field made grey bars above and below the room).
     asset.type === 'set' || asset.type === 'environment' ? 'The place fills the entire frame edge to edge, with no grey or blank borders, no letterbox bars, no frame, no text, no labels and no watermark.' : backdropLine(backdrop, anchored, backdropHex),
     asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
