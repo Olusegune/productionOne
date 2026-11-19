@@ -96,7 +96,7 @@
         "intentionalTexture": false,
         "providerNote": "Request construction is supported on every image provider here. Visual quality has not been checked on any model for this style: make one view first and look at it before generating a whole sheet.",
         "visualStatus": "live-tested",
-        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked.",
+        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked. Clean digital cel animation was also taken through a whole in-app workflow with one model: a character made from a description, then her turnaround (5 views), 8 expressions, 8 poses and a costume sheet, a prop (6 views) and a place (4 views). Linework, palette, costume and identity held across views; weaknesses are listed in docs/2D_LIVE_TEST_2026-11-19.md.",
         "preview": {
           "kind": "schematic",
           "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."
