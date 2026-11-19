@@ -1,8 +1,6 @@
 name: macOS build
 # Builds the macOS app (Apple silicon and Intel) and attaches the disk images to a release. Run it by hand: Actions > macOS build > Run workflow, with the release tag (for example v0.51.0).
 on:
-  push:
-    branches: ['feature/autopilot-0520']   # temporary: lets the first run happen before this file is on the main branch
   workflow_dispatch:
     inputs:
       tag:
@@ -18,7 +16,7 @@ jobs:
       matrix:
         include:
           - { os: macos-latest, arch: arm64, target: aarch64-apple-darwin }
-          - { os: macos-13, arch: x64, target: x86_64-apple-darwin }
+          - { os: macos-15-intel, arch: x64, target: x86_64-apple-darwin }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

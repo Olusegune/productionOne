@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { AlertTriangle, Check, FileText, ImagePlus, Paperclip, Pause, Play, Send, Sparkles, Square, X } from "lucide-react";
+import { describeStatus, isTool, parseStart } from "../domain/agentTools";
 import { advance, initialState, report, summarize, withBudget, type AutopilotOptions, type AutopilotState, type Depth } from "../domain/autopilot";
 import { planCoverage } from "../domain/direct";
 import { cancelAllWaiting, committedUsd, type ImageJob, type QueueState } from "../domain/generationQueue";
@@ -66,6 +68,9 @@ export function AssistantView(props: {
   const [budget, setBudget] = useState(() => readStored("po.asst.budget", ""));
   const [writer, setWriter] = useState(() => readStored("po.asst.writer", "google"));
   const [writerModel, setWriterModel] = useState(() => readStored("po.asst.writerModel", "gemini-2.5-flash"));
+  const [allowRuns, setAllowRuns] = useState(() => readStored("po.agent.allow", "0") === "1");
+  const [agentCap, setAgentCap] = useState(() => readStored("po.agent.cap", "5"));
+  const [agent, setAgent] = useState<{ enabled: boolean; port?: number | null; configPath?: string | null }>({ enabled: false });
   const prevGuard = useRef<Pick<QueueState, "guard" | "perImageUsd" | "totalCeilingUsd"> | null>(null);
   const nextId = useRef(messages.length + 1);
   const endRef = useRef<HTMLDivElement>(null);
@@ -74,6 +79,7 @@ export function AssistantView(props: {
   const say = (role: Msg["role"], text: string, extra: Partial<Msg> = {}) => setMessages((list) => { const next = [...list, { id: nextId.current++, role, text, ...extra }]; kept.messages = next; return next; });
   useEffect(() => { if (!messages.length) say("assistant", "Hello. Give me a script or an idea and I will make the production for you, inside a budget you set. Attach a Word, PDF or text script, describe a short film, or attach pictures.\n\nType \"help\" to see everything I can do."); }, []);
   useEffect(() => { endRef.current?.scrollIntoView?.({ block: "end" }); }, [messages, busy]);
+  useEffect(() => { writeStored("po.agent.allow", allowRuns ? "1" : "0"); writeStored("po.agent.cap", agentCap); }, [allowRuns, agentCap]);
   useEffect(() => { writeStored("po.asst.price", price); writeStored("po.asst.budget", budget); writeStored("po.asst.writer", writer); writeStored("po.asst.writerModel", writerModel); }, [price, budget, writer, writerModel]);
 
   const perImageUsd = price.trim() === "" || !(Number(price) >= 0) ? null : Number(price);
@@ -97,15 +103,70 @@ export function AssistantView(props: {
     if (changedState && (step.state.phase === "done" || step.state.phase === "stopped")) restoreGuard();
   }, [queue, state, analysis, shots]);
 
-  const start = () => {
-    if (plan.needsAttention || !plan.images) return;
+  const launch = (o: AutopilotOptions, p: ReturnType<typeof summarize>) => {
     prevGuard.current = { guard: queue.guard, perImageUsd: queue.perImageUsd, totalCeilingUsd: queue.totalCeilingUsd };
-    setQueue((q) => withBudget({ ...q, paused: false }, { perImageUsd, budgetUsd }));
-    if (includeFrames && !shots.length) setShots(() => planCoverage(analysis));
+    setQueue((q) => withBudget({ ...q, paused: false }, { perImageUsd: o.perImageUsd, budgetUsd: o.budgetUsd }));
+    if (o.includeFrames && !shots.length) setShots(() => planCoverage(analysis));
     setState({ ...initialState(), phase: "concepts", note: "Starting…" });
-    say("assistant", `Starting. ${plan.images} picture${plan.images === 1 ? "" : "s"} planned, about $${(plan.costUsd ?? 0).toFixed(2)}, and I will stop at $${(budgetUsd ?? 0).toFixed(2)}.${stopAfterConcepts ? " I will stop after the first concepts so you can approve or replace them." : ""}`);
+    say("assistant", `Starting. ${p.images} picture${p.images === 1 ? "" : "s"} planned, about $${(p.costUsd ?? 0).toFixed(2)}, and I will stop at $${(o.budgetUsd ?? 0).toFixed(2)}.${o.stopAfterConcepts ? " I will stop after the first concepts so you can approve or replace them." : ""}`);
   };
+  const start = () => { if (plan.needsAttention || !plan.images) return; launch(options, plan); };
   const stop = () => { setQueue((q) => cancelAllWaiting(q)); setState({ ...state, phase: "stopped", note: "Stopped. Pictures already being made will finish; nothing new starts." }); restoreGuard(); say("assistant", "Stopped. Pictures already being made will finish; nothing new starts."); };
+
+  // Connected agents: the local door (off by default) forwards their requests here, and every answer goes back through this same screen.
+  const live = useRef<Record<string, unknown>>({});
+  live.current = { analysis, shots, style, queue, assetRefs, options, state, plan, allowRuns, agentCap, launch, stop, setState, perImageUsd, budgetUsd };
+  useEffect(() => {
+    if (!desktop) return;
+    let off: (() => void) | undefined;
+    void listen<{ id: string; tool: string; args: Record<string, unknown> | null }>("agent-request", async (event) => {
+      const { id, tool, args } = event.payload;
+      const L = live.current as any;
+      const reply = (result: unknown) => void invoke("agent_reply", { id, result }).catch(() => {});
+      try {
+        if (!isTool(tool)) return reply({ ok: false, error: `Unknown tool ${String(tool)}` });
+        const jobsNow: ImageJob[] = L.queue.jobs;
+        const statusNow = () => describeStatus({ phase: L.state.phase, note: L.state.note, items: L.analysis.assets.length, made: jobsNow.filter((j) => !!j.outputPath).length, inProgress: jobsNow.filter((j) => ["queued", "pending", "generating", "validating"].includes(j.status)).length, failed: jobsNow.filter((j) => j.status === "failed" && j.source !== "supplied").length, waitingForDecision: jobsNow.filter((j) => j.status === "needs-review" && !j.approved && !j.rejected).length, spentUsd: L.perImageUsd === null ? null : committedUsd({ ...L.queue, perImageUsd: L.perImageUsd }), budgetUsd: L.budgetUsd });
+        const a = args ?? {};
+        if (tool === "get_status") return reply({ ok: true, result: statusNow() });
+        if (tool === "list_items") return reply({ ok: true, result: L.analysis.assets.map((x: any) => ({ name: x.name, type: x.type, hasPicture: jobsNow.some((j) => j.assetId === x.id && !!j.outputPath), approved: jobsNow.some((j) => j.assetId === x.id && j.approved) })) });
+        if (tool === "read_script") {
+          if (typeof a.text !== "string" || !a.text.trim()) return reply({ ok: false, error: "Give text: the script." });
+          const r = props.useScript(typeof a.name === "string" ? a.name : "an agent's script", a.format === "fdx" ? "fdx" : "text", a.text);
+          say("assistant", r.ok ? `A connected agent gave me a script: ${r.scenes} scenes and ${r.assets} characters, props and places.` : `A connected agent gave me a script I could not read: ${r.error}`);
+          await new Promise((done) => setTimeout(done, 250)); // let the screen take the new script before the next call asks about it
+          return reply(r.ok ? { ok: true, result: { scenes: r.scenes, items: r.assets } } : { ok: false, error: r.error });
+        }
+        if (tool === "get_plan") {
+          const o = { ...L.options, depth: a.depth === "quick" ? "quick" : "standard", includeFrames: a.includeFrames === true, perImageUsd: typeof a.pricePerImageUsd === "number" ? a.pricePerImageUsd : L.options.perImageUsd, budgetUsd: typeof a.budgetUsd === "number" ? a.budgetUsd : L.options.budgetUsd };
+          const p = summarize(L.analysis, L.shots, L.style, L.queue, L.assetRefs, o);
+          return reply({ ok: true, result: { items: L.analysis.assets.length, concepts: p.concepts, sheetPictures: p.sheets, storyboardFrames: p.frames, pictures: p.images, estimatedCostUsd: p.costUsd, problem: p.needsAttention ? p.reason : null, steps: p.steps } });
+        }
+        if (tool === "start_run") {
+          if (L.state.phase !== "idle" && L.state.phase !== "done" && L.state.phase !== "stopped") return reply({ ok: false, error: "A run is already going. Use get_status." });
+          const parsed = parseStart(a, L.allowRuns, Number(L.agentCap) || 0);
+          if (!parsed.ok) return reply({ ok: false, error: parsed.error });
+          const o = { ...L.options, ...parsed.start };
+          const p = summarize(L.analysis, L.shots, L.style, L.queue, L.assetRefs, o);
+          if (p.needsAttention || !p.images) return reply({ ok: false, error: p.reason || "There is nothing to make." });
+          setDepth(o.depth); setIncludeFrames(o.includeFrames); setStop(o.stopAfterConcepts); setPrice(String(o.perImageUsd)); setBudget(String(o.budgetUsd));
+          say("assistant", "A connected agent started this run (you allowed that in Connected agents).");
+          L.launch(o, p);
+          return reply({ ok: true, result: { started: true, pictures: p.images, estimatedCostUsd: p.costUsd, budgetUsd: o.budgetUsd } });
+        }
+        if (tool === "continue_run") {
+          if (L.state.phase !== "checkpoint") return reply({ ok: false, error: "Nothing is waiting for a decision." });
+          L.setState({ ...L.state, continued: true });
+          return reply({ ok: true, result: { continued: true } });
+        }
+        if (tool === "stop_run") { L.stop(); return reply({ ok: true, result: { stopped: true } }); }
+        if (tool === "get_report") return reply({ ok: true, result: L.state.phase === "done" || L.state.phase === "stopped" ? report(L.queue, L.analysis, L.state, L.perImageUsd) : statusNow() });
+      } catch (e) { reply({ ok: false, error: String(e) }); }
+    }).then((fn) => { off = fn; });
+    void invoke<{ enabled: boolean; port?: number | null; configPath?: string | null }>("agent_status").then((v) => { if (v) setAgent(v); }).catch(() => {});
+    return () => { off?.(); };
+  }, [desktop]);
+  const toggleAgent = async (on: boolean) => { try { const v = await invoke<{ enabled: boolean; port?: number | null; configPath?: string | null }>("agent_enable", { enabled: on }); if (v) setAgent(v); } catch (e) { notify(String(e)); } };
 
   const attach = async () => {
     if (!desktop) { notify("Attaching files needs the desktop app. You can paste a script into the message box."); return; }
@@ -200,6 +261,13 @@ export function AssistantView(props: {
           <textarea aria-label="Message" rows={2} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} placeholder="Describe your film, paste a script, or attach files…" />
           <button type="submit" className="primary" disabled={busy || (!input.trim() && !pending.length)}><Send size={15} aria-hidden="true" /> Send</button>
         </form>
+        <details className="asst-settings asst-agents">
+          <summary>Connected agents (MCP): let another program drive this app</summary>
+          <p className="helper">Off by default. When on, a program on <b>this computer</b> that has the access code (the MCP server) can read your project and ask for a plan. It cannot start a run unless you also allow that below, and never past the budget limit you set.</p>
+          <label className="asst-check"><input type="checkbox" aria-label="Let agents connect" checked={agent.enabled} onChange={(e) => void toggleAgent(e.target.checked)} disabled={!desktop} /> Let agents connect {agent.enabled && agent.port ? <small>(listening on 127.0.0.1:{agent.port})</small> : null}</label>
+          <label className="asst-check"><input type="checkbox" aria-label="Let connected agents start runs" checked={allowRuns} onChange={(e) => setAllowRuns(e.target.checked)} /> Let connected agents <b>start runs</b> (this spends money), up to <input className="asst-cap" inputMode="decimal" aria-label="Most a connected agent may budget per run in dollars" value={agentCap} onChange={(e) => setAgentCap(e.target.value)} /> USD each</label>
+          {agent.enabled && <small>The MCP server reads its access code from {agent.configPath ?? "the app data folder"}. See the guide for how to add it to Claude Desktop.</small>}
+        </details>
         <details className="asst-settings">
           <summary>Writing model (used only to write a script from an idea)</summary>
           <label><span>Provider</span><select value={writer} onChange={(e) => setWriter(e.target.value)} aria-label="Writing provider"><option value="google">Google Gemini</option><option value="openrouter">OpenRouter</option></select></label>

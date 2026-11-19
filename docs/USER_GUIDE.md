@@ -131,6 +131,31 @@ Type **help** for the list.
 
 **Not built yet:** dragging files onto the window, and an MCP server so other agents can drive the app.
 
+### Connected agents (MCP): let Claude Desktop or another agent drive the app
+
+An **MCP server** lets an AI agent that you use (Claude Desktop, for example) read your open project, hand it a script, ask for a plan and, if you allow it, start a budget-limited run. It is a small program (`tools/mcp/production-one-mcp.mjs`, needs Node.js 18 or newer, no other installs) that talks to the running app.
+
+**Turn it on (in the app).** Assistant > **Connected agents (MCP)**.
+1. Tick **Let agents connect**. The app starts listening on **this computer only** (127.0.0.1) and writes a fresh access code to its own data folder. The code changes every time you tick it. Nothing else on your network can reach it, and web pages are refused.
+2. Optional and separate: tick **Let connected agents start runs**, and set the most any one run may budget. **Off by default.** With it off, an agent can read, plan and hand over a script, but it cannot spend.
+
+**Connect Claude Desktop.** Add this to its MCP settings (change the path to where Production One's `tools/mcp` folder is; it is in the repository and in the portable zip's source download):
+```json
+{ "mcpServers": { "production-one": { "command": "node", "args": ["C:/path/to/tools/mcp/production-one-mcp.mjs"] } } }
+```
+The server finds the access code by itself (Windows: `%APPDATA%\com.productionguy.studio\agent.json`; macOS: `~/Library/Application Support/com.productionguy.studio/agent.json`). Keep the app open with the project loaded.
+
+**The tools.** `get_status`, `list_items`, `read_script`, `get_plan`, `start_run`, `continue_run`, `stop_run`, `get_report`.
+
+**The rules an agent cannot get round.**
+- **A run needs everything:** your permission switch, a price per picture, a budget no bigger than your limit, and `confirm: true`. Missing any one is refused, with the reason.
+- **It stops at the budget**, and by default stops after the first concepts for you to approve (the agent can choose otherwise).
+- **Everything shows on screen:** a script an agent hands over, and a run it starts, appear in the Assistant chat, and the run has the same Pause and Stop buttons.
+- **No keys, no settings:** an agent cannot read or change your API keys, your model or your style.
+- Turning **Let agents connect** off closes the door at once and deletes the access code file.
+
+**Limits.** This has been tested with the app's own request handling and a fake client; it has **not** been tried with Claude Desktop itself.
+
 ## 2D art styles
 
 Production One has a library of **2D styles** (drawn and cel animation, anime-inspired, storybook and painterly, graphic and vector, comics and ink, pixel art). The full list, with every setting, is in [STYLE_CATALOG_2D.md](STYLE_CATALOG_2D.md).

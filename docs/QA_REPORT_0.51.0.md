@@ -6,8 +6,8 @@ Scope: the Assistant (chat, attachments, plan, run, report) and its two Rust com
 | Check | Result |
 |---|---|
 | tsc (`tsc -p tsconfig.app.json`) | Pass |
-| JS tests | 706 pass, 1 skipped |
-| Rust tests | 97 pass (6 new) |
+| JS tests | 721 pass, 1 skipped |
+| Rust tests | 101 pass (10 new) |
 | clippy -D warnings, npm run build, npm audit | Pass, 0 vulnerabilities |
 
 ## What the tests prove (mocked image model: data flow, not visual quality)
@@ -30,9 +30,23 @@ A three-line script (a harbour pilot with a grey braid and a navy coat, a brass 
 **Two bugs found by the live runs, fixed, and re-run:** (1) the report said "cost not worked out" because the price had been put back with the budget guard; (2) the script's own description of the character and the place was not in the picture requests, so the first run drew a generic woman. After the fix the second run drew the described woman (grey braid, long navy coat with brass buttons) consistently across front, three-quarter, side and rear, and the lantern consistently across its views.
 **Weaknesses seen:** the character holds the lantern in every view because her script line says so; the establishing view of the harbour office was an exterior with the pilot standing in it (the place's description was a line about the pilot, fixed afterwards so a place is described only by a line about the place, not re-run).
 
+## Connected agents (MCP), real app, no spending
+The app was started, **Let agents connect** ticked (the access-code file appeared with a port and a token), and the real MCP server (`tools/mcp/production-one-mcp.mjs`) was driven over stdio against it:
+| Check | Result |
+|---|---|
+| get_status, list_items, get_plan answered by the running app | Pass |
+| read_script: the script an agent handed over was read (1 scene, 3 items) and appeared in the Assistant chat | Pass |
+| start_run with the permission switch off | Refused, with the reason |
+| After switching it on: a budget of $50 over the $5 limit; a start without confirm | Both refused, nothing queued |
+| Unticking Let agents connect | The door closed and the access-code file was deleted |
+The first live test showed that calls sent all at once can see the project before the screen has taken a new script, so read_script now waits a moment before it answers.
+
+## macOS build
+The workflow built the **Apple-silicon** app on a GitHub Mac runner: `cargo test` passed there and the disk image was produced. The **Intel** runner label (macos-13) no longer exists, so it was changed to macos-15-intel and has **not been run yet**. **No Mac was available to run or open the app**, and the images are **unsigned and not notarised**: macOS will warn on first open.
+
 ## Not checked
 - Writing a script from an idea with a real language model (no Gemini or OpenRouter key was available).
 - The checkpoint path (stopping for approval, then Continue) in the real app: only the mocked tests cover it; the live run used the auto-approve choice.
 - A real Word or PDF through the paperclip (a .txt was used live).
 - Reading a real PDF through the attach button (the readers have their own tests).
-- Drag-and-drop of files, an MCP server (not built), the light theme, Playwright, installers on a clean machine.
+- Claude Desktop itself driving the MCP server (only a fake client and the real server by hand), drag-and-drop of files, the light theme, Playwright, installers on a clean machine.

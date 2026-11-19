@@ -10,7 +10,8 @@ const calls: Array<{ name: string; args: Record<string, unknown> }> = []
 let keys = { google: false, openrouter: false }
 let attachments: unknown[] = []
 let written = 'Title: Lantern\n\nINT. HARBOUR OFFICE - DAY\n\nMIRA holds a brass lantern.\n\nMIRA\nWe sail at dawn.'
-vi.mock('@tauri-apps/api/event', () => ({ listen: async () => () => {} }))
+let agentHandler: ((e: { payload: unknown }) => Promise<void>) | null = null
+vi.mock('@tauri-apps/api/event', () => ({ listen: async (name: string, fn: (e: { payload: unknown }) => Promise<void>) => { if (name === 'agent-request') agentHandler = fn; return () => {} } }))
 vi.mock('@tauri-apps/api/core', () => ({
   convertFileSrc: (p: string) => `asset://${p}`,
   invoke: async (name: string, args: Record<string, unknown> = {}) => {
@@ -20,6 +21,8 @@ vi.mock('@tauri-apps/api/core', () => ({
     if (name === 'kie_models') return { kie: { fetchedAt: Date.now() / 1000, models: [] } }
     if (name === 'pick_attachments') return attachments
     if (name === 'assistant_complete') return written
+    if (name === 'agent_status') return { enabled: false, port: null, configPath: 'C:/data/agent.json' }
+    if (name === 'agent_enable') return { enabled: (args as { enabled: boolean }).enabled, port: 4242, configPath: 'C:/data/agent.json' }
     return undefined
   },
 }))
@@ -214,5 +217,87 @@ describe('the plan and the run', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Stop/ }))
     expect(await screen.findByText(/Stopped\. Pictures already being made will finish/)).toBeTruthy()
     expect(screen.getByLabelText('Report').textContent).toMatch(/Stopped/)
+  })
+})
+
+describe('connected agents', () => {
+  const ask = async (tool: string, args: Record<string, unknown> = {}) => {
+    const before = calls.filter((c) => c.name === 'agent_reply').length
+    await act(async () => { await agentHandler!({ payload: { id: `r${before}`, tool, args } }) })
+    const replies = calls.filter((c) => c.name === 'agent_reply')
+    expect(replies.length).toBe(before + 1)
+    return replies[replies.length - 1].args.result as { ok: boolean; result?: Record<string, unknown>; error?: string }
+  }
+  beforeEach(() => { agentHandler = null; try { localStorage.clear() } catch { /* ignore */ } })
+
+  it('refuses a tool it does not know', async () => {
+    render(<Harness analysis={filled} />)
+    await waitFor(() => expect(agentHandler).toBeTruthy())
+    expect((await ask('format_disk')).error).toMatch(/Unknown tool/)
+  })
+
+  it('lets an agent read the project and the plan without spending anything', async () => {
+    let queue = emptyQueue()
+    render(<Harness analysis={filled} onQueue={(q) => { queue = q }} />)
+    await waitFor(() => expect(agentHandler).toBeTruthy())
+    expect((await ask('get_status')).result).toMatchObject({ phase: 'idle', items: 3 })
+    const items = (await ask('list_items')).result as unknown as Array<{ name: string; type: string; hasPicture: boolean }>
+    expect(items.map((i) => i.type)).toEqual(['character', 'prop', 'set'])
+    expect(items.every((i) => !i.hasPicture)).toBe(true)
+    const plan = (await ask('get_plan', { depth: 'quick', pricePerImageUsd: 0.1, budgetUsd: 5 })).result!
+    expect(plan).toMatchObject({ concepts: 3, pictures: 11, problem: null })
+    expect(plan.estimatedCostUsd as number).toBeCloseTo(1.1, 5)
+    expect(queue.jobs).toHaveLength(0)
+  })
+
+  it('hands a script an agent wrote to the same reader a person uses', async () => {
+    const useScript = vi.fn(() => ({ ok: true as const, scenes: 2, assets: 4 }))
+    render(<Harness useScript={useScript as never} />)
+    await waitFor(() => expect(agentHandler).toBeTruthy())
+    expect((await ask('read_script', { text: '' })).ok).toBe(false)
+    expect((await ask('read_script', { text: 'INT. A - DAY\n\nTOM waits.', name: 'film.fountain' })).result).toEqual({ scenes: 2, items: 4 })
+    expect(useScript).toHaveBeenCalledWith('film.fountain', 'text', 'INT. A - DAY\n\nTOM waits.')
+    expect(await screen.findByText(/A connected agent gave me a script: 2 scenes and 4 characters/)).toBeTruthy()
+  })
+
+  it('will not start a run unless the person allowed it, confirmed it, and the budget is within their limit', async () => {
+    let queue = emptyQueue()
+    render(<Harness analysis={filled} auto onQueue={(q) => { queue = q }} />)
+    await waitFor(() => expect(agentHandler).toBeTruthy())
+    const args = { confirm: true, pricePerImageUsd: 0.1, budgetUsd: 3, depth: 'quick' }
+    expect((await ask('start_run', args)).error).toMatch(/not allowed connected agents/)
+    expect(queue.jobs).toHaveLength(0)
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Let connected agents start runs' }))
+    expect((await ask('start_run', { ...args, confirm: false })).error).toMatch(/confirm: true/)
+    expect((await ask('start_run', { ...args, budgetUsd: 50 })).error).toMatch(/at most \$5\.00/)
+    expect(queue.jobs).toHaveLength(0)
+    expect(queue.guard).toBe(false)
+  })
+
+  it('starts a run only after all of that, inside the budget, visible in the chat, and it can be stopped', async () => {
+    let queue = emptyQueue()
+    render(<Harness analysis={filled} auto onQueue={(q) => { queue = q }} />)
+    await waitFor(() => expect(agentHandler).toBeTruthy())
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Let connected agents start runs' }))
+    const started = await ask('start_run', { confirm: true, pricePerImageUsd: 0.1, budgetUsd: 3, depth: 'quick' })
+    expect(started.result).toMatchObject({ started: true, pictures: 11, budgetUsd: 3 })
+    expect(await screen.findByText(/A connected agent started this run/)).toBeTruthy()
+    expect(queue.guard).toBe(true)
+    expect(queue).toMatchObject({ perImageUsd: 0.1, totalCeilingUsd: 3 })
+    expect((await ask('start_run', { confirm: true, pricePerImageUsd: 0.1, budgetUsd: 3 })).error).toMatch(/already going/)
+    await screen.findByText(/3 concepts waiting for you/, {}, { timeout: 4000 })
+    expect((await ask('get_status')).result).toMatchObject({ phase: 'checkpoint', atCheckpoint: true })
+    expect((await ask('stop_run')).result).toEqual({ stopped: true })
+    expect((await ask('get_report')).result).toMatchObject({ made: 3 })
+  })
+
+  it('shows the switches off, and the door status when the person turns it on', async () => {
+    render(<Harness />)
+    const connect = await screen.findByRole('checkbox', { name: 'Let agents connect' }) as HTMLInputElement
+    expect(connect.checked).toBe(false)
+    expect((screen.getByRole('checkbox', { name: 'Let connected agents start runs' }) as HTMLInputElement).checked).toBe(false)
+    fireEvent.click(connect)
+    expect(await screen.findByText(/listening on 127\.0\.0\.1:4242/)).toBeTruthy()
+    expect(calls.some((c) => c.name === 'agent_enable' && c.args.enabled === true)).toBe(true)
   })
 })
