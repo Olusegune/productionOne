@@ -13,6 +13,8 @@ export interface CastVoice {
   model?: string
 }
 
+import type { StyleBible } from './visualDevelopment'
+
 export interface ExtractedAsset {
   id: string
   name: string
@@ -35,6 +37,12 @@ export interface ExtractedAsset {
   /** The voice chosen for this character (characters only). */
   castVoice?: CastVoice
   prompt?: string
+  /** What the person says this is, in their own words (assets made by hand). Used in every picture's prompt. */
+  description?: string
+  /** Sets only: where the main things are. Kept the same in every view of the place and in every shot set there. */
+  layout?: string
+  /** An explicit style for this asset only. Absent means it inherits the project's style. */
+  style?: StyleBible
 }
 
 export interface ScriptScene {
@@ -53,7 +61,7 @@ const slug = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]+/g, '-').
 
 /** Reads a script with the story engine (free, local) and maps it to scenes and production assets. The full reading, with line evidence, is kept in `story`. */
 /** Fields a person fills in or confirms. A fresh reading of the script must never wipe them. */
-const KEPT_FIELDS = ['age', 'gender', 'race', 'ethnicity', 'role', 'never', 'personality', 'motionDirection', 'interactionDirection', 'soundDirection', 'castVoice', 'prompt'] as const
+const KEPT_FIELDS = ['age', 'gender', 'race', 'ethnicity', 'role', 'never', 'personality', 'motionDirection', 'interactionDirection', 'soundDirection', 'castVoice', 'prompt', 'description', 'layout', 'style'] as const
 
 /**
  * Re-reading a script makes new assets; this carries over what the person set on the ones that are still there (matched by type and name).

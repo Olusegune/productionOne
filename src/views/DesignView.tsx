@@ -39,7 +39,7 @@ export interface DesignViewProps {
   importAsset: (file: File) => Promise<void>;
   jobs: GenerationJob[];
   modelRecommendations: (ImageModelRecord & { score: number; reason: string; })[];
-  onAddAsset: (kind: NewAssetKind, name: string, gender: string, withImage: boolean) => void;
+  onAddAsset: (kind: NewAssetKind, name: string, gender: string, withImage: boolean, extras?: { description?: string; layout?: string; makeConcept?: boolean }) => void;
   /** Adds one asset per chosen image, named from the file names. */
   onAddMany?: (kind: NewAssetKind) => void;
   onSheetApproved: (job: ImageJob, primary: boolean) => void;
@@ -145,6 +145,8 @@ export function DesignView(p: DesignViewProps) {
               controlRef={studioControl}
               refs={assetRefs}
               setRefs={setAssetRefs}
+              onPatchAsset={(id, patch) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => (a.id === id ? { ...a, ...patch } : a)) }))}
+              onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}

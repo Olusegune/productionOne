@@ -1,0 +1,108 @@
+{
+  "format": "production-one-project",
+  "version": 1,
+  "title": "2D style demo: Low-resolution pixel art",
+  "savedAt": "2026-11-19T00:00:00.000Z",
+  "graph": {
+    "schemaVersion": 1,
+    "nodes": [],
+    "edges": []
+  },
+  "studio": {
+    "script": "",
+    "analysis": {
+      "scenes": [],
+      "assets": [
+        {
+          "id": "DEMO-CHAR-001",
+          "name": "Mira",
+          "type": "character",
+          "sceneIds": [],
+          "status": "planned",
+          "age": "30s",
+          "gender": "female",
+          "role": "harbour pilot",
+          "description": "A weathered harbour pilot with a short grey-streaked braid, a long navy coat with brass buttons, a patched satchel and a small scar through her left eyebrow.",
+          "never": "never without the scar"
+        },
+        {
+          "id": "DEMO-PROP-001",
+          "name": "Brass lantern",
+          "type": "prop",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A squat brass storm lantern with a cracked blue glass shade, a looped leather handle and a dented base."
+        },
+        {
+          "id": "DEMO-SET-001",
+          "name": "Harbour office",
+          "type": "set",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A cramped harbour master's office above the quay: wood panelling, charts pinned to the walls, a big brass telescope.",
+          "layout": "The door is on the left wall. A large desk sits in the centre facing the door. A tall window with the quay behind it is directly behind the desk. A chart table runs along the right wall. The brass telescope stands in the right corner by the window."
+        }
+      ]
+    },
+    "shots": [],
+    "jobs": [],
+    "storyboardsEnabled": false,
+    "model": "Seedance 2.0",
+    "styleBible": {
+      "name": "Low-resolution pixel art",
+      "description": "Chunky low-resolution pixel art: very few pixels per character, tiny palette and hard blocky edges.",
+      "palette": [
+        "#1a1c2c",
+        "#b13e53",
+        "#38b764",
+        "#f4f4f4"
+      ],
+      "materials": "None: crisp square pixels",
+      "rendering": "Flat 2D: Flat colour with one or two stepped tones; dithering only if asked",
+      "lighting": "Flat, even lighting that suits the style (no studio or cinematic light)",
+      "locked": false,
+      "revision": 1,
+      "family": "2D · Pixel art",
+      "animationApproach": "Frame-by-frame sprite animation (not produced here)",
+      "shapeLanguage": "Blocky silhouettes, details reduced to single pixels",
+      "surfaceTreatment": "None: crisp square pixels",
+      "lineTreatment": "One-pixel outline or none, drawn on the grid",
+      "detailLevel": "Very low",
+      "spec2d": {
+        "id": "2d-pixel-low",
+        "version": 1,
+        "family2d": "2D · Pixel art",
+        "summary": "Chunky low-resolution pixel art: very few pixels per character, tiny palette and hard blocky edges.",
+        "line": "One-pixel outline or none, drawn on the grid",
+        "shape": "Blocky silhouettes, details reduced to single pixels",
+        "proportions": "Compact, chunky, readable at a glance (about 16 to 32 pixels tall)",
+        "palette": "A small fixed palette of 8 to 16 colours; no blended colours",
+        "shading": "Flat colour with one or two stepped tones; dithering only if asked",
+        "texture": "None: crisp square pixels",
+        "perspective": "Orthographic or simple pixel-art perspective on the same pixel grid; no smooth rotation or scaling",
+        "background": "A flat colour field or a simple tile-like backdrop on the same grid",
+        "edges": "Hard stair-stepped pixel edges, no anti-aliasing",
+        "detail": "Very low",
+        "technical": "Sprite-sheet clarity: the subject alone on the plain flat field at one coherent pixel scale, every pixel the same size, aligned to the grid, no smoothing.",
+        "scene": "A pixel-art scene at one coherent pixel scale with a limited palette; every element on the same grid.",
+        "avoid": [
+          "smooth or anti-aliased edges",
+          "mixed pixel sizes",
+          "gradients and blur",
+          "3D or photographic look"
+        ],
+        "animation": "Frame-by-frame sprite animation (not produced here)",
+        "output": "One flat 2D raster reference picture per view. Not vector artwork, not a layered file, not a rigged puppet, not an animation file, and not frame-by-frame animation.",
+        "intentionalTexture": false,
+        "providerNote": "Request construction is supported. Image models often draw soft or inconsistent pixels: check the pixel scale on one view first. A true pixel grid may need clean-up in a pixel editor.",
+        "visualStatus": "unverified",
+        "preview": {
+          "kind": "schematic",
+          "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."
+        }
+      }
+    },
+    "title": "2D style demo: Low-resolution pixel art",
+    "format": "16:9"
+  }
+}

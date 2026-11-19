@@ -282,15 +282,17 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
   const scene = analysis.scenes.find((s) => s.id === shot.sceneId)
   const names = shot.assetIds.map((id) => analysis.assets.find((a) => a.id === id)).filter((a): a is ExtractedAsset => !!a)
   const chars = names.filter((a) => a.type === 'character')
+  const placeLayout = names.find((a) => (a.type === 'set' || a.type === 'environment') && a.layout?.trim())?.layout?.trim().replace(/\s+/g, ' ')
   const lines = [
-    `Storyboard frame, ${aspect}, drawn in the project's art style. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${shot.lens ?? 40}mm lens${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
-    `Art style, applied to the whole picture (the people, the place and the light alike): ${styleGuidance(style)}.`,
+    `Storyboard frame, ${aspect}, drawn in the project's art style. ${sizeLabels[shot.size ?? 'MS']}, ${angleLabels[shot.angle ?? 'eye-level'].toLowerCase()}, ${style.spec2d ? 'drawn layout, no photographic lens effects' : `${shot.lens ?? 40}mm lens`}${shot.movement && shot.movement !== 'static' ? ` (frame the start of a ${movementLabels[shot.movement].toLowerCase()})` : ''}.`,
+    `Art style, applied to the whole picture (the people, the place and the light alike): ${styleGuidance(style, 'scene')}.`,
     extremeShape(aspect) ? `The picture may be trimmed to ${aspect} afterwards: keep every person and important object in the middle of the frame and leave the top and bottom (or the sides) free of anything that matters.` : '',
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.${shot.coverage === 'establishing' ? '' : ' Only these people appear in the frame: no other people, creatures, crowd or bystanders, not even small or in the background.'}` : '',
     names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',
     names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.prompt?.startsWith('As the script describes it') ? `${n.name} (${n.prompt.replace('As the script describes it: ', '')})` : n.name).join(', ')}.${names.some((n) => n.type === 'prop' && n.prompt?.startsWith('As the script describes it')) ? ' What a described prop shows is exactly what its description says and nothing more: add no other people or objects to it.' : ''}` : '',
     refs.some((r) => r.kind === 'set') ? `Set consistency: the picture labelled ${refs.filter((r) => r.kind === 'set').map((r) => `"${r.label}"`).join(', ')} is this exact place. Keep its layout, walls, floor, furniture, doors and windows, colours, materials and light sources identical, and show only the part of it this camera angle would see. Do not redesign, restyle or replace the set.` : '',
+    placeLayout ? `Fixed layout of this place (the same in every shot set here): ${placeLayout}. Show only the part of it this camera would see, and keep these landmarks where they are.` : '',
     `Action: ${shot.action}`,
     shot.emotion && shot.emotion !== 'neutral' ? `Feeling: ${shot.emotion}. Face: ${shot.facialActing}. Body: ${shot.bodyLanguage}.` : '',
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',

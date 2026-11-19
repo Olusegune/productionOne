@@ -18,6 +18,12 @@ const yellowProne = (model: string) => /gpt-image|dall-e|openai/i.test(model)
 /** One or two short sentences to add to an image prompt. Empty when nothing useful can be said. */
 export function artifactGuidance(style: StyleBible, model = '', extraLighting = ''): string {
   const parts: string[] = []
+  // A 2D style decides for itself: its texture is intentional where it says so, its palette is its own, and nothing photographic is added.
+  if (style.spec2d) {
+    parts.push('Keep the chosen 2D style consistently across the whole image; do not add photographic skin pores, film grain, lens bloom, depth of field or 3D material shading.')
+    parts.push(style.spec2d.intentionalTexture ? "Keep the style's own paper grain, brush, pencil or print texture: it is part of the look, not noise." : 'Keep fills clean and even, without unintended noise or banding.')
+    return parts.join(' ')
+  }
   if (isStylised(style)) {
     parts.push('Keep the chosen illustrated style consistently across the whole image; do not add photographic skin pores, film grain or lens bloom.')
   } else {

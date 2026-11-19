@@ -1,4 +1,7 @@
 import { sheetHints, sheetIconFor } from "../domain/categoryIcons";
+import { styleFingerprint } from "../domain/style2d";
+import { StyleGallery } from "./StyleGallery";
+import { stylePresets } from "../domain/visualDevelopment";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, Undo2, X } from "lucide-react";
@@ -120,9 +123,19 @@ export function SheetStudio(props: {
   setSettings?: (update: (m: Record<string, string>) => Record<string, string>) => void;
   /** When given, the sheet's controls (look, sheet, model, generate, notes) are drawn there, for example in the side inspector, and only the pictures stay in this panel. */
   controlsSlot?: HTMLElement | null;
+  /** Sets or clears this asset's own style (an override of the project's). */
+  onAssetStyle?: (assetId: string, style: StyleBible | undefined) => void;
+  /** Every style the person can choose from, for an asset override. */
+  allStyles?: StyleBible[];
+  /** Edits an asset's own fields (its description and, for a set, its layout). */
+  onPatchAsset?: (assetId: string, patch: Partial<ExtractedAsset>) => void;
 }) {
-  const { assets, scenes, story, assetIndex, style, queue, setQueue, desktop, providersVersion, onApproved, onUnapproved, notify, openProviders, openLocal, controlRef, controlsSlot, refs, setRefs, focusSheetType } = props;
+  const { assets, scenes, story, assetIndex, queue, setQueue, desktop, providersVersion, onApproved, onUnapproved, notify, openProviders, openLocal, controlRef, controlsSlot, refs, setRefs, focusSheetType } = props;
   const asset = assets[Math.min(assetIndex, Math.max(0, assets.length - 1))];
+  /** The style this asset is made in: its own override if it has one, otherwise the project's. */
+  const style = asset?.style ?? props.style;
+  const fingerprint = styleFingerprint(style);
+  const [pickingStyle, setPickingStyle] = useState(false);
   const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
   const [variant, setVariant] = useState("Canonical");
   const sheetTypes = asset ? sheetTypesFor(asset.type) : [];
@@ -182,16 +195,17 @@ export function SheetStudio(props: {
   }, [backdrop, frontPath, desktop]);
   const backdropHex = backdrop === "front" && frontColour && frontColour.path === frontPath ? frontColour.hex : "";
   /** `only` limits the run to those view keys; `force` makes a new revision even where an image already exists (never for views still in the queue). */
-  const generate = (testOneFirst = false, only?: string[], force = false) => {
+  const generate = (testOneFirst = false, only?: string[], force = false, reinterpret = false) => {
     if (!asset) return;
     const pool = only ? views.filter((v) => only.includes(v.key)) : views;
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, anchored: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, anchored: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
       aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
-      references: modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []) : [],
-      useAnchor: modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
+      references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? [])] : [],
+      styleName: style.name, styleFp: fingerprint,
+      useAnchor: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));
     const result = enqueue(queue, requests, Date.now(), force);
@@ -314,6 +328,7 @@ export function SheetStudio(props: {
             <button className="secondary" disabled={!waiting && !stats.generating} onClick={() => setQueue((q) => ({ ...q, paused: true }))}><Pause size={14} /> Pause</button>
           )}
           <button className="secondary" disabled={!waiting} onClick={() => setQueue((q) => cancelAllWaiting(q))}>Cancel waiting</button>
+          {style.spec2d && <button className="secondary" disabled={!frontPath || !modelTakesReferences(provider, modelId)} onClick={() => generate(false, [(views.find((v) => primaryViewKeys.includes(v.key)) ?? views[0])?.key].filter(Boolean) as string[], true, true)} title={frontPath ? `Redraw the approved picture in ${style.name} as a new revision for review. The original and its approval are kept. Identity may not carry over exactly. This uses one image request.` : "Approve a picture first: it is what gets reinterpreted."}>Reinterpret in {style.name}</button>}
           {desktop && <button className="secondary" disabled={viewItems.length === 0} onClick={() => setQuality(0)} title="Check colour, noise, highlights and sharpness, and correct them without changing the original"><Wand2 size={14} /> Image quality</button>}
         </div>
   );
@@ -321,6 +336,29 @@ export function SheetStudio(props: {
       <div className="ss-bar">
         <label><span>Look</span>
           <select value={activeVariant} onChange={(e) => setVariant(e.target.value)}>{variants.map((v) => <option key={v}>{v}</option>)}</select></label>
+        <div className="ss-style" aria-label="Style for this asset">
+          <span>Style</span>
+          <div className="ss-style-row">
+            <b>{style.name}</b>
+            {style.spec2d && <i className="ss-2d-tag">2D</i>}
+            <small>{asset.style ? "your override for this asset" : "inherited from the project"}</small>
+            {props.onAssetStyle && <button type="button" className="tertiary" onClick={() => setPickingStyle(true)}>{asset.style ? "Change" : "Override for this asset"}</button>}
+            {props.onAssetStyle && asset.style && <button type="button" className="tertiary" onClick={() => props.onAssetStyle?.(asset.id, undefined)}>Use the project style</button>}
+          </div>
+          {style.spec2d && (refs[asset.id]?.length ?? 0) > 0 && <small className="ss-2d-note">Your reference photos are used as identity references only; pictures are redrawn in {style.name}. A photograph can still pull the result toward realism. If it does, use Reinterpret on the approved front view.</small>}
+          {style.spec2d && <small className="ss-2d-note">{style.spec2d.providerNote}</small>}
+        </div>
+        {props.onPatchAsset && (
+          <details className="ss-about">
+            <summary>{asset.type === "set" || asset.type === "environment" ? "About this place and its layout" : `About this ${asset.type}`}{(asset.description || asset.layout) ? <small> · saved</small> : null}</summary>
+            <label><span>Description (your words, added to every picture's prompt)</span>
+              <textarea rows={3} aria-label={`Description of ${asset.name}`} value={asset.description ?? ""} onChange={(e) => props.onPatchAsset?.(asset.id, { description: e.target.value })} placeholder={asset.type === "character" ? "Who they are, what they look like, what they wear" : asset.type === "set" || asset.type === "environment" ? "What the place is, its mood and materials" : "What it is, its shape, size and materials"} /></label>
+            {(asset.type === "set" || asset.type === "environment") && (
+              <label><span>Layout and landmarks (kept the same in every view and every shot in this place)</span>
+                <textarea rows={3} aria-label={`Layout of ${asset.name}`} value={asset.layout ?? ""} onChange={(e) => props.onPatchAsset?.(asset.id, { layout: e.target.value })} placeholder="For example: the door is on the left wall, the desk is in the centre facing the door, a tall window is behind the desk, the lamp stands on the desk's right corner" /></label>
+            )}
+          </details>
+        )}
         <div className="ss-sheets" role="group" aria-label="Sheet">
           <span>Sheet</span>
           <div className="ss-sheet-row">{sheetTypes.map((t) => { const Icon = sheetIconFor(t); return <button key={t} type="button" className={`ss-sheet${t === activeType ? " on" : ""}`} aria-pressed={t === activeType} title={sheetHints[t] ?? t} onClick={() => setSheetType(t)}><Icon size={15} aria-hidden="true" /><span>{t}</span></button>; })}</div>
@@ -466,6 +504,7 @@ export function SheetStudio(props: {
                     {job?.error && <small className="qa-note">{job.error}</small>}
                     {job && job.status === "queued" && waitingForAnchor(queue, job) && <small>Waits for the approved front view, then uses it as its reference.</small>}
                     {job?.width && <small>{job.width}×{job.height}px{job.source === "supplied" ? " · your image" : ""}</small>}
+                    {job?.styleFp && job.styleFp !== fingerprint && <small className="qa-note" title="The style changed after this picture was made. Nothing was re-approved: decide whether to keep it or regenerate it.">Made in {job.styleName ?? "an earlier style"}: out of date</small>}
                   </div>
                   <div className="view-actions">
                     {job?.status === "needs-review" && (<>
@@ -497,6 +536,7 @@ export function SheetStudio(props: {
         {!controlsSlot && sheetSettings}
       </div>
 
+      {pickingStyle && props.onAssetStyle && <StyleGallery styles={props.allStyles ?? stylePresets} current={style.name} onChoose={(picked) => { props.onAssetStyle?.(asset.id, { ...picked, locked: false }); setPickingStyle(false); notify(`${asset.name} now uses ${picked.name}. Pictures already made keep their style and are marked out of date: nothing was re-approved.`); }} onClose={() => setPickingStyle(false)} />}
       {quality !== null && viewItems.length > 0 && (
         <CleanRender items={viewItems.map((it) => it.job)} index={Math.min(quality, viewItems.length - 1)} onIndex={setQuality} onClose={() => setQuality(null)} notify={notify}
           onSaved={(from, file) => { const out = addCleaned(queue, from, file); setQueue(() => out.state); if (out.job.approved) onApproved(out.job, primaryViewKeys.includes(out.job.viewKey)); }} />
