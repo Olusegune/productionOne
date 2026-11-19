@@ -18,6 +18,9 @@ Scope: upscalers in Image quality (Real-ESRGAN, Topaz, Magnific).
 | Topaz result | **Failed**: Kie answered "ConnectException: Operation timed out" on three tries (about 4 minutes each). No file was produced. |
 | The failure is shown inside the panel | Pass (found because the first attempt showed nothing; fixed) |
 
+## Follow-up (2026-11-19)
+Topaz was tried twice more: with a proper file extension on the upload, and with Kie's own documented example image URL in place of our upload. Both gave the same 500 ConnectException timeout, so the failure is on Kie's Topaz service, not in the app's upload. Still no successful Topaz result.
+
 ## Not checked
 - A successful Topaz upscale. Cause unknown: Kie's service, or its access to the uploaded file.
 - Magnific (no key; built from docs) and Real-ESRGAN end to end (no ComfyUI with the model).

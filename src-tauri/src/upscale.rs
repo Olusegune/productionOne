@@ -61,6 +61,11 @@ pub fn prepare(bytes: Vec<u8>, max_bytes: usize) -> Result<(Vec<u8>, &'static st
     Err("The picture is too large to send. Make it smaller first.".to_string())
 }
 
+/// The file name sent with an upload. Kie's upscaler decides what the file is from its extension, so it must have one that matches the picture.
+pub fn upload_name(mime: &str) -> &'static str {
+    match mime { "image/jpeg" => "upscale-source.jpg", "image/webp" => "upscale-source.webp", _ => "upscale-source.png" }
+}
+
 fn dimensions(bytes: &[u8]) -> Result<(u32, u32), String> {
     image::ImageReader::new(Cursor::new(bytes)).with_guessed_format().map_err(|e| e.to_string())?.into_dimensions().map_err(|e| format!("Could not read the picture's size: {e}"))
 }
@@ -101,7 +106,7 @@ async fn download(url: &str, service: &str) -> Result<Vec<u8>, String> {
 async fn topaz(api_key: &str, bytes: Vec<u8>, factor: u32) -> Result<Vec<u8>, String> {
     let (data, mime) = prepare(bytes, TOPAZ_MAX_BYTES)?;
     let client = http(120)?;
-    let upload = json!({ "base64Data": format!("data:{mime};base64,{}", ENGINE.encode(&data)), "uploadPath": "production-one", "fileName": "upscale-source" });
+    let upload = json!({ "base64Data": format!("data:{mime};base64,{}", ENGINE.encode(&data)), "uploadPath": "production-one", "fileName": upload_name(mime) });
     let up = crate::kie::kie_json(client.post("https://kieai.redpandaai.co/api/file-base64-upload").bearer_auth(api_key).json(&upload)).await?;
     let d = if up["data"].is_null() { &up } else { &up["data"] };
     let url = d["downloadUrl"].as_str().or_else(|| d["fileUrl"].as_str()).or_else(|| d["url"].as_str()).ok_or("Kie's file upload returned no address")?.to_string();
@@ -189,6 +194,13 @@ mod tests {
         let mut out = Cursor::new(Vec::new());
         DynamicImage::ImageRgb8(img).write_to(&mut out, ImageFormat::Png).unwrap();
         out.into_inner()
+    }
+
+    #[test]
+    fn the_upload_has_a_file_name_with_the_right_extension() {
+        assert_eq!(upload_name("image/png"), "upscale-source.png");
+        assert_eq!(upload_name("image/jpeg"), "upscale-source.jpg");
+        assert_eq!(upload_name("image/webp"), "upscale-source.webp");
     }
 
     #[test]
