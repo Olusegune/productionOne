@@ -14,6 +14,7 @@ import { ProjectsView } from "./views/ProjectsView";
 import { StoryView } from "./views/StoryView";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { DeliveryCenter } from "./components/DeliveryCenter";
+import { AssistantView } from "./components/Assistant";
 import { DEFAULT_FORMAT, cleanFormat, videoAspectFor } from "./domain/formats";
 import { convertScript, type ScriptKind } from "./engine/importers";
 import { 
@@ -26,6 +27,7 @@ import {
   PackageCheck, 
   PenTool, 
   Sparkles, 
+  MessageCircle,
 } from "lucide-react";
 import { projectStore, studioStore, type StudioState } from "./data/projectStore";
 import { demoGraph } from "./domain/demoGraph";
@@ -103,6 +105,7 @@ const workspaces = [
   { name: "Design", icon: Sparkles },
   { name: "Direct", icon: Clapperboard, optional: true },
   { name: "Deliver", icon: PackageCheck },
+  { name: "Assistant", icon: MessageCircle },
 ];
 const sampleScript = sampleStory;
 
@@ -389,6 +392,19 @@ export default function App() {
     if (named) setTitle(named);
     setNotice(`${name} imported: ${next.scenes.length} scenes and ${next.assets.length} assets.${converted.notes.length ? " " + converted.notes.join(" ") : ""}`);
   };
+  /** For the assistant: reads a script the person attached or the assistant wrote, and says what was found. */
+  const assistantUseScript = (name: string, kind: ScriptKind, raw: string): { ok: true; scenes: number; assets: number } | { ok: false; error: string } => {
+    let converted;
+    try { converted = convertScript(kind, raw); } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "That script could not be read." }; }
+    if (!converted.text.trim()) return { ok: false, error: `${name} has no readable text.` };
+    setScript(converted.text);
+    const next = mergeAnalysis(analysis, analyzeScript(converted.text));
+    setAnalysis(next);
+    const named = titleFromScript(title, next.story?.title);
+    if (named) setTitle(named);
+    setShots((current) => keepShotsAfterReading(current, next));
+    return { ok: true, scenes: next.scenes.length, assets: next.assets.length };
+  };
   const importScript = async (file: File) => {
     const ext = /\.([a-z]+)$/i.exec(file.name)?.[1]?.toLowerCase() ?? "";
     if (ext === "fdx") return takeScript(file.name, "fdx", await file.text());
@@ -468,10 +484,18 @@ export default function App() {
       const { invoke } = await import("@tauri-apps/api/core");
       const chosen = (await invoke<string[]>("pick_image_files", { multiple: true })).slice(0, 24);
       if (!chosen.length) return;
-      const files = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen });
+      await addImagesAsAssets(kind, chosen);
+    } catch (error) { setNotice(String(error)); }
+  };
+  /** Adds one asset per picture, named from its file, each picture the approved reference. Returns how many were added. */
+  const addImagesAsAssets = async (kind: NewAssetKind, chosen: string[]): Promise<number> => {
+    if (!isTauri) { setNotice("Adding images needs the desktop app."); return 0; }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const files = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen.slice(0, 24) });
       const picked = chosen.slice(0, files.length);
       const out = addAssetsFromImages(analysis.assets, kind, picked, analysis.scenes[0]?.id ?? "SCENE-001");
-      if (!out.added.length) { setNotice("Nothing was added."); return; }
+      if (!out.added.length) { setNotice("Nothing was added."); return 0; }
       const slot = ownImageSlot(kind);
       let q = queue;
       const made: ImageJob[] = [];
@@ -486,7 +510,8 @@ export default function App() {
       setSelectedAsset(out.assets.findIndex((a) => a.id === out.added[0].id));
       const noun = newAssetKinds.find((k) => k.kind === kind)?.noun ?? "asset";
       setNotice(`Added ${out.added.length} ${noun}${out.added.length === 1 ? "" : "s"} from your images, named from the file names, each with its image as the approved reference. Rename any in the Identity tab.${picked.length < chosen.length || chosen.length === 24 ? " (Up to 24 images are added at once.)" : ""}`);
-    } catch (error) { setNotice(String(error)); }
+      return out.added.length;
+    } catch (error) { setNotice(String(error)); return 0; }
   };
   const approveAsset = (index: number) =>
     setAnalysis((current) => ({
@@ -1200,7 +1225,7 @@ export default function App() {
   };
   const paletteCommands: PaletteCommand[] = [
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
-    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
+    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
     { id: "appearance", label: "Appearance: choose a look", hint: "View", run: () => setAppearanceOpen(true) },
     ...looks.map((l) => ({ id: `look-${l.id}`, label: `Appearance: ${l.name}`, hint: l.tagline, run: () => setLook(l.id) })),
@@ -1418,6 +1443,11 @@ export default function App() {
         {workspace === "Projects" && (
           <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
         )}
+        <div hidden={workspace !== "Assistant"}>
+          <AssistantView analysis={analysis} shots={shots} setShots={setShots} queue={queue} setQueue={setQueue} style={styleBible} assetRefs={assetRefs} format={format} script={script}
+            desktop={isTauri} providersVersion={Number(providersOpen)} notify={setNotice} openProviders={() => setProvidersOpen(true)} openReview={() => setWorkspace("Review")} openDesign={() => setWorkspace("Design")} openDeliver={() => setWorkspace("Deliver")}
+            useScript={assistantUseScript} addImages={addImagesAsAssets} onApproved={onSheetApproved} />
+        </div>
         {workspace === "Story" && (
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}

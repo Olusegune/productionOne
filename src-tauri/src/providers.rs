@@ -177,7 +177,7 @@ fn client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder().timeout(Duration::from_secs(240)).build().map_err(|error| error.to_string())
 }
 
-fn key_for(provider: &str) -> Result<String, String> {
+pub(crate) fn key_for(provider: &str) -> Result<String, String> {
     credential(provider)?.get_password().map_err(|_| format!("No {provider} key is saved. Add it in Tools, Provider Settings."))
 }
 

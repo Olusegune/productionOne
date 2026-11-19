@@ -126,6 +126,23 @@ export function analyzeScript(text: string): AnalysisResult {
     const made = assets.get(`costume:${slug(name)}`)
     if (made && !made.prompt) made.prompt = `Costume worn by ${c.character}, as the script describes it: ${c.items.join(', ')}.`
   }
+  // What the script itself says about a person or a place, kept as the description so every picture is asked for the same thing the writer wrote.
+  const clip = (t: string) => t.replace(/\s+/g, ' ').trim().slice(0, 320)
+  const mentions = (text: string, name: string) => ` ${text.toLowerCase().replace(/[^a-z0-9']+/g, ' ')} `.includes(` ${name.toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim()} `)
+  for (const asset of assets.values()) {
+    if (asset.description) continue
+    if (asset.type === 'character') {
+      for (const scene of story.scenes) {
+        const line = scene.action.find((a) => mentions(a.text, asset.name) && a.text.trim().split(/\s+/).length > 4)
+        if (line) { asset.description = clip(line.text); break }
+      }
+    } else if (asset.type === 'set') {
+      const scene = story.scenes.find((sc) => sc.setting === asset.name)
+      // A place is described by a line about the place, not one about a person standing in it.
+      const line = scene?.action.find((a) => a.text.trim().split(/\s+/).length > 4 && !story.characters.some((c) => mentions(a.text, c.name)))
+      if (line) asset.description = clip(line.text)
+    }
+  }
   return { scenes, assets: [...assets.values()], story }
 }
 
