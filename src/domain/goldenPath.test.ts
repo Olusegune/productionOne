@@ -53,6 +53,13 @@ describe('golden path', () => {
       expect(withExtra.progress).toBe(without.progress)
       expect(withExtra.steps).toEqual(without.steps)
     })
+    it('reports camera and lighting direction the same way, only once started', () => {
+      expect(goldenPath({ ...base, camera: { shots: 5, withDetails: 0 } }).extras).toEqual([])
+      const x = goldenPath({ ...base, hasScript: true, assetCount: 2, storyboards: true, shotCount: 5, camera: { shots: 5, withDetails: 2 } })
+      expect(x.extras[0]).toMatchObject({ id: 'camera', state: 'upcoming' })
+      expect(x.extras[0].detail).toMatch(/2 of 5 shots have camera or lighting direction/)
+      expect(x.steps).toEqual(goldenPath({ ...base, hasScript: true, assetCount: 2, storyboards: true, shotCount: 5 }).steps)
+    })
     it('shows done when every character has a profile', () => {
       expect(goldenPath({ ...base, shape: { characters: 2, withProfile: 2 } }).extras[0].state).toBe('done')
     })

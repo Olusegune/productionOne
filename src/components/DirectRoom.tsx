@@ -18,6 +18,8 @@ import { Fold } from "./Fold";
 import { Lightbox, type LightboxItem } from "./Lightbox";
 import { CleanRender } from "./CleanRender";
 import { ModelPicker } from "./ModelPicker";
+import { ShotCameraLighting } from "./ShotCameraLighting";
+import { lightingTestPrompts } from "../domain/lighting";
 
 import { FormatPicker } from "./FormatPicker";
 import { formatName, isPortrait, ratioOf, sameShape } from "../domain/formats";
@@ -73,6 +75,17 @@ export function DirectRoom(props: {
     );
   }
 
+  /** One picture per lighting condition for the shot's focus character. Runs only when the person presses the button. */
+  const lightingTest = (s: ShotRecord) => {
+    const who = analysis.assets.find((a) => a.id === (s.focusAssetId ?? s.camera?.focusTarget)) ?? analysis.assets.find((a) => a.type === "character" && s.assetIds.includes(a.id));
+    if (!who) { notify("Choose a character in this shot first: the lighting test is made for one character."); return; }
+    const requests = lightingTestPrompts([who.name, who.description ?? ""].filter(Boolean).join(", "), `${sizeLabels[s.size ?? "MS"].toLowerCase()}, ${angleLabels[s.angle ?? "eye-level"].toLowerCase()}`).map((item) => ({
+      assetId: who.id, variant: "Lighting test", sheetType: "Lighting test", viewKey: item.presetId, label: item.label, prompt: item.prompt, aspect: "3:4", fullBody: false, provider: choice.provider, model: choice.modelId, references: [] as string[],
+      outputName: (rev: number) => `${who.id}_lighting-${item.presetId}_v${String(rev).padStart(2, "0")}`,
+    }));
+    setQueue((q) => enqueue(q, requests, Date.now(), false).state);
+    notify(`Asked for ${requests.length} lighting-test pictures of ${who.name}. Each is a new candidate, not a relit copy of one picture.`);
+  };
   const update = (id: string, patch: Partial<ShotRecord>) => setShots((list) => list.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   const planAll = () => {
     const planned = planCoverage(analysis);
@@ -289,6 +302,7 @@ export function DirectRoom(props: {
                   <label><span>Duration (s)</span><input type="number" min={1} max={30} step={0.5} value={shot.duration} onChange={(e) => update(shot.id, { duration: Math.max(1, Number(e.target.value) || 4) })} /></label>
                 </div>
               </Fold>
+              <ShotCameraLighting shot={shot} sceneShots={sceneShots} assets={analysis.assets} flat2D={!!style.spec2d} styleName={style.name} update={update} onLightingTest={lightingTest} />
               <Fold title="Composition" hint={`${shot.composition?.length ?? 0} guides`} id="composition">
                 <div className="dr-checks">{compositionRules.map((c) => { const on = !!shot.composition?.includes(c); return <label key={c} className={on ? "on" : ""}><input type="checkbox" checked={on} onChange={() => update(shot.id, { composition: on ? (shot.composition ?? []).filter((x) => x !== c) : [...(shot.composition ?? []), c] })} /> {c}</label>; })}</div>
               </Fold>
