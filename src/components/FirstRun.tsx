@@ -6,7 +6,7 @@ const read = () => { try { return localStorage.getItem(KEY) === "1"; } catch { r
 const write = () => { try { localStorage.setItem(KEY, "1"); } catch { /* private window: the card just returns next time */ } };
 
 /** A short, dismissible start for new people: keys, script, then the Golden Path. Remembers being dismissed. */
-export function FirstRun({ onKeys, onStory }: { onKeys: () => void; onStory: () => void }) {
+export function FirstRun({ onKeys, onStory, onTour }: { onKeys: () => void; onStory: () => void; onTour?: () => void }) {
   const [gone, setGone] = useState(read);
   if (gone) return null;
   const close = () => { write(); setGone(true); };
@@ -24,7 +24,10 @@ export function FirstRun({ onKeys, onStory }: { onKeys: () => void; onStory: () 
         <li><FileText size={18} aria-hidden="true" /><div><b>Paste or import a script</b><p>Production One reads characters, props and sets from it and shows how it read them, so you can correct a miss.</p><button className="secondary" onClick={onStory}>Open Story</button></div></li>
         <li><Route size={18} aria-hidden="true" /><div><b>Follow the Golden Path</b><p>The highlighted button in the sidebar always names the next step: design, generate, review, deliver.</p></div></li>
       </ol>
-      <button className="primary" onClick={close}>Got it</button>
+      <div className="first-run-actions">
+        {onTour && <button className="primary" onClick={() => { close(); onTour(); }}>Take the 1-minute tour</button>}
+        <button className={onTour ? "secondary" : "primary"} onClick={close}>Got it</button>
+      </div>
     </section>
   );
 }

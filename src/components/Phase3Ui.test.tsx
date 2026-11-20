@@ -119,7 +119,7 @@ describe('VisualReviewPanel', () => {
     const now = setControl(profile, 'eyeSize', 0.4)
     render(<Review profile={now} queue={done(provenanceFor(profile, []))} />)
     fireEvent.click(screen.getByRole('button', { name: /Run checks/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'Regenerate this view with a fix' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Regenerate this view with a fix/ }))
     const q = JSON.parse(screen.getByTestId('queue').textContent!)
     expect(q).toEqual([{ v: 'front', r: 1, a: false }, { v: 'side', r: 1, a: false }, { v: 'front', r: 2, a: false }])
     expect(screen.getByText(/waits for your approval/)).toBeTruthy()

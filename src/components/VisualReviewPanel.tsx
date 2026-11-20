@@ -12,6 +12,8 @@ import {
   applyExceptions, categories, categoryLabels, deterministicChecks, outputStatus, recordReview, runVisionReview, setFindingStatus, type Category, type Finding, type Reviews, type VisionProvider,
 } from '../domain/visualReview'
 import { RealImage } from './RealImage'
+import { readModelChoice } from '../data/modelChoice'
+import { costShort, priceFor } from '../domain/pricing'
 
 const STATUS_LABEL = { passed: 'Passed', 'needs-review': 'Needs review', 'not-checked': 'Not checked', 'unable-to-assess': 'Unable to assess' } as const
 
@@ -43,6 +45,8 @@ export function VisualReviewPanel(p: Props) {
   const outputs = useMemo(() => queue.jobs.filter((j) => j.outputPath && !['scale-fit', 'shape-candidate', 'redesign-candidate', 'Lighting test'].includes(j.sheetType)), [queue.jobs])
   const [openFinding, setOpenFinding] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const choice = readModelChoice()
+  const fixCost = costShort(1, priceFor(choice.provider, choice.modelId, queue.perImageUsd))
   const nameOf = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? shots.find((s) => s.id === id)?.title ?? id
   const sceneFor = (job: ImageJob) => { const shot = shots.find((s) => s.id === job.assetId); return shot ? { state: sceneStates[shot.sceneId], order: shots.filter((s) => s.sceneId === shot.sceneId).map((s) => s.id) } : undefined }
   const assetStyleFp = (job: ImageJob) => styleFingerprint(analysis.assets.find((a) => a.id === job.assetId)?.style ?? style)
@@ -134,7 +138,7 @@ export function VisualReviewPanel(p: Props) {
                       <button type="button" className="secondary" onClick={() => setReviews((r) => setFindingStatus(r, f.id, 'accepted', 'Accepted: you agree it is a problem'))}>Accept</button>
                       <button type="button" className="secondary" onClick={() => setReviews((r) => setFindingStatus(r, f.id, 'dismissed', 'Dismissed by you'))}>Dismiss</button>
                       <button type="button" className="secondary" onClick={() => markIntentional(f)}>Mark intentional</button>
-                      <button type="button" className="secondary" onClick={() => correct(f, job)}>Regenerate this view with a fix</button>
+                      <button type="button" className="secondary" onClick={() => correct(f, job)}>Regenerate this view with a fix{fixCost ? ` · ${fixCost}` : ''}</button>
                     </>}
                     {f.status !== 'open' && <button type="button" className="secondary" onClick={() => setReviews((r) => setFindingStatus(r, f.id, 'open'))}>Reopen</button>}
                   </div>

@@ -19,6 +19,8 @@ interface Props {
   onGenerate: (asset: ExtractedAsset, prompt: string) => void
   candidates: Candidate[]
   approvedViews: number
+  /** What one candidate is likely to cost, for the button (for example "about $0.04"). */
+  cost?: string
   /** The profile a new character starts from (the world default, or Natural). */
   startFrom?: () => ProportionProfile
   world?: WorldRules
@@ -53,7 +55,7 @@ function Slider({ spec, profile, onSet, onReset, excused }: { spec: ControlSpec;
 }
 
 /** Target proportions for one character. Four things are kept apart on screen: the target, the schematic drawn from it, a generated interpretation, and the approved design. */
-export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, startFrom, world, onSetWorld, notify }: Props) {
+export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, cost, startFrom, world, onSetWorld, notify }: Props) {
   const [history, setHistory] = useState<History<ProportionProfile> | null>(profile ? newHistory(profile) : null)
   useEffect(() => { setHistory(profile ? newHistory(profile) : null) }, [asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const current = history?.present
@@ -118,7 +120,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
         <div className="prop-layer">
           <h5>3 · Generated interpretation <small>an AI candidate, not approved</small></h5>
           <p className="helper">Moving a slider never contacts an image model. Press the button to ask for one candidate; it uses one image request.</p>
-          <button type="button" className="primary" onClick={() => { onGenerate(asset, [asset.description ?? asset.name, words, 'Full-body neutral standing pose, front view, plain background.'].filter(Boolean).join(' ')); notify(`Asked for one candidate of ${asset.name}.`) }}><Sparkles size={13} /> Generate preview</button>
+          <button type="button" className="primary" onClick={() => { onGenerate(asset, [asset.description ?? asset.name, words, 'Full-body neutral standing pose, front view, plain background.'].filter(Boolean).join(' ')); notify(`Asked for one candidate of ${asset.name}.`) }}><Sparkles size={13} /> Generate preview{cost ? ` · ${cost}` : ''}</button>
           <div className="prop-candidates">
             {candidates.length === 0 && <small className="helper">No candidate yet.</small>}
             {candidates.map((c) => c.path ? <img key={c.id} src={convertFileSrc(c.path)} alt={`Candidate for ${asset.name}`} /> : <small key={c.id}>{c.status}…</small>)}

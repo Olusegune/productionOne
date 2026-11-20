@@ -23,6 +23,7 @@ import type { NewAssetKind } from "../domain/readingActions";
 import type { Dispatch, SetStateAction, RefObject } from "react";
 import { ProportionPanel } from "../components/ProportionPanel";
 import { FitPanel } from "../components/FitPanel";
+import { costShort, priceFor } from "../domain/pricing";
 import { profileFromWorld, type WorldRules } from "../domain/worldRules";
 import type { FitRule } from "../domain/fit";
 import { madeWithEarlierProportions } from "../domain/characterLayers";
@@ -154,6 +155,7 @@ export function DesignView(p: DesignViewProps) {
                 }}
                 candidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "shape-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status }))}
                 approvedViews={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType !== "shape-candidate" && j.approved).length}
+                cost={costShort(1, priceFor(readModelChoice().provider, readModelChoice().modelId, queue.perImageUsd))}
                 notify={setNotice}
               />;
             })()}
@@ -174,6 +176,7 @@ export function DesignView(p: DesignViewProps) {
                 redesignCandidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "redesign-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status, approved: j.approved }))}
                 onGenerateRedesign={(req) => ask(req.sheetType, req.viewKey, req.label, req.prompt, req.references, "redesign-candidate")}
                 onApproveCandidate={(id) => setQueue((q) => approveJob(q, id))}
+                cost={costShort(1, priceFor(choice.provider, choice.modelId, queue.perImageUsd))}
                 staleViews={queue.jobs.filter((j) => j.assetId === a.id && j.approved && madeWithEarlierProportions(j.provenance, profile)).length}
                 notify={setNotice}
               />;

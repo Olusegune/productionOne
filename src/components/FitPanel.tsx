@@ -26,13 +26,15 @@ interface Props {
   onApproveCandidate: (jobId: string) => void
   /** Approved views made with an earlier version of the proportions. They are left as they are. */
   staleViews: number
+  /** What one picture is likely to cost, for the buttons (for example "about $0.04"). */
+  cost?: string
   notify: (message: string) => void
 }
 
 const groupLabel = { functional: 'Functional fit', visual: 'Visual language', spatial: 'Spatial layout' } as const
 
 /** Fit rules proposed from a character's proportions, the Scale and Fit sheet, and redesigning an imported character. Nothing here applies itself. */
-export function FitPanel({ asset, profile, rules, onRules, people, onGenerateScaleSheet, originalPath, redesignCandidates, onGenerateRedesign, onApproveCandidate, staleViews, notify }: Props) {
+export function FitPanel({ asset, profile, rules, onRules, people, onGenerateScaleSheet, originalPath, redesignCandidates, onGenerateRedesign, onApproveCandidate, staleViews, cost, notify }: Props) {
   const proposals = useMemo(() => mergeProposals(rules, proposeFitRules(profile, asset.id)), [rules, profile, asset.id])
   const sheet = useMemo(() => scaleFitSheet(people.length ? people : [{ name: asset.name, profile }]), [people, asset.name, profile])
   const [warp, setWarp] = useState(false)
@@ -76,7 +78,7 @@ export function FitPanel({ asset, profile, rules, onRules, people, onGenerateSca
         <tbody>{sheet.measures.map((m) => <tr key={m.item}><td>{m.label}</td><td>{m.valueM} m</td><td><i>{m.basis}</i></td></tr>)}</tbody>
       </table>
       <small className="helper">{sheet.basisNote}</small>
-      <button type="button" className="primary" onClick={() => { onGenerateScaleSheet(sheet.prompt); notify('Asked for one Scale and Fit reference picture.') }}><Sparkles size={13} /> Generate Scale and Fit reference</button>
+      <button type="button" className="primary" onClick={() => { onGenerateScaleSheet(sheet.prompt); notify('Asked for one Scale and Fit reference picture.') }}><Sparkles size={13} /> Generate Scale and Fit reference{cost ? ` · ${cost}` : ''}</button>
 
       {originalPath && (
         <>
@@ -91,7 +93,7 @@ export function FitPanel({ asset, profile, rules, onRules, people, onGenerateSca
           </div>
           {warp && <small className="helper" role="note">{WARP_LABEL}</small>}
           <div className="dr-tools">
-            <button type="button" className="primary" onClick={() => { onGenerateRedesign(redesignRequest(asset.id, asset.name, originalPath, profile)); notify('Asked for one redesign candidate.') }}><Sparkles size={13} /> Generate redesign candidate</button>
+            <button type="button" className="primary" onClick={() => { onGenerateRedesign(redesignRequest(asset.id, asset.name, originalPath, profile)); notify('Asked for one redesign candidate.') }}><Sparkles size={13} /> Generate redesign candidate{cost ? ` · ${cost}` : ''}</button>
             {latest?.path && compare(originalPath, latest.path).ready && !latest.approved && <button type="button" className="secondary" onClick={() => onApproveCandidate(latest.id)}>Approve as a new revision</button>}
             {latest?.approved && <small className="helper">Approved as a new revision. The original is unchanged.</small>}
           </div>

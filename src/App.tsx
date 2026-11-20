@@ -105,6 +105,8 @@ import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type Queu
 import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { HelpCenter } from "./components/HelpCenter";
+import { Tour } from "./components/Tour";
+import type { FirstPicture } from "./components/QuickStart";
 import pkg from "../package.json";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -201,7 +203,8 @@ export default function App() {
   const localAi = useLocalAi(isTauri);
   const scriptArea = useRef<HTMLTextAreaElement>(null),
     studioControl = useRef<{ generateFirst: () => void } | null>(null),
-    [pendingConcept, setPendingConcept] = useState<string | null>(null);
+    [pendingConcept, setPendingConcept] = useState<string | null>(null),
+    [tourOpen, setTourOpen] = useState(false);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
   const snapshot = useRef<string | null>(null),
     scriptInput = useRef<HTMLInputElement>(null),
@@ -1069,6 +1072,16 @@ export default function App() {
       `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
     );
   };
+  /** The quick start: one picture, started only by the button on the card (which showed the model and the cost). */
+  const makeFirstPicture = (what: FirstPicture) => {
+    if (what.kind === "new") { void addAssetToBible("character", what.name, "", false, { description: what.description, makeConcept: true }); setWorkspace("Design"); return; }
+    const index = analysis.assets.findIndex((a) => a.id === what.assetId);
+    if (index < 0) { setNotice("That character is no longer in the project."); return; }
+    setSelectedAsset(index);
+    setPendingConcept(what.assetId);
+    setWorkspace("Design");
+    setNotice(`Making a first picture of ${analysis.assets[index].name}. It appears in the sheet below for you to approve or reject.`);
+  };
   const addDesktopShortcut = async () => {
     if (!isTauri) { setNotice("Adding a desktop shortcut needs the desktop app."); return; }
     try { const { invoke } = await import("@tauri-apps/api/core"); setNotice(await invoke<string>("create_desktop_shortcut")); } catch (error) { setNotice(String(error)); }
@@ -1242,6 +1255,7 @@ export default function App() {
     "help-start": () => setHelpTopic("start"),
     "help-docs": () => setHelpTopic("docs"),
     "help-shortcuts": () => setHelpTopic("shortcuts"),
+    "help-tour": () => setTourOpen(true),
     "help-desktop-shortcut": () => { void addDesktopShortcut(); },
     "help-trouble": () => setHelpTopic("trouble"),
     "help-updates": () => setHelpTopic("updates"),
@@ -1307,6 +1321,7 @@ export default function App() {
     { id: "rail", label: "Show or hide the side panels", hint: "View", run: () => setSidebarHidden((hidden) => !hidden) },
     { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
+    { id: "tour", label: "Take the quick tour", hint: "Help", run: () => setTourOpen(true) },
     { id: "desktop-shortcut", label: "Add Production One to the Desktop", hint: "Help", run: () => { void addDesktopShortcut(); } },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
   ];
@@ -1391,6 +1406,7 @@ export default function App() {
       />
       <main className="po-main">
         {localOpen && <LocalAiPanel onClose={() => setLocalOpen(false)} notify={setNotice} />}
+        {tourOpen && <Tour onClose={() => setTourOpen(false)} onFinish={() => { setWorkspace("Projects"); window.setTimeout(() => document.querySelector(".qs")?.scrollIntoView({ block: "center" }), 80); }} />}
         {helpTopic && (helpTopic === "start" || helpTopic === "docs")
           ? <HelpCenter onClose={() => setHelpTopic(null)} onGo={(w) => setWorkspace(w)} onDesktopShortcut={() => { void addDesktopShortcut(); }} version={`v${pkg.version}`} initialChapter={helpTopic === "start" ? "welcome" : "welcome"} />
           : helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
@@ -1509,7 +1525,7 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
+          <ProjectsView desktop={isTauri} providersVersion={Number(providersOpen)} perImageUsd={queue.perImageUsd} onMakeFirst={makeFirstPicture} onOwnPicture={() => setWorkspace("Design")} onTour={() => { setWorkspace("Projects"); setTourOpen(true); }} title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
         )}
         <div hidden={workspace !== "Assistant"}>
           <AssistantView proportions={proportions} analysis={analysis} shots={shots} setShots={setShots} queue={queue} setQueue={setQueue} style={styleBible} assetRefs={assetRefs} format={format} script={script}

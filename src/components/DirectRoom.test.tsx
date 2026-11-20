@@ -62,7 +62,7 @@ describe('Directors room', () => {
     render(<Harness />)
     fireEvent.click(screen.getByRole('button', { name: /plan all scenes/i }))
     await waitFor(() => expect(latest.shots.length).toBeGreaterThan(8))
-    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?$/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?( · .*)?$/i }))
     await waitFor(() => expect(calls.filter((c) => c.name === 'generate_image').length).toBeGreaterThan(0))
     const first = calls.find((c) => c.name === 'generate_image')!
     expect(first.args.aspect).toBe('16:9')
@@ -78,7 +78,7 @@ describe('Directors room', () => {
     render(<Harness startFormat="9:16" />)
     fireEvent.click(screen.getByRole('button', { name: /plan all scenes/i }))
     await waitFor(() => expect(latest.shots.length).toBeGreaterThan(8))
-    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?$/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?( · .*)?$/i }))
     await waitFor(() => expect(calls.some((c) => c.name === 'generate_image')).toBe(true))
     const first = calls.find((c) => c.name === 'generate_image')!
     expect(first.args.aspect).toBe('9:16')
@@ -92,7 +92,7 @@ describe('Directors room', () => {
     render(<Harness />)
     fireEvent.click(screen.getByRole('button', { name: /plan all scenes/i }))
     await waitFor(() => expect(latest.shots.length).toBeGreaterThan(8))
-    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?$/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /^generate \d+ frames?( · .*)?$/i }))
     await waitFor(() => expect(latest.queue.jobs.some((j) => j.sheetType === 'Storyboard' && j.outputPath)).toBe(true))
     await waitFor(() => expect(latest.queue.jobs.filter((j) => j.sheetType === 'Storyboard').every((j) => !['queued', 'generating', 'validating'].includes(j.status))).toBe(true), { timeout: 5000 })
     const made = calls.filter((c) => c.name === 'generate_image').length

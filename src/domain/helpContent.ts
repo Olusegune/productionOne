@@ -51,6 +51,16 @@ export const helpChapters: HelpChapter[] = [
         note: { kind: 'tip', text: 'Nothing is made until you press a Generate button, and you approve every picture yourself. The app never approves anything for you.' },
       },
       {
+        title: 'Your first picture in a minute',
+        text: [
+          'New here? Press **Take the 1-minute tour** on the Welcome card (or open **Help, Quick Tour**, or type "tour" in the command list). It points at the real buttons and changes nothing in your project.',
+          'Then use the **Quick start** card on Projects: choose a character from your project (or describe a new one in a sentence) and press **Make my first picture**. It makes **one** picture with the model you have chosen. The card shows the style, the model and the cost first, and nothing is made or charged until you press the button.',
+        ],
+        steps: ['Add a key under Tools, Provider Settings (the card tells you if one is missing).', 'Choose who the first picture is of.', 'Check the style, the model and the cost on the card.', 'Press Make my first picture. It opens in Design for you to approve or reject.'],
+        image: { file: 'help/15-quickstart.webp', caption: 'The Quick start card: the style, the model and the cost are shown before you press the button.' },
+        note: { kind: 'tip', text: 'Every Generate button in the app shows what it is likely to cost ("about $0.04"). Those are typical prices, labelled as such; enter your own price in the spending limit and they use yours.' },
+      },
+      {
         title: 'Where things are',
         text: [
           'The left sidebar has seven screens: **Projects** (overview and files), **Story** (your script), **Design** (characters, sets, props, style), **Review** (approve pictures), **Direct** (optional storyboards), **Deliver** (audit and export) and **Assistant** (a chat that can do much of this for you).',
@@ -76,7 +86,7 @@ export const helpChapters: HelpChapter[] = [
       },
       {
         title: 'Spending limits',
-        text: ['Before a batch runs you set a **price per picture** and a **budget**. The queue will not start past the ceiling. In the Assistant, a run cannot start without both numbers.'],
+        text: ['Every Generate button shows what it is likely to cost before you press it (for example "about $0.04"), using a typical price for the model or your own price if you have entered one. A typical price is an estimate, not a quote: the real charge is on your provider account.', 'Before a batch runs you can set a **price per picture** and a **budget**. The queue will not start past the ceiling. In the Assistant, a run cannot start without both numbers.'],
       },
       {
         title: 'Using your own computer (Local AI)',
