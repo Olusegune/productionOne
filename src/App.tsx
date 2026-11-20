@@ -189,6 +189,14 @@ export default function App() {
     [lookState, setLookState] = useState<LookState>(emptyLooks()),
     [world, setWorld] = useState<WorldRules>(defaultWorld());
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
+  // A new screen starts at its top, not wherever the last one was scrolled to.
+  useEffect(() => {
+    const top = () => { for (const el of [document.querySelector(".po-main"), document.scrollingElement]) el?.scrollTo?.({ top: 0 }); };
+    top();
+    // Some screens focus a field as they open, which scrolls; settle at the top after that.
+    const t = window.setTimeout(top, 120);
+    return () => window.clearTimeout(t);
+  }, [workspace]);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
   const scriptArea = useRef<HTMLTextAreaElement>(null),

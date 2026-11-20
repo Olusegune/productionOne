@@ -112,3 +112,15 @@ button:focus-visible, [role="button"]:focus-visible, a:focus-visible { outline: 
 .asst-check small { white-space: nowrap; }
 .asst-opts .seg { height: auto; overflow: visible; align-items: stretch; }
 .asst-opts .seg button { height: auto; min-height: 44px; border-radius: var(--radius-sm); }
+
+/* The style bar in a narrow column: the name and picker get a full row, the palette and lock share the next one (the picker used to shrink to "Re…"). */
+.ad-compact .ad-name { flex: 1 1 100%; }
+.ad-compact .style-browser-trigger { width: 100%; justify-content: space-between; min-width: 0; }
+.ad-compact .style-browser-trigger > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-compact .ad-palette { flex: 1 1 auto; }
+
+/* Design at 1280 px and below: the right-hand rail is hidden, so its column is dropped too (it used to leave 320 px of empty space and squeeze the work area). */
+@media (max-width: 1280px) {
+  .po-shell .po-design { grid-template-columns: minmax(220px, 26vw) minmax(0, 1fr); }
+  .po-shell .po-design > .po-inspector { display: none; }
+}

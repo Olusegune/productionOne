@@ -110,6 +110,7 @@ export function DirectView(p: DirectViewProps) {
                     />
                     <button
                       className="timeline-play"
+                      aria-label={animaticPlaying ? "Pause the animatic" : "Play the animatic"}
                       onClick={() => setAnimaticPlaying((value) => !value)}
                     >
                       {animaticPlaying ? (

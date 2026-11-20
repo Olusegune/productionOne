@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { useEffect, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { approve, emptyQueue, type QueueState } from '../domain/generationQueue'
 import { demoAssets2D, styleByName } from '../domain/demo2d'
@@ -57,6 +57,12 @@ describe('the assistant chat', () => {
     type('help')
     expect(await screen.findByText(/Attach a script: a Word document, a PDF/)).toBeTruthy()
     expect(HELP).toMatch(/Nothing is made until you press Start/)
+  })
+
+  it('greets you once, even when React mounts the screen twice (development mode)', async () => {
+    render(<StrictMode><Harness /></StrictMode>)
+    await screen.findAllByText(/Give me a script or an idea/)
+    expect(screen.getAllByText(/Hello\. Give me a script or an idea/)).toHaveLength(1)
   })
 
   it('reads an attached Word or PDF script and says what it found', async () => {

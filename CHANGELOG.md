@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased: LUT import
+## 0.55.0 (2026-11-20): LUT import and a UX polish pass
+**UX fixes from a QA pass** (every screen at 1100, 1440 and 1920 px, dark and light, with automatic checks for overflow, missing names and console errors):
+- A new screen now opens at its top. Before, Story and Review could open scrolled partway down with the heading cut off.
+- Design at 1280 px and below no longer reserves an empty 320 px column on the right; the work area is 60% wider at 1100 px.
+- The style picker in the Design style bar no longer shrinks to "Re…" in a narrow column.
+- The Director's room says "1 shot" and "1 frame", and shot cards show a size and lens even for shots from older projects (they showed " mm").
+- The animatic play button has a name for screen readers.
+- The Visual review notes are no longer run together.
+- The Assistant no longer greets you twice in development builds.
+
+**LUT import** (below).
+
 - **Import a `.cube` LUT into a look** (Direct, Looks and grade). 3D and 1D tables, applied after the grade with their own strength, changing colour only (no relighting). Trilinear interpolation, checked against known values.
 - **Careful by default.** A file that is not a clean `.cube` (wrong row count, bad numbers, unknown keywords, both 1D and 3D, binary, over 12 MB) is refused with the line and the reason. A LUT whose title or file name suggests log or HDR (LogC, S-Log, V-Log, HLG, PQ, ACES...) is warned about and **not applied** until you say it is meant for ordinary pictures. Table values outside 0 to 1 are counted, warned about and clamped.
 - **Kept and exported:** each table is stored once in the project (16-bit, base64; up to 8 per project), and each LUT is exported with the package as `Looks/<name>.cube`, listed in `design_records.json` with its colour spaces. The package writer refuses unsafe file names.

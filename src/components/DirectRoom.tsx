@@ -179,7 +179,7 @@ export function DirectRoom(props: {
       <div className="dr-top">
         <div>
           <Eyebrow icon={Clapperboard}>Director's room</Eyebrow>
-          <h2>{shots.length} shots · {frameCount} with frames</h2>
+          <h2>{shots.length} {shots.length === 1 ? "shot" : "shots"} · {frameCount} with {frameCount === 1 ? "a frame" : "frames"}</h2>
         </div>
         <div className="dr-top-actions">
           <ModelPicker catalog={choice.catalog} configured={choice.configured} provider={choice.provider} modelId={choice.modelId} onPick={choice.pick} onRefresh={() => void choice.refresh().then(notify)} refreshing={choice.refreshing} />
@@ -252,7 +252,7 @@ export function DirectRoom(props: {
                     <p className="dr-line">{s.action}</p>
                     <div className="dr-chips">
                       <i>{s.coverage ? coverageLabels[s.coverage] : "Shot"}</i>
-                      <i>{s.size} · {s.lens}mm</i>
+                      <i>{s.size ?? "MS"} · {s.lens ?? 40}mm</i>
                       <i>{s.movement ? movementLabels[s.movement] : "Static"}</i>
                       <i>{s.duration}s</i>
                       {frame?.outputPath && !sameShape(frame.aspect, aspect) && <i className="off" title={`Made at ${frame.aspect}; the project is ${aspect}`}>Made at {frame.aspect}</i>}

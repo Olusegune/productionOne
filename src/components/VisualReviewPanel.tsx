@@ -107,8 +107,8 @@ export function VisualReviewPanel(p: Props) {
         <button type="button" className="primary" onClick={runChecks} disabled={!outputs.length}>Run checks on {outputs.length} picture{outputs.length === 1 ? '' : 's'}</button>
         <button type="button" className="secondary" onClick={() => void runVision()} disabled={!outputs.length || busy} title={vision.ok ? `Uses ${vision.model} on this computer` : vision.why}>{busy ? 'Asking…' : 'Check with a vision model (this computer)'}</button>
       </div>
-      {!vision.ok && <small className="helper">{vision.why} Vision checking is optional; accuracy has not been measured against human-labelled examples.</small>}
-      <small className="helper" role="status">{outputs.length ? `${open} picture${open === 1 ? '' : 's'} need${open === 1 ? 's' : ''} review.` : 'No pictures to check yet.'}</small>
+      {!vision.ok && <small className="helper" style={{ display: 'block' }}>{vision.why} Vision checking is optional; accuracy has not been measured against human-labelled examples.</small>}
+      <small className="helper" role="status" style={{ display: 'block' }}>{outputs.length ? `${open} picture${open === 1 ? '' : 's'} need${open === 1 ? 's' : ''} review.` : 'No pictures to check yet.'}</small>
       <ul className="vr-list" aria-label="Review results">
         {outputs.map((job) => {
           const st = outputStatus(reviews, job.id)

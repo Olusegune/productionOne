@@ -83,7 +83,8 @@ export function AssistantView(props: {
 
   const setState = (s: AutopilotState) => { kept.state = s; setStateRaw(s); };
   const say = (role: Msg["role"], text: string, extra: Partial<Msg> = {}) => setMessages((list) => { const next = [...list, { id: nextId.current++, role, text, ...extra }]; kept.messages = next; return next; });
-  useEffect(() => { if (!messages.length) say("assistant", "Hello. Give me a script or an idea and I will make the production for you, inside a budget you set. Attach a Word, PDF or text script, describe a short film, or attach pictures.\n\nType \"help\" to see everything I can do."); }, []);
+  const greeted = useRef(false);
+  useEffect(() => { if (greeted.current) return; greeted.current = true; if (!messages.length) say("assistant", "Hello. Give me a script or an idea and I will make the production for you, inside a budget you set. Attach a Word, PDF or text script, describe a short film, or attach pictures.\n\nType \"help\" to see everything I can do."); }, []);
   useEffect(() => { endRef.current?.scrollIntoView?.({ block: "end" }); }, [messages, busy]);
   useEffect(() => { writeStored("po.agent.allow", allowRuns ? "1" : "0"); writeStored("po.agent.cap", agentCap); }, [allowRuns, agentCap]);
   useEffect(() => { writeStored("po.asst.price", price); writeStored("po.asst.budget", budget); writeStored("po.asst.writer", writer); writeStored("po.asst.writerModel", writerModel); writeStored("po.asst.localUrl", localUrl); }, [price, budget, writer, writerModel, localUrl]);
