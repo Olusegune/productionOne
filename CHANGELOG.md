@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased: a storyboard from your own pictures, without a script
+## 0.54.0 (2026-11-20): a storyboard from your own pictures, without a script
 - **Type your story, one line per beat.** With pictures added as characters, places and props and no script, tell the Assistant the story (for example "Marcus finds the lantern on the Old Harbour pier at dusk", "Amina: You should not be out here."). It turns your own words into a screenplay-shaped script using the items you already have (scene headings from the places and times you name, names capitalised, `Name: words` as dialogue), then plans the shots. It needs no language model and sends nothing anywhere; it invents nothing.
 - **With a language model**, a one-line idea is now written using your existing characters, places and props instead of inventing others.
 - **After you add pictures to a project with no story**, the Assistant now asks for one.
