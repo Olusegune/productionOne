@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.51.1 (2026-11-19): real pictures for every 2D style, and Kie.ai first
+- **The 33 flat 2D styles now have a picture of their own** in the style gallery (the same lighthouse keeper as the other 117), in place of the drawn swatches. Made through the app with fal.ai Nano Banana.
+- **Fixed: Nano Banana went to Google even when Kie.ai had credits.** The engine picker took the first provider with a saved key, and Google came first, so a Google key with no billing answered 402 and Kie.ai was never tried. Kie.ai is now preferred for Nano Banana 2.1 and Pro and for the default; Google direct is used only when there is no Kie.ai key.
+
 ## 0.51.0 (2026-11-19): the Assistant: give it a script or an idea, and it makes the production inside your budget
 Asked for by the owner ("agentic": the app executes a script or a brief on its own). This has two parts: the Assistant inside the app, and an **MCP server** so outside agents (Claude Desktop, for example) can drive the app.
 - **A new Assistant screen**, a friendly chat. Attach a **Word (.docx), PDF, text, Fountain or Final Draft** script and it reads it; describe a short film and it **writes the script** (this needs a Google Gemini or OpenRouter key; not yet checked with a real model, and it says so); attach **pictures** and it asks whether they are characters, props, places or costumes and adds them as items with your picture as the approved reference. "help" lists everything.
