@@ -23,6 +23,7 @@ import type { NewAssetKind } from "../domain/readingActions";
 import type { Dispatch, SetStateAction, RefObject } from "react";
 import { ProportionPanel } from "../components/ProportionPanel";
 import { FitPanel } from "../components/FitPanel";
+import { profileFromWorld, type WorldRules } from "../domain/worldRules";
 import type { FitRule } from "../domain/fit";
 import { madeWithEarlierProportions } from "../domain/characterLayers";
 import { approve as approveJob } from "../domain/generationQueue";
@@ -77,6 +78,8 @@ export interface DesignViewProps {
   setSheetSettings: Dispatch<SetStateAction<Record<string, string>>>;
   sheetSettings: Record<string, string>;
   proportions: Record<string, ProportionProfile>;
+  world: WorldRules;
+  setWorld: Dispatch<SetStateAction<WorldRules>>;
   fitRules: Record<string, FitRule[]>;
   setFitRules: Dispatch<SetStateAction<Record<string, FitRule[]>>>;
   setProportions: Dispatch<SetStateAction<Record<string, ProportionProfile>>>;
@@ -114,7 +117,7 @@ export function DesignView(p: DesignViewProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const wide = useWide();
   const inInspector = wide && section === "sheets";
-  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, fitRules, setFitRules } = p;
+  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, world, setWorld, fitRules, setFitRules } = p;
   return (
 <div className="po-design">
             <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
@@ -141,6 +144,9 @@ export function DesignView(p: DesignViewProps) {
               return <ProportionPanel
                 asset={a}
                 profile={proportions[a.id]}
+                startFrom={() => profileFromWorld(world, a.id)}
+                world={world}
+                onSetWorld={(w) => setWorld(w)}
                 onChange={(next) => setProportions((cur) => { const m = { ...cur }; if (next) m[a.id] = next; else delete m[a.id]; return m; })}
                 onGenerate={(asset, prompt) => {
                   const choice = readModelChoice();

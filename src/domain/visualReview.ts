@@ -81,8 +81,6 @@ export interface DeterministicInput {
   seatHeightsM?: Record<string, number>
 }
 
-let counter = 0
-const fid = (job: ImageJob, rule: string) => `F-${job.id}-${rule}-${(counter++).toString(36)}`
 const base = (job: ImageJob) => ({ targetId: job.assetId, outputJobId: job.id, outputRevision: job.revision, confidence: 1, source: 'deterministic' as const, status: 'open' as const })
 
 /**
@@ -93,6 +91,9 @@ export function deterministicChecks(input: DeterministicInput): { findings: Find
   const { job } = input
   const findings: Finding[] = []
   const checked: Category[] = []
+  // Ids come from the output and the rule, in order, so the same input always gives the same ids.
+  let n = 0
+  const fid = (_job: ImageJob, rule: string) => `F-${job.id}-${rule}-${++n}`
   // B: proportions. Only when the output recorded a profile or the character has one now.
   if (job.provenance || input.profile) {
     checked.push('B')
@@ -202,7 +203,9 @@ export async function runVisionReview(provider: VisionProvider, req: VisionReque
 export function recordReview(reviews: Reviews, jobId: string, source: FindingSource, findings: Finding[], checked: Category[], unable = false): Reviews {
   const keep = (list: Finding[]) => list.filter((f) => f.outputJobId !== jobId || f.status !== 'open')
   const prev = reviews.checked[jobId] ?? { deterministic: [], vision: [] }
-  const merged = { ...prev, [source]: [...new Set([...(prev[source] ?? []), ...checked])], ...(source === 'vision' ? { visionUnable: unable && checked.length === 0 } : {}) }
+  const { visionUnable: wasUnable, ...prevRest } = prev
+  const stillUnable = source === 'vision' ? unable && checked.length === 0 : wasUnable === true
+  const merged = { ...prevRest, [source]: [...new Set([...(prev[source] ?? []), ...checked])], ...(stillUnable ? { visionUnable: true } : {}) }
   return {
     deterministic: source === 'deterministic' ? [...keep(reviews.deterministic), ...findings] : reviews.deterministic,
     vision: source === 'vision' ? [...keep(reviews.vision), ...findings] : reviews.vision,

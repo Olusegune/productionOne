@@ -6,6 +6,7 @@ import {
   addException, commit, controlSpecs, createProfile, describe as describeProfile, newHistory, overrideCount, presets, ratios, redo, removeException, resetControl, resetProfile,
   schematic, setControl, setPreset, setStylization, undo, warnings, type ControlSpec, type History, type PresetId, type ProportionProfile,
 } from '../domain/proportions'
+import type { WorldRules } from '../domain/worldRules'
 import '../proportions.css'
 
 export interface Candidate { id: string; path?: string; status: string }
@@ -18,6 +19,10 @@ interface Props {
   onGenerate: (asset: ExtractedAsset, prompt: string) => void
   candidates: Candidate[]
   approvedViews: number
+  /** The profile a new character starts from (the world default, or Natural). */
+  startFrom?: () => ProportionProfile
+  world?: WorldRules
+  onSetWorld?: (world: WorldRules) => void
   notify: (message: string) => void
 }
 
@@ -48,7 +53,7 @@ function Slider({ spec, profile, onSet, onReset, excused }: { spec: ControlSpec;
 }
 
 /** Target proportions for one character. Four things are kept apart on screen: the target, the schematic drawn from it, a generated interpretation, and the approved design. */
-export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, notify }: Props) {
+export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, startFrom, world, onSetWorld, notify }: Props) {
   const [history, setHistory] = useState<History<ProportionProfile> | null>(profile ? newHistory(profile) : null)
   useEffect(() => { setHistory(profile ? newHistory(profile) : null) }, [asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const current = history?.present
@@ -64,7 +69,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
       <section className="prop-panel panel" aria-label="Target proportions">
         <h4>Shape and proportions</h4>
         <p className="helper">Optional. Set the target body and face proportions for {asset.name}: tall or compact, long limbs, large eyes, angular or rounded. Nothing changes for this character until you set them, and style changes never reset them.</p>
-        <button type="button" className="primary" onClick={() => apply(createProfile(asset.id))}>Set target proportions</button>
+        <button type="button" className="primary" onClick={() => apply(startFrom ? startFrom() : createProfile(asset.id))}>Set target proportions{world?.profile ? ` (from the world default: ${presets.find((p) => p.id === world.profile!.preset)?.label})` : ''}</button>
       </section>
     )
   }
@@ -79,6 +84,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
           <button type="button" className="secondary" onClick={() => step('undo')} disabled={!history?.past.length} aria-label="Undo"><Undo2 size={13} /></button>
           <button type="button" className="secondary" onClick={() => step('redo')} disabled={!history?.future.length} aria-label="Redo"><Redo2 size={13} /></button>
           <button type="button" className="secondary" onClick={() => apply(resetProfile(current))} disabled={!overrideCount(current) && !current.exceptions.length && current.stylization === presets.find((p) => p.id === current.preset)!.stylization}>Reset profile</button>
+          {onSetWorld && <button type="button" className="secondary" onClick={() => { onSetWorld({ ...(world ?? { scaleConvention: 'metres' as const }), profile: { preset: current.preset, stylization: current.stylization } }); notify(`New characters will start from ${presets.find((p) => p.id === current.preset)?.label} at stylization ${current.stylization}.`) }}>Use as the world default</button>}
           <button type="button" className="secondary" onClick={() => { onChange(undefined); setHistory(null); notify(`Target proportions cleared for ${asset.name}.`) }}>Remove</button>
         </div>
       </div>

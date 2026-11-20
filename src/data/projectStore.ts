@@ -10,6 +10,7 @@ import type { SceneState } from '../domain/sceneState'
 import type { Reviews } from '../domain/visualReview'
 import type { Ledgers } from '../domain/correction'
 import type { LookState } from '../domain/grade'
+import type { WorldRules } from '../domain/worldRules'
 
 const KEY = 'production-guy:project:v1'
 const STUDIO_KEY = 'production-guy:studio:v1'
@@ -45,6 +46,8 @@ export interface StudioState {
   corrections?: Ledgers
   /** Named looks (grades) and where they apply. Metadata only: grades are never baked into pictures. */
   looks?: LookState
+  /** World rules: the starting profile new characters begin from, and the scale convention. */
+  world?: WorldRules
 }
 
 export const projectStore = {
