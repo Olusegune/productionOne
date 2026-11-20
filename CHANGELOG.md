@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- Sliders everywhere are redesigned: a thin filled track and a round handle. The shape and proportion rows show the name and value on one line, with the slider beneath.
+- The schematic figure is now a soft solid mannequin on a height ruler (in heads) instead of a wire diagram.
+
 ## 0.57.0 (2026-11-20): a sleeker look
 - Cast board cards are much larger and wrap in a grid instead of a small scrolling strip.
 - Panels, cards, chips, checklists, editors and tabs everywhere have softer corners, soft depth and pill tabs, so the app reads as modern rather than boxy.
