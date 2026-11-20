@@ -12,12 +12,13 @@ export interface GoldenPathInput {
   shape?: { characters: number; withProfile: number }
   camera?: { shots: number; withDetails: number }
   visualReview?: { checked: number; needReview: number }
+  looks?: { looks: number; scenes: number; scenesWithLook: number }
 }
 
 export type GoldenState = 'done' | 'active' | 'upcoming'
 
 export interface GoldenStep {
-  id: 'create' | 'analyze' | 'design' | 'generate' | 'review' | 'direct' | 'deliver' | 'shape' | 'camera' | 'visual-review'
+  id: 'create' | 'analyze' | 'design' | 'generate' | 'review' | 'direct' | 'deliver' | 'shape' | 'camera' | 'visual-review' | 'look'
   label: string
   state: GoldenState
   detail: string
@@ -65,6 +66,10 @@ export function extraSteps(i: GoldenPathInput): GoldenStep[] {
   if (i.visualReview && i.visualReview.checked > 0) {
     const n = i.visualReview.needReview
     out.push({ id: 'visual-review', label: 'Visual review', workspace: 'Design', action: 'Look at the review findings', state: n === 0 ? 'done' : 'upcoming', detail: n === 0 ? `${plural(i.visualReview.checked, 'picture')} checked, nothing needs review (optional)` : `${plural(n, 'picture')} need${n === 1 ? 's' : ''} review (optional)` })
+  }
+  if (i.looks && i.looks.looks > 0) {
+    const l = i.looks
+    out.push({ id: 'look', label: 'Looks', workspace: 'Direct', action: 'Give each scene a look', state: l.scenes > 0 && l.scenesWithLook >= l.scenes ? 'done' : 'upcoming', detail: `${plural(l.looks, 'look')}; ${l.scenesWithLook} of ${plural(l.scenes, 'scene')} ${l.scenesWithLook === 1 && l.scenes !== 1 ? 'has' : 'have'} one (optional)` })
   }
   return out
 }

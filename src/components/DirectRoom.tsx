@@ -20,6 +20,8 @@ import { CleanRender } from "./CleanRender";
 import { ModelPicker } from "./ModelPicker";
 import { ShotCameraLighting } from "./ShotCameraLighting";
 import { BlockingCanvas } from "./BlockingCanvas";
+import { LookPanel } from "./LookPanel";
+import type { LookState } from "../domain/grade";
 import { emptySceneState, type SceneState } from "../domain/sceneState";
 import type { ProportionProfile } from "../domain/proportions";
 import { lightingTestPrompts } from "../domain/lighting";
@@ -48,6 +50,8 @@ export function DirectRoom(props: {
   format?: string;
   setFormat?: (aspect: string) => void;
   proportions?: Record<string, ProportionProfile>;
+  looks?: LookState;
+  setLooks?: (update: (l: LookState) => LookState) => void;
   sceneStates?: Record<string, SceneState>;
   setSceneStates?: (update: (s: Record<string, SceneState>) => Record<string, SceneState>) => void;
 }) {
@@ -358,6 +362,16 @@ export function DirectRoom(props: {
       </div>
 
       <Animatic shots={shots} queue={queue} scenes={analysis.scenes} />
+      {props.looks && props.setLooks && (
+        <LookPanel
+          state={props.looks}
+          setState={(next) => props.setLooks!(() => next)}
+          scenes={analysis.scenes.map((s) => ({ id: s.id, heading: s.heading }))}
+          shots={shots.map((s) => ({ id: s.id, sceneId: s.sceneId, title: s.title }))}
+          frames={shots.map((s) => ({ s, f: cardFrame(queue, s.id) })).filter((x) => x.f?.outputPath).map((x) => ({ id: x.s.id, label: x.s.title ?? x.s.id, path: x.f!.outputPath! }))}
+          notify={notify}
+        />
+      )}
       {quality !== null && lbItems.length > 0 && (
         <CleanRender items={lbItems.map((it) => it.job)} index={Math.min(quality, lbItems.length - 1)} onIndex={setQuality} onClose={() => setQuality(null)} notify={notify}
           onSaved={(from, file) => { const out = addCleaned(queue, from, file); setQueue(() => out.state); if (out.job.approved) update(out.job.assetId, { storyboardStatus: "approved" }); }} />

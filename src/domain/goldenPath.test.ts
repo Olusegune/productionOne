@@ -65,6 +65,11 @@ describe('golden path', () => {
       expect(goldenPath({ ...base, visualReview: { checked: 4, needReview: 2 } }).extras[0]).toMatchObject({ id: 'visual-review', state: 'upcoming', detail: '2 pictures need review (optional)' })
       expect(goldenPath({ ...base, visualReview: { checked: 4, needReview: 0 } }).extras[0].state).toBe('done')
     })
+    it('reports looks once one exists, and is done when every scene has a look', () => {
+      expect(goldenPath({ ...base, looks: { looks: 0, scenes: 3, scenesWithLook: 0 } }).extras).toEqual([])
+      expect(goldenPath({ ...base, looks: { looks: 2, scenes: 3, scenesWithLook: 1 } }).extras[0]).toMatchObject({ id: 'look', state: 'upcoming', detail: '2 looks; 1 of 3 scenes has one (optional)' })
+      expect(goldenPath({ ...base, looks: { looks: 2, scenes: 3, scenesWithLook: 3 } }).extras[0].state).toBe('done')
+    })
     it('shows done when every character has a profile', () => {
       expect(goldenPath({ ...base, shape: { characters: 2, withProfile: 2 } }).extras[0].state).toBe('done')
     })
