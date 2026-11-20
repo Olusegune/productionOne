@@ -16,7 +16,7 @@ All new records are optional fields of `StudioState` (`src/data/projectStore.ts`
 | `sceneStates[sceneId]` | `SceneState` | `domain/sceneState.ts` | `spatial-and-review.md` |
 | `reviews` | `Reviews` (deterministic, vision, checked) | `domain/visualReview.ts` | `spatial-and-review.md` |
 | `corrections[findingId]` | `CorrectionLedger` | `domain/correction.ts` | `spatial-and-review.md` |
-| `looks` | `LookState` | `domain/grade.ts` | `grading-and-looks.md` |
+| `looks` (with `looks.luts`) | `LookState` | `domain/grade.ts`, `domain/lut.ts` | `grading-and-looks.md` |
 | `queue.jobs[].provenance` | `Provenance` | `domain/characterLayers.ts` | `character-layers-and-fit.md` |
 
 Every record has a **reader** (`readProfiles`, `readFitRules`, `readSceneStates`, `readReviews`, `readLedgers`, `readLooks`, `readWorld`, `normalizeShots`) that never throws: missing fields take the documented defaults, numbers are clamped to their ranges, unknown values are dropped, and anything that could hide something (an unknown finding status, an unknown fit-rule status) becomes the safe value (`open`, `proposed`). Tests feed every reader nothing, junk and half-records.

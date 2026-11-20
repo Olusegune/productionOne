@@ -226,7 +226,7 @@ export const helpChapters: HelpChapter[] = [
     blocks: [
       {
         title: 'Non-destructive grades',
-        text: ['Under the animatic, **Looks and grade** lets you add a look (exposure, temperature, tint, contrast, saturation, tints) and apply it to the whole project, a scene or a single shot. The picture file is **never changed**: a look is a recipe applied on top. Compare with **Show the original**, change the strength, or reset. The colour script lists every scene with its look. LUTs are not available yet.'],
+        text: ['Under the animatic, **Looks and grade** lets you add a look (exposure, temperature, tint, contrast, saturation, tints) and apply it to the whole project, a scene or a single shot. The picture file is **never changed**: a look is a recipe applied on top. Compare with **Show the original**, change the strength, or reset. The colour script lists every scene with its look.', 'To use a **LUT** (a .cube colour table from a colourist or a film-look pack), open a look and choose **Import a LUT (.cube)**. It is applied after the grade, with its own strength. A LUT changes colour only; it does not move lights or rebuild shadows. LUTs made for log or HDR camera formats are refused unless you tick that you know they are meant for ordinary pictures. The LUT is exported as a .cube file with the package; your pictures are never changed.'],
         image: { file: 'help/12-looks.webp', caption: 'Looks and grade with the colour script.' },
       },
     ],

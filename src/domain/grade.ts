@@ -1,3 +1,6 @@
+import { applyLut, packLut, unpackLut, type Lut, type StoredLut } from './lut'
+export { contentHash } from './hash'
+
 /**
  * Non-destructive grading. A grade is METADATA applied over an original picture; it is never baked into the original, and grading again never compounds
  * (every render starts from the original). The data model keeps apart: lighting instructions (what light was asked for, see lighting.ts), exposure and white
@@ -8,7 +11,11 @@ export interface TechnicalGrade { /** Exposure change in stops, -3 to 3. */ expo
 export interface ToneGrade { /** -100 to 100. 0 leaves the picture alone. */ contrast: number; /** -100 (grey) to 100 (very vivid). */ saturation: number }
 export interface CreativeGrade { /** A tint pushed into the shadows, as #rrggbb, or empty for none. */ shadowTint: string; highlightTint: string; /** How strongly the tints apply, 0 to 100. */ tintAmount: number }
 
-export interface Grade { technical: TechnicalGrade; tone: ToneGrade; creative: CreativeGrade }
+/** A LUT applied after the grade. The table itself is kept once in the look state (`luts`); the grade only names it. */
+export interface LutUse { id: string; /** 0 to 100: how much of the LUT's effect is used. */ strength: number; /** The person says a LUT that looks like a log or HDR one is meant for this picture. */ acknowledgeLog?: boolean }
+export interface Grade { technical: TechnicalGrade; tone: ToneGrade; creative: CreativeGrade; lut?: LutUse }
+/** How the grade finds the table for a LUT id. */
+export type LutLookup = (id: string) => Lut | undefined
 
 export const neutralGrade = (): Grade => ({ technical: { exposureEv: 0, temperature: 0, tint: 0 }, tone: { contrast: 0, saturation: 0 }, creative: { shadowTint: '', highlightTint: '', tintAmount: 0 } })
 
@@ -21,6 +28,8 @@ export interface LookState {
   /** Look per scene id and per shot id. A shot look beats a scene look, which beats the project look. */
   sceneLooks: Record<string, string>
   shotLooks: Record<string, string>
+  /** LUT tables used by the looks, by id. Each is kept once. */
+  luts?: Record<string, StoredLut>
 }
 export const emptyLooks = (): LookState => ({ looks: [], sceneLooks: {}, shotLooks: {} })
 
@@ -38,10 +47,11 @@ export function normalizeGrade(g: Partial<Grade> | undefined): Grade {
       highlightTint: typeof g?.creative?.highlightTint === 'string' && HEX.test(g.creative.highlightTint) ? g.creative.highlightTint.toLowerCase() : n.creative.highlightTint,
       tintAmount: num(g?.creative?.tintAmount, 0, 100, 0),
     },
+    ...(typeof g?.lut?.id === 'string' && g.lut.id && g.lut.id.length <= 60 ? { lut: { id: g.lut.id, strength: num(g.lut.strength, 0, 100, 100), ...(g.lut.acknowledgeLog === true ? { acknowledgeLog: true } : {}) } } : {}),
   }
 }
 
-export const isNeutral = (g: Grade): boolean => JSON.stringify(normalizeGrade(g)) === JSON.stringify(neutralGrade())
+export const isNeutral = (g: Grade): boolean => { const n = normalizeGrade(g); return JSON.stringify({ ...n, lut: undefined }) === JSON.stringify(neutralGrade()) && !(n.lut && n.lut.strength > 0) }
 
 // ----------------------------------------------------------------- the transform
 
@@ -54,7 +64,7 @@ const hexRgb = (h: string): [number, number, number] => [parseInt(h.slice(1, 3),
  * Grades one sRGB pixel (0 to 255 per channel). Order: exposure and white balance in linear light, then contrast, saturation and the creative tints in sRGB.
  * `strength` (0 to 100) blends the result with the original pixel: 0 returns the original exactly, 100 the full grade. Out-of-range results are clamped.
  */
-export function gradePixel(rgb: readonly [number, number, number], grade: Grade, strength = 100): [number, number, number] {
+export function gradePixel(rgb: readonly [number, number, number], grade: Grade, strength = 100, luts?: LutLookup): [number, number, number] {
   const g = normalizeGrade(grade)
   const s = clamp(strength, 0, 100) / 100
   if (s === 0 || isNeutral(g)) return [rgb[0], rgb[1], rgb[2]]
@@ -82,29 +92,29 @@ export function gradePixel(rgb: readonly [number, number, number], grade: Grade,
       return clamp(x, 0, 1)
     })
   }
+  // The LUT comes last, on the graded colour. A LUT that looks like a log or HDR one is not applied unless the person said it is meant for this picture.
+  const lut = g.lut && luts ? luts(g.lut.id) : undefined
+  if (lut && g.lut && (!lut.suspectedLog || g.lut.acknowledgeLog)) {
+    const l = applyLut(lut, out[0], out[1], out[2])
+    const k = g.lut.strength / 100
+    out = out.map((v, i) => v + (l[i] - v) * k)
+  }
   const graded = out.map((v) => v * 255)
   return [0, 1, 2].map((i) => Math.round(clamp(rgb[i] + (graded[i] - rgb[i]) * s, 0, 255))) as [number, number, number]
 }
 
 /** Grades RGBA bytes into a NEW array. The input (the original) is never changed. Alpha is kept. */
-export function gradeBytes(original: Uint8ClampedArray | Uint8Array, grade: Grade, strength = 100): Uint8ClampedArray {
+export function gradeBytes(original: Uint8ClampedArray | Uint8Array, grade: Grade, strength = 100, luts?: LutLookup): Uint8ClampedArray {
   const out = new Uint8ClampedArray(original.length)
   const g = normalizeGrade(grade)
   const cache = new Map<number, [number, number, number]>()
   for (let i = 0; i + 3 < original.length; i += 4) {
     const key = (original[i] << 16) | (original[i + 1] << 8) | original[i + 2]
     let px = cache.get(key)
-    if (!px) { px = gradePixel([original[i], original[i + 1], original[i + 2]], g, strength); if (cache.size < 70000) cache.set(key, px) }
+    if (!px) { px = gradePixel([original[i], original[i + 1], original[i + 2]], g, strength, luts); if (cache.size < 70000) cache.set(key, px) }
     out[i] = px[0]; out[i + 1] = px[1]; out[i + 2] = px[2]; out[i + 3] = original[i + 3]
   }
   return out
-}
-
-/** A short content hash (two 32-bit FNV-1a hashes), enough to show an original has not changed. Not a security hash. */
-export function contentHash(bytes: ArrayLike<number>): string {
-  let a = 0x811c9dc5, b = 0x01000193 ^ bytes.length
-  for (let i = 0; i < bytes.length; i++) { a = Math.imul(a ^ bytes[i], 0x01000193); b = Math.imul(b ^ (bytes[i] + i), 0x85ebca6b) }
-  return `${(a >>> 0).toString(16).padStart(8, '0')}${(b >>> 0).toString(16).padStart(8, '0')}`
 }
 
 // ----------------------------------------------------------------- looks, scenes and shots
@@ -137,7 +147,7 @@ export const updateLook = (state: LookState, id: string, patch: Partial<Pick<Loo
 /** Removing a look removes where it was used; no picture is touched (grades are never baked into pictures). */
 export function removeLook(state: LookState, id: string): LookState {
   const strip = (m: Record<string, string>) => Object.fromEntries(Object.entries(m).filter(([, v]) => v !== id))
-  return { looks: state.looks.filter((l) => l.id !== id), projectLook: state.projectLook === id ? undefined : state.projectLook, sceneLooks: strip(state.sceneLooks), shotLooks: strip(state.shotLooks) }
+  return dropUnusedLuts({ ...state, looks: state.looks.filter((l) => l.id !== id), projectLook: state.projectLook === id ? undefined : state.projectLook, sceneLooks: strip(state.sceneLooks), shotLooks: strip(state.shotLooks) })
 }
 
 /** A swatch strip for the colour script: the grade applied to black, three greys and white, plus a skin-like and a sky-like colour. */
@@ -168,10 +178,43 @@ export const LOOKS_FORMAT = 'production-one-looks'
  * Look metadata for export: the grades and where they apply. It is metadata only: no picture is baked, and no LUT file is exported (a LUT is not implemented, and
  * a colour description in words is not a LUT).
  */
+/** The name a LUT is exported under (no folders, no odd characters). */
+export const lutFileName = (id: string, title: string): string => `Looks/${(title.split(/[\\/]/).pop()!.replace(/[^A-Za-z0-9._ -]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40) || id)} (${id}).cube`
+
+const MAX_LUTS = 8
+const MAX_LUT_B64 = 3_000_000
+
+/** Adds a parsed LUT to the looks (kept once: the same table is recognised by its hash). Refuses past a small limit so the project file stays light. */
+export function addLut(state: LookState, lut: Lut): { ok: true; state: LookState; id: string } | { ok: false; error: string } {
+  const id = `LUT-${lut.hash.slice(0, 8)}`
+  const luts = state.luts ?? {}
+  if (luts[id]) return { ok: true, state, id }
+  if (Object.keys(luts).length >= MAX_LUTS) return { ok: false, error: `A project can hold ${MAX_LUTS} LUTs. Remove one you no longer use first.` }
+  const packed = packLut(lut)
+  const total = Object.values(luts).reduce((n, l) => n + l.dataB64.length, 0) + packed.dataB64.length
+  if (total > MAX_LUT_B64) return { ok: false, error: 'The LUTs in this project would be too large to keep in the project file. Use a smaller LUT size (33 is plenty) or remove one.' }
+  return { ok: true, state: { ...state, luts: { ...luts, [id]: packed } }, id }
+}
+
+/** A lookup for the grade: unpacks each table once. */
+export function lutLookup(state: LookState): LutLookup {
+  const cache = new Map<string, Lut | undefined>()
+  return (id) => { if (!cache.has(id)) cache.set(id, state.luts?.[id] ? unpackLut(state.luts[id]) : undefined); return cache.get(id) }
+}
+
+/** Removes tables that no look uses any more. */
+export function dropUnusedLuts(state: LookState): LookState {
+  const used = new Set(state.looks.map((l) => l.grade.lut?.id).filter(Boolean) as string[])
+  const luts = Object.fromEntries(Object.entries(state.luts ?? {}).filter(([id]) => used.has(id)))
+  const { luts: _old, ...rest } = state
+  return Object.keys(luts).length ? { ...rest, luts } : rest
+}
+
 export function exportLooks(state: LookState, outputs: Array<{ id: string; path: string; hash?: string }> = []) {
   return {
-    format: LOOKS_FORMAT, version: 1, bakedIntoOriginals: false, lut: null,
-    note: 'Grades are applied over the original pictures and are never baked into them. A grade does not move lights or rebuild shadows. No LUT is included.',
+    format: LOOKS_FORMAT, version: 1, bakedIntoOriginals: false,
+    note: 'Grades are applied over the original pictures and are never baked into them. A grade or a LUT does not move lights or rebuild shadows. Each LUT is listed with the file it is exported as.',
+    luts: Object.entries(state.luts ?? {}).map(([id, l]) => ({ id, title: l.title, kind: l.kind, size: l.size, hash: l.hash, file: lutFileName(id, l.title), inputSpace: 'display-referred sRGB (Rec.709-like)', outputSpace: 'display-referred sRGB (Rec.709-like)', suspectedLog: l.suspectedLog })),
     looks: state.looks, projectLook: state.projectLook ?? null, sceneLooks: state.sceneLooks, shotLooks: state.shotLooks,
     originals: outputs.map((o) => ({ id: o.id, path: o.path, ...(o.hash ? { hash: o.hash } : {}) })),
   }
@@ -185,5 +228,16 @@ export function readLooks(raw: unknown): LookState {
   const looks: Look[] = (Array.isArray(raw.looks) ? raw.looks : []).filter(isObject).filter((l) => typeof l.id === 'string' && typeof l.name === 'string').map((l) => ({ id: l.id as string, name: (l.name as string).slice(0, 60), grade: normalizeGrade(l.grade as Partial<Grade>), ...(typeof l.note === 'string' ? { note: l.note.slice(0, 300) } : {}) }))
   const ids = new Set(looks.map((l) => l.id))
   const assign = (v: unknown) => (isObject(v) ? Object.fromEntries(Object.entries(v).filter(([, id]) => typeof id === 'string' && ids.has(id))) as Record<string, string> : {})
-  return { looks, ...(typeof raw.projectLook === 'string' && ids.has(raw.projectLook) ? { projectLook: raw.projectLook } : {}), sceneLooks: assign(raw.sceneLooks), shotLooks: assign(raw.shotLooks) }
+  const luts: Record<string, StoredLut> = {}
+  if (isObject(raw.luts)) {
+    for (const [id, v] of Object.entries(raw.luts)) {
+      if (Object.keys(luts).length >= MAX_LUTS || !isObject(v) || typeof v.dataB64 !== 'string' || (v.kind !== '1d' && v.kind !== '3d')) continue
+      const dom = (x: unknown): [number, number, number] | undefined => (Array.isArray(x) && x.length === 3 && x.every((n) => typeof n === 'number' && Number.isFinite(n)) ? [x[0], x[1], x[2]] : undefined)
+      const stored: StoredLut = { kind: v.kind, title: typeof v.title === 'string' ? v.title.slice(0, 120) : 'LUT', size: Number(v.size), domainMin: dom(v.domainMin) ?? [0, 0, 0], domainMax: dom(v.domainMax) ?? [1, 1, 1], hash: typeof v.hash === 'string' ? v.hash.slice(0, 32) : '', suspectedLog: v.suspectedLog === true, warnings: Array.isArray(v.warnings) ? v.warnings.filter((w): w is string => typeof w === 'string').slice(0, 6) : [], outOfRangeValues: Number.isFinite(Number(v.outOfRangeValues)) ? Number(v.outOfRangeValues) : 0, dataB64: v.dataB64 }
+      if (unpackLut(stored)) luts[id.slice(0, 40)] = stored
+    }
+  }
+  // A look that names a LUT that is not there loses that reference rather than pointing at nothing.
+  const cleaned = looks.map((l) => (l.grade.lut && !luts[l.grade.lut.id] ? { ...l, grade: (({ lut: _x, ...g }) => g)(l.grade) as Grade } : l))
+  return { looks: cleaned, ...(typeof raw.projectLook === 'string' && ids.has(raw.projectLook) ? { projectLook: raw.projectLook } : {}), sceneLooks: assign(raw.sceneLooks), shotLooks: assign(raw.shotLooks), ...(Object.keys(luts).length ? { luts } : {}) }
 }

@@ -14,7 +14,8 @@ import { readFitRules, type FitRule } from "./domain/fit";
 import { readSceneStates, type SceneState } from "./domain/sceneState";
 import { emptyReviews, outputStatus, readReviews, type Reviews } from "./domain/visualReview";
 import { readLedgers, type Ledgers } from "./domain/correction";
-import { emptyLooks, readLooks, type LookState } from "./domain/grade";
+import { emptyLooks, lutFileName, lutLookup, readLooks, type LookState } from "./domain/grade";
+import { lutToCube } from "./domain/lut";
 import { defaultWorld, readWorld, type WorldRules } from "./domain/worldRules";
 import { normalizeShots } from "./domain/shotRecords";
 import { buildDesignRecords } from "./domain/exportRecords";
@@ -1026,11 +1027,14 @@ export default function App() {
       ),
     ].join("\n");
     const designRecords = JSON.stringify(buildDesignRecords(studioNow), null, 2);
-    const problems = checkExport(Object.values(assetOutputs), [{ name: "design_records.json", text: designRecords }, { name: "style_bible.json", text: JSON.stringify(styleBible) }]);
+    const lookup = lutLookup(lookState);
+    const lookFiles = Object.entries(lookState.luts ?? {}).flatMap(([id, stored]) => { const lut = lookup(id); return lut ? [{ name: lutFileName(id, stored.title), content: lutToCube(lut) }] : []; });
+    const problems = checkExport(Object.values(assetOutputs), [{ name: "design_records.json", text: designRecords }, ...lookFiles.map((f) => ({ name: f.name, text: f.content })), { name: "style_bible.json", text: JSON.stringify(styleBible) }]);
     if (problems.length) { setNotice(safetyMessage(problems)); return; }
     const { invoke } = await import("@tauri-apps/api/core");
     const path = await invoke<string>("export_production_package", {
       designRecords,
+      lookFiles: lookFiles.length ? lookFiles : null,
       packageName: `${title || "production-one"}-${activeShot.id}`,
       manifest: JSON.stringify(packageManifest, null, 2),
       assetLedgerCsv: ledger,
