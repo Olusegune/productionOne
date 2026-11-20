@@ -1,5 +1,7 @@
+import type { Dispatch, SetStateAction } from "react";
 import { DirectRoom } from "../components/DirectRoom";
 import type { ProportionProfile } from "../domain/proportions";
+import type { SceneState } from "../domain/sceneState";
 import { Eyebrow } from "../components/Eyebrow";
 import { Clapperboard, Pause, Play, ArrowLeft, ArrowRight, Copy, Trash2, Plus } from "lucide-react";
 import { type ShotRecord } from "../domain/productionStudio";
@@ -7,7 +9,6 @@ import { isTauri } from "../appHelpers";
 import type { AnalysisResult } from "../domain/productionStudio";
 import type { QueueState } from "../domain/generationQueue";
 import type { StyleBible } from "../domain/visualDevelopment";
-import type { Dispatch, SetStateAction } from "react";
 
 /** The Direct workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DirectViewProps {
@@ -41,6 +42,8 @@ export interface DirectViewProps {
   format: string;
   setFormat: (aspect: string) => void;
   proportions?: Record<string, ProportionProfile>;
+  sceneStates?: Record<string, SceneState>;
+  setSceneStates?: Dispatch<SetStateAction<Record<string, SceneState>>>;
 }
 
 export function DirectView(p: DirectViewProps) {
@@ -62,6 +65,8 @@ export function DirectView(p: DirectViewProps) {
               title={title}
               format={format}
               proportions={p.proportions}
+              sceneStates={p.sceneStates}
+              setSceneStates={p.setSceneStates}
               setFormat={setFormat}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}

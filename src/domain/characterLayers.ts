@@ -40,6 +40,8 @@ export interface Provenance {
   proportionFp?: string
   /** The reference pictures sent with it, as files and (when known) the job and revision they came from. */
   references: Array<{ path: string; jobId?: string; revision?: number }>
+  /** Set when this output is a correction of a finding on an earlier revision. */
+  correctionOf?: { findingId: string; sourceJobId: string; sourceRevision: number }
 }
 
 export function provenanceFor(profile: ProportionProfile | undefined, references: Array<{ path: string; jobId?: string; revision?: number }>): Provenance {

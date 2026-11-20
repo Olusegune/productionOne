@@ -6,6 +6,9 @@ import type { AnalysisResult, GenerationJob, ShotRecord, VideoModel } from '../d
 import type { StyleBible } from '../domain/visualDevelopment'
 import type { ProportionProfile } from '../domain/proportions'
 import type { FitRule } from '../domain/fit'
+import type { SceneState } from '../domain/sceneState'
+import type { Reviews } from '../domain/visualReview'
+import type { Ledgers } from '../domain/correction'
 
 const KEY = 'production-guy:project:v1'
 const STUDIO_KEY = 'production-guy:studio:v1'
@@ -33,6 +36,12 @@ export interface StudioState {
   proportions?: Record<string, ProportionProfile>
   /** Set and prop rules proposed from each character's proportions, with the decisions made on them (asset id to rules). */
   fitRules?: Record<string, FitRule[]>
+  /** Where things are in each scene (world space), separate from each shot's camera (scene id to state). */
+  sceneStates?: Record<string, SceneState>
+  /** Visual review results: deterministic and vision findings kept apart, and which categories were checked per output. */
+  reviews?: Reviews
+  /** Correction attempts and spend per finding. */
+  corrections?: Ledgers
 }
 
 export const projectStore = {

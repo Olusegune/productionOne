@@ -19,6 +19,8 @@ import { Lightbox, type LightboxItem } from "./Lightbox";
 import { CleanRender } from "./CleanRender";
 import { ModelPicker } from "./ModelPicker";
 import { ShotCameraLighting } from "./ShotCameraLighting";
+import { BlockingCanvas } from "./BlockingCanvas";
+import { emptySceneState, type SceneState } from "../domain/sceneState";
 import type { ProportionProfile } from "../domain/proportions";
 import { lightingTestPrompts } from "../domain/lighting";
 
@@ -46,6 +48,8 @@ export function DirectRoom(props: {
   format?: string;
   setFormat?: (aspect: string) => void;
   proportions?: Record<string, ProportionProfile>;
+  sceneStates?: Record<string, SceneState>;
+  setSceneStates?: (update: (s: Record<string, SceneState>) => Record<string, SceneState>) => void;
 }) {
   const { analysis, shots, setShots, queue, setQueue, style, assetRefs, desktop, providersVersion, enabled, setEnabled, title, notify, openProviders, openLocal } = props;
   const aspect = props.format ?? "16:9";
@@ -313,6 +317,18 @@ export function DirectRoom(props: {
                   {([["neutral", "Neutral"], ["L>R", "Facing right"], ["R>L", "Facing left"]] as const).map(([v, label]) => <button key={v} className={(shot.screenDir ?? "neutral") === v ? "on" : ""} aria-pressed={(shot.screenDir ?? "neutral") === v} onClick={() => update(shot.id, { screenDir: v as ScreenDir })}>{label}</button>)}
                 </div>
               </Fold>
+              {props.setSceneStates && (
+                <Fold title="Blocking map" hint={props.sceneStates?.[shot.sceneId]?.world.things.length ? `${props.sceneStates[shot.sceneId].world.things.length} on the map` : "top-down"} id="blocking-map">
+                  <BlockingCanvas
+                    scene={props.sceneStates?.[shot.sceneId] ?? emptySceneState(shot.sceneId)}
+                    setScene={(next) => props.setSceneStates!((all) => ({ ...all, [shot.sceneId]: next }))}
+                    assets={analysis.assets.filter((a) => shot.assetIds.includes(a.id))}
+                    shot={shot}
+                    shotOrder={sceneShots.map((s) => s.id)}
+                    notify={notify}
+                  />
+                </Fold>
+              )}
               <Fold title="Cast and wardrobe" hint={`${shot.assetIds.filter((id) => characters.some((c) => c.id === id)).length} in shot`} defaultOpen id="cast">
                 <div className="dr-tiles">{characters.map((c) => { const on = shot.assetIds.includes(c.id); return <button key={c.id} className={on ? "on" : ""} aria-pressed={on} onClick={() => update(shot.id, { assetIds: on ? shot.assetIds.filter((x) => x !== c.id) : [...shot.assetIds, c.id], focusAssetId: shot.focusAssetId ?? c.id })}>{on && <Check size={13} />} {c.name}</button>; })}</div>
                 {shot.assetIds.filter((id) => characters.some((c) => c.id === id)).map((id) => { const c = characters.find((x) => x.id === id)!; const looks = ["Canonical", ...new Set((analysis.story?.variants ?? []).filter((v) => v.character.toUpperCase() === c.name.toUpperCase()).map((v) => v.value))]; return <label key={id} className="dr-look"><span>{c.name} wears</span><select value={shot.looks?.[id] ?? "Canonical"} onChange={(e) => update(shot.id, { looks: { ...(shot.looks ?? {}), [id]: e.target.value } })}>{looks.map((l) => <option key={l}>{l}</option>)}</select></label>; })}

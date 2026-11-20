@@ -23,3 +23,30 @@
 .prop-chip { display: inline-flex; gap: 4px; padding: 1px 6px; border: 1px solid currentColor; border-radius: 10px; margin-right: 4px; font-size: 11px; }
 .linklike { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 .golden-extras { list-style: none; margin: 8px 0 0; padding: 0; display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; opacity: 0.85; }
+.blk-svg { background: rgba(127, 127, 127, 0.08); border-radius: 8px; touch-action: none; }
+.blk-floor { fill: transparent; stroke: currentColor; stroke-width: 0.05; opacity: 0.5; }
+.blk-grid { stroke: currentColor; stroke-width: 0.02; opacity: 0.15; }
+.blk-thing { cursor: grab; outline: none; }
+.blk-thing circle, .blk-thing rect { fill: rgba(120, 160, 220, 0.35); stroke: currentColor; stroke-width: 0.05; }
+.blk-thing.furniture rect { fill: rgba(200, 160, 100, 0.35); }
+.blk-thing.on circle, .blk-thing.on rect, .blk-thing:focus circle, .blk-thing:focus rect { stroke-width: 0.12; }
+.blk-thing text { fill: currentColor; font-family: inherit; }
+.blk-facing { stroke: currentColor; stroke-width: 0.06; }
+.blk-camera polygon { fill: currentColor; opacity: 0.8; }
+.blk-camera { cursor: move; }
+.blk-fov { fill: rgba(250, 200, 80, 0.18); stroke: none; }
+.blk-issues { color: #c0392b; font-size: 12px; margin: 6px 0; padding-left: 18px; }
+.blk-sel, .blk-add, .blk-screen { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-size: 12px; }
+.blk-add { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.fit-list { list-style: none; margin: 4px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.fit-list li { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.fit-actions { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.fit-approved { opacity: 1; } .fit-rejected { opacity: 0.55; }
+.fit-table { font-size: 12px; border-collapse: collapse; } .fit-table td { padding: 2px 10px 2px 0; }
+.fit-compare { display: flex; gap: 10px; flex-wrap: wrap; } .fit-compare img { max-height: 220px; border-radius: 6px; }
+.prop-cat { font-size: 12px; opacity: 0.85; }
+.vr-list { list-style: none; margin: 6px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.vr-item { border: 1px solid var(--line, #3a3f4a); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.vr-badge { display: inline-block; padding: 0 6px; border-radius: 10px; border: 1px solid currentColor; font-size: 11px; }
+.vr-badge.needs-review { color: #c0392b; } .vr-badge.passed { color: #2e8b57; } .vr-badge.not-checked, .vr-badge.unable-to-assess { opacity: 0.7; }
+.vr-actions { display: flex; gap: 6px; flex-wrap: wrap; }
