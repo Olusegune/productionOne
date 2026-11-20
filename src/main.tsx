@@ -11,6 +11,7 @@ import './polish.css'
 import './looks.css'
 import './sleek.css'
 import './refine.css'
+import './finish.css'
 import { applyTheme, savedTheme } from './data/theme'
 import { startLook } from './data/appearance'
 
