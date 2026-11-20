@@ -38,7 +38,8 @@ describe('the in-app guide', () => {
   })
   it('says honestly what the Assistant needs for a storyboard', () => {
     const text = JSON.stringify(helpChapters.find((c) => c.id === 'assistant')!)
-    expect(text).toMatch(/storyboard needs a script/i)
+    expect(text).toMatch(/one line per beat/i)
+    expect(text).toMatch(/storyboard is planned from scenes/i)
     expect(text).toMatch(/matched|attached to that character/i)
     expect(text).toMatch(/price per picture/)
   })
