@@ -60,6 +60,11 @@ describe('golden path', () => {
       expect(x.extras[0].detail).toMatch(/2 of 5 shots have camera or lighting direction/)
       expect(x.steps).toEqual(goldenPath({ ...base, hasScript: true, assetCount: 2, storyboards: true, shotCount: 5 }).steps)
     })
+    it('reports visual review findings once checks have been run', () => {
+      expect(goldenPath({ ...base, visualReview: { checked: 0, needReview: 0 } }).extras).toEqual([])
+      expect(goldenPath({ ...base, visualReview: { checked: 4, needReview: 2 } }).extras[0]).toMatchObject({ id: 'visual-review', state: 'upcoming', detail: '2 pictures need review (optional)' })
+      expect(goldenPath({ ...base, visualReview: { checked: 4, needReview: 0 } }).extras[0].state).toBe('done')
+    })
     it('shows done when every character has a profile', () => {
       expect(goldenPath({ ...base, shape: { characters: 2, withProfile: 2 } }).extras[0].state).toBe('done')
     })

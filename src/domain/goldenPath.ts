@@ -11,12 +11,13 @@ export interface GoldenPathInput {
   /** Optional extras. Each appears only once the person has started using it, so projects that do not use it look exactly as before. */
   shape?: { characters: number; withProfile: number }
   camera?: { shots: number; withDetails: number }
+  visualReview?: { checked: number; needReview: number }
 }
 
 export type GoldenState = 'done' | 'active' | 'upcoming'
 
 export interface GoldenStep {
-  id: 'create' | 'analyze' | 'design' | 'generate' | 'review' | 'direct' | 'deliver' | 'shape' | 'camera'
+  id: 'create' | 'analyze' | 'design' | 'generate' | 'review' | 'direct' | 'deliver' | 'shape' | 'camera' | 'visual-review'
   label: string
   state: GoldenState
   detail: string
@@ -60,6 +61,10 @@ export function extraSteps(i: GoldenPathInput): GoldenStep[] {
   }
   if (i.camera && i.camera.withDetails > 0) {
     out.push({ id: 'camera', label: 'Camera and light', workspace: 'Direct', action: 'Add camera and lighting direction', state: i.camera.withDetails >= i.camera.shots ? 'done' : 'upcoming', detail: `${i.camera.withDetails} of ${plural(i.camera.shots, 'shot')} ${i.camera.withDetails === 1 && i.camera.shots !== 1 ? 'has' : 'have'} camera or lighting direction (optional)` })
+  }
+  if (i.visualReview && i.visualReview.checked > 0) {
+    const n = i.visualReview.needReview
+    out.push({ id: 'visual-review', label: 'Visual review', workspace: 'Design', action: 'Look at the review findings', state: n === 0 ? 'done' : 'upcoming', detail: n === 0 ? `${plural(i.visualReview.checked, 'picture')} checked, nothing needs review (optional)` : `${plural(n, 'picture')} need${n === 1 ? 's' : ''} review (optional)` })
   }
   return out
 }

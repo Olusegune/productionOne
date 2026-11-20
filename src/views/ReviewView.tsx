@@ -2,7 +2,16 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, Check, MessageSquareWarning, Undo2, X } from "lucide-react";
 import { RealImage } from "../components/RealImage";
 import { approve, reconsider, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
-import type { AnalysisResult } from "../domain/productionStudio";
+import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
+import type { StyleBible } from "../domain/visualDevelopment";
+import type { ProportionProfile } from "../domain/proportions";
+import type { FitRule } from "../domain/fit";
+import type { SceneState } from "../domain/sceneState";
+import type { Reviews } from "../domain/visualReview";
+import type { Ledgers } from "../domain/correction";
+import { VisualReviewPanel } from "../components/VisualReviewPanel";
+import { localVision } from "../data/visionReview";
+import { useLocalAi } from "../data/localAi";
 import { approvedPictures, approvedReference, awaitingReview, defaultCompareTarget, keepRevision, otherRevisions, turnedDown } from "../domain/review";
 import { primaryViewKeys } from "../domain/sheetSpecs";
 
@@ -22,8 +31,20 @@ export function ReviewView(props: {
   openAsset: (assetId: string, sheetType: string) => void;
   openDesign: () => void;
   notify: (message: string) => void;
+  shots?: ShotRecord[];
+  style?: StyleBible;
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
+  ledgers?: Ledgers;
+  setLedgers?: (update: (l: Ledgers) => Ledgers) => void;
+  proportions?: Record<string, ProportionProfile>;
+  setProportions?: (update: (p: Record<string, ProportionProfile>) => Record<string, ProportionProfile>) => void;
+  fitRules?: Record<string, FitRule[]>;
+  sceneStates?: Record<string, SceneState>;
 }) {
   const { analysis, queue, setQueue, onApproved, onUnapproved, openAsset, openDesign, notify } = props;
+  const local = useLocalAi("__TAURI_INTERNALS__" in window);
+  const vision = useMemo(() => localVision(local.config), [local.config]);
   const [filter, setFilter] = useState<Filter>("waiting");
   const [pickedId, setPickedId] = useState<string | null>(null);
   const waiting = useMemo(() => awaitingReview(queue), [queue]);
@@ -178,6 +199,9 @@ export function ReviewView(props: {
             </details>
           </aside>
         </div>
+      )}
+      {props.reviews && props.setReviews && props.setLedgers && props.setProportions && props.style && (
+      <VisualReviewPanel shots={props.shots ?? []} ledgers={props.ledgers ?? {}} proportions={props.proportions ?? {}} fitRules={props.fitRules ?? {}} sceneStates={props.sceneStates ?? {}} analysis={analysis} queue={queue} setQueue={setQueue} style={props.style} reviews={props.reviews} setReviews={props.setReviews} setLedgers={props.setLedgers} setProportions={props.setProportions} vision={vision} notify={notify} />
       )}
     </section>
   );
