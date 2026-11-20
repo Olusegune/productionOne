@@ -102,6 +102,7 @@ import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
+import { detectDecision, undoDecision, decisionWords, type DecisionSnapshot } from "./domain/decisionUndo";
 import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
@@ -1370,6 +1371,39 @@ export default function App() {
     setAssetOutputs(fixed.outputs);
     if (fixed.demoted.length) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (fixed.demoted.includes(a.id) ? { ...a, status: "planned" } : a)) }));
   };
+  // Undo for the last decision on a picture (approve, reject, take back). The decision is noticed from the change in the queue, so every screen gets it.
+  const [lastDecision, setLastDecision] = useState<{ snap: DecisionSnapshot; text: string } | null>(null);
+  const seen = useRef({ queue, outputs: assetOutputs, assets: analysis.assets, skip: false });
+  useEffect(() => {
+    const was = seen.current;
+    if (was.queue !== queue && !was.skip) {
+      const snap = detectDecision(was.queue, queue, { outputs: was.outputs, assetStatus: (id) => was.assets.find((a) => a.id === id)?.status });
+      if (snap) {
+        const job = queue.jobs.find((j) => j.id === snap.jobId);
+        const name = was.assets.find((a) => a.id === snap.assetId)?.name ?? snap.assetId;
+        setLastDecision({ snap, text: decisionWords(snap, `${name} · ${job?.label ?? "picture"}`) });
+      }
+    }
+    seen.current = { queue, outputs: assetOutputs, assets: analysis.assets, skip: false };
+  }, [queue]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { seen.current.outputs = assetOutputs; seen.current.assets = analysis.assets; }, [assetOutputs, analysis.assets]);
+  useEffect(() => {
+    if (!lastDecision) return;
+    const timer = window.setTimeout(() => setLastDecision(null), 15000);
+    return () => window.clearTimeout(timer);
+  }, [lastDecision]);
+  const undoLastDecision = () => {
+    if (!lastDecision) return;
+    const { snap } = lastDecision;
+    seen.current.skip = true;
+    setQueueState((q) => undoDecision(q, snap));
+    setAssetOutputs((cur) => {
+      if (snap.prevOutput === undefined) { const { [snap.assetId]: _gone, ...rest } = cur; return rest; }
+      return { ...cur, [snap.assetId]: snap.prevOutput };
+    });
+    if (snap.prevAssetStatus) setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => (a.id === snap.assetId ? { ...a, status: snap.prevAssetStatus as typeof a.status } : a)) }));
+    setLastDecision(null);
+  };
   // Messages fade on their own so a stale one never sits on screen.
   useEffect(() => {
     if (!notice) return;
@@ -1438,6 +1472,14 @@ export default function App() {
               <p className="helper">File: {filePath ?? "Not saved to a file yet"}</p>
               <p className="helper">Format: Production One project (.pone). Legacy .pguy files open and are converted by Save As.</p>
             </section>
+          </div>
+        )}
+        {lastDecision && (
+          <div className="notice undo-bar" role="status">
+            <Check size={16} />
+            {lastDecision.text}
+            <button onClick={undoLastDecision}>Undo</button>
+            <button onClick={() => setLastDecision(null)}>Dismiss</button>
           </div>
         )}
         {notice && (

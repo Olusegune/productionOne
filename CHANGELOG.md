@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Undo for decisions:** after you approve or reject a picture, or take a decision back, a bar offers Undo for 15 seconds on any screen. It puts that one picture, its approved picture and the asset's Approved label back as they were. It never touches a file, and does nothing if the picture has been regenerated or decided again since.
 - Sliders everywhere are redesigned: a thin filled track and a round handle. The shape and proportion rows show the name and value on one line, with the slider beneath.
 - The schematic figure is now a soft solid mannequin on a height ruler (in heads) instead of a wire diagram.
 
