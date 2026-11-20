@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Undo for decisions:** after you approve or reject a picture, or take a decision back, a bar offers Undo for 15 seconds on any screen. It puts that one picture, its approved picture and the asset's Approved label back as they were. It never touches a file, and does nothing if the picture has been regenerated or decided again since.
+
 ## 0.57.0 (2026-11-20): a sleeker look
 - Cast board cards are much larger and wrap in a grid instead of a small scrolling strip.
 - Panels, cards, chips, checklists, editors and tabs everywhere have softer corners, soft depth and pill tabs, so the app reads as modern rather than boxy.
