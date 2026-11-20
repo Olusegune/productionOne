@@ -13,9 +13,11 @@ import './sleek.css'
 import './refine.css'
 import './finish.css'
 import { applyTheme, savedTheme } from './data/theme'
+import { startRangeFill } from './data/rangeFill'
 import { startLook } from './data/appearance'
 
 applyTheme(savedTheme())
+startRangeFill()
 startLook()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>)
