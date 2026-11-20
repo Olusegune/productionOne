@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (0.52.0): shape, camera and light, review, looks
+## 0.52.0 (2026-11-20): shape, camera and light, review, looks
 Optional design tools, in six parts. Nothing changes in a project until you use it; older projects open and render exactly as before (golden tests). Docs: `docs/design/`, `docs/USER_GUIDE_DESIGN_TOOLS.md`, `docs/MIGRATION_NOTES_0.52.md`, `docs/PROVIDER_LIMITATIONS.md`, `docs/QA_REPORT_0.52.0.md`.
 - **Shape and proportions.** Target proportions per character (17 documented controls, eight starter profiles, Stylization, per-control override, reset, undo and redo, warnings that never block, "intentional" exceptions) with a deterministic schematic preview. Moving a slider makes no provider call; "Generate preview" is a separate, explicit request.
 - **Camera and lighting.** Optional camera direction (height, distance, sensor, focus, depth of field, optical character) with a field-of-view readout and honest wording (guides the picture; does not simulate a camera; perspective comes from where the camera stands); eight camera and eight lighting presets; coverage suggestions with reasons; Character Lighting Test. Lighting is a record separate from grading; lighting by generation is a new candidate, not a relight.
