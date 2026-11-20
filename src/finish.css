@@ -53,3 +53,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 
 @media (prefers-reduced-motion: reduce) { .cb-card, .cb-card:hover { transition: none; transform: none; } }
 @media (max-width: 760px) { .cb-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } .cb-detail { grid-template-columns: 1fr; } }
+
+/* Every remaining sharp-cornered surface */
+.po-project, .po-next, .ph-look, .tone-scene, .tone-character, .tone-prop, .tone-set, .tone-approved, .fmt-opt, .first-run, .po-dock, .po-cost-chip, .sv-source, .script-editor, .sv-breakdown, .cb-more, .style-browser-trigger, .view-card, .thumb-empty, .real-empty, .prompt-box, .asset-prompt-editor, .model-match, .image-generation-gate, .rv-filter, .rv-empty, .seg, .dr-thumb, .dr-findings, .an-stage, .optional-banner, .timeline, .dc-ready, .dc-stats, .dc-next, .video-model-card, .fold, .tl-row, .asst-log { border-radius: var(--radius); }
+.fmt-opt, .rv-filter, .seg, .tl-row, .style-browser-trigger, .po-cost-chip { border-radius: var(--radius-sm); }
+.po-cost-chip { border-radius: 999px; }
+.dc-ready, .dc-stats, .dc-next, .fold, .sv-source, .sv-breakdown, .optional-banner, .first-run, .view-card, .video-model-card, .an-stage, .asst-log { box-shadow: var(--lift); border-color: color-mix(in srgb, var(--text) 9%, transparent); }
+.fmt-opt { transition: border-color .15s, background .15s, transform .15s var(--ease-out); }
+.fmt-opt:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--blue) 45%, transparent); }
+.script-editor, .asset-prompt-editor, .prompt-box { overflow: hidden; }
+.dc-checklist li, .dc-row, .todo, .ok, .warn { border-radius: var(--radius-sm); }
+.po-dock { box-shadow: 0 -8px 24px rgba(0,0,0,.2); }
