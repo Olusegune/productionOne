@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.51.2 (2026-11-19): the Assistant can write with local or cloud models
+- **The Assistant's writing model is now your choice:** Google Gemini, **OpenAI (ChatGPT)**, OpenRouter, **Ollama** or **LM Studio**. Cloud ones use the key saved in Provider Settings; the two local ones run on this computer (or your own network), need no key, and send nothing online. Picking a provider fills in a default model name; local ones have an optional server address. If the saved provider has no key, the screen moves to one that does. Not yet checked against a live ChatGPT or Ollama: if a call fails the message says why.
+- Three style pictures redone with Kie.ai: **Colored pencil** (now reads as real pencil), **Manga-inspired monochrome** (full scene, lighthouse no longer cropped) and **Contemporary clean-line anime**.
+- Tests: new ones for writer choice and fallback, the Ollama and ChatGPT paths in the Assistant, and the address rules for each provider (727 JS, 102 Rust).
+
 ## 0.51.1 (2026-11-19): real pictures for every 2D style, and Kie.ai first
 - **The 33 flat 2D styles now have a picture of their own** in the style gallery (the same lighthouse keeper as the other 117), in place of the drawn swatches. Made through the app with fal.ai Nano Banana.
 - **Fixed: Nano Banana went to Google even when Kie.ai had credits.** The engine picker took the first provider with a saved key, and Google came first, so a Google key with no billing answered 402 and Kie.ai was never tried. Kie.ai is now preferred for Nano Banana 2.1 and Pro and for the default; Google direct is used only when there is no Kie.ai key.

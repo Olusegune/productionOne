@@ -7,7 +7,7 @@ import type { AnalysisResult, ShotRecord } from '../domain/productionStudio'
 import { AssistantView, HELP, WRITE_SYSTEM, forgetAssistant } from './Assistant'
 
 const calls: Array<{ name: string; args: Record<string, unknown> }> = []
-let keys = { google: false, openrouter: false }
+let keys: Record<string, boolean> = { google: false, openrouter: false }
 let attachments: unknown[] = []
 let written = 'Title: Lantern\n\nINT. HARBOUR OFFICE - DAY\n\nMIRA holds a brass lantern.\n\nMIRA\nWe sail at dawn.'
 let agentHandler: ((e: { payload: unknown }) => Promise<void>) | null = null
@@ -46,7 +46,7 @@ function Harness(p: { analysis?: AnalysisResult; useScript?: (n: string, k: stri
 }
 const type = (text: string) => { fireEvent.change(screen.getByLabelText('Message'), { target: { value: text } }); fireEvent.click(screen.getByRole('button', { name: /^Send$/ })) }
 
-beforeEach(() => { forgetAssistant(); calls.length = 0; keys = { google: false, openrouter: false }; attachments = [] })
+beforeEach(() => { forgetAssistant(); calls.length = 0; keys = { google: false, openrouter: false }; attachments = []; try { localStorage.clear() } catch { /* ignore */ } })
 
 describe('the assistant chat', () => {
   it('greets you and offers friendly starting points, and explains itself on request', async () => {
@@ -111,6 +111,30 @@ describe('the assistant chat', () => {
     expect(ask.messages[0].text).toContain('A short film about a harbour pilot and a lantern')
     expect(await screen.findByText(/Here is the script I wrote/)).toBeTruthy()
     expect(useScript).toHaveBeenCalledWith('the script I wrote', 'text', written)
+  })
+
+  it('can write with a model on this computer (Ollama) with no key at all', async () => {
+    const useScript = vi.fn(() => ({ ok: true, scenes: 1, assets: 2 }))
+    render(<Harness useScript={useScript} />)
+    await new Promise((r) => setTimeout(r, 50))
+    fireEvent.click(screen.getByText(/Writing model/))
+    fireEvent.change(screen.getByLabelText('Writing provider'), { target: { value: 'ollama' } })
+    expect((screen.getByLabelText('Writing model id') as HTMLInputElement).value).toBe('gemma3:12b')
+    fireEvent.change(screen.getByLabelText('Local server address'), { target: { value: 'http://127.0.0.1:11434' } })
+    type('A short film about a harbour pilot and a lantern')
+    await waitFor(() => expect(calls.some((c) => c.name === 'assistant_complete')).toBe(true))
+    expect(calls.find((c) => c.name === 'assistant_complete')!.args).toMatchObject({ provider: 'ollama', model: 'gemma3:12b', base: 'http://127.0.0.1:11434' })
+    expect(await screen.findByText(/Here is the script I wrote/)).toBeTruthy()
+  })
+
+  it('can write with OpenAI (ChatGPT) when its key is saved', async () => {
+    keys = { openai: true }
+    render(<Harness useScript={() => ({ ok: true, scenes: 1, assets: 1 })} />)
+    await waitFor(() => expect(calls.some((c) => c.name === 'credential_status' && c.args.provider === 'openai')).toBe(true))
+    await new Promise((r) => setTimeout(r, 80))
+    type('A short film about a harbour pilot')
+    await waitFor(() => expect(calls.some((c) => c.name === 'assistant_complete')).toBe(true))
+    expect(calls.find((c) => c.name === 'assistant_complete')!.args).toMatchObject({ provider: 'openai', model: 'gpt-4o-mini', base: null })
   })
 
   it('does not pretend: with no key it says it cannot write from an idea and offers to add one', async () => {

@@ -6,6 +6,7 @@ import { describeStatus, isTool, parseStart } from "../domain/agentTools";
 import { advance, initialState, report, summarize, withBudget, type AutopilotOptions, type AutopilotState, type Depth } from "../domain/autopilot";
 import { planCoverage } from "../domain/direct";
 import { cancelAllWaiting, committedUsd, type ImageJob, type QueueState } from "../domain/generationQueue";
+import { chooseWriter, writerOption, writerOptions, writerReady } from "../domain/assistantWriters";
 import { modelTakesReferences } from "../domain/imageCatalog";
 import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
 import { primaryViewKeys } from "../domain/sheetSpecs";
@@ -68,6 +69,7 @@ export function AssistantView(props: {
   const [budget, setBudget] = useState(() => readStored("po.asst.budget", ""));
   const [writer, setWriter] = useState(() => readStored("po.asst.writer", "google"));
   const [writerModel, setWriterModel] = useState(() => readStored("po.asst.writerModel", "gemini-2.5-flash"));
+  const [localUrl, setLocalUrl] = useState(() => readStored("po.asst.localUrl", ""));
   const [allowRuns, setAllowRuns] = useState(() => readStored("po.agent.allow", "0") === "1");
   const [agentCap, setAgentCap] = useState(() => readStored("po.agent.cap", "5"));
   const [agent, setAgent] = useState<{ enabled: boolean; port?: number | null; configPath?: string | null }>({ enabled: false });
@@ -80,14 +82,21 @@ export function AssistantView(props: {
   useEffect(() => { if (!messages.length) say("assistant", "Hello. Give me a script or an idea and I will make the production for you, inside a budget you set. Attach a Word, PDF or text script, describe a short film, or attach pictures.\n\nType \"help\" to see everything I can do."); }, []);
   useEffect(() => { endRef.current?.scrollIntoView?.({ block: "end" }); }, [messages, busy]);
   useEffect(() => { writeStored("po.agent.allow", allowRuns ? "1" : "0"); writeStored("po.agent.cap", agentCap); }, [allowRuns, agentCap]);
-  useEffect(() => { writeStored("po.asst.price", price); writeStored("po.asst.budget", budget); writeStored("po.asst.writer", writer); writeStored("po.asst.writerModel", writerModel); }, [price, budget, writer, writerModel]);
+  useEffect(() => { writeStored("po.asst.price", price); writeStored("po.asst.budget", budget); writeStored("po.asst.writer", writer); writeStored("po.asst.writerModel", writerModel); writeStored("po.asst.localUrl", localUrl); }, [price, budget, writer, writerModel, localUrl]);
 
   const perImageUsd = price.trim() === "" || !(Number(price) >= 0) ? null : Number(price);
   const budgetUsd = budget.trim() === "" || !(Number(budget) > 0) ? null : Number(budget);
   const options: AutopilotOptions = useMemo(() => ({ depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, provider: choice.provider, model: choice.modelId, takesReferences: modelTakesReferences(choice.provider, choice.modelId), aspect: format }), [depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, choice.provider, choice.modelId, format]);
   const plan = useMemo(() => summarize(analysis, shots, style, queue, assetRefs, options), [analysis, shots, style, queue, assetRefs, options]);
   const running = state.phase !== "idle" && state.phase !== "done" && state.phase !== "stopped";
-  const hasWriter = !!(choice.configured?.google || choice.configured?.openrouter);
+  const writerSpec = writerOption(writer);
+  const hasWriter = writerReady(writer, choice.configured);
+  // Once the saved keys are known, move off a cloud writer that has no key (for example a first run, or a key that was removed).
+  useEffect(() => {
+    if (!choice.configured || Object.keys(choice.configured).length === 0) return;
+    const next = chooseWriter(writer, choice.configured);
+    if (next !== writer) { setWriter(next); setWriterModel(writerOption(next).defaultModel); }
+  }, [choice.configured]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const restoreGuard = () => { const g = prevGuard.current; if (g) setQueue((q) => ({ ...q, ...g })); prevGuard.current = null; };
 
@@ -175,7 +184,7 @@ export function AssistantView(props: {
 
   const writeScript = async (brief: string): Promise<string | null> => {
     try {
-      return await invoke<string>("assistant_complete", { provider: writer, model: writerModel, system: WRITE_SYSTEM, messages: [{ role: "user", text: `Brief: ${brief}\n\nScenes: 4 to 6.` }] });
+      return await invoke<string>("assistant_complete", { provider: writer, model: writerModel, base: writerSpec.local && localUrl.trim() ? localUrl.trim() : null, system: WRITE_SYSTEM, messages: [{ role: "user", text: `Brief: ${brief}\n\nScenes: 4 to 6.` }] });
     } catch (e) { say("assistant", `I could not write the script: ${String(e)}`); return null; }
   };
 
@@ -270,9 +279,10 @@ export function AssistantView(props: {
         </details>
         <details className="asst-settings">
           <summary>Writing model (used only to write a script from an idea)</summary>
-          <label><span>Provider</span><select value={writer} onChange={(e) => setWriter(e.target.value)} aria-label="Writing provider"><option value="google">Google Gemini</option><option value="openrouter">OpenRouter</option></select></label>
+          <label><span>Provider</span><select value={writer} onChange={(e) => { setWriter(e.target.value); setWriterModel(writerOption(e.target.value).defaultModel); }} aria-label="Writing provider">{writerOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</select></label>
           <label><span>Model id</span><input value={writerModel} onChange={(e) => setWriterModel(e.target.value)} aria-label="Writing model id" /></label>
-          <small>{hasWriter ? "A key is saved for Google Gemini or OpenRouter." : "No Google Gemini or OpenRouter key is saved yet."} Not yet checked with a real model: if it fails the message says why.</small>
+          {writerSpec.local && <label><span>Server address (optional)</span><input value={localUrl} placeholder={writer === "ollama" ? "http://127.0.0.1:11434" : "http://127.0.0.1:1234"} onChange={(e) => setLocalUrl(e.target.value)} aria-label="Local server address" /></label>}
+          <small>{writerSpec.hint} {writerSpec.local ? "" : hasWriter ? "A key is saved." : `No ${writerSpec.label} key is saved yet (Tools, Provider Settings).`} If it fails, the message says why.</small>
         </details>
       </div>
 

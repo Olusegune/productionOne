@@ -104,18 +104,39 @@ pub fn extract_openrouter_text(body: &Value) -> Result<String, String> {
 
 fn model_ok(model: &str) -> bool { !model.is_empty() && model.len() <= 120 && model.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ':' | '/')) }
 
-/// One text answer from Google Gemini or OpenRouter, using the key already saved for that provider.
+/// Where a chat-style provider is called, and whether it needs a saved key. Cloud providers use fixed addresses; the two local servers use the address
+/// the person set (or the usual one) and are only accepted on this computer or their own network.
+pub fn chat_endpoint(provider: &str, base: Option<&str>) -> Result<(String, bool), String> {
+    match provider {
+        "openai" => Ok(("https://api.openai.com/v1/chat/completions".into(), true)),
+        "openrouter" => Ok(("https://openrouter.ai/api/v1/chat/completions".into(), true)),
+        "ollama" | "lmstudio" => {
+            let default = if provider == "ollama" { "http://127.0.0.1:11434" } else { "http://127.0.0.1:1234" };
+            let root = crate::local::normalize_base(base.filter(|b| !b.trim().is_empty()).unwrap_or(default))?;
+            Ok((format!("{root}/v1/chat/completions"), false))
+        }
+        _ => Err("The assistant can write with Google Gemini, OpenAI (ChatGPT), OpenRouter, Ollama or LM Studio.".into()),
+    }
+}
+
+/// One text answer from Google Gemini, OpenAI, OpenRouter, or a model on this computer (Ollama, LM Studio). Cloud providers use the key already saved for them.
 #[tauri::command]
-pub async fn assistant_complete(provider: String, model: String, system: String, messages: Vec<ChatMessage>) -> Result<String, String> {
+pub async fn assistant_complete(provider: String, model: String, system: String, messages: Vec<ChatMessage>, base: Option<String>) -> Result<String, String> {
     if !model_ok(&model) { return Err("That model id is not valid".into()); }
     let messages = clean_messages(&messages)?;
     let system: String = system.chars().take(20_000).collect();
-    let key = crate::providers::key_for(&provider)?;
-    let client = reqwest::Client::builder().timeout(Duration::from_secs(120)).build().map_err(|e| e.to_string())?;
-    let (request, google) = match provider.as_str() {
-        "google" => (client.post(format!("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent")).header("x-goog-api-key", &key).json(&gemini_chat_body(&system, &messages)), true),
-        "openrouter" => (client.post("https://openrouter.ai/api/v1/chat/completions").bearer_auth(&key).json(&openrouter_chat_body(&model, &system, &messages)), false),
-        _ => return Err("The assistant can write with Google Gemini or OpenRouter. Add a key for one of them in Tools, Provider Settings.".into()),
+    let local = matches!(provider.as_str(), "ollama" | "lmstudio");
+    let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(if local { 600 } else { 120 }));
+    if local { builder = builder.no_proxy(); }
+    let client = builder.build().map_err(|e| e.to_string())?;
+    let google = provider == "google";
+    let request = if google {
+        let key = crate::providers::key_for("google")?;
+        client.post(format!("https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent")).header("x-goog-api-key", &key).json(&gemini_chat_body(&system, &messages))
+    } else {
+        let (url, needs_key) = chat_endpoint(&provider, base.as_deref())?;
+        let req = client.post(url).json(&openrouter_chat_body(&model, &system, &messages));
+        if needs_key { req.bearer_auth(crate::providers::key_for(&provider)?) } else { req }
     };
     let response = request.send().await.map_err(|e| format!("The language model could not be reached: {}", e.without_url()))?;
     let status = response.status();
@@ -187,6 +208,17 @@ mod tests {
         assert!(extract_gemini_text(&json!({ "candidates": [{ "content": { "parts": [{ "text": "  " }] } }] })).is_err());
         assert_eq!(extract_openrouter_text(&json!({ "choices": [{ "message": { "content": "Hi" } }] })).unwrap(), "Hi");
         assert!(extract_openrouter_text(&json!({ "error": { "message": "no credits" } })).unwrap_err().contains("no credits"));
+    }
+
+    #[test]
+    fn picks_the_chat_address_for_each_provider() {
+        assert_eq!(chat_endpoint("openai", None).unwrap(), ("https://api.openai.com/v1/chat/completions".to_string(), true));
+        assert_eq!(chat_endpoint("ollama", None).unwrap(), ("http://127.0.0.1:11434/v1/chat/completions".to_string(), false));
+        assert_eq!(chat_endpoint("lmstudio", Some("")).unwrap().0, "http://127.0.0.1:1234/v1/chat/completions");
+        assert_eq!(chat_endpoint("ollama", Some("http://192.168.1.20:11434/")).unwrap().0, "http://192.168.1.20:11434/v1/chat/completions");
+        assert!(chat_endpoint("ollama", Some("http://example.com:11434")).is_err());
+        assert!(chat_endpoint("ollama", Some("https://127.0.0.1:11434")).is_err());
+        assert!(chat_endpoint("mystery", None).is_err());
     }
 
     #[test]
