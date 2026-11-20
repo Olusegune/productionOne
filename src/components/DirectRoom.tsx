@@ -24,7 +24,8 @@ import { LookPanel } from "./LookPanel";
 import type { LookState } from "../domain/grade";
 import { emptySceneState, type SceneState } from "../domain/sceneState";
 import type { ProportionProfile } from "../domain/proportions";
-import { lightingTestPrompts } from "../domain/lighting";
+import { lightingPresets, lightingTestPrompts } from "../domain/lighting";
+import { costShort, priceFor } from "../domain/pricing";
 
 import { FormatPicker } from "./FormatPicker";
 import { formatName, isPortrait, ratioOf, sameShape } from "../domain/formats";
@@ -58,6 +59,7 @@ export function DirectRoom(props: {
   const { analysis, shots, setShots, queue, setQueue, style, assetRefs, desktop, providersVersion, enabled, setEnabled, title, notify, openProviders, openLocal } = props;
   const aspect = props.format ?? "16:9";
   const choice = useModelChoice(desktop, providersVersion);
+  const price = priceFor(choice.provider, choice.modelId, queue.perImageUsd);
   const [sceneId, setSceneId] = useState(analysis.scenes[0]?.id ?? "");
   const [selected, setSelected] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -139,7 +141,7 @@ export function DirectRoom(props: {
     const result = enqueue(queue, requests, Date.now(), force);
     setQueue(() => result.state);
     if (!result.added) { notify("Those shots already have frames waiting or approved. Use Regenerate on a shot to make another version."); return; }
-    if (desktop && !choice.configured[choice.provider]) {
+    if (desktop && choice.keysChecked && !choice.configured[choice.provider]) {
       if (choice.provider === "comfyui") { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but ComfyUI is not running. Start it from Local AI.`); openLocal?.(); } else { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but there is no ${choice.provider} key yet.`); openProviders(); }
       return;
     }
@@ -221,7 +223,7 @@ export function DirectRoom(props: {
               <button className="secondary" onClick={planScene} disabled={!scene}><Wand2 size={14} /> Plan this scene</button>
               <button className="secondary" onClick={addShot} disabled={!scene}>Add shot</button>
               <button className="secondary" disabled={!needFrames.length} onClick={() => makeFrames(needFrames, false, true)} title="Make one frame first to check the look">Test one first</button>
-              <button className="primary" disabled={!needFrames.length} onClick={() => makeFrames(needFrames)}><Sparkles size={15} /> Generate {needFrames.length} frame{needFrames.length === 1 ? "" : "s"}</button>
+              <button className="primary" disabled={!needFrames.length} onClick={() => makeFrames(needFrames)}><Sparkles size={15} /> Generate {needFrames.length} frame{needFrames.length === 1 ? "" : "s"}{needFrames.length ? ` · ${costShort(needFrames.length, price)}` : ""}</button>
             </div>
           </div>
           {sceneShots.length === 0 && <div className="dr-empty"><p>No shots in this scene yet.</p><button className="primary" onClick={planScene} disabled={!scene}><Wand2 size={15} /> Plan the coverage for this scene</button></div>}
@@ -262,7 +264,7 @@ export function DirectRoom(props: {
                   <div className="dr-actions">
                     {frame?.status === "completed" && frame.outputPath && !live && !frame.approved && <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
                     {frame?.status === "needs-review" && <button className="primary" onClick={() => approveFrame(frame)}><Check size={13} /> Approve</button>}
-                    {!live && frame?.status !== "needs-review" && (!frame || frame.approved) && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"}</button>}
+                    {!live && frame?.status !== "needs-review" && (!frame || frame.approved) && <button className={frame ? "secondary" : "primary"} onClick={() => makeFrames([s], true)}><Sparkles size={13} /> {frame ? "Regenerate" : "Generate frame"} · {costShort(1, price)}</button>}
                     {!live && frame && !frame.approved && (frame.status === "completed" || frame.status === "needs-review") && frame.outputPath && !frame.rejected && <button className="secondary" onClick={() => rejectFrame(frame)}><X size={13} /> Reject</button>}
                     {live && <span className="dr-busy">{live.status}…</span>}
                     {mine.some((j) => j.status === "failed" && j.source !== "supplied" && j.prompt) && !live && <button className="secondary" onClick={() => { const j = mine.find((x) => x.status === "failed" && x.source !== "supplied" && x.prompt); if (j) setQueue((q) => retry(q, j.id)); }}>Retry</button>}
@@ -312,7 +314,7 @@ export function DirectRoom(props: {
                   <label><span>Duration (s)</span><input type="number" min={1} max={30} step={0.5} value={shot.duration} onChange={(e) => update(shot.id, { duration: Math.max(1, Number(e.target.value) || 4) })} /></label>
                 </div>
               </Fold>
-              <ShotCameraLighting shot={shot} sceneShots={sceneShots} assets={analysis.assets} flat2D={!!style.spec2d} styleName={style.name} update={update} onLightingTest={lightingTest} />
+              <ShotCameraLighting testCost={costShort(lightingPresets.length, price)} shot={shot} sceneShots={sceneShots} assets={analysis.assets} flat2D={!!style.spec2d} styleName={style.name} update={update} onLightingTest={lightingTest} />
               <Fold title="Composition" hint={`${shot.composition?.length ?? 0} guides`} id="composition">
                 <div className="dr-checks">{compositionRules.map((c) => { const on = !!shot.composition?.includes(c); return <label key={c} className={on ? "on" : ""}><input type="checkbox" checked={on} onChange={() => update(shot.id, { composition: on ? (shot.composition ?? []).filter((x) => x !== c) : [...(shot.composition ?? []), c] })} /> {c}</label>; })}</div>
               </Fold>

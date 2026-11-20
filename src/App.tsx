@@ -1,3 +1,4 @@
+import type { ProjectSlice } from "./domain/removeAsset";
 import { toggleTheme } from "./data/theme";
 import { useLook, useProjectAccent } from "./data/appearance";
 import { looks } from "./domain/appearance";
@@ -105,6 +106,8 @@ import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type Queu
 import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
 import { HelpCenter } from "./components/HelpCenter";
+import { Tour } from "./components/Tour";
+import type { FirstPicture } from "./components/QuickStart";
 import pkg from "../package.json";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
@@ -201,7 +204,8 @@ export default function App() {
   const localAi = useLocalAi(isTauri);
   const scriptArea = useRef<HTMLTextAreaElement>(null),
     studioControl = useRef<{ generateFirst: () => void } | null>(null),
-    [pendingConcept, setPendingConcept] = useState<string | null>(null);
+    [pendingConcept, setPendingConcept] = useState<string | null>(null),
+    [tourOpen, setTourOpen] = useState(false);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);
   const snapshot = useRef<string | null>(null),
     scriptInput = useRef<HTMLInputElement>(null),
@@ -751,6 +755,11 @@ export default function App() {
     );
     setSelectedShot((current) => current + 1);
   };
+  const applySlice = (s: ProjectSlice) => {
+    setAnalysis(s.analysis); setQueueState(s.queue); setAssetOutputs(s.assetOutputs); setAssetRefsState(s.assetRefs); setProportions(s.proportions); setFitRules(s.fitRules);
+    setSheetNotes(s.sheetNotes); setSheetSettings(s.sheetSettings); setShots(s.shots); setSceneStates(s.sceneStates); setReviews(s.reviews);
+    setSelectedAsset((i) => Math.max(0, Math.min(i, s.analysis.assets.length - 1)));
+  };
   const deleteShot = () => {
     if (shots.length === 1) {
       setNotice("A production must retain at least one shot.");
@@ -1069,6 +1078,16 @@ export default function App() {
       `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
     );
   };
+  /** The quick start: one picture, started only by the button on the card (which showed the model and the cost). */
+  const makeFirstPicture = (what: FirstPicture) => {
+    if (what.kind === "new") { void addAssetToBible("character", what.name, "", false, { description: what.description, makeConcept: true }); setWorkspace("Design"); return; }
+    const index = analysis.assets.findIndex((a) => a.id === what.assetId);
+    if (index < 0) { setNotice("That character is no longer in the project."); return; }
+    setSelectedAsset(index);
+    setPendingConcept(what.assetId);
+    setWorkspace("Design");
+    setNotice(`Making a first picture of ${analysis.assets[index].name}. It appears in the sheet below for you to approve or reject.`);
+  };
   const addDesktopShortcut = async () => {
     if (!isTauri) { setNotice("Adding a desktop shortcut needs the desktop app."); return; }
     try { const { invoke } = await import("@tauri-apps/api/core"); setNotice(await invoke<string>("create_desktop_shortcut")); } catch (error) { setNotice(String(error)); }
@@ -1242,6 +1261,7 @@ export default function App() {
     "help-start": () => setHelpTopic("start"),
     "help-docs": () => setHelpTopic("docs"),
     "help-shortcuts": () => setHelpTopic("shortcuts"),
+    "help-tour": () => setTourOpen(true),
     "help-desktop-shortcut": () => { void addDesktopShortcut(); },
     "help-trouble": () => setHelpTopic("trouble"),
     "help-updates": () => setHelpTopic("updates"),
@@ -1307,6 +1327,7 @@ export default function App() {
     { id: "rail", label: "Show or hide the side panels", hint: "View", run: () => setSidebarHidden((hidden) => !hidden) },
     { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
+    { id: "tour", label: "Take the quick tour", hint: "Help", run: () => setTourOpen(true) },
     { id: "desktop-shortcut", label: "Add Production One to the Desktop", hint: "Help", run: () => { void addDesktopShortcut(); } },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
   ];
@@ -1391,6 +1412,7 @@ export default function App() {
       />
       <main className="po-main">
         {localOpen && <LocalAiPanel onClose={() => setLocalOpen(false)} notify={setNotice} />}
+        {tourOpen && <Tour onClose={() => setTourOpen(false)} onFinish={() => { setWorkspace("Projects"); window.setTimeout(() => document.querySelector(".qs")?.scrollIntoView({ block: "center" }), 80); }} />}
         {helpTopic && (helpTopic === "start" || helpTopic === "docs")
           ? <HelpCenter onClose={() => setHelpTopic(null)} onGo={(w) => setWorkspace(w)} onDesktopShortcut={() => { void addDesktopShortcut(); }} version={`v${pkg.version}`} initialChapter={helpTopic === "start" ? "welcome" : "welcome"} />
           : helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
@@ -1509,7 +1531,7 @@ export default function App() {
           </div>
         )}
         {workspace === "Projects" && (
-          <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
+          <ProjectsView desktop={isTauri} providersVersion={Number(providersOpen)} perImageUsd={queue.perImageUsd} onMakeFirst={makeFirstPicture} onOwnPicture={() => setWorkspace("Design")} onTour={() => { setWorkspace("Projects"); setTourOpen(true); }} title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
         )}
         <div hidden={workspace !== "Assistant"}>
           <AssistantView proportions={proportions} analysis={analysis} shots={shots} setShots={setShots} queue={queue} setQueue={setQueue} style={styleBible} assetRefs={assetRefs} format={format} script={script}
@@ -1520,7 +1542,7 @@ export default function App() {
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Design" && (
-          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} world={world} setWorld={setWorld} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} world={world} setWorld={setWorld} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} slice={{ analysis, queue, assetOutputs, assetRefs, proportions, fitRules, sheetNotes, sheetSettings, shots, sceneStates, reviews }} applySlice={applySlice} />
         )}
         {workspace === "Review" && (
           <ReviewView shots={shots} style={styleBible} reviews={reviews} setReviews={setReviews} ledgers={corrections} setLedgers={setCorrections} proportions={proportions} setProportions={setProportions} fitRules={fitRules} sceneStates={sceneStates} analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />

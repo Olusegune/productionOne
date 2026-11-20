@@ -5,6 +5,7 @@ import { Eyebrow } from "../components/Eyebrow";
 import { FirstRun } from "../components/FirstRun";
 import { GoldenPath } from "../components/GoldenPath";
 import { ProjectHero } from "../components/ProjectHero";
+import { QuickStart, type FirstPicture } from "../components/QuickStart";
 import type { GoldenPathInput, GoldenStep } from "../domain/goldenPath";
 import type { AnalysisResult } from "../domain/productionStudio";
 import type { StyleBible } from "../domain/visualDevelopment";
@@ -29,6 +30,12 @@ export function ProjectsView(props: {
   onNext: (step: GoldenStep) => void;
   format: string;
   onFormat: (aspect: string) => void;
+  desktop?: boolean;
+  providersVersion?: number;
+  perImageUsd?: number | null;
+  onMakeFirst?: (what: FirstPicture) => void;
+  onOwnPicture?: () => void;
+  onTour?: () => void;
 }) {
   const { title, filePath, analysis, golden, recents } = props;
   const count = (...types: string[]) => analysis.assets.filter((a) => types.includes(a.type)).length;
@@ -39,7 +46,10 @@ export function ProjectsView(props: {
         <div className="po-format-head"><h3>Format</h3><small>Pick the shape first: it sets your storyboard frames and your video.</small></div>
         <FormatPicker value={props.format} onChange={props.onFormat} />
       </section>
-      <FirstRun onKeys={props.onKeys} onStory={() => props.onWorkspace("Story")} />
+      <FirstRun onKeys={props.onKeys} onStory={() => props.onWorkspace("Story")} onTour={props.onTour} />
+      {props.onMakeFirst && golden.outputsCount === 0 && golden.approvedCount === 0 && golden.jobsActive === 0 && (
+        <QuickStart desktop={!!props.desktop} providersVersion={props.providersVersion ?? 0} perImageUsd={props.perImageUsd ?? null} characters={analysis.assets.filter((a) => a.type === "character").map((a) => ({ id: a.id, name: a.name }))} styleName={props.style.name} onMake={props.onMakeFirst} onKeys={props.onKeys} onOwnPicture={props.onOwnPicture ?? (() => props.onWorkspace("Design"))} />
+      )}
       <GoldenPath input={golden} onGo={props.onWorkspace} onNext={props.onNext} />
       {recents.length > 0 && (
         <div className="recent-list">

@@ -23,6 +23,7 @@ import type { NewAssetKind } from "../domain/readingActions";
 import type { Dispatch, SetStateAction, RefObject } from "react";
 import { ProportionPanel } from "../components/ProportionPanel";
 import { FitPanel } from "../components/FitPanel";
+import { costShort, priceFor } from "../domain/pricing";
 import { profileFromWorld, type WorldRules } from "../domain/worldRules";
 import type { FitRule } from "../domain/fit";
 import { madeWithEarlierProportions } from "../domain/characterLayers";
@@ -30,6 +31,8 @@ import { approve as approveJob } from "../domain/generationQueue";
 import type { ProportionProfile } from "../domain/proportions";
 import { enqueue } from "../domain/generationQueue";
 import { readModelChoice } from "../data/modelChoice";
+import { RemoveAsset } from "../components/RemoveAsset";
+import type { ProjectSlice } from "../domain/removeAsset";
 
 /** The Design workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DesignViewProps {
@@ -87,6 +90,9 @@ export interface DesignViewProps {
   sheetNotes: Record<string, string>;
   studioControl: RefObject<{ generateFirst: () => void; } | null>;
   styleBible: StyleBible;
+  /** Everything a removal touches, and how to put a changed copy back (used by "Remove from project" and its Undo). */
+  slice?: ProjectSlice;
+  applySlice?: (next: ProjectSlice) => void;
 }
 
 type Section = "sheets" | "identity" | "motion" | "voice";
@@ -129,6 +135,7 @@ export function DesignView(p: DesignViewProps) {
             />
             <div className="as-head">
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
+              {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
                 {sections.map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>
@@ -154,6 +161,7 @@ export function DesignView(p: DesignViewProps) {
                 }}
                 candidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "shape-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status }))}
                 approvedViews={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType !== "shape-candidate" && j.approved).length}
+                cost={costShort(1, priceFor(readModelChoice().provider, readModelChoice().modelId, queue.perImageUsd))}
                 notify={setNotice}
               />;
             })()}
@@ -174,6 +182,7 @@ export function DesignView(p: DesignViewProps) {
                 redesignCandidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "redesign-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status, approved: j.approved }))}
                 onGenerateRedesign={(req) => ask(req.sheetType, req.viewKey, req.label, req.prompt, req.references, "redesign-candidate")}
                 onApproveCandidate={(id) => setQueue((q) => approveJob(q, id))}
+                cost={costShort(1, priceFor(choice.provider, choice.modelId, queue.perImageUsd))}
                 staleViews={queue.jobs.filter((j) => j.assetId === a.id && j.approved && madeWithEarlierProportions(j.provenance, profile)).length}
                 notify={setNotice}
               />;

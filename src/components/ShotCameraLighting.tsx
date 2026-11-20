@@ -16,15 +16,18 @@ interface Props {
   update: (id: string, patch: Partial<ShotRecord>) => void
   /** Asks for one picture per lighting condition for the focus character. Only called when the person presses the button. */
   onLightingTest?: (shot: ShotRecord) => void
+  /** What the whole lighting test is likely to cost (for example "about $0.32"). */
+  testCost?: string
 }
 
 const neutralLighting = lightingPresets[0].record
 
 /** The extra camera and lighting controls for one shot. They add to the existing size, angle, lens and movement; a shot that uses none of them is unchanged. */
-export function ShotCameraLighting({ shot, sceneShots, assets, flat2D, styleName, update, onLightingTest }: Props) {
+export function ShotCameraLighting({ shot, sceneShots, assets, flat2D, styleName, update, onLightingTest, testCost }: Props) {
   const camera = shot.camera ?? {}
   const lighting = shot.lightingRecord
   const inShot = assets.filter((a) => shot.assetIds.includes(a.id))
+  const hasCharacter = inShot.some((a) => a.type === 'character')
   const setCamera = (patch: Partial<CameraDirection>) => update(shot.id, { camera: { ...camera, ...patch } })
   const setLight = (patch: Partial<LightingRecord>) => update(shot.id, { lightingRecord: { ...(lighting ?? neutralLighting), ...patch } })
   const sensor = sensorFor(camera.sensor)
@@ -86,9 +89,10 @@ export function ShotCameraLighting({ shot, sceneShots, assets, flat2D, styleName
               <label className="dr-check"><input type="checkbox" aria-label="Rim or back light" checked={lighting.rim} onChange={(e) => setLight({ rim: e.target.checked })} /> Rim or back light</label>
             </div>
             <label><span>Practical lights (lamps, windows)</span><input aria-label="Practical lights" value={lighting.practicals} onChange={(e) => setLight({ practicals: e.target.value })} /></label>
+            {onLightingTest && !hasCharacter && <small className="helper" role="status">The lighting test is made for one character. Add a character to this shot (Cast and wardrobe) to use it.</small>}
             <small className="helper" data-testid="lighting-words">{describeLighting(lighting)}</small>
             <div className="dr-tools">
-              {onLightingTest && <button type="button" className="secondary" onClick={() => onLightingTest(shot)}>Make a lighting test of the focus character ({lightingPresets.length} pictures)</button>}
+              {onLightingTest && <button type="button" className="secondary" disabled={!hasCharacter} title={hasCharacter ? undefined : 'Add a character to this shot first: the test is made for one character.'} onClick={() => onLightingTest(shot)}>Make a lighting test of the focus character ({lightingPresets.length} pictures{testCost ? `, ${testCost}` : ''})</button>}
               <button type="button" className="secondary" onClick={() => update(shot.id, { lightingRecord: undefined })}>Clear lighting design</button>
             </div>
           </>

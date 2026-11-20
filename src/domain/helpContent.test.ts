@@ -32,6 +32,14 @@ describe('the in-app guide', () => {
     }
     for (const c of helpChapters) for (const b of c.blocks) if (b.image) expect(b.image.caption.length).toBeGreaterThan(10)
   })
+  it('teaches the tour, the quick start and the cost estimates', () => {
+    const all = JSON.stringify(helpChapters)
+    expect(all).toMatch(/Take the 1-minute tour/)
+    expect(all).toMatch(/Make my first picture/)
+    expect(all).toMatch(/nothing is made or charged until you press the button/i)
+    expect(all).toMatch(/typical price/)
+    expect(helpImages).toContain('help/15-quickstart.webp')
+  })
   it('names the real screens and the real labels', () => {
     const all = JSON.stringify(helpChapters)
     for (const label of ['Analyze script', 'Add to the bible', 'Test one first', 'Turn on the Director', 'Plan the coverage', 'Approve', 'Lock style', 'Use this style', 'Provider Settings', 'Looks and grade', 'Blocking map', 'Visual review', 'Start']) expect(all, label).toContain(label)

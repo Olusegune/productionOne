@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- **First run:** a one-minute tour, a "Make my first picture" quick start (one picture, cost shown first), and a price estimate on every Generate button (typical price, or yours from the spending limit).
+- **Remove from project:** characters, costumes, props and sets can be removed from Design. It asks first, clears the item from shots, notes, proportions, fit rules, the blocking map and review findings, keeps the picture files on your computer, and offers Undo.
+- Fixed a false "no key" dialog right after making a first picture, and the lighting test now explains when a shot has no character.
+
 ## 0.55.0 (2026-11-20): LUT import and a UX polish pass
 **UX fixes from a QA pass** (every screen at 1100, 1440 and 1920 px, dark and light, with automatic checks for overflow, missing names and console errors):
 - A new screen now opens at its top. Before, Story and Review could open scrolled partway down with the heading cut off.

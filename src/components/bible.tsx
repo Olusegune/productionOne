@@ -6,6 +6,8 @@ import { assetIconFor } from "../domain/categoryIcons";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { newAssetKinds, type NewAssetKind } from "../domain/readingActions";
 import { isSuperseded, type QueueState } from "../domain/generationQueue";
+import { costShort, priceFor } from "../domain/pricing";
+import { readModelChoice } from "../data/modelChoice";
 import { characterArcs, expressionPlan, type Emotion, type CharacterArc } from "../engine/emotion";
 import type { ParsedStory } from "../engine/story";
 
@@ -39,6 +41,8 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState("");
   const [newKind, setNewKind] = useState<NewAssetKind>("character");
+  const modelNow = readModelChoice();
+  const conceptCost = costShort(1, priceFor(modelNow.provider, modelNow.modelId, queue.perImageUsd));
   const [newDescription, setNewDescription] = useState("");
   const [newLayout, setNewLayout] = useState("");
   const extras = (makeConcept = false) => ({ description: newDescription, layout: newKind === "set" ? newLayout : "", makeConcept });
@@ -63,7 +67,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
               {newKind === "character" && <label><span>Gender (optional, helps pick a voice)</span><select value={newGender} onChange={(e) => setNewGender(e.target.value)} aria-label="Gender for the new character"><option value="">Not set</option><option value="female">Female</option><option value="male">Male</option></select></label>}
               <button className="secondary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", true, extras()); reset(); }} title="Choose an image. It becomes the approved reference; every other sheet is built from it."><ImagePlus size={14} aria-hidden="true" /> Add from image</button>
               {onAddMany && <div className="add-many"><button className="secondary" type="button" onClick={() => { onAddMany(newKind); setAdding(false); }} title="Choose several images at once. Each becomes its own item of the type above, named from its file name, with its image as the approved reference."><ImagePlus size={14} aria-hidden="true" /> Add several images at once…</button><small>One {newAssetKinds.find((k) => k.kind === newKind)?.label.toLowerCase()} per image, named from the file names (up to 24). Good for a folder of Midjourney images.</small></div>}
-              <button className="primary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false, extras(true)); reset(); }} title="Adds it and makes one first picture from your description with the image model you have chosen (one image request). You then approve it, replace it with your own image, or refine the description and try again."><Sparkles size={14} aria-hidden="true" /> Add and make a first concept</button>
+              <button className="primary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false, extras(true)); reset(); }} title={`Adds it and makes one first picture from your description with the image model you have chosen (one image request, ${conceptCost}). You then approve it, replace it with your own image, or refine the description and try again.`}><Sparkles size={14} aria-hidden="true" /> Add and make a first concept{conceptCost ? ` · ${conceptCost}` : ""}</button>
               <button className="tertiary" type="button" disabled={!newName.trim()} onClick={() => { onAddAsset(newKind, newName, newKind === "character" ? newGender : "", false, extras()); reset(); }} title="Plan its sheets now and generate the first picture yourself.">Add without image</button>
             </form>
           </section>

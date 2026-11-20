@@ -339,6 +339,7 @@ pub fn build_menu(app: &tauri::AppHandle) -> tauri::Result<Menu<Wry>> {
         .item(&item("help-start", "Getting Started", Some("F1"))?)
         .item(&item("help-docs", "Documentation", None)?)
         .item(&item("help-shortcuts", "Keyboard Shortcuts", Some("CmdOrCtrl+/"))?)
+        .item(&item("help-tour", "Quick Tour", None)?)
         .item(&item("help-desktop-shortcut", "Add Production One to the Desktop", None)?)
         .item(&item("help-trouble", "Troubleshooting", None)?)
         .item(&item("help-updates", "Check for Updates", None)?)

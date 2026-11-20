@@ -8,6 +8,7 @@ import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, 
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { proportionWords, provenanceFor } from "../domain/characterLayers";
+import { costText, priceFor } from "../domain/pricing";
 import type { ProportionProfile } from "../domain/proportions";
 import {
   addCleaned,
@@ -25,7 +26,6 @@ import {
   retry,
   summarize,
   wouldEnqueue,
-  costPreview,
   waitingForAnchor,
   type ImageJob,
   type QueueState,
@@ -218,7 +218,7 @@ export function SheetStudio(props: {
     if (!result.added) { notify("Nothing was added: every view already has an image or is in the queue. To make new versions, tick the views you want and press Regenerate, or use Regenerate unapproved."); return; }
     setPicked([]);
     const what = `${result.added} view${result.added === 1 ? "" : "s"}${testOneFirst ? " (a test of the first one)" : ""}`;
-    if (desktop && !configured[provider]) {
+    if (desktop && choice.keysChecked && !configured[provider]) {
       if (provider === "comfyui") { notify(`Queued ${what}, but ComfyUI is not running. Start it from Local AI, then generation starts.`); openLocal?.(); } else { notify(`Queued ${what}, but there is no ${providerLabels[provider]} key yet. Add it, then generation starts.`); openProviders(); }
       return;
     }
@@ -289,9 +289,10 @@ export function SheetStudio(props: {
   const newKeys = views.filter((v) => wouldEnqueue(jobFor(v.key))).map((v) => v.key);
   const redoKeys = views.filter((v) => { const j = jobFor(v.key); return !!j && !j.approved && wouldEnqueue(j, true) && !wouldEnqueue(j); }).map((v) => v.key);
   const pickedKeys = picked.filter((k) => { const j = jobFor(k); return !!j && wouldEnqueue(j, true); });
-  const newCost = costPreview(newKeys.length, queue.perImageUsd);
-  const redoCost = costPreview(redoKeys.length, queue.perImageUsd);
-  const pickedCost = costPreview(pickedKeys.length, queue.perImageUsd);
+  const price = priceFor(provider, modelId, queue.perImageUsd);
+  const newCost = { label: costText(newKeys.length, price) };
+  const redoCost = { label: costText(redoKeys.length, price) };
+  const pickedCost = { label: costText(pickedKeys.length, price) };
   const togglePick = (key: string) => setPicked((p) => (p.includes(key) ? p.filter((k) => k !== key) : [...p, key]));
   const approvedCount = views.filter((v) => jobFor(v.key)?.approved).length;
   const generatingCount = views.filter((v) => ["generating", "validating", "queued", "pending"].includes(jobFor(v.key)?.status ?? "")).length;

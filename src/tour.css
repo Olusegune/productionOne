@@ -1,0 +1,23 @@
+.tour { position: fixed; inset: 0; z-index: 200; }
+.tour-dim { position: absolute; inset: 0; background: rgba(4, 6, 12, .66); }
+.tour-spot { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(4, 6, 12, .66), 0 0 0 2px var(--accent); transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; pointer-events: none; }
+.tour-card { position: absolute; background: var(--panel-1); border: 1px solid var(--stroke-strong); border-radius: 14px; padding: 16px 18px 14px; box-shadow: 0 24px 70px rgba(0, 0, 0, .55); outline: none; }
+.tour-card h3 { margin: 4px 0 6px; font-size: 17px; }
+.tour-card p { margin: 0 0 14px; color: var(--text-2); font-size: 14px; line-height: 1.55; }
+.tour-count { color: var(--text-3); font-size: 12px; font-weight: 550; }
+.tour-x { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-3); border-radius: 8px; cursor: pointer; }
+.tour-x:hover { background: rgba(255, 255, 255, .08); color: var(--text); }
+.tour-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.tour-actions .secondary:first-child { margin-right: auto; }
+@media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
+.qs { margin: 14px 0; }
+.qs header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.qs h3 { margin: 2px 0 0; }
+.qs label { display: grid; gap: 4px; margin: 10px 0; font-size: 13px; color: var(--text-3); }
+.qs-new { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 10px; }
+.qs-facts { list-style: none; margin: 10px 0; padding: 10px 12px; border: 1px solid var(--stroke); border-radius: var(--radius-sm); display: grid; gap: 4px; font-size: 13.5px; color: var(--text-2); }
+.qs-facts b { color: var(--text); }
+.qs-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.first-run-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.qs small.helper { display: block; margin-top: 6px; }
+.qs header { padding-bottom: 0; border-bottom: 0; min-height: 0; margin-bottom: 0; }
