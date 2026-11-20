@@ -8,7 +8,7 @@
 .cr-stage { position: relative; background: #05070a; overflow: hidden; touch-action: none; cursor: ew-resize; }
 .cr-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
 .cr-handle { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--gold); transform: translateX(-1px); }
-.cr-handle::after { content: "↔"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: #17140e; display: grid; place-items: center; font-weight: 700; }
+.cr-handle::after { content: "↔"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: #0e1117; display: grid; place-items: center; font-weight: 700; }
 .cr-handle:focus-visible { outline: 2px solid #fff; }
 .cr-tag { position: absolute; top: 14px; padding: 4px 10px; border-radius: 2px; background: rgba(10,12,15,.8); font-size: 13px; pointer-events: none; } .cr-tag.l { left: 14px; } .cr-tag.r { right: 14px; }
 .cr-wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-3); }

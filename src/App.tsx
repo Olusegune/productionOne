@@ -3,7 +3,7 @@ import { useLook, useProjectAccent } from "./data/appearance";
 import { looks } from "./domain/appearance";
 import { keepShotsAfterReading } from "./domain/direct";
 import { AppearanceMenu } from "./components/AppearanceMenu";
-import { addAssetsFromImages, addProductionAsset, addPropAsset, applyReadAge, newAssetKinds, ownImageSlot, type NewAssetKind } from "./domain/readingActions";
+import { addAssetsFromImages, planImageAssets, addProductionAsset, addPropAsset, applyReadAge, newAssetKinds, ownImageSlot, type NewAssetKind } from "./domain/readingActions";
 import { hasWork, needsBackup } from "./domain/projectSafety";
 import { workspaceShortcut } from "./domain/shortcuts";
 import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers";
@@ -103,6 +103,8 @@ import { useImageQueue } from "./data/useImageQueue";
 import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
 import { HelpSheet, type HelpTopic } from "./components/HelpSheet";
+import { HelpCenter } from "./components/HelpCenter";
+import pkg from "../package.json";
 import { UnsavedSheet } from "./components/UnsavedSheet";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "./domain/goldenPath";
 import { ReviewView } from "./views/ReviewView";
@@ -522,23 +524,30 @@ export default function App() {
       const { invoke } = await import("@tauri-apps/api/core");
       const files = await invoke<Array<{ path: string; inspection: { width: number; height: number } }>>("import_images", { paths: chosen.slice(0, 24) });
       const picked = chosen.slice(0, files.length);
-      const out = addAssetsFromImages(analysis.assets, kind, picked, analysis.scenes[0]?.id ?? "SCENE-001");
-      if (!out.added.length) { setNotice("Nothing was added."); return 0; }
       const slot = ownImageSlot(kind);
+      const plan = planImageAssets(analysis.assets, kind, picked, analysis.scenes[0]?.id ?? "SCENE-001", (id) => queue.jobs.some((j) => j.assetId === id && j.approved && j.sheetType === slot.sheetType && j.viewKey === slot.viewKey));
+      if (!plan.targets.length) { setNotice(plan.skipped.length ? `${plan.skipped.map((x) => x.asset.name).join(", ")} already ${plan.skipped.length === 1 ? "has" : "have"} an approved picture, so nothing was replaced. Reject the old one first if you want to use this picture instead.` : "Nothing was added."); return 0; }
       let q = queue;
       const made: ImageJob[] = [];
-      out.added.forEach((asset, i) => {
-        const file = files[i];
-        const r = addSupplied(q, { assetId: asset.id, variant: "Canonical", sheetType: slot.sheetType, viewKey: slot.viewKey, label: slot.label, aspect: slot.aspect, fullBody: slot.fullBody, path: file.path, width: file.inspection.width, height: file.inspection.height });
+      plan.targets.forEach((target) => {
+        const file = files[target.index];
+        const r = addSupplied(q, { assetId: target.asset.id, variant: "Canonical", sheetType: slot.sheetType, viewKey: slot.viewKey, label: slot.label, aspect: slot.aspect, fullBody: slot.fullBody, path: file.path, width: file.inspection.width, height: file.inspection.height });
         q = r.state; made.push(r.job);
       });
-      setAnalysis((current) => ({ ...current, assets: out.assets }));
+      setAnalysis((current) => ({ ...current, assets: plan.assets }));
       setQueue(() => q);
       made.forEach((job) => onSheetApproved(job, true));
-      setSelectedAsset(out.assets.findIndex((a) => a.id === out.added[0].id));
+      setSelectedAsset(plan.assets.findIndex((x) => x.id === plan.targets[0].asset.id));
       const noun = newAssetKinds.find((k) => k.kind === kind)?.noun ?? "asset";
-      setNotice(`Added ${out.added.length} ${noun}${out.added.length === 1 ? "" : "s"} from your images, named from the file names, each with its image as the approved reference. Rename any in the Identity tab.${picked.length < chosen.length || chosen.length === 24 ? " (Up to 24 images are added at once.)" : ""}`);
-      return out.added.length;
+      const matched = plan.targets.filter((t) => t.matched).map((t) => t.asset.name);
+      const created = plan.targets.length - matched.length;
+      setNotice([
+        matched.length ? `Attached ${matched.length === 1 ? "a picture" : `${matched.length} pictures`} to ${matched.join(", ")} (matched by file name), as the approved reference.` : "",
+        created ? `Added ${created} new ${noun}${created === 1 ? "" : "s"} from your images, named from the file names, each with its image as the approved reference. Rename any in the Identity tab.` : "",
+        plan.skipped.length ? `${plan.skipped.map((x) => x.asset.name).join(", ")} already ${plan.skipped.length === 1 ? "has" : "have"} an approved picture and was left as it is.` : "",
+        picked.length < chosen.length || chosen.length === 24 ? "Up to 24 images are added at once." : "",
+      ].filter(Boolean).join(" "));
+      return plan.targets.length;
     } catch (error) { setNotice(String(error)); return 0; }
   };
   const approveAsset = (index: number) =>
@@ -1048,6 +1057,10 @@ export default function App() {
       `Validated ${audit.ready ? "production-ready" : "draft"} package saved to ${path}`,
     );
   };
+  const addDesktopShortcut = async () => {
+    if (!isTauri) { setNotice("Adding a desktop shortcut needs the desktop app."); return; }
+    try { const { invoke } = await import("@tauri-apps/api/core"); setNotice(await invoke<string>("create_desktop_shortcut")); } catch (error) { setNotice(String(error)); }
+  };
   const markSaved = () => {
     snapshot.current = studioKey;
     setDirty(false);
@@ -1217,6 +1230,7 @@ export default function App() {
     "help-start": () => setHelpTopic("start"),
     "help-docs": () => setHelpTopic("docs"),
     "help-shortcuts": () => setHelpTopic("shortcuts"),
+    "help-desktop-shortcut": () => { void addDesktopShortcut(); },
     "help-trouble": () => setHelpTopic("trouble"),
     "help-updates": () => setHelpTopic("updates"),
     "help-about": () => setHelpTopic("about"),
@@ -1281,6 +1295,7 @@ export default function App() {
     { id: "rail", label: "Show or hide the side panels", hint: "View", run: () => setSidebarHidden((hidden) => !hidden) },
     { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
+    { id: "desktop-shortcut", label: "Add Production One to the Desktop", hint: "Help", run: () => { void addDesktopShortcut(); } },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
   ];
   /** Every file outside the queue that the project records: approved pictures, clips and reference photos. */
@@ -1364,7 +1379,9 @@ export default function App() {
       />
       <main className="po-main">
         {localOpen && <LocalAiPanel onClose={() => setLocalOpen(false)} notify={setNotice} />}
-        {helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
+        {helpTopic && (helpTopic === "start" || helpTopic === "docs")
+          ? <HelpCenter onClose={() => setHelpTopic(null)} onGo={(w) => setWorkspace(w)} onDesktopShortcut={() => { void addDesktopShortcut(); }} version={`v${pkg.version}`} initialChapter={helpTopic === "start" ? "welcome" : "welcome"} />
+          : helpTopic && <HelpSheet topic={helpTopic} onClose={() => setHelpTopic(null)} />}
         {pending && (
           <UnsavedSheet
             title={title}

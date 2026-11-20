@@ -38,7 +38,7 @@
 .rv-hint { margin: 0; font-size: 13px; color: var(--text-3); line-height: 1.45; }
 .rv-actions { display: grid; gap: 8px; margin-top: 4px; }
 .rv-actions button { justify-content: center; }
-.rv-actions .primary { color: #15120d; background: var(--gold-2); }
+.rv-actions .primary { color: #0d1015; background: var(--gold-2); }
 .rv-more { border-top: 1px solid var(--line-1); padding-top: 8px; }
 .rv-more summary { cursor: pointer; font-size: 14px; color: var(--text-2); }
 .rv-more dl { margin: 8px 0; display: grid; gap: 4px; font-size: 13px; }
@@ -49,7 +49,7 @@
 .rv-prompt textarea { width: 100%; box-sizing: border-box; font-size: 13px; }
 @media (max-width: 1280px) { .rv-body { grid-template-columns: 200px minmax(0, 1fr); } .rv-side { grid-column: 1 / -1; position: static; } }
 
-.po-shell .po-tabs em.po-badge { font-style: normal; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--gold-2); color: #15120d; font-size: 12px; font-weight: 700; text-align: center; }
+.po-shell .po-tabs em.po-badge { font-style: normal; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--gold-2); color: #0d1015; font-size: 12px; font-weight: 700; text-align: center; }
 
 /* Deliver checklist */
 .dc-checklist { margin: 16px 0; }
@@ -117,7 +117,7 @@
 .fg-head { display: flex; gap: 12px; align-items: center; }
 .fg-head > div { display: grid; gap: 2px; min-width: 0; }
 .fg-head small { color: var(--text-3); font-size: 13px; overflow-wrap: anywhere; }
-.fg-count { flex: none; min-width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--gold-2); color: #15120d; font-weight: 700; font-size: 14px; }
+.fg-count { flex: none; min-width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--gold-2); color: #0d1015; font-weight: 700; font-size: 14px; }
 .fg-advice { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
 .fg-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .fg-actions button { height: 36px; font-size: 13px; }

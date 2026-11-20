@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { CircleHelp } from "lucide-react";
 import { BrandMark } from "./BrandMark";
+import pkg from "../../package.json";
 
 export type HelpTopic = "start" | "docs" | "shortcuts" | "trouble" | "updates" | "about";
 
@@ -64,7 +65,7 @@ const copy: Record<HelpTopic, { title: string; body: React.ReactElement }> = {
     body: (
       <>
         <p><b>A project will not open.</b> Only <code>.pone</code> and legacy <code>.pguy</code> project files open. The message says what is wrong with the file.</p>
-        <p><b>An API key was rejected.</b> Re-enter it in Tools, Provider Settings. Keys never appear in project files.</p>
+        <p><b>An API key was rejected.</b> Re-enter it in Tools, Provider Settings (or the wand icon in the top bar). Keys never appear in project files.</p>
         <p><b>Something looks wrong after a crash.</b> Reopen the app: the last autosaved state is restored. Your saved <code>.pone</code> files are untouched.</p>
         <p><b>Reset the view.</b> View, Reset Layout restores zoom and the sidebar.</p>
       </>
@@ -81,7 +82,7 @@ const copy: Record<HelpTopic, { title: string; body: React.ReactElement }> = {
     body: (
       <>
         <div className="about-mark"><BrandMark size={72} /></div>
-        <p><b>Production One</b> {`0.14.0`}</p>
+        <p><b>Production One</b> {`v${pkg.version}`}</p>
         <p>Your AI Production Department. A Windows studio for scripts, references, shots and production packages.</p>
         <p>Continues the Production Guy codebase; legacy Production Guy projects remain supported.</p>
       </>

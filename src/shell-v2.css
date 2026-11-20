@@ -26,7 +26,7 @@
 .po-shell .po-next { display: grid; gap: 8px; padding: 12px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line-1); }
 .po-shell .po-next small { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); }
 .po-shell .po-next p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-2); }
-.po-shell .po-next .primary { width: 100%; justify-content: center; height: 42px; color: #15120d; background: var(--gold-2); }
+.po-shell .po-next .primary { width: 100%; justify-content: center; height: 42px; color: #0d1015; background: var(--gold-2); }
 .po-shell .po-next .primary > .btn-label { white-space: normal; text-align: left; line-height: 1.2; }
 
 .po-shell .po-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; align-items: center; padding: 0 4px; }
@@ -38,7 +38,7 @@
 /* Light theme */
 :root[data-theme="light"] .po-shell > .po-top, :root[data-theme="light"] .po-shell > .po-dock, :root[data-theme="light"] .po-shell .po-project, :root[data-theme="light"] .po-shell .po-next { background: rgba(255, 255, 255, .7); border-color: rgba(20, 24, 30, .14); }
 :root[data-theme="light"] .po-shell .po-tabs button.active { background: rgba(20, 24, 30, .08); }
-:root[data-theme="light"] .po-shell .po-wordmark b { color: #8a6420; }
+:root[data-theme="light"] .po-shell .po-wordmark b { color: #244186; }
 
 @media (max-width: 1280px) {
   .po-shell { --side-w: 76px; }
@@ -58,7 +58,7 @@
 :root[data-theme="light"] .po-shell small { color: var(--text-3); }
 
 /* Light theme values for the surface tokens, so every screen that uses them is readable in both themes */
-:root[data-theme="light"] { --panel-1: #fbf9f4; --panel-2: #efeae0; --line-1: rgba(20, 24, 30, .16); }
+:root[data-theme="light"] { --panel-1: #f4f6fb; --panel-2: #e1e5ee; --line-1: rgba(20, 24, 30, .16); }
 /* In the light theme the champagne accent is a dark gold, so text on it is white */
 :root[data-theme="light"] .po-shell .po-next .primary, :root[data-theme="light"] .po-shell .po-tabs em.po-badge, :root[data-theme="light"] .rv-actions .primary, :root[data-theme="light"] .sg-fav-toggle.on, :root[data-theme="light"] .sg-families button.on, :root[data-theme="light"] .sg-detail .primary, :root[data-theme="light"] .sv-toolbar .primary, :root[data-theme="light"] .sv-count.warn, :root[data-theme="light"] .po-sub span, :root[data-theme="light"] .sg-current { color: #fff; }
 :root[data-theme="light"] .sg-fav-toggle.on, :root[data-theme="light"] .sg-families button.on, :root[data-theme="light"] .rv-filter button.on { background: var(--gold-2); color: #fff; }

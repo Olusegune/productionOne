@@ -1,0 +1,43 @@
+.hc { width: min(1180px, 94vw); height: min(860px, 90vh); display: flex; flex-direction: column; background: var(--panel-1); border: 1px solid var(--stroke-strong); border-radius: 14px; box-shadow: 0 30px 90px rgba(0, 0, 0, .55); overflow: hidden; }
+.hc-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--stroke); }
+.hc-head h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 17px; }
+.hc-head small { color: var(--text-3); font-weight: 500; font-size: 12px; margin-left: 6px; }
+.hc-close { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--stroke-strong); background: transparent; color: var(--text); cursor: pointer; }
+.hc-close:hover { background: rgba(255, 255, 255, .08); }
+.hc-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px 1fr; }
+.hc-nav { border-right: 1px solid var(--stroke); overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.hc-search { display: flex; align-items: center; gap: 8px; }
+.hc-search input { flex: 1; border: 0 !important; background: transparent !important; padding: 9px 0; color: var(--text); outline: none; font-size: 13.5px; }
+.hc-nav ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.hc-nav button { width: 100%; text-align: left; border: 0; background: transparent; color: var(--text-2); padding: 9px 10px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.hc-nav button b { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.hc-nav button small { font-size: 12px; color: var(--text-3); line-height: 1.35; }
+.hc-nav button:hover { background: rgba(255, 255, 255, .06); }
+.hc-nav button.on { background: rgba(123, 155, 255, .14); box-shadow: inset 2px 0 var(--accent); }
+.hc-none { color: var(--text-3); font-size: 13px; padding: 8px 10px; }
+.hc-body { overflow: auto; padding: 26px 34px 30px; outline: none; }
+.hc-title { margin: 0 0 4px; font-size: 26px; }
+.hc-summary { margin: 0 0 22px; color: var(--text-3); font-size: 14.5px; }
+.hc-block { margin: 0 0 26px; max-width: 78ch; }
+.hc-block h3 { margin: 0 0 8px; font-size: 17px; }
+.hc-block p { margin: 0 0 10px; line-height: 1.65; font-size: 14.5px; color: var(--text-2); }
+.hc-block b { color: var(--text); font-weight: 620; }
+.hc-block code { background: rgba(255, 255, 255, .07); border-radius: 5px; padding: 1px 6px; }
+.hc-steps { margin: 6px 0 12px; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; color: var(--text-2); font-size: 14.5px; line-height: 1.55; }
+.hc-steps li::marker { color: var(--accent-2); font-weight: 650; }
+.hc-figure { margin: 14px 0; }
+.hc-figure img { width: 100%; max-width: 860px; border-radius: 10px; border: 1px solid var(--stroke-strong); box-shadow: 0 10px 30px rgba(0, 0, 0, .35); display: block; }
+.hc-figure figcaption { margin-top: 7px; font-size: 12.5px; color: var(--text-3); }
+.hc-missing { padding: 36px; border: 1px dashed var(--stroke-strong); border-radius: 10px; color: var(--text-3); text-align: center; max-width: 860px; }
+.hc-note { display: flex; gap: 10px; padding: 11px 14px; border-radius: 10px; margin: 12px 0; border: 1px solid var(--stroke); background: rgba(255, 255, 255, .035); }
+.hc-note p { margin: 2px 0 0; font-size: 13.5px; }
+.hc-note.tip svg { color: var(--accent-2); } .hc-note.cost svg { color: #e0b24d; } .hc-note.careful svg { color: #ef7b6c; }
+.hc-note.cost { border-color: rgba(224, 178, 77, .35); } .hc-note.careful { border-color: rgba(239, 123, 108, .35); }
+.hc-actions { display: flex; gap: 10px; margin: 8px 0 20px; flex-wrap: wrap; }
+.hc-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 16px; border-top: 1px solid var(--stroke); }
+@media (max-width: 900px) { .hc-main { grid-template-columns: 1fr; } .hc-nav { max-height: 180px; border-right: 0; border-bottom: 1px solid var(--stroke); } }
+:root[data-theme="light"] .hc-nav button:hover { background: rgba(15, 23, 42, .05); }
+:root[data-theme="light"] .hc-search { background: #fff; }
+:root[data-theme="light"] .hc-block code { background: rgba(15, 23, 42, .07); }
+.hc-search { position: sticky; top: -12px; z-index: 1; margin: -12px -12px 0; padding: 12px; background: var(--panel-1); }
+.hc-search input { background: rgba(255, 255, 255, .04) !important; border: 1px solid var(--stroke-strong) !important; border-radius: 9px; padding: 9px 10px !important; }
