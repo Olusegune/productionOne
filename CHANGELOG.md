@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.56.0 (2026-11-20): first run, prices on buttons, remove items
 - **First run:** a one-minute tour, a "Make my first picture" quick start (one picture, cost shown first), and a price estimate on every Generate button (typical price, or yours from the spending limit).
 - **Remove from project:** characters, costumes, props and sets can be removed from Design. It asks first, clears the item from shots, notes, proportions, fit rules, the blocking map and review findings, keeps the picture files on your computer, and offers Undo.
 - Fixed a false "no key" dialog right after making a first picture, and the lighting test now explains when a shot has no character.
