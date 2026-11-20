@@ -11,7 +11,7 @@ export function readModelChoice(): { provider: ProviderKey; modelId: string } {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
     if (raw && providerOrder.includes(raw.provider) && typeof raw.modelId === "string" && raw.modelId) return raw;
   } catch { /* A missing or broken value falls back to the default. */ }
-  return { provider: "google", modelId: startModel.google };
+  return { provider: "kie", modelId: startModel.kie };
 }
 export function writeModelChoice(provider: ProviderKey, modelId: string) {
   try { localStorage.setItem(KEY, JSON.stringify({ provider, modelId })); } catch { /* The choice is a convenience; the app works without it. */ }

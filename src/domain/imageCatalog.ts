@@ -165,8 +165,8 @@ export function quickEngines(catalog: CatalogModel[], configured: Record<string,
   const first = (...choices: Array<EngineOption | null>) => choices.find((c) => !!c) ?? null
   const kieVariant = (stem: string, label: string) => option('kie', `${stem}-${needsReferences ? 'image-to-image' : 'text-to-image'}`, label)
   const out: Array<EngineOption | null> = [
-    pick(option('google', 'gemini-nano-banana-2.1', 'Nano Banana 2.1'), option('kie', 'google/nanobanana-2-1', 'Nano Banana 2.1')),
-    pick(option('google', 'gemini-3-pro-image', 'Nano Banana Pro'), option('kie', 'google/pro-image-to-image', 'Nano Banana Pro')),
+    pick(option('kie', 'google/nanobanana-2-1', 'Nano Banana 2.1'), option('google', 'gemini-nano-banana-2.1', 'Nano Banana 2.1')),
+    pick(option('kie', 'google/pro-image-to-image', 'Nano Banana Pro'), option('google', 'gemini-3-pro-image', 'Nano Banana Pro')),
     first(kieVariant('seedream/5-5', 'Seedream 5.5'), kieVariant('seedream/5-pro', 'Seedream 5.0 Pro'), option('openrouter', 'bytedance-seed/seedream-4.5', 'Seedream 4.5')),
     first(kieVariant('gpt/gpt-image-2-6-flare', 'GPT Image 2.6'), kieVariant('gpt/gpt-image-2-5-flare', 'GPT Image 2.5'), option('openai', 'gpt-image-1.5', 'GPT Image 1.5')),
     option('kie', 'ideogram/character', 'Ideogram Character'),

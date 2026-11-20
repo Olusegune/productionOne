@@ -65,9 +65,11 @@ describe('quick engines for a view that must be made again', () => {
     expect(latest(catalog, keys, false)[0].label).toBe('Nano Banana 2.1')
     expect(quickEngines(catalog, { kie: true }, false)[0]).toMatchObject({ provider: 'kie', model: 'google/nanobanana-2-1', available: true })
   })
-  it('Nano Banana Pro works with only a Kie.ai key, and uses Google direct when that has a key', () => {
+  it('Nano Banana works with only a Kie.ai key, prefers Kie.ai when both have a key, and falls back to Google direct without one', () => {
     expect(latest(catalog, { kie: true })[1]).toMatchObject({ label: 'Nano Banana Pro', provider: 'kie', model: 'google/pro-image-to-image', available: true })
-    expect(latest(catalog, { google: true, kie: true })[1]).toMatchObject({ provider: 'google', model: 'gemini-3-pro-image' })
+    expect(latest(catalog, { google: true, kie: true })[1]).toMatchObject({ provider: 'kie', model: 'google/pro-image-to-image' })
+    expect(latest(catalog, { google: true, kie: true })[0]).toMatchObject({ provider: 'kie', model: 'google/nanobanana-2-1' })
+    expect(latest(catalog, { google: true })[1]).toMatchObject({ provider: 'google', model: 'gemini-3-pro-image' })
   })
   it('picks the image-to-image variant when the view is built from the approved front, and text-to-image otherwise', () => {
     const withRef = latest()
