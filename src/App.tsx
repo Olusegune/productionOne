@@ -10,6 +10,7 @@ import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers"
 import { Eyebrow } from "./components/Eyebrow";
 import { DesignView } from "./views/DesignView";
 import { readProfiles, type ProportionProfile } from "./domain/proportions";
+import { readFitRules, type FitRule } from "./domain/fit";
 import { DirectView } from "./views/DirectView";
 import { ProjectsView } from "./views/ProjectsView";
 import { StoryView } from "./views/StoryView";
@@ -169,7 +170,8 @@ export default function App() {
     [assetRefs, setAssetRefsState] = useState<Record<string, string[]>>({}),
     [sheetNotes, setSheetNotes] = useState<Record<string, string>>({}),
     [sheetSettings, setSheetSettings] = useState<Record<string, string>>({}),
-    [proportions, setProportions] = useState<Record<string, ProportionProfile>>({});
+    [proportions, setProportions] = useState<Record<string, ProportionProfile>>({}),
+    [fitRules, setFitRules] = useState<Record<string, FitRule[]>>({});
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
@@ -194,8 +196,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}) }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}) }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -269,6 +271,7 @@ export default function App() {
           setSheetNotes(studio.sheetNotes ?? {});
           setSheetSettings(studio.sheetSettings ?? {});
           setProportions(readProfiles(studio.proportions));
+          setFitRules(readFitRules(studio.fitRules));
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -1060,6 +1063,7 @@ export default function App() {
     setSheetNotes(s.sheetNotes ?? {});
     setSheetSettings(s.sheetSettings ?? {});
     setProportions(readProfiles(s.proportions));
+    setFitRules(readFitRules(s.fitRules));
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1450,7 +1454,7 @@ export default function App() {
           <ProjectsView title={title} filePath={filePath} analysis={analysis} golden={goldenInput} style={styleBible} recents={recents} onNew={() => guard(() => void newProject())} onOpen={() => guard(() => void openProject())} onSave={() => void saveProject()} onOpenRecent={(path) => guard(() => void openPath(path))} onForgetRecent={(path) => void forgetRecent(path)} onClearRecents={() => void clearRecents()} onKeys={() => setProvidersOpen(true)} onWorkspace={setWorkspace} onNext={goNext} format={format} onFormat={setFormat} />
         )}
         <div hidden={workspace !== "Assistant"}>
-          <AssistantView analysis={analysis} shots={shots} setShots={setShots} queue={queue} setQueue={setQueue} style={styleBible} assetRefs={assetRefs} format={format} script={script}
+          <AssistantView proportions={proportions} analysis={analysis} shots={shots} setShots={setShots} queue={queue} setQueue={setQueue} style={styleBible} assetRefs={assetRefs} format={format} script={script}
             desktop={isTauri} providersVersion={Number(providersOpen)} notify={setNotice} openProviders={() => setProvidersOpen(true)} openReview={() => setWorkspace("Review")} openDesign={() => setWorkspace("Design")} openDeliver={() => setWorkspace("Deliver")}
             useScript={assistantUseScript} addImages={addImagesAsAssets} onApproved={onSheetApproved} />
         </div>
@@ -1458,13 +1462,13 @@ export default function App() {
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Design" && (
-          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
         {workspace === "Review" && (
           <ReviewView analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Direct" && (
-          <DirectView activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
+          <DirectView proportions={proportions} activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
         )}
         {workspace === "Deliver" && (
           <DeliveryCenter

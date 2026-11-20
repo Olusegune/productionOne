@@ -1,3 +1,5 @@
+import { proportionWords, provenanceFor } from './characterLayers'
+import type { ProportionProfile } from './proportions'
 import { buildShotPrompt, frameJobs, planCoverage, shotReferences } from './direct'
 import { approve, committedUsd, enqueue, shouldAnchor, type ImageJob, type JobRequest, type QueueState } from './generationQueue'
 import type { AnalysisResult, ExtractedAsset, ShotRecord } from './productionStudio'
@@ -25,6 +27,8 @@ export interface AutopilotOptions {
   takesReferences: boolean
   /** The project's shape, for example 9:16, used for storyboard frames. */
   aspect: string
+  /** Target proportions per character, used in every picture request so the same body runs through every sheet and frame. */
+  proportions?: Record<string, ProportionProfile>
 }
 
 export interface AutopilotState {
@@ -68,9 +72,10 @@ function request(asset: ExtractedAsset, sheet: SheetType, view: ViewSpec, style:
   const anchored = o.takesReferences && shouldAnchor(queue, { assetId: asset.id, variant: 'Canonical', sheetType: sheet, viewKey: view.key })
   return {
     assetId: asset.id, variant: 'Canonical', sheetType: sheet, viewKey: view.key, label: view.label,
-    prompt: buildViewPrompt({ style, asset, variant: 'Canonical', sheetType: sheet, view, model: o.model, anchored, backdrop: 'gray', photoRefs: refs.length > 0 }),
+    prompt: buildViewPrompt({ style, asset, variant: 'Canonical', sheetType: sheet, view, model: o.model, anchored, backdrop: 'gray', photoRefs: refs.length > 0, proportions: proportionWords(o.proportions?.[asset.id]) }),
     aspect: view.aspect, fullBody: view.fullBody, provider: o.provider, model: o.model,
     references: o.takesReferences ? refs : [], useAnchor: anchored, styleName: style.name, styleFp: styleFingerprint(style),
+    provenance: provenanceFor(o.proportions?.[asset.id], o.takesReferences ? refs.map((path) => ({ path })) : []),
     outputName: (revision: number) => outputName(asset, 'Canonical', sheet, view, revision),
   }
 }
@@ -105,7 +110,7 @@ export function frameRequests(analysis: AnalysisResult, shots: ShotRecord[], sty
     const refs = o.takesReferences ? shotReferences(s, analysis, queue, assetRefs) : []
     return {
       assetId: s.id, variant: 'Storyboard', sheetType: 'Storyboard', viewKey: 'frame', label: s.title ?? s.id, aspect: o.aspect, fullBody: false, provider: o.provider, model: o.model,
-      prompt: buildShotPrompt(s, analysis, style, refs, o.aspect, o.model), references: refs.map((r) => r.path), styleName: style.name, styleFp: styleFingerprint(style),
+      prompt: buildShotPrompt(s, analysis, style, refs, o.aspect, o.model, o.proportions), references: refs.map((r) => r.path), styleName: style.name, styleFp: styleFingerprint(style),
       outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, '0')}`,
     }
   })

@@ -5,6 +5,7 @@ import type { ProductionGraph } from '../domain/productionGraph'
 import type { AnalysisResult, GenerationJob, ShotRecord, VideoModel } from '../domain/productionStudio'
 import type { StyleBible } from '../domain/visualDevelopment'
 import type { ProportionProfile } from '../domain/proportions'
+import type { FitRule } from '../domain/fit'
 
 const KEY = 'production-guy:project:v1'
 const STUDIO_KEY = 'production-guy:studio:v1'
@@ -30,6 +31,8 @@ export interface StudioState {
   format?: string
   /** Target proportions per character (asset id). Absent in projects saved before 0.52; a character without one is unchanged. */
   proportions?: Record<string, ProportionProfile>
+  /** Set and prop rules proposed from each character's proportions, with the decisions made on them (asset id to rules). */
+  fitRules?: Record<string, FitRule[]>
 }
 
 export const projectStore = {

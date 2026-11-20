@@ -164,6 +164,8 @@ export interface PromptInput {
   photoRefs?: boolean
   /** This view is a deliberate redraw of the attached approved picture in the selected 2D style (a new revision for review). */
   reinterpret?: boolean
+  /** The character's target proportions in words (see proportions.describe). Empty or absent: the prompt is exactly as it was. */
+  proportions?: string
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -175,7 +177,7 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
   return [facts ? `Confirmed character identity: ${facts}.` : '', never ? `Must never drift: ${never}.` : ''].filter(Boolean).join(' ')
 }
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const twoD = !!style.spec2d
   const place = asset.type === 'set' || asset.type === 'environment'
@@ -183,6 +185,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
     twoD ? adaptViewFor2D(view.instruction) : view.instruction,
     identityFacts(asset),
+    asset.type === 'character' ? proportions ?? '' : '',
     asset.description?.trim() ? `Description (the person's own words): ${asset.description.trim().replace(/\s+/g, ' ')}` : '',
     place ? (asset.layout?.trim() ? `Fixed layout of this place, the same in every view: ${asset.layout.trim().replace(/\s+/g, ' ')}. Show the same place from a different position: do not move, add or remove these landmarks.` : 'Every view of this place shows the same architecture, layout, landmarks and prop positions as the others, seen from a different position or in different light.') : '',
     // A costume made from the script's own description of a character keeps those words in every view.

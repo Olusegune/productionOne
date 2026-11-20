@@ -18,11 +18,14 @@ proportionProfile {
   preset        natural | elongated | compact | large-headed | long-limbed | angular | rounded | custom
   stylization   0..100
   controls      { <controlId>: { value, unit, source: "default" | "override" } }   (all 17 are always present)
+  heightM       the character's height in metres (default 1.75, range 0.2 to 3); an assumption you set, used for fit rules
   exceptions    [ { control, note } ]   deliberate departures for this character
 }
 ```
 
 Stored in the project file as the optional `studio.proportions` map (asset id to profile). A project saved before this existed has no such field and is read as "no profiles": its prompts and drawings are unchanged (a golden test compares every prompt of a saved 0.51.2 project, byte for byte). Reading a saved profile never throws: missing or invalid fields take the defaults below and values are clamped to range.
+
+The profile has a content fingerprint (`pp1-` plus eight hex digits) over its preset, stylization, height, controls and exceptions. Outputs store it (and a copy of the profile) so a later change can be noticed; see `character-layers-and-fit.md`.
 
 ## Measurement conventions
 
