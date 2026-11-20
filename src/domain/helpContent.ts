@@ -240,7 +240,7 @@ export const helpChapters: HelpChapter[] = [
       {
         title: 'What you can give it',
         text: [
-          'Open **Assistant** and press the paperclip. You can attach a **script** (Word, PDF, text, Fountain, Final Draft), and **pictures** of your own characters, props, places or costumes. Or type a short idea and it writes a script (this needs a language model: Gemini, OpenAI, OpenRouter, Ollama or LM Studio, chosen under "Writing model").',
+          'Open **Assistant** and press the paperclip. You can attach a **script** (Word, PDF, text, Fountain, Final Draft), and **pictures** of your own characters, props, places or costumes. Or type your story as one line per beat, or a short idea (a language model then writes the script, using the items you already have) (this needs a language model: Gemini, OpenAI, OpenRouter, Ollama or LM Studio, chosen under "Writing model").',
           'When you attach pictures it asks what they are (characters, props, places or costumes) and makes an item for each with **your picture as the approved reference**. A picture named after a character in your script (marcus.png) is attached to that character.',
         ],
         image: { file: 'help/13-assistant.webp', caption: 'The Assistant: chat on the left, the plan and budget on the right.' },
@@ -248,8 +248,8 @@ export const helpChapters: HelpChapter[] = [
       {
         title: 'Plan, budget, go',
         text: ['The right-hand **Plan** shows how many items and pictures there will be and the estimated cost. Choose **Quick** (one sheet each) or **Standard** (turnaround, expressions, poses, costume, prop and place sheets), tick **storyboard frames** to have it plan the shots from your script and make a frame for each in your project shape, enter your **price per picture** and **budget**, then press **Start**. Nothing is made before you press Start, and it will not start without a price and a budget.'],
-        steps: ['Attach your script and pictures (or type an idea).', 'Tell it what the pictures are.', 'Check the plan on the right.', 'Tick storyboard frames if you want the storyboard.', 'Enter a price per picture and a budget, then press Start.', 'It makes a first concept for every item and stops so you can approve, replace or reject each (the default).', 'Press Continue: it makes the sheets from your approved concepts, then the storyboard frames.'],
-        note: { kind: 'careful', text: 'A storyboard needs a script: the shots are planned from its scenes. Pictures alone can become characters, props and places, but there is no scene to plan shots from until you give it a script or a story.' },
+        steps: ['Attach your script and pictures, or type your story one line per beat.', 'Tell it what the pictures are.', 'Check the plan on the right.', 'Tick storyboard frames if you want the storyboard.', 'Enter a price per picture and a budget, then press Start.', 'It makes a first concept for every item and stops so you can approve, replace or reject each (the default).', 'Press Continue: it makes the sheets from your approved concepts, then the storyboard frames.'],
+        note: { kind: 'tip', text: 'A storyboard is planned from scenes, so it needs a story. If you only have pictures, type your story as one line per beat (for example: Marcus finds the lantern on the Old Harbour pier at dusk). The Assistant turns your own words into scenes using your characters, places and props, with no language model and nothing sent anywhere, then plans the shots.' },
       },
       {
         title: 'Connected agents',

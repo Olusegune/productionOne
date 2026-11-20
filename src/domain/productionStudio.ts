@@ -68,7 +68,7 @@ const KEPT_FIELDS = ['age', 'gender', 'race', 'ethnicity', 'role', 'never', 'per
 /**
  * Re-reading a script makes new assets; this carries over what the person set on the ones that are still there (matched by type and name).
  * An asset keeps its old id: ids contain a running number, so a new location added earlier in the script would otherwise renumber every character and orphan their pictures, references and shots.
- * A value the person set wins over one the reader found. Approval stays with an asset that still exists, because its pictures are tied to the same id. Assets the script no longer has are dropped.
+ * A value the person set wins over one the reader found. Approval stays with an asset that still exists, because its pictures are tied to the same id. Assets the script no longer has are dropped, except those the person added by hand or from their own pictures.
  */
 export function mergeAnalysis(previous: AnalysisResult, next: AnalysisResult): AnalysisResult {
   const before = new Map(previous.assets.map((a) => [`${a.type}:${slug(a.name)}`, a]))
@@ -82,7 +82,10 @@ export function mergeAnalysis(previous: AnalysisResult, next: AnalysisResult): A
     }
     return merged
   })
-  return { ...next, assets }
+  // Items the person made by hand or from their own pictures (ids start with MANU-) are theirs: a script that does not mention them does not remove them.
+  const named = new Set(assets.map((a) => `${a.type}:${slug(a.name)}`))
+  const mine = previous.assets.filter((a) => a.id.startsWith('MANU-') && !named.has(`${a.type}:${slug(a.name)}`))
+  return { ...next, assets: [...assets, ...mine] }
 }
 
 /** The sample project and an unnamed one carry placeholder names. */

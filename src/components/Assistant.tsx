@@ -7,6 +7,7 @@ import { advance, initialState, report, summarize, withBudget, type AutopilotOpt
 import { planCoverage } from "../domain/direct";
 import { cancelAllWaiting, committedUsd, type ImageJob, type QueueState } from "../domain/generationQueue";
 import type { ProportionProfile } from "../domain/proportions";
+import { looksLikeOutline, outlineToScript } from "../domain/storyOutline";
 import { chooseWriter, writerOption, writerOptions, writerReady } from "../domain/assistantWriters";
 import { modelTakesReferences } from "../domain/imageCatalog";
 import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
@@ -39,6 +40,7 @@ export const HELP = [
   "• Attach a script: a Word document, a PDF, or a text, Fountain or Final Draft file. I read it and find the characters, places and props.",
   "• Describe a short film: I can write the script for you (this needs a Google Gemini or OpenRouter key).",
   "• Attach pictures: I can turn them into characters, props or places with your picture as the approved reference.",
+  "• Type your story as one line per beat (no model needed): I turn it into scenes using your characters, places and props, then plan the shots.",
   "Then I show you a plan with the number of pictures and the cost. Nothing is made until you press Start, and I stop at the budget you set.",
 ].join("\n");
 
@@ -184,9 +186,15 @@ export function AssistantView(props: {
     try { const files = await invoke<Attachment[]>("pick_attachments"); if (files.length) setPending((p) => [...p, ...files].slice(0, 12)); } catch (e) { notify(String(e)); }
   };
 
+  /** The items the person already has, so a written script uses them instead of inventing others. */
+  const itemsLine = () => {
+    const names = (t: string) => analysis.assets.filter((a) => a.type === t).map((a) => a.name);
+    const parts = ([["Characters", names("character")], ["Places", [...names("set"), ...names("environment")]], ["Props", names("prop")]] as Array<[string, string[]]>).filter(([, n]) => n.length).map(([k, n]) => `${k}: ${n.join(", ")}`);
+    return parts.length ? `Use these existing characters, places and props (and only add others if the story needs them): ${parts.join(". ")}.\n\n` : "";
+  };
   const writeScript = async (brief: string): Promise<string | null> => {
     try {
-      return await invoke<string>("assistant_complete", { provider: writer, model: writerModel, base: writerSpec.local && localUrl.trim() ? localUrl.trim() : null, system: WRITE_SYSTEM, messages: [{ role: "user", text: `Brief: ${brief}\n\nScenes: 4 to 6.` }] });
+      return await invoke<string>("assistant_complete", { provider: writer, model: writerModel, base: writerSpec.local && localUrl.trim() ? localUrl.trim() : null, system: WRITE_SYSTEM, messages: [{ role: "user", text: `Brief: ${brief}\n\n${itemsLine()}Scenes: 4 to 6.` }] });
     } catch (e) { say("assistant", `I could not write the script: ${String(e)}`); return null; }
   };
 
@@ -211,6 +219,14 @@ export function AssistantView(props: {
         if (looksLikeScript(text)) {
           const result = props.useScript("your message", "text", text);
           if (result.ok) say("assistant", `I read your script: ${result.scenes} scene${result.scenes === 1 ? "" : "s"} and ${result.assets} characters, props and places. The plan is on the right.`); else say("assistant", result.error);
+        } else if (looksLikeOutline(text) || (!hasWriter && analysis.assets.length > 0)) {
+          const out = outlineToScript(text, analysis.assets);
+          if (!out.script) say("assistant", out.notes[0] ?? "I could not make a story from that.");
+          else {
+            const result = props.useScript("your story outline", "text", out.script);
+            if (result.ok) say("assistant", `I turned your outline into ${out.scenes} scene${out.scenes === 1 ? "" : "s"} using your own words and the characters, places and props you already have. It is in the Story screen if you want to edit it. The plan is on the right: tick storyboard frames to have me plan the shots.${out.notes.length ? `\n\nNotes:\n${out.notes.map((n) => `• ${n}`).join("\n")}` : ""}`);
+            else say("assistant", result.error);
+          }
         } else if (hasWriter) {
           say("assistant", "Writing a short script from your idea…");
           const written = await writeScript(text);
@@ -229,6 +245,7 @@ export function AssistantView(props: {
   const chooseKind = async (msgId: number, kind: NewAssetKind, paths: string[]) => {
     setMessages((list) => { const next = list.map((m) => (m.id === msgId ? { ...m, choose: null } : m)); kept.messages = next; return next; });
     const n = await props.addImages(kind, paths);
+    if (n && !analysis.scenes.length) say("assistant", "Now tell me the story so I can plan the shots: one line per beat, for example \"Marcus finds the lantern on the pier at dusk\". I use your own words and the items you just added, and nothing is sent anywhere.");
     say("assistant", n ? `Added ${n} item${n === 1 ? "" : "s"}, each with your picture as the approved reference. A picture whose file name matches someone already in the plan (from your script, for example) is attached to them instead of making a duplicate. They are in the plan now.` : "I could not add those pictures.");
   };
 

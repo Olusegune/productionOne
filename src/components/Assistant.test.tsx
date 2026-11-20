@@ -137,6 +137,46 @@ describe('the assistant chat', () => {
     expect(calls.find((c) => c.name === 'assistant_complete')!.args).toMatchObject({ provider: 'openai', model: 'gpt-4o-mini', base: null })
   })
 
+  it('turns a typed story outline into scenes from the items you already have, with no language model', async () => {
+    const useScript = vi.fn(() => ({ ok: true, scenes: 2, assets: 3 }))
+    render(<Harness analysis={filled} useScript={useScript} />)
+    await new Promise((r) => setTimeout(r, 50))
+    type(['Mira lights the Brass lantern in the Harbour office at night.', 'Mira: Not again.', 'The next morning Mira walks the quay.'].join('\n'))
+    expect(await screen.findByText(/I turned your outline into/)).toBeTruthy()
+    expect(useScript).toHaveBeenCalledTimes(1)
+    const [name, , text] = useScript.mock.calls[0] as unknown as [string, string, string]
+    expect(name).toBe('your story outline')
+    expect(text).toMatch(/^INT\. HARBOUR OFFICE - NIGHT/)
+    expect(text).toMatch(/MIRA lights the BRASS LANTERN/)
+    expect(text).toMatch(/MIRA\nNot again\./)
+    expect(calls.some((c) => c.name === 'assistant_complete')).toBe(false)
+  })
+
+  it('with a language model and items already in the project, a one-line idea is written using those items', async () => {
+    keys = { google: true, openrouter: false }
+    render(<Harness analysis={filled} useScript={() => ({ ok: true, scenes: 3, assets: 3 })} />)
+    await waitFor(() => expect(calls.some((c) => c.name === 'credential_status' && c.args.provider === 'google')).toBe(true))
+    await new Promise((r) => setTimeout(r, 80))
+    type('A pilot finds her lantern')
+    await waitFor(() => expect(calls.some((c) => c.name === 'assistant_complete')).toBe(true))
+    const ask = calls.find((c) => c.name === 'assistant_complete')!.args as { messages: Array<{ text: string }> }
+    expect(ask.messages[0].text).toMatch(/Use these existing characters, places and props/)
+    expect(ask.messages[0].text).toMatch(/Characters: Mira/)
+    expect(ask.messages[0].text).toMatch(/Places: Harbour office/)
+    expect(ask.messages[0].text).toMatch(/Props: Brass lantern/)
+  })
+
+  it('after your pictures are added to a project with no story it asks for one, and says nothing is sent anywhere', async () => {
+    attachments = [{ path: 'C:/p/mira.png', name: 'mira.png', kind: 'image' }]
+    render(<Harness addImages={async () => 1} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Attach files' }))
+    await screen.findByText('mira.png')
+    type('')
+    fireEvent.click(await screen.findByRole('button', { name: 'Characters' }))
+    expect(await screen.findByText(/Now tell me the story so I can plan the shots/)).toBeTruthy()
+    expect(screen.getByText(/nothing is sent anywhere/)).toBeTruthy()
+  })
+
   it('does not pretend: with no key it says it cannot write from an idea and offers to add one', async () => {
     render(<Harness />)
     await new Promise((r) => setTimeout(r, 50))

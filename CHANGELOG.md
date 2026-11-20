@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased: a storyboard from your own pictures, without a script
+- **Type your story, one line per beat.** With pictures added as characters, places and props and no script, tell the Assistant the story (for example "Marcus finds the lantern on the Old Harbour pier at dusk", "Amina: You should not be out here."). It turns your own words into a screenplay-shaped script using the items you already have (scene headings from the places and times you name, names capitalised, `Name: words` as dialogue), then plans the shots. It needs no language model and sends nothing anywhere; it invents nothing.
+- **With a language model**, a one-line idea is now written using your existing characters, places and props instead of inventing others.
+- **After you add pictures to a project with no story**, the Assistant now asks for one.
+- **Fixed: reading a script removed items made from your own pictures** if the script did not name them. Items you added by hand or from your pictures are now kept.
+
 ## 0.53.0 (2026-11-20): a real guide, a sleeker look, a better splash, and your pictures match your script
 - **A full in-app guide** (Help, Documentation, or F1): 14 chapters with a walkthrough of every screen, steps that name the real buttons, notes on cost and care, 14 screenshots taken from the running app, a search box, next and previous, and "Open this screen". It replaces the one-screen Documentation dialog. About now shows the real version (it said 0.14.0).
 - **A new default look.** Studio is now the default: cool graphite, one blue accent, and one sans (Geist, with Geist Mono for numbers) instead of the warm gold and cream with a serif. Softer corners, one clear focus ring, calmer buttons, light theme updated to match. The warm Cinematic look is still a choice under Appearance. Fraunces and Space Grotesk are no longer bundled.
