@@ -1,5 +1,7 @@
 import { parseStory, type ParsedStory } from '../engine/story'
 import type { CameraAngle, Coverage, Movement, ScreenDir, ShotSize } from './direct'
+import type { CameraDirection } from './camera'
+import type { LightingRecord } from './lighting'
 
 export type AssetType = 'character' | 'costume' | 'prop' | 'set' | 'environment'
 
@@ -224,6 +226,10 @@ export interface ShotRecord {
   emotion?: string
   emotionIntensity?: number
   evidenceLine?: number
+  /** Extra camera direction (height, distance, sensor, focus, depth of field). Absent for shots made before 0.52, which are unchanged. */
+  camera?: CameraDirection
+  /** Structured lighting design. When present it is used in place of the free-text `lighting` in the picture prompt. Never holds grading. */
+  lightingRecord?: LightingRecord
 }
 
 export function animaticDuration(shots: ShotRecord[]): number {

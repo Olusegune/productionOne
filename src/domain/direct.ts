@@ -5,6 +5,8 @@ import { primaryViewKeys } from './sheetSpecs'
 import { styleGuidance, type StyleBible } from './visualDevelopment'
 import { characterArcs, intensityBand, type CharacterArc, type Emotion } from '../engine/emotion'
 import type { ParsedStory, StoryScene } from '../engine/story'
+import { cameraWords } from './camera'
+import { describeLighting } from './lighting'
 
 export type ShotSize = 'EWS' | 'WS' | 'MWS' | 'MS' | 'MCU' | 'CU' | 'ECU'
 export type CameraAngle = 'eye-level' | 'low' | 'high' | 'overhead' | 'dutch' | 'ots' | 'pov' | 'profile'
@@ -297,7 +299,8 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     shot.emotion && shot.emotion !== 'neutral' ? `Feeling: ${shot.emotion}. Face: ${shot.facialActing}. Body: ${shot.bodyLanguage}.` : '',
     shot.screenDir && shot.screenDir !== 'neutral' ? `Screen direction: the subject faces ${shot.screenDir === 'L>R' ? 'right' : 'left'}.` : '',
     shot.composition?.length ? `Composition: ${shot.composition.join(', ')}.` : '',
-    `Lighting: ${shot.lighting}.`,
+    cameraWords(shot.camera, shot.lens ?? 40, !!style.spec2d, names.find((n) => n.id === (shot.camera?.focusTarget ?? ''))?.name),
+    `Lighting: ${shot.lightingRecord ? describeLighting(shot.lightingRecord) : shot.lighting}.`,
     refs.length ? `Reference images are attached in this order: ${refs.map((r, i) => `${i + 1} = ${r.label}`).join('; ')}. Keep every person's face, hair, build and costume identical to their reference, and keep the set and props consistent.` : '',
     artifactGuidance(style, model, shot.lighting),
     `Match the art style exactly: ${style.name}. Do not drift toward a different look.`,

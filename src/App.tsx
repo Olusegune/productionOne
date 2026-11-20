@@ -209,6 +209,7 @@ export default function App() {
     storyboards: storyboardsEnabled,
     shotCount: shots.length,
     ready: audit.ready,
+    camera: { shots: shots.length, withDetails: shots.filter((s) => s.camera || s.lightingRecord).length },
     shape: { characters: analysis.assets.filter((a) => a.type === "character").length, withProfile: Object.keys(proportions).length },
   };
   const sceneCoverage = useMemo(
