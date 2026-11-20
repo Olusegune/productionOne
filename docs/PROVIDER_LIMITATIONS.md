@@ -11,7 +11,7 @@ Production One passes your direction to an image model as words and reference pi
 | References | Sends the approved front view and photos to models that accept references (check the model picker: some models take none; fal.ai Nano Banana here is text-only) | That the character stays identical on a model that accepts no references |
 | Targeted edit (inpainting) | Offered only where a provider supports it and a region is known | **No adapter in this app supports it today**, so a correction regenerates the whole view and may change other things |
 | Vision review | Runs a vision-capable model **on this computer** (Ollama or LM Studio), only when you press the button, reads its answer strictly | Accuracy. It has not been measured against human-labelled pictures. "Unable to assess" is shown when a model cannot tell, fails or answers in the wrong form. No cloud vision provider is wired |
-| Grading | A pure colour transform over the original pixels, previewed on storyboard frames | Colour management (no ICC or wide gamut), LUTs (not implemented), moving lights or rebuilding shadows |
+| Grading and LUTs | A pure colour transform over the original pixels (and an optional `.cube` LUT after it), previewed on storyboard frames | Colour management (no ICC or wide gamut), formats other than `.cube`, correct colours from a log or HDR LUT on an ordinary picture (those are refused unless you confirm), moving lights or rebuilding shadows |
 | Package export | Writes records and file names | A format for any other program. Nothing is shaped for a downstream import contract |
 
 ## Provider facts worth knowing

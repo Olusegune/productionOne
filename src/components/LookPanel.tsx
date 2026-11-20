@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { RotateCcw } from 'lucide-react'
 import {
-  addLook, colourScript, effectiveLook, gradeBytes, isNeutral, neutralGrade, normalizeGrade, removeLook, updateLook, type Grade, type Look, type LookState,
+  addLook, addLut, colourScript, dropUnusedLuts, effectiveLook, gradeBytes, isNeutral, lutLookup, neutralGrade, normalizeGrade, removeLook, updateLook, type Grade, type Look, type LookState, type LutLookup,
 } from '../domain/grade'
+import { parseCube } from '../domain/lut'
 
 export interface FramePick { id: string; label: string; path: string }
 interface Props {
@@ -28,7 +29,7 @@ const sliders: SliderDef[] = [
 const valueAt = (g: Grade, [section, key]: SliderDef['path']) => (g[section] as unknown as Record<string, number>)[key]
 const withValue = (g: Grade, [section, key]: SliderDef['path'], v: number): Grade => normalizeGrade({ ...g, [section]: { ...(g[section] as object), [key]: v } })
 
-function useGradedPreview(path: string | undefined, grade: Grade | undefined, strength: number) {
+function useGradedPreview(path: string | undefined, grade: Grade | undefined, strength: number, luts?: LutLookup) {
   const canvas = useRef<HTMLCanvasElement | null>(null)
   const [state, setState] = useState<'idle' | 'ready' | 'unavailable'>('idle')
   const source = useRef<ImageData | null>(null)
@@ -57,9 +58,9 @@ function useGradedPreview(path: string | undefined, grade: Grade | undefined, st
     if (state !== 'ready' || !c || !ctx || !src) return
     // Always from the original pixels held in `source`, never from what is on screen: re-grading cannot compound.
     const out = ctx.createImageData(src.width, src.height)
-    out.data.set(gradeBytes(src.data, grade ?? neutralGrade(), strength))
+    out.data.set(gradeBytes(src.data, grade ?? neutralGrade(), strength, luts))
     ctx.putImageData(out, 0, 0)
-  }, [state, grade, strength])
+  }, [state, grade, strength, luts])
   return { canvas, state }
 }
 
@@ -70,14 +71,29 @@ export function LookPanel({ state, setState, scenes, shots, frames, notify }: Pr
   const [framePath, setFramePath] = useState<string | undefined>(frames[0]?.path)
   const [showOriginal, setShowOriginal] = useState(false)
   const look: Look | undefined = state.looks.find((l) => l.id === selectedId) ?? state.looks[0]
-  const preview = useGradedPreview(framePath ?? frames[0]?.path, look?.grade, strength)
+  const lookup = useMemo(() => lutLookup(state), [state.luts])
+  const preview = useGradedPreview(framePath ?? frames[0]?.path, look?.grade, strength, lookup)
+  const [lutMessage, setLutMessage] = useState('')
+  const lutId = look?.grade.lut?.id
+  const lutInfo = lutId ? state.luts?.[lutId] : undefined
   const script = useMemo(() => colourScript(state, scenes, shots), [state, scenes, shots])
-  const set = (grade: Grade) => look && setState(updateLook(state, look.id, { grade }))
+  const set = (grade: Grade) => look && setState(dropUnusedLuts(updateLook(state, look.id, { grade })))
+  const importLut = async (file: File | undefined) => {
+    if (!file || !look) return
+    if (!/\.cube$/i.test(file.name)) { setLutMessage('Choose a .cube file. Other LUT formats (.3dl, .lut, .csp) are not supported.'); return }
+    if (file.size > 12 * 1024 * 1024) { setLutMessage('That file is larger than 12 MB, which is more than a LUT should be.'); return }
+    const parsed = parseCube(await file.text(), file.name)
+    if (!parsed.ok) { setLutMessage(`Could not use ${file.name}: ${parsed.error}`); return }
+    const added = addLut(state, parsed.lut)
+    if (!added.ok) { setLutMessage(added.error); return }
+    setState(updateLook(added.state, look.id, { grade: { ...look.grade, lut: { id: added.id, strength: 100 } } }))
+    setLutMessage(`Added ${parsed.lut.title} (${parsed.lut.kind === '3d' ? '3D' : '1D'}, size ${parsed.lut.size}) to ${look.name}.${parsed.lut.warnings.length ? ' Read the notes below.' : ''}`)
+  }
 
   return (
     <section className="panel look-panel" aria-label="Looks">
       <h3>Looks and grade</h3>
-      <p className="helper">A look is a grade applied over your original pictures. The originals are never changed and a grade is never baked into them; changing a look again always starts from the original. A grade changes colour only: it does not move lights or rebuild shadows. LUT import is not available yet.</p>
+      <p className="helper">A look is a grade applied over your original pictures. The originals are never changed and a grade is never baked into them; changing a look again always starts from the original. A grade changes colour only: it does not move lights or rebuild shadows.</p>
       <div className="vr-actions">
         <button type="button" className="primary" onClick={() => { const r = addLook(state, 'New look'); setState(r.state); setSelectedId(r.look.id) }}>Add a look</button>
         {look && <button type="button" className="secondary" onClick={() => { setState(removeLook(state, look.id)); setSelectedId(undefined); notify(`Removed ${look.name}. No picture was changed.`) }}>Remove this look</button>}
@@ -99,6 +115,25 @@ export function LookPanel({ state, setState, scenes, shots, frames, notify }: Pr
             <label><span>Shadow tint</span><input aria-label="Shadow tint" type="color" value={look.grade.creative.shadowTint || '#000000'} onChange={(e) => set(normalizeGrade({ ...look.grade, creative: { ...look.grade.creative, shadowTint: e.target.value } }))} /></label>
             <label><span>Highlight tint</span><input aria-label="Highlight tint" type="color" value={look.grade.creative.highlightTint || '#ffffff'} onChange={(e) => set(normalizeGrade({ ...look.grade, creative: { ...look.grade.creative, highlightTint: e.target.value } }))} /></label>
           </div>
+          <h5>LUT (optional)</h5>
+          <p className="helper">A LUT is a table of colour changes in a .cube file (from a colourist or a film-look pack). It is applied after the grade above and changes colour only: it does not move lights or rebuild shadows. This app expects an ordinary picture in and an ordinary picture out (sRGB); a LUT made for a log or HDR camera format gives wrong colours here.</p>
+          <label><span>Import a LUT (.cube)</span><input aria-label="Import a LUT (.cube)" type="file" accept=".cube" onChange={(e) => { void importLut(e.target.files?.[0]); e.target.value = '' }} /></label>
+          {lutMessage && <small className="helper" role="status">{lutMessage}</small>}
+          {lutInfo && look.grade.lut && (
+            <div role="group" aria-label="LUT in this look">
+              <small className="helper"><b>{lutInfo.title}</b> ({lutInfo.kind === '3d' ? '3D' : '1D'}, size {lutInfo.size})</small>
+              <div className="prop-row">
+                <label htmlFor="lut-strength">LUT strength</label>
+                <input id="lut-strength" aria-label="LUT strength" type="range" min={0} max={100} step={1} value={look.grade.lut.strength} onChange={(e) => set({ ...look.grade, lut: { ...look.grade.lut!, strength: Number(e.target.value) } })} />
+                <output>{look.grade.lut.strength}</output><span />
+              </div>
+              {lutInfo.warnings.length > 0 && <ul className="prop-warnings" aria-label="LUT notes">{lutInfo.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>}
+              {lutInfo.suspectedLog && (
+                <label className="dr-check"><input type="checkbox" aria-label="This LUT is meant for ordinary pictures" checked={!!look.grade.lut.acknowledgeLog} onChange={(e) => set({ ...look.grade, lut: { ...look.grade.lut!, acknowledgeLog: e.target.checked } })} /> I know this LUT is meant for ordinary pictures like these (it is not applied until you tick this)</label>
+              )}
+              <button type="button" className="secondary" onClick={() => { const { lut: _drop, ...rest } = look.grade; set(rest as Grade); setLutMessage('') }}>Remove the LUT from this look</button>
+            </div>
+          )}
           <div className="vr-actions">
             <button type="button" className="secondary" onClick={() => set(neutralGrade())} disabled={isNeutral(look.grade)}><RotateCcw size={12} /> Reset this look</button>
           </div>

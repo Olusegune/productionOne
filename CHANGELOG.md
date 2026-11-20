@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased: LUT import
+- **Import a `.cube` LUT into a look** (Direct, Looks and grade). 3D and 1D tables, applied after the grade with their own strength, changing colour only (no relighting). Trilinear interpolation, checked against known values.
+- **Careful by default.** A file that is not a clean `.cube` (wrong row count, bad numbers, unknown keywords, both 1D and 3D, binary, over 12 MB) is refused with the line and the reason. A LUT whose title or file name suggests log or HDR (LogC, S-Log, V-Log, HLG, PQ, ACES...) is warned about and **not applied** until you say it is meant for ordinary pictures. Table values outside 0 to 1 are counted, warned about and clamped.
+- **Kept and exported:** each table is stored once in the project (16-bit, base64; up to 8 per project), and each LUT is exported with the package as `Looks/<name>.cube`, listed in `design_records.json` with its colour spaces. The package writer refuses unsafe file names.
+
 ## 0.54.0 (2026-11-20): a storyboard from your own pictures, without a script
 - **Type your story, one line per beat.** With pictures added as characters, places and props and no script, tell the Assistant the story (for example "Marcus finds the lantern on the Old Harbour pier at dusk", "Amina: You should not be out here."). It turns your own words into a screenplay-shaped script using the items you already have (scene headings from the places and times you name, names capitalised, `Name: words` as dialogue), then plans the shots. It needs no language model and sends nothing anywhere; it invents nothing.
 - **With a language model**, a one-line idea is now written using your existing characters, places and props instead of inventing others.

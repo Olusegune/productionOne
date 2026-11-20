@@ -53,7 +53,7 @@ describe('design records for a package', () => {
     expect(records.shots[0].camera).toBeTruthy()
     expect(records.shots[0].lighting).toBeTruthy()
     expect(records.looks.bakedIntoOriginals).toBe(false)
-    expect(records.looks.lut).toBeNull()
+    expect(records.looks.luts).toEqual([])
     expect(records.review.deterministic.length).toBeGreaterThan(0)
     expect(records.review.vision.length).toBeGreaterThan(0)
     expect(records.approvedRevisions).toHaveLength(2)

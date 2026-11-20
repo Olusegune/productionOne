@@ -22,11 +22,11 @@ beforeEach(() => { invoke.mockClear() })
 afterEach(cleanup)
 
 describe('LookPanel', () => {
-  it('says plainly that originals are never changed, a grade is colour only, and LUTs are not available', () => {
-    render(<Harness />)
+  it('says plainly that originals are never changed, a grade is colour only, and that LUTs are colour-only too', () => {
+    render(<Harness start={addLook(emptyLooks(), 'Warm').state} />)
     expect(screen.getByText(/never changed and a grade is never baked/)).toBeTruthy()
-    expect(screen.getByText(/does not move lights or rebuild shadows/)).toBeTruthy()
-    expect(screen.getByText(/LUT import is not available yet/)).toBeTruthy()
+    expect(screen.getAllByText(/does not move lights or rebuild shadows/).length).toBe(2)
+    expect(screen.getByText(/A LUT is a table of colour changes/)).toBeTruthy()
   })
   it('adds a look, edits its grade (clamped), and resets it', () => {
     render(<Harness />)
@@ -64,6 +64,47 @@ describe('LookPanel', () => {
     fireEvent.change(screen.getByLabelText('Grade strength'), { target: { value: '40' } })
     expect(invoke).not.toHaveBeenCalled()
   })
+  const cubeText = (title: string) => `TITLE "${title}"\nLUT_3D_SIZE 2\n` + ['1 1 1', '0 1 1', '1 0 1', '0 0 1', '1 1 0', '0 1 0', '1 0 0', '0 0 0'].join('\n') + '\n'
+  const pick = async (text: string, name: string) => {
+    const file = new File([text], name, { type: 'text/plain' })
+    Object.defineProperty(file, 'text', { value: async () => text })
+    fireEvent.change(screen.getByLabelText('Import a LUT (.cube)'), { target: { files: [file] } })
+  }
+
+  it('imports a .cube LUT into the look, keeps it once, and lets you set its strength and remove it', async () => {
+    render(<Harness start={addLook(emptyLooks(), 'Warm').state} />)
+    await pick(cubeText('Invert test'), 'invert.cube')
+    expect(await screen.findByText(/Added Invert test \(3D, size 2\) to Warm/)).toBeTruthy()
+    expect(Object.keys(saved().luts ?? {})).toHaveLength(1)
+    expect(saved().looks[0].grade.lut).toMatchObject({ strength: 100 })
+    fireEvent.change(screen.getByLabelText('LUT strength'), { target: { value: '40' } })
+    expect(saved().looks[0].grade.lut?.strength).toBe(40)
+    fireEvent.click(screen.getByRole('button', { name: 'Remove the LUT from this look' }))
+    expect(saved().looks[0].grade.lut).toBeUndefined()
+    expect(saved().luts).toBeUndefined()
+    expect(invoke).not.toHaveBeenCalled()
+  })
+
+  it('refuses a file that is not a usable LUT, and says why', async () => {
+    render(<Harness start={addLook(emptyLooks(), 'Warm').state} />)
+    await pick('LUT_3D_SIZE 2\n0 0 0\n', 'broken.cube')
+    expect(await screen.findByText(/Could not use broken\.cube: The file says size 2 \(8 rows\) but has 1 rows/)).toBeTruthy()
+    await pick('hello', 'notes.txt')
+    expect(await screen.findByText(/Choose a \.cube file/)).toBeTruthy()
+    expect(saved().luts).toBeUndefined()
+  })
+
+  it('a LUT that looks like a log LUT is warned about and not applied until the person says it is meant for these pictures', async () => {
+    render(<Harness start={addLook(emptyLooks(), 'Warm').state} />)
+    await pick(cubeText('ARRI LogC to Rec709'), 'logc.cube')
+    expect((await screen.findAllByText(/suggests this LUT is for a log, linear or HDR format/)).length).toBeGreaterThan(0)
+    const box = screen.getByLabelText('This LUT is meant for ordinary pictures') as HTMLInputElement
+    expect(box.checked).toBe(false)
+    expect(saved().looks[0].grade.lut?.acknowledgeLog).toBeUndefined()
+    fireEvent.click(box)
+    expect(saved().looks[0].grade.lut?.acknowledgeLog).toBe(true)
+  })
+
   it('with no frame yet it says so instead of faking a preview', () => {
     render(<Harness start={addLook(emptyLooks(), 'Warm').state} frs={[]} />)
     expect(screen.getByText(/Make a storyboard frame to preview a look on it/)).toBeTruthy()

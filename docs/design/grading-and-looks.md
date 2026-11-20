@@ -12,7 +12,7 @@ The data model keeps these apart:
 | Exposure and white balance (technical) | `exposureEv` (-3 to 3 stops), `temperature` (cool to warm), `tint` (green to magenta) | `grade.technical` |
 | Tone | `contrast`, `saturation` (-100 to 100) | `grade.tone` |
 | Creative grade | shadow tint, highlight tint, amount | `grade.creative` |
-| LUT application | **not implemented** (see below) | none |
+| LUT application | an optional `.cube` table applied after the grade | `grade.lut` (the table is in `looks.luts`) |
 
 `contrast` appears in both a lighting record and a grade on purpose and means different things: in lighting it is the depth of the shadows the light is asked to make (low, medium, high); in a grade it is a curve over the pixels. No other field is shared (tested).
 
@@ -36,11 +36,19 @@ The **Looks and grade** panel (Direct, below the animatic) previews a look on a 
 
 ## Export
 
-`exportLooks` produces `production-one-looks` metadata: the looks, where they apply, and the originals (with content hashes when known). It states `bakedIntoOriginals: false` and `lut: null`. **No LUT file is exported**: LUT import and application are not implemented, and a colour described in words is not a LUT.
+`exportLooks` produces `production-one-looks` metadata: the looks, where they apply, and the originals (with content hashes when known). It states `bakedIntoOriginals: false` and lists each LUT with the `.cube` file it is exported as. A colour described in words is not a LUT and is never exported as one.
 
-## LUT import: deferred
+## LUT import (`.cube`)
 
-Not built. When it is built it must validate format and size, state its input and output colour-space expectations, test parsing and interpolation against reference values, handle out-of-range values explicitly, warn about unsupported LUTs and refuse to apply a log-camera LUT to sRGB pictures by default. Until then the grade record has no LUT field.
+A **LUT** is a table of colour changes. In a look, choose **Import a LUT (.cube)**; the LUT is applied **after** the grade, with its own strength (0 to 100). It changes colour only: it **does not move lights or rebuild shadows** (the same input colour always gives the same output colour wherever it sits in the picture; tested).
+
+- **Formats:** Adobe/Resolve `.cube`, 3D (size 2 to 65) or 1D (size 2 to 16384). A file with both a 1D and a 3D table, an unknown keyword, a wrong number of rows, a non-number, a missing size, a bad `DOMAIN_MIN`/`DOMAIN_MAX`, binary content or more than 12 MB is refused with the line and the reason. Other formats (.3dl, .lut, .csp) are not supported.
+- **Interpolation:** trilinear for 3D, linear for 1D, red index fastest then green then blue, as the format defines. Tests check it against known values (identity, inversion, a curve read between nodes, a channel-rotating table that proves the ordering, a custom input range, 1D).
+- **Colour space:** the app treats a picture as display-referred sRGB (Rec.709-like) and expects a LUT that goes from that to that. A LUT whose title or file name suggests a **log, linear or HDR** format (LogC, S-Log, V-Log, HLG, PQ, ACES, Rec.2020...) is **not applied** to an ordinary picture unless you tick "I know this LUT is meant for ordinary pictures"; it is warned about on import.
+- **Out-of-range values:** table values outside 0 to 1 are counted, warned about and clamped when applied. Picture values outside a LUT's own input range are clamped to it. Results are always clamped to 0 to 255.
+- **Storage:** each table is kept once in the project (`looks.luts`), as 16-bit values in base64 (precision 1/65535 of the range, finer than an 8-bit picture), recognised by a hash so importing the same LUT twice adds nothing. A project holds up to 8 LUTs and about 2 MB of tables; a damaged table is dropped on opening together with the references to it.
+- **Export:** each LUT is exported into the package as `Looks/<name> (LUT-xxxxxxxx).cube` (rewritten from the stored table; reading it back gives the same table), listed in `design_records.json` with its input and output colour space and whether it looked like a log LUT. File names are plain characters, one folder deep; the package writer refuses anything else. No folder from your computer is written.
+- **Still not done:** `.3dl`, `.csp` and other formats, tetrahedral interpolation (trilinear is used), colour-managed (ICC, wide-gamut) pipelines.
 
 ## Scope in this phase
 
