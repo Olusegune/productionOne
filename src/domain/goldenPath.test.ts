@@ -37,4 +37,24 @@ describe('golden path', () => {
     expect(steps.find((s) => s.id === 'analyze')?.detail).toBe('1 asset added')
     expect(next?.id).toBe('design')
   })
+  describe('optional extras', () => {
+    it('are absent until started, so existing projects look exactly as before', () => {
+      expect(goldenPath(base).extras).toEqual([])
+      expect(goldenPath({ ...base, shape: { characters: 4, withProfile: 0 } }).extras).toEqual([])
+    })
+    it('report where optional shape work stands without becoming the next step or changing progress', () => {
+      const input = { ...base, hasScript: true, assetCount: 4, styleLocked: true, shape: { characters: 4, withProfile: 2 } }
+      const withExtra = goldenPath(input)
+      const without = goldenPath({ ...input, shape: undefined })
+      expect(withExtra.extras).toHaveLength(1)
+      expect(withExtra.extras[0]).toMatchObject({ id: 'shape', state: 'upcoming' })
+      expect(withExtra.extras[0].detail).toMatch(/2 of 4 characters have target proportions/)
+      expect(withExtra.next).toEqual(without.next)
+      expect(withExtra.progress).toBe(without.progress)
+      expect(withExtra.steps).toEqual(without.steps)
+    })
+    it('shows done when every character has a profile', () => {
+      expect(goldenPath({ ...base, shape: { characters: 2, withProfile: 2 } }).extras[0].state).toBe('done')
+    })
+  })
 })

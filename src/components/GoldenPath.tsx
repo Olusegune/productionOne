@@ -12,7 +12,7 @@ export function GoldenPath({
   onGo: (workspace: string) => void;
   onNext?: (step: GoldenStep) => void;
 }) {
-  const { steps, next, progress } = goldenPath(input);
+  const { steps, next, progress, extras } = goldenPath(input);
   return (
     <section className="golden-path" aria-label="Golden Path">
       <div className="golden-head">
@@ -46,6 +46,13 @@ export function GoldenPath({
           </li>
         ))}
       </ol>
+      {extras.length > 0 && (
+        <ul className="golden-extras" aria-label="Optional steps">
+          {extras.map((x) => (
+            <li key={x.id} className={x.state}><button className="linklike" onClick={() => onGo(x.workspace)}>{x.state === "done" ? <Check size={12} aria-hidden="true" /> : null} {x.label}: {x.detail}</button></li>
+          ))}
+        </ul>
+      )}
       {!input.storyboards && (
         <p className="golden-note">
           Direct (storyboards and animatics) is optional. Turn it on in the

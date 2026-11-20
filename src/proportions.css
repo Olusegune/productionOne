@@ -1,0 +1,25 @@
+.prop-panel { margin-top: 14px; padding: 14px; }
+.prop-panel h4 { margin: 0 0 6px; }
+.prop-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.prop-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.prop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 10px; }
+.prop-layer { border: 1px solid var(--line, #3a3f4a); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.prop-layer h5 { margin: 0; font-size: 13px; }
+.prop-layer h5 small { font-weight: 400; opacity: 0.7; margin-left: 4px; }
+.prop-line { display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+.prop-row { display: grid; grid-template-columns: 1fr minmax(80px, 1.2fr) auto auto; gap: 6px; align-items: center; font-size: 12px; }
+.prop-row.override label { font-weight: 600; }
+.prop-row output { min-width: 62px; text-align: right; font-variant-numeric: tabular-nums; }
+.prop-reset { padding: 2px 5px; }
+.prop-excused { grid-column: 1 / -1; opacity: 0.7; }
+.prop-svg { width: 100%; max-height: 360px; background: rgba(127, 127, 127, 0.08); border-radius: 8px; }
+.prop-svg ellipse, .prop-svg rect { fill: rgba(120, 160, 220, 0.25); stroke: currentColor; stroke-width: 1.2; }
+.prop-svg line { stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.prop-svg line[data-shape='floor'] { stroke-width: 1; opacity: 0.4; }
+.prop-warnings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.prop-warnings li { display: flex; gap: 6px; align-items: flex-start; }
+.prop-candidates { display: flex; gap: 6px; flex-wrap: wrap; }
+.prop-candidates img { width: 120px; height: 160px; object-fit: cover; border-radius: 6px; }
+.prop-chip { display: inline-flex; gap: 4px; padding: 1px 6px; border: 1px solid currentColor; border-radius: 10px; margin-right: 4px; font-size: 11px; }
+.linklike { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.golden-extras { list-style: none; margin: 8px 0 0; padding: 0; display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; opacity: 0.85; }

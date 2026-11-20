@@ -8,12 +8,14 @@ export interface GoldenPathInput {
   storyboards: boolean
   shotCount: number
   ready: boolean
+  /** Optional extras. Each appears only once the person has started using it, so projects that do not use it look exactly as before. */
+  shape?: { characters: number; withProfile: number }
 }
 
 export type GoldenState = 'done' | 'active' | 'upcoming'
 
 export interface GoldenStep {
-  id: 'create' | 'analyze' | 'design' | 'generate' | 'review' | 'direct' | 'deliver'
+  id: 'create' | 'analyze' | 'design' | 'generate' | 'review' | 'direct' | 'deliver' | 'shape'
   label: string
   state: GoldenState
   detail: string
@@ -24,7 +26,7 @@ export interface GoldenStep {
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
 /** Create -> Analyze -> Design -> Generate -> Review -> Deliver, with Direct inserted only when storyboards are on. Every line is derived from real project data. */
-export function goldenPath(i: GoldenPathInput): { steps: GoldenStep[]; next: GoldenStep | null; progress: number } {
+export function goldenPath(i: GoldenPathInput): { steps: GoldenStep[]; next: GoldenStep | null; progress: number; extras: GoldenStep[] } {
   const raw: Array<Omit<GoldenStep, 'state'> & { done: boolean }> = [
     { id: 'create', label: 'Create', workspace: 'Story', action: 'Add your script', done: i.hasScript || i.assetCount > 0, detail: i.hasScript ? 'Source material added' : i.assetCount > 0 ? 'Started from your own images' : 'Paste or import a script, lyrics or story, or add your own images in Design' },
     { id: 'analyze', label: 'Analyze', workspace: 'Story', action: 'Analyze the script', done: i.assetCount > 0, detail: i.assetCount > 0 ? (i.hasScript ? `${plural(i.assetCount, 'asset')} found` : `${plural(i.assetCount, 'asset')} added`) : 'Find characters, sets and props' },
@@ -42,5 +44,18 @@ export function goldenPath(i: GoldenPathInput): { steps: GoldenStep[]; next: Gol
   })
   const next = steps.find((step) => step.state === 'active') ?? null
   const progress = Math.round((steps.filter((step) => step.state === 'done').length / steps.length) * 100)
-  return { steps, next, progress }
+  return { steps, next, progress, extras: extraSteps(i) }
+}
+
+/**
+ * Recommended, skippable steps. They never become the "next step", never count toward progress and never block Deliver; they only report where an optional
+ * part of the work stands. A step is listed only after the person has started it.
+ */
+export function extraSteps(i: GoldenPathInput): GoldenStep[] {
+  const out: GoldenStep[] = []
+  if (i.shape && i.shape.withProfile > 0) {
+    const all = i.shape.withProfile >= i.shape.characters
+    out.push({ id: 'shape', label: 'Shape', workspace: 'Design', action: 'Set target proportions', state: all ? 'done' : 'upcoming', detail: `${i.shape.withProfile} of ${plural(i.shape.characters, 'character')} ${i.shape.withProfile === 1 && i.shape.characters !== 1 ? 'has' : 'have'} target proportions (optional)` })
+  }
+  return out
 }

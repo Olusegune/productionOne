@@ -21,6 +21,10 @@ import type { ImageJob, QueueState } from "../domain/generationQueue";
 import type { SheetType, StyleBible } from "../domain/visualDevelopment";
 import type { NewAssetKind } from "../domain/readingActions";
 import type { Dispatch, SetStateAction, RefObject } from "react";
+import { ProportionPanel } from "../components/ProportionPanel";
+import type { ProportionProfile } from "../domain/proportions";
+import { enqueue } from "../domain/generationQueue";
+import { readModelChoice } from "../data/modelChoice";
 
 /** The Design workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DesignViewProps {
@@ -68,6 +72,8 @@ export interface DesignViewProps {
   setSheetNotes: Dispatch<SetStateAction<Record<string, string>>>;
   setSheetSettings: Dispatch<SetStateAction<Record<string, string>>>;
   sheetSettings: Record<string, string>;
+  proportions: Record<string, ProportionProfile>;
+  setProportions: Dispatch<SetStateAction<Record<string, ProportionProfile>>>;
   setStyleBible: Dispatch<SetStateAction<StyleBible>>;
   sheetNotes: Record<string, string>;
   studioControl: RefObject<{ generateFirst: () => void; } | null>;
@@ -102,7 +108,7 @@ export function DesignView(p: DesignViewProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const wide = useWide();
   const inInspector = wide && section === "sheets";
-  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible } = p;
+  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions } = p;
   return (
 <div className="po-design">
             <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
@@ -124,6 +130,21 @@ export function DesignView(p: DesignViewProps) {
               onChange={(asset) => setAnalysis((current) => ({ ...current, assets: current.assets.map((item) => item.id === asset.id ? asset : item) }))}
               notify={setNotice}
             />
+            {analysis.assets[selectedAsset]?.type === "character" && (() => {
+              const a = analysis.assets[selectedAsset];
+              return <ProportionPanel
+                asset={a}
+                profile={proportions[a.id]}
+                onChange={(next) => setProportions((cur) => { const m = { ...cur }; if (next) m[a.id] = next; else delete m[a.id]; return m; })}
+                onGenerate={(asset, prompt) => {
+                  const choice = readModelChoice();
+                  setQueue((q) => enqueue(q, [{ assetId: asset.id, variant: "default", sheetType: "shape-candidate", viewKey: "candidate", label: "Proportion candidate", prompt, aspect: "2:3", fullBody: true, provider: choice.provider, model: choice.modelId, references: [], outputName: (revision: number) => `${asset.id}_proportion-candidate_v${String(revision).padStart(2, "0")}` }], Date.now(), true).state);
+                }}
+                candidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "shape-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status }))}
+                approvedViews={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType !== "shape-candidate" && j.approved).length}
+                notify={setNotice}
+              />;
+            })()}
             </div>
             <div id="sec-sheets" role="tabpanel" aria-labelledby="as-tab-sheets" hidden={section !== "sheets"}>
             <CharacterBible onSection={setSection} asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
