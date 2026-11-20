@@ -141,7 +141,7 @@ export function DirectRoom(props: {
     const result = enqueue(queue, requests, Date.now(), force);
     setQueue(() => result.state);
     if (!result.added) { notify("Those shots already have frames waiting or approved. Use Regenerate on a shot to make another version."); return; }
-    if (desktop && !choice.configured[choice.provider]) {
+    if (desktop && choice.keysChecked && !choice.configured[choice.provider]) {
       if (choice.provider === "comfyui") { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but ComfyUI is not running. Start it from Local AI.`); openLocal?.(); } else { notify(`Queued ${result.added} frame${result.added === 1 ? "" : "s"}, but there is no ${choice.provider} key yet.`); openProviders(); }
       return;
     }

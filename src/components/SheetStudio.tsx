@@ -218,7 +218,7 @@ export function SheetStudio(props: {
     if (!result.added) { notify("Nothing was added: every view already has an image or is in the queue. To make new versions, tick the views you want and press Regenerate, or use Regenerate unapproved."); return; }
     setPicked([]);
     const what = `${result.added} view${result.added === 1 ? "" : "s"}${testOneFirst ? " (a test of the first one)" : ""}`;
-    if (desktop && !configured[provider]) {
+    if (desktop && choice.keysChecked && !configured[provider]) {
       if (provider === "comfyui") { notify(`Queued ${what}, but ComfyUI is not running. Start it from Local AI, then generation starts.`); openLocal?.(); } else { notify(`Queued ${what}, but there is no ${providerLabels[provider]} key yet. Add it, then generation starts.`); openProviders(); }
       return;
     }

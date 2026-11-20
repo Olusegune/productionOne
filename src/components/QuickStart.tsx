@@ -37,7 +37,7 @@ export function QuickStart({ desktop, providersVersion, perImageUsd, characters,
   const hasKey = choice.provider === 'comfyui' ? !!choice.configured.comfyui : !!choice.configured[choice.provider]
   const modelName = choice.catalog.find((m) => m.provider === choice.provider && m.id === choice.modelId)?.name ?? choice.modelId
   const newOne = pick === 'new'
-  const canMake = desktop && hasKey && (!newOne || (name.trim().length > 0 && description.trim().length > 0))
+  const canMake = desktop && choice.keysChecked && hasKey && (!newOne || (name.trim().length > 0 && description.trim().length > 0))
   const why = !desktop ? 'Making pictures needs the desktop app.' : !hasKey ? `There is no ${providerLabels[choice.provider] ?? choice.provider} key yet.` : newOne && !description.trim() ? 'Describe the character in a sentence first.' : ''
   const close = () => { write(); setGone(true) }
   return (
@@ -65,7 +65,7 @@ export function QuickStart({ desktop, providersVersion, perImageUsd, characters,
         <li><b>Cost:</b> <span data-testid="qs-cost">{costText(1, price)}</span></li>
       </ul>
       <div className="qs-actions">
-        {hasKey || !desktop
+        {hasKey || !desktop || !choice.keysChecked
           ? <button className="primary" disabled={!canMake} onClick={() => onMake(newOne ? { kind: 'new', name: name.trim(), description: description.trim() } : { kind: 'existing', assetId: pick })}><Sparkles size={15} aria-hidden="true" /> Make my first picture</button>
           : <button className="primary" onClick={onKeys}><KeyRound size={15} aria-hidden="true" /> Add a key first</button>}
         <button className="secondary" onClick={onOwnPicture}>Use my own picture instead</button>

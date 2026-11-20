@@ -23,6 +23,8 @@ export function useModelChoice(desktop: boolean, providersVersion: number) {
   const [provider, setProvider] = useState<ProviderKey>(initial.provider);
   const [modelId, setModelId] = useState(initial.modelId);
   const [configured, setConfigured] = useState<Record<string, boolean>>({});
+  /** True once the saved keys have been read. Before that, "no key" would only be a guess. */
+  const [keysChecked, setKeysChecked] = useState(false);
   const [discovered, setDiscovered] = useState<DiscoveredCatalog>({});
   const [refreshing, setRefreshing] = useState(false);
   const switched = useRef(false);
@@ -41,6 +43,7 @@ export function useModelChoice(desktop: boolean, providersVersion: number) {
       if (age > 86400) saved = (await invoke<DiscoveredCatalog>("kie_models").catch(() => saved)) ?? saved;
       if (!live) return;
       setConfigured({ ...status, comfyui: false });
+      setKeysChecked(true);
       setDiscovered(saved);
       if (!switched.current) {
         switched.current = true;
@@ -65,5 +68,5 @@ export function useModelChoice(desktop: boolean, providersVersion: number) {
       setRefreshing(false);
     }
   };
-  return { provider, modelId, configured: configuredAll, catalog, discovered, refreshing, pick, refresh };
+  return { provider, modelId, configured: configuredAll, keysChecked, catalog, discovered, refreshing, pick, refresh };
 }

@@ -31,6 +31,8 @@ import { approve as approveJob } from "../domain/generationQueue";
 import type { ProportionProfile } from "../domain/proportions";
 import { enqueue } from "../domain/generationQueue";
 import { readModelChoice } from "../data/modelChoice";
+import { RemoveAsset } from "../components/RemoveAsset";
+import type { ProjectSlice } from "../domain/removeAsset";
 
 /** The Design workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DesignViewProps {
@@ -88,6 +90,9 @@ export interface DesignViewProps {
   sheetNotes: Record<string, string>;
   studioControl: RefObject<{ generateFirst: () => void; } | null>;
   styleBible: StyleBible;
+  /** Everything a removal touches, and how to put a changed copy back (used by "Remove from project" and its Undo). */
+  slice?: ProjectSlice;
+  applySlice?: (next: ProjectSlice) => void;
 }
 
 type Section = "sheets" | "identity" | "motion" | "voice";
@@ -130,6 +135,7 @@ export function DesignView(p: DesignViewProps) {
             />
             <div className="as-head">
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
+              {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
                 {sections.map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>

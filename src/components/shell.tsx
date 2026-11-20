@@ -130,7 +130,7 @@ function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (
       <button className="po-cost-chip" onClick={() => setOpen((o) => !o)} aria-expanded={open} title="Cost and spending cap">{label}{queue.guard ? " · cap on" : ""}</button>
       {open && (
         <div className="po-cost-pop" role="dialog" aria-label="Cost and spending cap">
-          <p>Your provider bills the account behind your key. This app does not state prices, so it counts requests, including retries.</p>
+          <p>Your provider bills the account behind your key. Buttons show a typical price as an estimate; enter your own price here and they use it. The count below includes retries.</p>
           <label className="po-switch"><input type="checkbox" checked={queue.guard} onChange={(e) => setQueue((q) => ({ ...q, guard: e.target.checked }))} /> Stop at a spending cap</label>
           <div className="po-cost-fields">
             <label>Price per request (USD)<input inputMode="decimal" disabled={!queue.guard} value={queue.perImageUsd ?? ""} onChange={(e) => setQueue((q) => ({ ...q, perImageUsd: num(e.target.value) }))} aria-label="Price per request in dollars" /></label>
