@@ -30,11 +30,27 @@ interface Props {
 
 export function Mannequin({ profile }: { profile: ProportionProfile }) {
   const art = useMemo(() => schematic(profile), [profile])
+  const head = art.shapes.find((s) => s.id === 'head')
+  const floor = art.shapes.find((s) => s.id === 'floor')
+  const unit = head?.h ?? 36
+  const top = head?.y ?? 14
+  const bottom = floor?.y ?? art.height
+  const marks = unit > 0 ? Math.max(0, Math.floor((bottom - top) / unit + 0.001)) : 0
+  const round = (id: string) => (id === 'torso' ? 14 : id === 'hips' ? 8 : id === 'neck' ? 4 : 3)
   return (
     <svg className="prop-svg" viewBox={`0 0 ${art.width} ${art.height}`} role="img" aria-label="Schematic preview of the target proportions" data-testid="schematic">
+      <defs>
+        <linearGradient id="mq-body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#8fb0ff" /><stop offset="1" stopColor="#5b6fd6" /></linearGradient>
+        <linearGradient id="mq-limb" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={art.height}><stop offset="0" stopColor="#9db8ff" /><stop offset="1" stopColor="#6f86e6" /></linearGradient>
+        <radialGradient id="mq-ground" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#7d97d4" stopOpacity=".38" /><stop offset="1" stopColor="#7d97d4" stopOpacity="0" /></radialGradient>
+      </defs>
+      <g className="prop-ruler" aria-hidden="true">
+        {Array.from({ length: marks + 1 }, (_, i) => <g key={i}><line x1={24} x2={276} y1={top + i * unit} y2={top + i * unit} /><text x={8} y={top + i * unit + 3}>{i}</text></g>)}
+      </g>
+      {floor && <ellipse className="prop-ground" cx={150} cy={floor.y + 1} rx={96} ry={7} fill="url(#mq-ground)" />}
       {art.shapes.map((s) => {
         if (s.kind === 'ellipse') return <ellipse key={s.id} data-shape={s.id} cx={(s.x) + (s.w ?? 0) / 2} cy={s.y + (s.h ?? 0) / 2} rx={(s.w ?? 0) / 2} ry={(s.h ?? 0) / 2} />
-        if (s.kind === 'rect') return <rect key={s.id} data-shape={s.id} x={s.x} y={s.y} width={s.w} height={s.h} rx={3} />
+        if (s.kind === 'rect') return <rect key={s.id} data-shape={s.id} x={s.x} y={s.y} width={s.w} height={s.h} rx={round(s.id)} />
         return <line key={s.id} data-shape={s.id} x1={s.x} y1={s.y} x2={s.x2} y2={s.y2} />
       })}
     </svg>

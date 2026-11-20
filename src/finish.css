@@ -64,3 +64,53 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .script-editor, .asset-prompt-editor, .prompt-box { overflow: hidden; }
 .dc-checklist li, .dc-row, .todo, .ok, .warn { border-radius: var(--radius-sm); }
 .po-dock { box-shadow: 0 -8px 24px rgba(0,0,0,.2); }
+
+/* Sliders: a thin filled track, a round handle with a soft ring. --p is kept by data/rangeFill.ts. */
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 22px; padding: 0; margin: 0; border: 0; background: transparent; cursor: pointer; --track: color-mix(in srgb, var(--text) 16%, transparent); --fillc: var(--blue); }
+input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 999px; background: linear-gradient(90deg, var(--fillc) var(--p, 0%), var(--track) var(--p, 0%)); }
+input[type="range"]::-moz-range-track { height: 5px; border-radius: 999px; background: var(--track); }
+input[type="range"]::-moz-range-progress { height: 5px; border-radius: 999px; background: var(--fillc); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -5.5px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--fillc) 55%, transparent), 0 2px 6px rgba(0,0,0,.4); transition: box-shadow .15s, transform .15s var(--ease-out); }
+input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--fillc) 55%, transparent), 0 2px 6px rgba(0,0,0,.4); }
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.12); box-shadow: 0 0 0 5px color-mix(in srgb, var(--fillc) 40%, transparent), 0 2px 8px rgba(0,0,0,.45); }
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--fillc) 60%, transparent), 0 2px 8px rgba(0,0,0,.45); }
+input[type="range"]:disabled { opacity: .45; cursor: not-allowed; }
+:root[data-theme="light"] input[type="range"] { --track: rgba(20,30,50,.16); }
+:root[data-theme="light"] input[type="range"]::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fillc) 45%, transparent), 0 1px 4px rgba(20,30,50,.3); }
+
+/* Proportion rows: name and value on one line, the slider full width beneath */
+.prop-layer { border-radius: var(--radius); gap: 4px; padding: 14px 16px; background: color-mix(in srgb, var(--text) 2.5%, transparent); }
+.prop-row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "l o r" "s s s" "x x x"; row-gap: 0; column-gap: 8px; padding: 6px 0 4px; border-bottom: 1px solid color-mix(in srgb, var(--text) 6%, transparent); font-size: 13px; }
+.prop-row > label { grid-area: l; color: var(--text-2); font-weight: 500; }
+.prop-row.override > label { color: var(--text); font-weight: 600; }
+.prop-row > input[type="range"] { grid-area: s; width: 100%; }
+.prop-row > output { grid-area: o; min-width: 0; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); font: 600 12px/1.6 ui-monospace, "Geist Mono Variable", monospace; color: var(--text); }
+.prop-row > output small { font-weight: 400; color: var(--text-3); }
+.prop-row.override > output { background: color-mix(in srgb, var(--blue) 20%, transparent); }
+.prop-row .prop-reset { grid-area: r; width: 24px; height: 24px; min-height: 0; padding: 0; display: inline-grid; place-items: center; border-radius: 50%; background: transparent; border-color: transparent; color: var(--text-3); }
+.prop-row .prop-reset:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 10%, transparent); color: var(--text); }
+.prop-row .prop-reset:disabled { opacity: .25; }
+.prop-row .prop-excused { grid-area: x; }
+
+/* The figure: a soft solid mannequin on a height ruler, not a wire diagram */
+.prop-svg { max-height: 460px; background: radial-gradient(90% 70% at 50% 30%, color-mix(in srgb, var(--blue) 10%, transparent), transparent 70%), color-mix(in srgb, var(--text) 3%, var(--panel-1)); border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: #dfe8ff; }
+.prop-svg ellipse[data-shape], .prop-svg rect[data-shape] { fill: url(#mq-body); stroke: rgba(255,255,255,.55); stroke-width: 1; filter: drop-shadow(0 4px 8px rgba(30,40,100,.45)); transition: all .25s var(--ease-out); }
+.prop-svg ellipse[data-shape="head"] { fill: url(#mq-limb); }
+.prop-svg ellipse[data-shape^="eye"] { fill: #0d1017; stroke: none; filter: none; }
+.prop-svg rect[data-shape="hips"] { fill: #6f86e6; }
+.prop-svg line[data-shape] { stroke: url(#mq-limb); stroke-width: 9; stroke-linecap: round; opacity: .96; transition: all .25s var(--ease-out); }
+.prop-svg line[data-shape^="arm"] { stroke-width: 7; }
+.prop-svg line[data-shape^="hand"] { stroke-width: 5; }
+.prop-svg line[data-shape^="foot"] { stroke-width: 6; }
+.prop-svg line[data-shape="floor"] { stroke: rgba(255,255,255,.25); stroke-width: 1; stroke-dasharray: 3 4; }
+.prop-svg .prop-ruler line { stroke: rgba(255,255,255,.1); stroke-width: 1; stroke-linecap: butt; }
+.prop-svg .prop-ruler text { fill: rgba(255,255,255,.4); font: 500 8px var(--ui); }
+:root[data-theme="light"] .prop-svg { color: #26324f; }
+:root[data-theme="light"] .prop-svg .prop-ruler line { stroke: rgba(20,30,50,.12); }
+:root[data-theme="light"] .prop-svg .prop-ruler text { fill: rgba(20,30,50,.5); }
+:root[data-theme="light"] .prop-svg line[data-shape="floor"] { stroke: rgba(20,30,50,.3); }
+@media (prefers-reduced-motion: reduce) { .prop-svg * { transition: none !important; } }
+
+/* Confirm box spacing */
+[role="alertdialog"].panel .dr-tools { display: flex; gap: 10px; margin-top: 12px; }
