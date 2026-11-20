@@ -1,0 +1,18 @@
+{
+  "title": "The Pier",
+  "script": "INT. PIER OFFICE - DAY\n\nNORA, a harbour clerk, stamps a ledger.\n\nNORA\nAnother late ship.",
+  "analysis": {
+    "scenes": [{ "id": "SC-1", "heading": "INT. PIER OFFICE - DAY", "setting": "PIER OFFICE", "timeOfDay": "DAY", "summary": "Nora stamps a ledger.", "assetIds": ["CHAR-001", "SET-001"], "startLine": 1, "endLine": 5 }],
+    "assets": [
+      { "id": "CHAR-001", "name": "NORA", "type": "character", "sceneIds": ["SC-1"], "status": "approved", "age": "40s", "role": "harbour clerk" },
+      { "id": "SET-001", "name": "PIER OFFICE", "type": "set", "sceneIds": ["SC-1"], "status": "planned" }
+    ]
+  },
+  "shots": [
+    { "id": "SHOT-001", "sceneId": "SC-1", "order": 1, "duration": 4, "assetIds": ["CHAR-001"], "action": "Nora stamps the ledger.", "dialogue": "Another late ship.", "speaker": "NORA", "emotionalObjective": "Observation", "facialActing": "Tired", "bodyLanguage": "Hunched", "microAnimation": "One blink", "cameraFraming": "Medium", "cameraMovement": "Static", "lighting": "Natural window light", "soundEffects": "", "ambience": "", "music": "", "transition": "Cut", "storyboardStatus": "planned" }
+  ],
+  "jobs": [],
+  "storyboardsEnabled": true,
+  "model": "Seedance 2.0",
+  "assetOutputs": { "CHAR-001": "C:/old/nora_front.png" }
+}

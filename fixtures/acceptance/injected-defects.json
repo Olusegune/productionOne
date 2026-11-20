@@ -1,0 +1,9 @@
+{
+  "note": "Four defects injected on purpose into otherwise clean outputs. The acceptance run scores how many of them the review finds (true positives), how many findings are not injected defects (false positives) and how many injected defects were missed.",
+  "defects": [
+    { "id": "D1", "kind": "wrong-chair", "category": "E", "targetId": "S1", "description": "AMINA is placed on CHAIR-A, which is assigned to MARCUS, in the wide shot." },
+    { "id": "D2", "kind": "proportion", "category": "B", "targetId": "AMINA", "description": "AMINA's side view was made with larger eyes than her approved profile." },
+    { "id": "D3", "kind": "costume", "category": "C", "targetId": "MARCUS", "description": "MARCUS's frame shows a red scarf that is not part of his approved costume." },
+    { "id": "D4", "kind": "intersection", "category": "H", "targetId": "S3", "description": "The lantern passes through AMINA's hand in the over-the-shoulder shot." }
+  ]
+}

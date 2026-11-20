@@ -1,0 +1,21 @@
+{
+  "characters": [
+    { "id": "MARCUS", "name": "MARCUS", "heightM": 1.8, "deltas": { "armLength": 3.6, "shoulderWidth": 2.9 }, "description": "A weathered harbour pilot in a navy wool coat and a knit cap." },
+    { "id": "AMINA", "name": "AMINA", "heightM": 1.65, "deltas": { "legLength": 3.6, "eyeSize": 0.26 }, "description": "A young engineer with a braid, round glasses and a yellow oilskin jacket." }
+  ],
+  "room": {
+    "sceneId": "SC-1",
+    "heading": "INT. HARBOUR KITCHEN - NIGHT",
+    "furniture": [
+      { "id": "CHAIR-A", "name": "Chair A", "x": 3, "y": 4, "facing": 90, "ownedBy": "MARCUS" },
+      { "id": "CHAIR-B", "name": "Chair B", "x": 6, "y": 4, "facing": 270, "ownedBy": "AMINA" },
+      { "id": "DESK-1", "name": "Desk", "x": 4.5, "y": 4, "facing": 0 }
+    ],
+    "prop": { "id": "LANTERN-1", "name": "Oil lantern", "ownedBy": "MARCUS", "x": 3.3, "y": 3.7 }
+  },
+  "shots": [
+    { "id": "S1", "camera": { "x": 4.5, "y": 8, "facing": 0 }, "title": "Wide of the kitchen" },
+    { "id": "S2", "camera": { "x": 1.5, "y": 4, "facing": 90 }, "title": "Marcus from the side" },
+    { "id": "S3", "camera": { "x": 8, "y": 2, "facing": 235 }, "title": "Over Amina to the lantern" }
+  ]
+}

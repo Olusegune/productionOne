@@ -339,10 +339,10 @@ fn write_prompt_archive(output_path: &std::path::Path, entries: &[PromptArchiveE
 }
 
 #[derive(Deserialize)]
-struct ProductionPackageInput { manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String }
+struct ProductionPackageInput { #[serde(default)] design_records: Option<String>, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String }
 
 #[tauri::command]
-fn export_production_package(app: tauri::AppHandle, package_name: String, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String) -> Result<String, String> {
+fn export_production_package(app: tauri::AppHandle, package_name: String, design_records: Option<String>, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String) -> Result<String, String> {
     let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Exports");
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
     let safe_name = safe_package_name(&package_name);
@@ -352,7 +352,7 @@ fn export_production_package(app: tauri::AppHandle, package_name: String, manife
         let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|error| error.to_string())?.as_secs();
         output_path = export_dir.join(format!("{safe_name}-{stamp}.zip"));
     }
-    let input = ProductionPackageInput { manifest, asset_ledger_csv, style_bible, model_usage, prompt, reference_paths, export_mode };
+    let input = ProductionPackageInput { design_records, manifest, asset_ledger_csv, style_bible, model_usage, prompt, reference_paths, export_mode };
     write_production_package(&output_path, &input)?;
     Ok(output_path.to_string_lossy().to_string())
 }
@@ -363,12 +363,49 @@ fn missing_references_message(missing: &[&String]) -> String {
     format!("No verified package was made: {} approved picture{} not on this computer ({}). Remake or replace {}, approve, then export again.", names.len(), if names.len() == 1 { " is" } else { "s are" }, names.join(", "), if names.len() == 1 { "it" } else { "them" })
 }
 
+/// Why a file may not go into a package: a credential, a key, or a machine-specific model file. None when it is fine.
+fn unsafe_export_file(path: &str) -> Option<&'static str> {
+    let lower = path.to_lowercase().replace('\\', "/");
+    let name = lower.rsplit('/').next().unwrap_or("");
+    if name == ".env" || name.starts_with(".env.") { return Some("an environment file"); }
+    if ["id_rsa", "id_ed25519", "id_ecdsa", "id_rsa.pub", "id_ed25519.pub"].contains(&name) { return Some("an SSH key"); }
+    if [".pem", ".key", ".p12", ".pfx", ".jks", ".keystore", ".kdbx", ".ppk"].iter().any(|e| name.ends_with(e)) { return Some("a key or certificate file"); }
+    if ["credentials", "credential", "secrets", "secret", "auth", "token", "tokens"].iter().any(|b| [".json", ".yaml", ".yml", ".toml", ".ini", ".txt"].iter().any(|e| name == format!("{b}{e}"))) { return Some("a credentials file"); }
+    if [".netrc", ".npmrc", ".pypirc", ".git-credentials"].contains(&name) { return Some("a credentials file"); }
+    if [".safetensors", ".ckpt", ".gguf", ".ggml", ".pt", ".pth", ".onnx", ".lora"].iter().any(|e| name.ends_with(e)) { return Some("a machine-specific model file"); }
+    if lower.contains("/comfyui/models/") || lower.contains("/comfyui/custom_nodes/") { return Some("a file from a local ComfyUI install"); }
+    if lower.contains("/.ollama/") { return Some("a file from a local Ollama install"); }
+    None
+}
+
+/// Does the text contain `prefix` followed by at least `min` token characters (letters, digits, - _ . ~ + /)?
+fn has_token(text: &str, prefix: &str, min: usize) -> bool {
+    text.match_indices(prefix).any(|(i, _)| text[i + prefix.len()..].chars().take_while(|c| c.is_ascii_alphanumeric() || "-_.~+/".contains(*c)).count() >= min)
+}
+
+/// Why a text may not be written into a package: it looks like it holds a key or token. None when it is fine.
+fn unsafe_export_text(text: &str) -> Option<&'static str> {
+    if text.contains("-----BEGIN") && text.contains("PRIVATE KEY-----") { return Some("a private key"); }
+    if has_token(text, "sk-", 20) { return Some("an API key"); }
+    if has_token(text, "AIza", 30) { return Some("a Google API key"); }
+    if has_token(text, "Bearer ", 20) { return Some("a bearer token"); }
+    for p in ["ghp_", "gho_", "ghu_", "ghs_", "ghr_"] { if has_token(text, p, 30) { return Some("a GitHub token"); } }
+    None
+}
+
 fn write_production_package(output_path: &std::path::Path, input: &ProductionPackageInput) -> Result<(), String> {
     let manifest: Value = serde_json::from_str(&input.manifest).map_err(|error| format!("Asset manifest is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.style_bible).map_err(|error| format!("Style Bible is invalid: {error}"))?;
     serde_json::from_str::<Value>(&input.model_usage).map_err(|error| format!("Model usage record is invalid: {error}"))?;
     if input.export_mode != "draft" && input.export_mode != "verified" { return Err("Export mode must be draft or verified".to_string()); }
     if input.export_mode == "verified" && manifest.get("status").and_then(Value::as_str) != Some("production-ready") { return Err("Verified package requires a production-ready manifest".to_string()); }
+    if let Some(records) = &input.design_records { serde_json::from_str::<Value>(records).map_err(|error| format!("Design records are invalid: {error}"))?; }
+    for path in &input.reference_paths {
+        if let Some(why) = unsafe_export_file(path) { let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(); return Err(format!("No package was made: it would have included {why} ({name}). Credentials and model files never go into a package. Remove it and export again.")); }
+    }
+    for (label, text) in [("manifest", Some(&input.manifest)), ("style bible", Some(&input.style_bible)), ("model usage", Some(&input.model_usage)), ("prompt", Some(&input.prompt)), ("design records", input.design_records.as_ref())] {
+        if let Some(why) = text.and_then(|t| unsafe_export_text(t)) { return Err(format!("No package was made: the {label} contains {why}. Credentials never go into a package. Remove it and export again.")); }
+    }
     let missing: Vec<&String> = input.reference_paths.iter().filter(|source_path| !std::path::Path::new(source_path.as_str()).is_file()).collect();
     if input.export_mode == "verified" && !missing.is_empty() { return Err(missing_references_message(&missing)); }
     let incomplete = if missing.is_empty() { "None".to_string() } else { missing.iter().map(|p| p.as_str()).collect::<Vec<_>>().join("\n") };
@@ -385,6 +422,7 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
         ("Prompts/shot-prompt.txt", input.prompt.as_str()),
         ("production_readme.md", &format!("# Production One Package\n\nExport mode: {}\n\nIncomplete references:\n{}\n", input.export_mode, incomplete)),
     ];
+    if let Some(records) = &input.design_records { archive.start_file("Project Bible/design_records.json", options).map_err(|error| error.to_string())?; archive.write_all(records.as_bytes()).map_err(|error| error.to_string())?; }
     for (name, contents) in files { archive.start_file(name, options).map_err(|error| error.to_string())?; archive.write_all(contents.as_bytes()).map_err(|error| error.to_string())?; }
     for (index, source_path) in input.reference_paths.iter().enumerate() {
         let path = std::path::Path::new(source_path);
@@ -584,7 +622,7 @@ mod tests {
     #[test]
     fn production_zip_is_validated_and_contains_interchange_records() {
         let path = std::env::temp_dir().join(format!("production-one-package-{}.zip", std::process::id()));
-        let input = super::ProductionPackageInput { manifest: "{\"format\":\"production-one-package\",\"status\":\"production-ready\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![], export_mode: "verified".into() };
+        let input = super::ProductionPackageInput { design_records: None, manifest: "{\"format\":\"production-one-package\",\"status\":\"production-ready\"}".into(), asset_ledger_csv: "asset_id,status\nCHAR-001,approved".into(), style_bible: "{\"name\":\"Test Style\"}".into(), model_usage: "{\"model\":\"seedance\"}".into(), prompt: "A model-aware shot prompt".into(), reference_paths: vec![], export_mode: "verified".into() };
         super::write_production_package(&path, &input).unwrap();
         let file = std::fs::File::open(&path).unwrap();
         let mut archive = zip::ZipArchive::new(file).unwrap();
@@ -599,7 +637,7 @@ mod tests {
     fn verified_package_names_missing_pictures_by_file_name() {
         let path = std::env::temp_dir().join(format!("production-one-missing-ref-{}.zip", std::process::id()));
         let gone = std::env::temp_dir().join("nowhere-at-all").join("venom_front_v01.png").to_string_lossy().into_owned();
-        let input = super::ProductionPackageInput { manifest: "{\"status\":\"production-ready\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![gone], export_mode: "verified".into() };
+        let input = super::ProductionPackageInput { design_records: None, manifest: "{\"status\":\"production-ready\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![gone], export_mode: "verified".into() };
         let message = super::write_production_package(&path, &input).unwrap_err();
         assert!(message.contains("venom_front_v01.png") && message.contains("not on this computer"), "{message}");
         assert!(!message.contains("nowhere-at-all"), "the folder is not echoed: {message}");
@@ -607,9 +645,45 @@ mod tests {
     }
 
     #[test]
+    fn package_refuses_credentials_and_model_files_and_says_why() {
+        let base = |refs: Vec<String>, prompt: &str, records: Option<String>| super::ProductionPackageInput { design_records: records, manifest: "{\"status\":\"draft-incomplete\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: prompt.into(), reference_paths: refs, export_mode: "draft".into() };
+        let path = std::env::temp_dir().join(format!("production-one-unsafe-{}.zip", std::process::id()));
+        for (file, why) in [("C:/p/.env", "environment file"), ("C:/p/id_rsa", "SSH key"), ("C:/p/server.pem", "key or certificate"), ("C:/p/credentials.json", "credentials file"), ("D:/ComfyUI/models/checkpoints/flux1-dev.safetensors", "model file"), ("C:/Users/x/.ollama/models/blobs/sha256-1", "Ollama")] {
+            let message = super::write_production_package(&path, &base(vec![file.to_string()], "prompt", None)).unwrap_err();
+            assert!(message.contains(why), "{file}: {message}");
+            assert!(!message.contains("C:/p/") && !message.contains("D:/ComfyUI"), "the folder is not echoed: {message}");
+        }
+        for (text, why) in [("key: sk-abcdefghijklmnopqrstuvwxyz123456", "API key"), ("AIzaSyAbcdefghijklmnopqrstuvwxyz0123456789", "Google API key"), ("Authorization: Bearer abcdefghijklmnopqrstuvwxyz", "bearer token"), ("-----BEGIN RSA PRIVATE KEY-----\nabc\n-----END RSA PRIVATE KEY-----", "private key")] {
+            let message = super::write_production_package(&path, &base(vec![], text, None)).unwrap_err();
+            assert!(message.contains(why), "{text}: {message}");
+            assert!(!message.contains("abcdefghijkl"), "the key is not echoed: {message}");
+            let in_records = super::write_production_package(&path, &base(vec![], "prompt", Some(format!("{{\"note\":\"{}\"}}", text.replace('\n', " "))))).unwrap_err();
+            assert!(in_records.contains("design records"), "{in_records}");
+        }
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn package_with_design_records_contains_them_and_rejects_invalid_ones() {
+        let path = std::env::temp_dir().join(format!("production-one-records-{}.zip", std::process::id()));
+        let mut input = super::ProductionPackageInput { design_records: Some("{\"format\":\"production-one-design-records\",\"version\":1}".into()), manifest: "{\"status\":\"draft-incomplete\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![], export_mode: "draft".into() };
+        super::write_production_package(&path, &input).unwrap();
+        let mut archive = zip::ZipArchive::new(std::fs::File::open(&path).unwrap()).unwrap();
+        let mut text = String::new();
+        archive.by_name("Project Bible/design_records.json").unwrap().read_to_string(&mut text).unwrap();
+        assert!(text.contains("production-one-design-records"));
+        drop(archive);
+        std::fs::remove_file(&path).unwrap();
+        input.design_records = Some("not json".into());
+        assert!(super::write_production_package(&path, &input).unwrap_err().contains("Design records are invalid"));
+        assert!(!path.exists());
+        assert!(super::unsafe_export_file("C:/p/frame.png").is_none() && super::unsafe_export_text("a plain sentence with sk- in it").is_none());
+    }
+
+    #[test]
     fn verified_package_rejects_incomplete_manifest() {
         let path = std::env::temp_dir().join(format!("production-one-incomplete-{}.zip", std::process::id()));
-        let input = super::ProductionPackageInput { manifest: "{\"status\":\"draft-incomplete\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![], export_mode: "verified".into() };
+        let input = super::ProductionPackageInput { design_records: None, manifest: "{\"status\":\"draft-incomplete\"}".into(), asset_ledger_csv: "asset_id,status".into(), style_bible: "{}".into(), model_usage: "{}".into(), prompt: "prompt".into(), reference_paths: vec![], export_mode: "verified".into() };
         let result = super::write_production_package(&path, &input);
         assert!(result.is_err());
         assert!(!path.exists());

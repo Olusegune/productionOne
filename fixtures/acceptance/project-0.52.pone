@@ -1,0 +1,3613 @@
+{
+  "format": "production-one-project",
+  "version": 1,
+  "title": "Acceptance",
+  "savedAt": "2026-11-20T00:00:00.000Z",
+  "graph": {
+    "schemaVersion": 1,
+    "nodes": [
+      {
+        "id": "PROJ-LAST-HORIZON-001",
+        "kind": "project",
+        "name": "The Last Horizon",
+        "status": "ready",
+        "revision": 1,
+        "metadata": {
+          "format": "Short film",
+          "runtime": "12 min"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "SCEN-RETURN-008",
+        "kind": "scene",
+        "name": "08 · The Return",
+        "status": "ready",
+        "revision": 1,
+        "metadata": {
+          "setting": "Bedroom",
+          "time": "Night"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "SHOT-RETURN-004",
+        "kind": "shot",
+        "name": "08-04 · Recognition",
+        "status": "draft",
+        "revision": 1,
+        "metadata": {
+          "framing": "Medium close-up",
+          "camera": "Slow push in"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "ASSE-AMINA-001",
+        "kind": "asset",
+        "name": "Amina",
+        "status": "approved",
+        "revision": 1,
+        "metadata": {
+          "type": "Character",
+          "role": "Explorer"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "STOR-AMINA-DUST-001",
+        "kind": "storyVariant",
+        "name": "Dust-worn expedition",
+        "status": "approved",
+        "revision": 1,
+        "metadata": {
+          "costume": "Field jacket",
+          "condition": "Weathered"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "SHEE-AMINA-TURN-001",
+        "kind": "sheet",
+        "name": "Character turnaround",
+        "status": "ready",
+        "revision": 1,
+        "metadata": {
+          "views": 5
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "REVI-AMINA-TURN-001",
+        "kind": "revision",
+        "name": "Turnaround v01",
+        "status": "approved",
+        "revision": 1,
+        "metadata": {
+          "filename": "CHAR_001_Amina_Expedition_Turnaround_v01.png"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "ASSE-BEDROOM-002",
+        "kind": "asset",
+        "name": "Cliff bedroom",
+        "status": "ready",
+        "revision": 1,
+        "metadata": {
+          "type": "Set",
+          "state": "Night"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      },
+      {
+        "id": "ASSE-COMPASS-007",
+        "kind": "asset",
+        "name": "Solar compass",
+        "status": "draft",
+        "revision": 1,
+        "metadata": {
+          "type": "Prop",
+          "condition": "Weathered"
+        },
+        "createdAt": "2026-10-20T12:00:00.000Z",
+        "updatedAt": "2026-10-20T12:00:00.000Z"
+      }
+    ],
+    "edges": [
+      {
+        "id": "E01",
+        "from": "PROJ-LAST-HORIZON-001",
+        "to": "SCEN-RETURN-008",
+        "relation": "contains"
+      },
+      {
+        "id": "E02",
+        "from": "SCEN-RETURN-008",
+        "to": "SHOT-RETURN-004",
+        "relation": "contains"
+      },
+      {
+        "id": "E03",
+        "from": "ASSE-AMINA-001",
+        "to": "STOR-AMINA-DUST-001",
+        "relation": "variantOf"
+      },
+      {
+        "id": "E04",
+        "from": "STOR-AMINA-DUST-001",
+        "to": "SHEE-AMINA-TURN-001",
+        "relation": "renders"
+      },
+      {
+        "id": "E05",
+        "from": "SHEE-AMINA-TURN-001",
+        "to": "REVI-AMINA-TURN-001",
+        "relation": "revises"
+      },
+      {
+        "id": "E06",
+        "from": "STOR-AMINA-DUST-001",
+        "to": "SHOT-RETURN-004",
+        "relation": "appearsIn"
+      },
+      {
+        "id": "E07",
+        "from": "ASSE-BEDROOM-002",
+        "to": "SHOT-RETURN-004",
+        "relation": "appearsIn"
+      },
+      {
+        "id": "E08",
+        "from": "ASSE-COMPASS-007",
+        "to": "SHOT-RETURN-004",
+        "relation": "appearsIn"
+      }
+    ]
+  },
+  "studio": {
+    "script": "",
+    "analysis": {
+      "scenes": [
+        {
+          "id": "SC-1",
+          "heading": "INT. HARBOUR KITCHEN - NIGHT",
+          "setting": "HARBOUR KITCHEN",
+          "timeOfDay": "NIGHT",
+          "summary": "",
+          "assetIds": [
+            "MARCUS",
+            "AMINA",
+            "LANTERN-1",
+            "SET-KITCHEN"
+          ],
+          "startLine": 1,
+          "endLine": 5
+        }
+      ],
+      "assets": [
+        {
+          "id": "MARCUS",
+          "name": "MARCUS",
+          "type": "character",
+          "sceneIds": [
+            "SC-1"
+          ],
+          "status": "planned",
+          "description": "A weathered harbour pilot in a navy wool coat and a knit cap."
+        },
+        {
+          "id": "AMINA",
+          "name": "AMINA",
+          "type": "character",
+          "sceneIds": [
+            "SC-1"
+          ],
+          "status": "planned",
+          "description": "A young engineer with a braid, round glasses and a yellow oilskin jacket."
+        },
+        {
+          "id": "LANTERN-1",
+          "name": "Oil lantern",
+          "type": "prop",
+          "sceneIds": [
+            "SC-1"
+          ],
+          "status": "planned"
+        },
+        {
+          "id": "SET-KITCHEN",
+          "name": "HARBOUR KITCHEN",
+          "type": "set",
+          "sceneIds": [
+            "SC-1"
+          ],
+          "status": "planned"
+        }
+      ]
+    },
+    "shots": [
+      {
+        "id": "S1",
+        "sceneId": "SC-1",
+        "order": 1,
+        "duration": 4,
+        "assetIds": [
+          "MARCUS",
+          "AMINA",
+          "LANTERN-1",
+          "SET-KITCHEN"
+        ],
+        "action": "Wide of the kitchen",
+        "dialogue": "",
+        "speaker": "",
+        "emotionalObjective": "",
+        "facialActing": "",
+        "bodyLanguage": "",
+        "microAnimation": "",
+        "cameraFraming": "",
+        "cameraMovement": "",
+        "lighting": "Warm lamp light",
+        "soundEffects": "",
+        "ambience": "",
+        "music": "",
+        "transition": "Cut",
+        "storyboardStatus": "planned",
+        "title": "Wide of the kitchen",
+        "size": "WS",
+        "angle": "eye-level",
+        "lens": 24,
+        "movement": "static",
+        "composition": [
+          "symmetry",
+          "leading lines"
+        ],
+        "camera": {
+          "height": "chest",
+          "dof": "deep",
+          "optical": "wide-distortion-free",
+          "presetId": "wide-architectural"
+        },
+        "lightingRecord": {
+          "rim": false,
+          "practicals": "table lamp and a lit window",
+          "ambient": "dim",
+          "exposure": "normal",
+          "presetId": "warm-practical-interior",
+          "keyAzimuth": 60,
+          "keyElevation": 25,
+          "sourceSize": "small",
+          "contrast": "medium",
+          "colorTempK": 2800,
+          "timeOfDay": "evening interior"
+        }
+      },
+      {
+        "id": "S2",
+        "sceneId": "SC-1",
+        "order": 2,
+        "duration": 4,
+        "assetIds": [
+          "MARCUS",
+          "AMINA",
+          "LANTERN-1",
+          "SET-KITCHEN"
+        ],
+        "action": "Marcus from the side",
+        "dialogue": "",
+        "speaker": "",
+        "emotionalObjective": "",
+        "facialActing": "",
+        "bodyLanguage": "",
+        "microAnimation": "",
+        "cameraFraming": "",
+        "cameraMovement": "",
+        "lighting": "Warm lamp light",
+        "soundEffects": "",
+        "ambience": "",
+        "music": "",
+        "transition": "Cut",
+        "storyboardStatus": "planned",
+        "title": "Marcus from the side",
+        "size": "MCU",
+        "angle": "eye-level",
+        "lens": 50,
+        "movement": "static",
+        "composition": [
+          "rule of thirds"
+        ],
+        "camera": {
+          "height": "eye",
+          "dof": "shallow",
+          "optical": "clean",
+          "presetId": "intimate-dialogue"
+        },
+        "lightingRecord": {
+          "rim": false,
+          "practicals": "table lamp and a lit window",
+          "ambient": "dim",
+          "exposure": "normal",
+          "presetId": "warm-practical-interior",
+          "keyAzimuth": 60,
+          "keyElevation": 25,
+          "sourceSize": "small",
+          "contrast": "medium",
+          "colorTempK": 2800,
+          "timeOfDay": "evening interior"
+        }
+      },
+      {
+        "id": "S3",
+        "sceneId": "SC-1",
+        "order": 3,
+        "duration": 4,
+        "assetIds": [
+          "MARCUS",
+          "AMINA",
+          "LANTERN-1",
+          "SET-KITCHEN"
+        ],
+        "action": "Over Amina to the lantern",
+        "dialogue": "",
+        "speaker": "",
+        "emotionalObjective": "",
+        "facialActing": "",
+        "bodyLanguage": "",
+        "microAnimation": "",
+        "cameraFraming": "",
+        "cameraMovement": "",
+        "lighting": "Warm lamp light",
+        "soundEffects": "",
+        "ambience": "",
+        "music": "",
+        "transition": "Cut",
+        "storyboardStatus": "planned",
+        "title": "Over Amina to the lantern",
+        "size": "MWS",
+        "angle": "eye-level",
+        "lens": 35,
+        "movement": "static",
+        "composition": [
+          "depth layers",
+          "rule of thirds"
+        ],
+        "camera": {
+          "height": "eye",
+          "dof": "moderate",
+          "optical": "clean",
+          "presetId": "environment-portrait"
+        },
+        "lightingRecord": {
+          "rim": false,
+          "practicals": "table lamp and a lit window",
+          "ambient": "dim",
+          "exposure": "normal",
+          "presetId": "warm-practical-interior",
+          "keyAzimuth": 60,
+          "keyElevation": 25,
+          "sourceSize": "small",
+          "contrast": "medium",
+          "colorTempK": 2800,
+          "timeOfDay": "evening interior"
+        }
+      }
+    ],
+    "jobs": [],
+    "storyboardsEnabled": true,
+    "model": "Seedance 2.0",
+    "queue": {
+      "jobs": [
+        {
+          "id": "IMG-MARCUS-1-1",
+          "key": "MARCUS|Canonical|Identity|front|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Identity",
+          "viewKey": "front",
+          "label": "MARCUS front",
+          "prompt": "Identity front of MARCUS. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), long arms, wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": []
+          },
+          "outputName": "MARCUS_Identity_front_v01",
+          "revision": 1,
+          "status": "completed",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": true,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 1,
+          "updatedAt": 10,
+          "outputPath": "C:/mock/MARCUS_Identity_front_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-1-2",
+          "key": "MARCUS|Canonical|Identity|side|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Identity",
+          "viewKey": "side",
+          "label": "MARCUS side",
+          "prompt": "Identity side of MARCUS. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), long arms, wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": []
+          },
+          "outputName": "MARCUS_Identity_side_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 1,
+          "updatedAt": 1,
+          "outputPath": "C:/mock/MARCUS_Identity_side_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-1-3",
+          "key": "AMINA|Canonical|Identity|front|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Identity",
+          "viewKey": "front",
+          "label": "AMINA front",
+          "prompt": "Identity front of AMINA. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": []
+          },
+          "outputName": "AMINA_Identity_front_v01",
+          "revision": 1,
+          "status": "completed",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": true,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 1,
+          "updatedAt": 10,
+          "outputPath": "C:/mock/AMINA_Identity_front_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-1-4",
+          "key": "AMINA|Canonical|Identity|side|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Identity",
+          "viewKey": "side",
+          "label": "AMINA side",
+          "prompt": "Identity side of AMINA. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": []
+          },
+          "outputName": "AMINA_Identity_side_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 1,
+          "updatedAt": 1,
+          "outputPath": "C:/mock/AMINA_Identity_side_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-2-5",
+          "key": "MARCUS|Canonical|Turnaround|front|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "front",
+          "label": "MARCUS turnaround front",
+          "prompt": "Turnaround front of MARCUS. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), long arms, wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/MARCUS_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": [
+              {
+                "path": "C:/mock/MARCUS_Identity_front_v01.png",
+                "jobId": "IMG-MARCUS-1-1",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "MARCUS_Turnaround_front_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/MARCUS_Turnaround_front_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-2-6",
+          "key": "MARCUS|Canonical|Turnaround|three-quarter|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "three-quarter",
+          "label": "MARCUS turnaround three-quarter",
+          "prompt": "Turnaround three-quarter of MARCUS. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), long arms, wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/MARCUS_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": [
+              {
+                "path": "C:/mock/MARCUS_Identity_front_v01.png",
+                "jobId": "IMG-MARCUS-1-1",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "MARCUS_Turnaround_three-quarter_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/MARCUS_Turnaround_three-quarter_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-2-7",
+          "key": "MARCUS|Canonical|Turnaround|side|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "side",
+          "label": "MARCUS turnaround side",
+          "prompt": "Turnaround side of MARCUS. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), long arms, wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/MARCUS_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": [
+              {
+                "path": "C:/mock/MARCUS_Identity_front_v01.png",
+                "jobId": "IMG-MARCUS-1-1",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "MARCUS_Turnaround_side_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/MARCUS_Turnaround_side_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-2-8",
+          "key": "MARCUS|Canonical|Turnaround|back|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "back",
+          "label": "MARCUS turnaround back",
+          "prompt": "Turnaround back of MARCUS. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), long arms, wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/MARCUS_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": [
+              {
+                "path": "C:/mock/MARCUS_Identity_front_v01.png",
+                "jobId": "IMG-MARCUS-1-1",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "MARCUS_Turnaround_back_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/MARCUS_Turnaround_back_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-2-9",
+          "key": "AMINA|Canonical|Turnaround|front|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "front",
+          "label": "AMINA turnaround front",
+          "prompt": "Turnaround front of AMINA. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/AMINA_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": [
+              {
+                "path": "C:/mock/AMINA_Identity_front_v01.png",
+                "jobId": "IMG-AMINA-1-3",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "AMINA_Turnaround_front_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/AMINA_Turnaround_front_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-2-10",
+          "key": "AMINA|Canonical|Turnaround|three-quarter|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "three-quarter",
+          "label": "AMINA turnaround three-quarter",
+          "prompt": "Turnaround three-quarter of AMINA. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/AMINA_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": [
+              {
+                "path": "C:/mock/AMINA_Identity_front_v01.png",
+                "jobId": "IMG-AMINA-1-3",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "AMINA_Turnaround_three-quarter_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/AMINA_Turnaround_three-quarter_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-2-11",
+          "key": "AMINA|Canonical|Turnaround|side|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "side",
+          "label": "AMINA turnaround side",
+          "prompt": "Turnaround side of AMINA. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/AMINA_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": [
+              {
+                "path": "C:/mock/AMINA_Identity_front_v01.png",
+                "jobId": "IMG-AMINA-1-3",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "AMINA_Turnaround_side_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/AMINA_Turnaround_side_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-2-12",
+          "key": "AMINA|Canonical|Turnaround|back|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "back",
+          "label": "AMINA turnaround back",
+          "prompt": "Turnaround back of AMINA. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [
+            "C:/mock/AMINA_Identity_front_v01.png"
+          ],
+          "useAnchor": true,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": [
+              {
+                "path": "C:/mock/AMINA_Identity_front_v01.png",
+                "jobId": "IMG-AMINA-1-3",
+                "revision": 1
+              }
+            ]
+          },
+          "outputName": "AMINA_Turnaround_back_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 2,
+          "updatedAt": 2,
+          "outputPath": "C:/mock/AMINA_Turnaround_back_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-3-13",
+          "key": "MARCUS|Canonical|Lighting test|neutral-reference|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Lighting test",
+          "viewKey": "neutral-reference",
+          "label": "Neutral reference",
+          "prompt": "Character lighting test. MARCUS, A weathered harbour pilot in a navy wool coat and a knit cap.. The same character, the same costume, the same pose and the same framing (medium close-up, front view) in every picture of this test; only the lighting changes. Lighting: key light from the camera side (flat, frontal), a little above; a large soft source; low contrast, shadows falling toward behind the subject; bright ambient light; neutral daylight colour (about 5500 K); neutral studio. Plain background, no text.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": []
+          },
+          "outputName": "MARCUS_Lighting test_neutral-reference_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 3,
+          "updatedAt": 3,
+          "outputPath": "C:/mock/MARCUS_Lighting test_neutral-reference_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-3-14",
+          "key": "MARCUS|Canonical|Lighting test|hard-side-light|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Lighting test",
+          "viewKey": "hard-side-light",
+          "label": "Hard dramatic side light",
+          "prompt": "Character lighting test. MARCUS, A weathered harbour pilot in a navy wool coat and a knit cap.. The same character, the same costume, the same pose and the same framing (medium close-up, front view) in every picture of this test; only the lighting changes. Lighting: key light from the side, frame right, a little above; a small hard source; high contrast, shadows falling toward the side, frame left; dark ambient light; warm white colour (about 4500 K); any. Plain background, no text.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": []
+          },
+          "outputName": "MARCUS_Lighting test_hard-side-light_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 3,
+          "updatedAt": 3,
+          "outputPath": "C:/mock/MARCUS_Lighting test_hard-side-light_v01.png"
+        },
+        {
+          "id": "IMG-S1-4-15",
+          "key": "S1|Canonical|Storyboard|frame|1",
+          "assetId": "S1",
+          "variant": "Canonical",
+          "sheetType": "Storyboard",
+          "viewKey": "frame",
+          "label": "Wide of the kitchen",
+          "prompt": "Storyboard S1",
+          "aspect": "16:9",
+          "fullBody": false,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "references": []
+          },
+          "outputName": "S1_Storyboard_frame_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 4,
+          "updatedAt": 4,
+          "outputPath": "C:/mock/S1_Storyboard_frame_v01.png"
+        },
+        {
+          "id": "IMG-S2-4-16",
+          "key": "S2|Canonical|Storyboard|frame|1",
+          "assetId": "S2",
+          "variant": "Canonical",
+          "sheetType": "Storyboard",
+          "viewKey": "frame",
+          "label": "Marcus from the side",
+          "prompt": "Storyboard S2",
+          "aspect": "16:9",
+          "fullBody": false,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "references": []
+          },
+          "outputName": "S2_Storyboard_frame_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 4,
+          "updatedAt": 4,
+          "outputPath": "C:/mock/S2_Storyboard_frame_v01.png"
+        },
+        {
+          "id": "IMG-S3-4-17",
+          "key": "S3|Canonical|Storyboard|frame|1",
+          "assetId": "S3",
+          "variant": "Canonical",
+          "sheetType": "Storyboard",
+          "viewKey": "frame",
+          "label": "Over Amina to the lantern",
+          "prompt": "Storyboard S3 INJECT:intersection",
+          "aspect": "16:9",
+          "fullBody": false,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "references": []
+          },
+          "outputName": "S3_Storyboard_frame_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 4,
+          "updatedAt": 4,
+          "outputPath": "C:/mock/S3_Storyboard_frame_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-4-18",
+          "key": "AMINA|Canonical|Turnaround|side-defect|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "side-defect",
+          "label": "AMINA side (made with larger eyes)",
+          "prompt": "Turnaround side of AMINA",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.38,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-4f39ba0a",
+            "references": []
+          },
+          "outputName": "AMINA_Turnaround_side-defect_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 4,
+          "updatedAt": 4,
+          "outputPath": "C:/mock/AMINA_Turnaround_side-defect_v01.png"
+        },
+        {
+          "id": "IMG-MARCUS-4-19",
+          "key": "MARCUS|Canonical|Costume|front|1",
+          "assetId": "MARCUS",
+          "variant": "Canonical",
+          "sheetType": "Costume",
+          "viewKey": "front",
+          "label": "MARCUS costume front",
+          "prompt": "Costume front of MARCUS INJECT:costume",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "MARCUS",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 2.78,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.9,
+                  "unit": "head widths",
+                  "source": "override"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.261,
+                  "unit": "face widths",
+                  "source": "default"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.8,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-b7a67070",
+            "references": []
+          },
+          "outputName": "MARCUS_Costume_front_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 4,
+          "updatedAt": 4,
+          "outputPath": "C:/mock/MARCUS_Costume_front_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-4-20",
+          "key": "AMINA|Canonical|Identity|decoy|1",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Identity",
+          "viewKey": "decoy",
+          "label": "AMINA decoy",
+          "prompt": "Identity of AMINA DECOY:hands",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": []
+          },
+          "outputName": "AMINA_Identity_decoy_v01",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 4,
+          "updatedAt": 4,
+          "outputPath": "C:/mock/AMINA_Identity_decoy_v01.png"
+        },
+        {
+          "id": "IMG-AMINA-k-21",
+          "key": "AMINA|Canonical|Turnaround|side-defect|2",
+          "assetId": "AMINA",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "side-defect",
+          "label": "AMINA side (made with larger eyes) (correction)",
+          "prompt": "Turnaround side of AMINA\nCorrect this problem and change nothing else: Made with earlier proportions (changed: Eye size). It should be: Made with the current target proportions. Body and face proportions (target, keep the same in every view): a compact build (about 6.625 heads tall), wide hips, large eyes, a short, round face, soft, rounded shapes.",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "mock",
+          "model": "mock-1",
+          "references": [],
+          "useAnchor": false,
+          "styleName": "Clean digital cel animation",
+          "styleFp": "Clean digital cel animation#16gej0m",
+          "provenance": {
+            "proportionProfile": {
+              "id": "AMINA",
+              "schemaVersion": 1,
+              "preset": "rounded",
+              "stylization": 35,
+              "controls": {
+                "heightInHeads": {
+                  "value": 6.625,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "torsoLength": {
+                  "value": 2.598,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "legLength": {
+                  "value": 3.6,
+                  "unit": "heads",
+                  "source": "override"
+                },
+                "legBalance": {
+                  "value": 50,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "armLength": {
+                  "value": 2.72,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "armBalance": {
+                  "value": 52,
+                  "unit": "percent",
+                  "source": "default"
+                },
+                "handSize": {
+                  "value": 0.82,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "footSize": {
+                  "value": 1.07,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "shoulderWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "hipWidth": {
+                  "value": 2.4,
+                  "unit": "head widths",
+                  "source": "default"
+                },
+                "neckLength": {
+                  "value": 0.248,
+                  "unit": "heads",
+                  "source": "default"
+                },
+                "eyeSize": {
+                  "value": 0.26,
+                  "unit": "face widths",
+                  "source": "override"
+                },
+                "eyeSpacing": {
+                  "value": 1,
+                  "unit": "eye widths",
+                  "source": "default"
+                },
+                "noseLength": {
+                  "value": 0.25,
+                  "unit": "head heights",
+                  "source": "default"
+                },
+                "jawChin": {
+                  "value": 0.802,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "facialElongation": {
+                  "value": 1.168,
+                  "unit": "ratio",
+                  "source": "default"
+                },
+                "shapeLanguage": {
+                  "value": -75,
+                  "unit": "score",
+                  "source": "default"
+                }
+              },
+              "heightM": 1.65,
+              "exceptions": []
+            },
+            "proportionFp": "pp1-473efc67",
+            "references": [],
+            "correctionOf": {
+              "findingId": "F-IMG-AMINA-4-18-B-1",
+              "sourceJobId": "IMG-AMINA-4-18",
+              "sourceRevision": 1
+            }
+          },
+          "outputName": "AMINA_Turnaround_side-defect_fix_v02",
+          "revision": 2,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "submissionState": "not-submitted",
+          "createdAt": 20,
+          "updatedAt": 20,
+          "outputPath": "C:/mock/AMINA_Turnaround_side-defect_fix_v02.png"
+        }
+      ],
+      "paused": false,
+      "concurrency": 2,
+      "guard": false,
+      "perImageUsd": null,
+      "totalCeilingUsd": null,
+      "quality": "medium"
+    },
+    "title": "Acceptance",
+    "format": "16:9",
+    "proportions": {
+      "MARCUS": {
+        "id": "MARCUS",
+        "schemaVersion": 1,
+        "preset": "rounded",
+        "stylization": 35,
+        "controls": {
+          "heightInHeads": {
+            "value": 6.625,
+            "unit": "heads",
+            "source": "default"
+          },
+          "torsoLength": {
+            "value": 2.598,
+            "unit": "heads",
+            "source": "default"
+          },
+          "legLength": {
+            "value": 2.78,
+            "unit": "heads",
+            "source": "default"
+          },
+          "legBalance": {
+            "value": 50,
+            "unit": "percent",
+            "source": "default"
+          },
+          "armLength": {
+            "value": 3.6,
+            "unit": "heads",
+            "source": "override"
+          },
+          "armBalance": {
+            "value": 52,
+            "unit": "percent",
+            "source": "default"
+          },
+          "handSize": {
+            "value": 0.82,
+            "unit": "head heights",
+            "source": "default"
+          },
+          "footSize": {
+            "value": 1.07,
+            "unit": "head heights",
+            "source": "default"
+          },
+          "shoulderWidth": {
+            "value": 2.9,
+            "unit": "head widths",
+            "source": "override"
+          },
+          "hipWidth": {
+            "value": 2.4,
+            "unit": "head widths",
+            "source": "default"
+          },
+          "neckLength": {
+            "value": 0.248,
+            "unit": "heads",
+            "source": "default"
+          },
+          "eyeSize": {
+            "value": 0.261,
+            "unit": "face widths",
+            "source": "default"
+          },
+          "eyeSpacing": {
+            "value": 1,
+            "unit": "eye widths",
+            "source": "default"
+          },
+          "noseLength": {
+            "value": 0.25,
+            "unit": "head heights",
+            "source": "default"
+          },
+          "jawChin": {
+            "value": 0.802,
+            "unit": "ratio",
+            "source": "default"
+          },
+          "facialElongation": {
+            "value": 1.168,
+            "unit": "ratio",
+            "source": "default"
+          },
+          "shapeLanguage": {
+            "value": -75,
+            "unit": "score",
+            "source": "default"
+          }
+        },
+        "heightM": 1.8,
+        "exceptions": []
+      },
+      "AMINA": {
+        "id": "AMINA",
+        "schemaVersion": 1,
+        "preset": "rounded",
+        "stylization": 35,
+        "controls": {
+          "heightInHeads": {
+            "value": 6.625,
+            "unit": "heads",
+            "source": "default"
+          },
+          "torsoLength": {
+            "value": 2.598,
+            "unit": "heads",
+            "source": "default"
+          },
+          "legLength": {
+            "value": 3.6,
+            "unit": "heads",
+            "source": "override"
+          },
+          "legBalance": {
+            "value": 50,
+            "unit": "percent",
+            "source": "default"
+          },
+          "armLength": {
+            "value": 2.72,
+            "unit": "heads",
+            "source": "default"
+          },
+          "armBalance": {
+            "value": 52,
+            "unit": "percent",
+            "source": "default"
+          },
+          "handSize": {
+            "value": 0.82,
+            "unit": "head heights",
+            "source": "default"
+          },
+          "footSize": {
+            "value": 1.07,
+            "unit": "head heights",
+            "source": "default"
+          },
+          "shoulderWidth": {
+            "value": 2.4,
+            "unit": "head widths",
+            "source": "default"
+          },
+          "hipWidth": {
+            "value": 2.4,
+            "unit": "head widths",
+            "source": "default"
+          },
+          "neckLength": {
+            "value": 0.248,
+            "unit": "heads",
+            "source": "default"
+          },
+          "eyeSize": {
+            "value": 0.26,
+            "unit": "face widths",
+            "source": "override"
+          },
+          "eyeSpacing": {
+            "value": 1,
+            "unit": "eye widths",
+            "source": "default"
+          },
+          "noseLength": {
+            "value": 0.25,
+            "unit": "head heights",
+            "source": "default"
+          },
+          "jawChin": {
+            "value": 0.802,
+            "unit": "ratio",
+            "source": "default"
+          },
+          "facialElongation": {
+            "value": 1.168,
+            "unit": "ratio",
+            "source": "default"
+          },
+          "shapeLanguage": {
+            "value": -75,
+            "unit": "score",
+            "source": "default"
+          }
+        },
+        "heightM": 1.65,
+        "exceptions": []
+      }
+    },
+    "fitRules": {
+      "MARCUS": [
+        {
+          "id": "MARCUS:seat-height",
+          "assetId": "MARCUS",
+          "key": "seat-height",
+          "category": "functional",
+          "label": "Chair seat height",
+          "text": "A seat about 0.38 m high lets the feet rest flat with the knees bent.",
+          "valueM": 0.38,
+          "status": "approved",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:desk-height",
+          "assetId": "MARCUS",
+          "key": "desk-height",
+          "category": "functional",
+          "label": "Desk or table height",
+          "text": "A work surface about 0.58 m high sits comfortably at the elbows when seated.",
+          "valueM": 0.58,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:doorway-clearance",
+          "assetId": "MARCUS",
+          "key": "doorway-clearance",
+          "category": "functional",
+          "label": "Doorway height",
+          "text": "A doorway at least 1.95 m high clears the head with a small margin.",
+          "valueM": 1.95,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:doorway-width",
+          "assetId": "MARCUS",
+          "key": "doorway-width",
+          "category": "functional",
+          "label": "Doorway width",
+          "text": "A doorway at least 0.97 m wide lets the shoulders through without turning.",
+          "valueM": 0.97,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:helmet-clearance",
+          "assetId": "MARCUS",
+          "key": "helmet-clearance",
+          "category": "functional",
+          "label": "Headroom with a helmet or hat",
+          "text": "About 1.94 m of headroom clears a helmet or a tall hat.",
+          "valueM": 1.94,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:reach-height",
+          "assetId": "MARCUS",
+          "key": "reach-height",
+          "category": "functional",
+          "label": "Standing reach",
+          "text": "A hand reaches about 2.44 m above the floor with the arm raised: shelves and switches that must be reached belong below this.",
+          "valueM": 2.44,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:stair-riser",
+          "assetId": "MARCUS",
+          "key": "stair-riser",
+          "category": "functional",
+          "label": "Stair or step height",
+          "text": "A step about 0.17 m high can be climbed without effort.",
+          "valueM": 0.17,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:handle-diameter",
+          "assetId": "MARCUS",
+          "key": "handle-diameter",
+          "category": "functional",
+          "label": "Handle thickness",
+          "text": "A handle about 0.05 m across (5 cm) fits a closed hand; a handle length near 0.12 m fits a grip.",
+          "valueM": 0.05,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:arm-swing",
+          "assetId": "MARCUS",
+          "key": "arm-swing",
+          "category": "spatial",
+          "label": "Clear space for arms",
+          "text": "Keep about 0.98 m clear to each side where this character gestures or works.",
+          "valueM": 0.98,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "MARCUS:shape-language",
+          "assetId": "MARCUS",
+          "key": "shape-language",
+          "category": "visual",
+          "label": "Visual language of furniture and props",
+          "text": "Soft, rounded furniture and props echo this character.",
+          "status": "proposed",
+          "intent": "fit"
+        }
+      ],
+      "AMINA": [
+        {
+          "id": "AMINA:seat-height",
+          "assetId": "AMINA",
+          "key": "seat-height",
+          "category": "functional",
+          "label": "Chair seat height",
+          "text": "A seat about 0.45 m high lets the feet rest flat with the knees bent.",
+          "valueM": 0.45,
+          "status": "approved",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:desk-height",
+          "assetId": "AMINA",
+          "key": "desk-height",
+          "category": "functional",
+          "label": "Desk or table height",
+          "text": "A work surface about 0.63 m high sits comfortably at the elbows when seated.",
+          "valueM": 0.63,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:doorway-clearance",
+          "assetId": "AMINA",
+          "key": "doorway-clearance",
+          "category": "functional",
+          "label": "Doorway height",
+          "text": "A doorway at least 1.8 m high clears the head with a small margin.",
+          "valueM": 1.8,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:doorway-width",
+          "assetId": "AMINA",
+          "key": "doorway-width",
+          "category": "functional",
+          "label": "Doorway width",
+          "text": "A doorway at least 0.81 m wide lets the shoulders through without turning.",
+          "valueM": 0.81,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:helmet-clearance",
+          "assetId": "AMINA",
+          "key": "helmet-clearance",
+          "category": "functional",
+          "label": "Headroom with a helmet or hat",
+          "text": "About 1.78 m of headroom clears a helmet or a tall hat.",
+          "valueM": 1.78,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:reach-height",
+          "assetId": "AMINA",
+          "key": "reach-height",
+          "category": "functional",
+          "label": "Standing reach",
+          "text": "A hand reaches about 2.22 m above the floor with the arm raised: shelves and switches that must be reached belong below this.",
+          "valueM": 2.22,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:stair-riser",
+          "assetId": "AMINA",
+          "key": "stair-riser",
+          "category": "functional",
+          "label": "Stair or step height",
+          "text": "A step about 0.2 m high can be climbed without effort.",
+          "valueM": 0.2,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:handle-diameter",
+          "assetId": "AMINA",
+          "key": "handle-diameter",
+          "category": "functional",
+          "label": "Handle thickness",
+          "text": "A handle about 0.04 m across (4 cm) fits a closed hand; a handle length near 0.11 m fits a grip.",
+          "valueM": 0.04,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:arm-swing",
+          "assetId": "AMINA",
+          "key": "arm-swing",
+          "category": "spatial",
+          "label": "Clear space for arms",
+          "text": "Keep about 0.68 m clear to each side where this character gestures or works.",
+          "valueM": 0.68,
+          "status": "proposed",
+          "intent": "fit"
+        },
+        {
+          "id": "AMINA:shape-language",
+          "assetId": "AMINA",
+          "key": "shape-language",
+          "category": "visual",
+          "label": "Visual language of furniture and props",
+          "text": "Soft, rounded furniture and props echo this character.",
+          "status": "proposed",
+          "intent": "fit"
+        }
+      ]
+    },
+    "sceneStates": {
+      "SC-1": {
+        "sceneId": "SC-1",
+        "revision": 12,
+        "world": {
+          "things": [
+            {
+              "interactions": [
+                "sit"
+              ],
+              "scale": 1,
+              "id": "CHAIR-A",
+              "kind": "furniture",
+              "name": "Chair A",
+              "x": 3,
+              "y": 4,
+              "facing": 90,
+              "ownedBy": "MARCUS"
+            },
+            {
+              "interactions": [
+                "sit"
+              ],
+              "scale": 1,
+              "id": "CHAIR-B",
+              "kind": "furniture",
+              "name": "Chair B",
+              "x": 6,
+              "y": 4,
+              "facing": 270,
+              "ownedBy": "AMINA"
+            },
+            {
+              "interactions": [
+                "work at"
+              ],
+              "scale": 1,
+              "id": "DESK-1",
+              "kind": "furniture",
+              "name": "Desk",
+              "x": 4.5,
+              "y": 4,
+              "facing": 0
+            },
+            {
+              "interactions": [],
+              "scale": 1,
+              "id": "MARCUS",
+              "kind": "character",
+              "name": "MARCUS",
+              "x": 3,
+              "y": 4,
+              "facing": 90,
+              "posture": "seated",
+              "occupies": "CHAIR-A"
+            },
+            {
+              "interactions": [],
+              "scale": 1,
+              "id": "AMINA",
+              "kind": "character",
+              "name": "AMINA",
+              "x": 6,
+              "y": 4,
+              "facing": 270,
+              "posture": "seated",
+              "occupies": "CHAIR-B"
+            },
+            {
+              "interactions": [
+                "carry",
+                "light"
+              ],
+              "scale": 1,
+              "id": "LANTERN-1",
+              "kind": "prop",
+              "name": "Oil lantern",
+              "x": 3.3,
+              "y": 3.7,
+              "facing": 0,
+              "ownedBy": "MARCUS"
+            }
+          ],
+          "relationships": []
+        },
+        "changes": [],
+        "cameras": {
+          "S1": {
+            "x": 4.5,
+            "y": 8,
+            "facing": 0,
+            "fov": 50
+          },
+          "S2": {
+            "x": 1.5,
+            "y": 4,
+            "facing": 90,
+            "fov": 50
+          },
+          "S3": {
+            "x": 8,
+            "y": 2,
+            "facing": 235,
+            "fov": 50
+          }
+        }
+      }
+    },
+    "reviews": {
+      "deterministic": [
+        {
+          "targetId": "S1",
+          "outputJobId": "IMG-S1-4-15",
+          "outputRevision": 1,
+          "confidence": 1,
+          "source": "deterministic",
+          "status": "open",
+          "id": "F-IMG-S1-4-15-E-chair-not-owned-1",
+          "category": "E",
+          "severity": "high",
+          "expected": "Each chair holds one person, the one it is assigned to, where that chair is.",
+          "observed": "AMINA sits in Chair A, which is assigned to MARCUS.",
+          "sourceRule": "Scene layout: chair-not-owned.",
+          "suggestedAction": "Fix the layout in the blocking map, then regenerate this frame."
+        },
+        {
+          "targetId": "AMINA",
+          "outputJobId": "IMG-AMINA-4-18",
+          "outputRevision": 1,
+          "confidence": 1,
+          "source": "deterministic",
+          "status": "open",
+          "id": "F-IMG-AMINA-4-18-B-1",
+          "category": "B",
+          "severity": "medium",
+          "control": "eyeSize",
+          "expected": "Made with the current target proportions.",
+          "observed": "Made with earlier proportions (changed: Eye size).",
+          "sourceRule": "Output provenance fingerprint differs from the character's current profile.",
+          "suggestedAction": "Regenerate this view with the current proportions, or keep it if the change does not matter here."
+        }
+      ],
+      "vision": [
+        {
+          "id": "F-IMG-S3-4-17-vH-1",
+          "targetId": "S3",
+          "outputJobId": "IMG-S3-4-17",
+          "outputRevision": 1,
+          "category": "H",
+          "source": "vision",
+          "status": "open",
+          "confidence": 0.6,
+          "severity": "medium",
+          "expected": "as approved",
+          "observed": "The lantern passes through the hand.",
+          "sourceRule": "scripted",
+          "suggestedAction": "look"
+        },
+        {
+          "id": "F-IMG-AMINA-4-20-vG-1",
+          "targetId": "AMINA",
+          "outputJobId": "IMG-AMINA-4-20",
+          "outputRevision": 1,
+          "category": "G",
+          "source": "vision",
+          "status": "open",
+          "confidence": 0.6,
+          "severity": "medium",
+          "expected": "as approved",
+          "observed": "A hand looks wrong.",
+          "sourceRule": "scripted",
+          "suggestedAction": "look"
+        }
+      ],
+      "checked": {
+        "IMG-S1-4-15": {
+          "deterministic": [
+            "B",
+            "I",
+            "E"
+          ],
+          "vision": [
+            "C",
+            "G",
+            "H"
+          ]
+        },
+        "IMG-S2-4-16": {
+          "deterministic": [
+            "B",
+            "I",
+            "E"
+          ],
+          "vision": [
+            "C",
+            "G",
+            "H"
+          ]
+        },
+        "IMG-S3-4-17": {
+          "deterministic": [
+            "B",
+            "I",
+            "E"
+          ],
+          "vision": [
+            "C",
+            "G",
+            "H"
+          ]
+        },
+        "IMG-AMINA-4-18": {
+          "deterministic": [
+            "B",
+            "I"
+          ],
+          "vision": [
+            "C",
+            "G",
+            "H"
+          ]
+        },
+        "IMG-MARCUS-4-19": {
+          "deterministic": [
+            "B",
+            "I"
+          ],
+          "vision": [
+            "C",
+            "G",
+            "H"
+          ]
+        },
+        "IMG-AMINA-4-20": {
+          "deterministic": [
+            "B",
+            "I"
+          ],
+          "vision": [
+            "C",
+            "G",
+            "H"
+          ]
+        }
+      }
+    },
+    "corrections": {
+      "F-IMG-AMINA-4-18-B-1": {
+        "findingId": "F-IMG-AMINA-4-18-B-1",
+        "attempts": 1,
+        "spentUsd": 0
+      }
+    },
+    "looks": {
+      "looks": [
+        {
+          "id": "LOOK-001",
+          "name": "Harbour night",
+          "grade": {
+            "technical": {
+              "exposureEv": 0.4,
+              "temperature": 40,
+              "tint": 0
+            },
+            "tone": {
+              "contrast": 15,
+              "saturation": 10
+            },
+            "creative": {
+              "shadowTint": "",
+              "highlightTint": "",
+              "tintAmount": 0
+            }
+          }
+        }
+      ],
+      "sceneLooks": {},
+      "shotLooks": {},
+      "projectLook": "LOOK-001"
+    },
+    "world": {
+      "scaleConvention": "metres",
+      "profile": {
+        "preset": "rounded",
+        "stylization": 35
+      },
+      "notes": "One soft, rounded world. Every character starts from this profile and changes only what is particular to them."
+    }
+  }
+}

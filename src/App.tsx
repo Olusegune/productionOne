@@ -15,6 +15,10 @@ import { readSceneStates, type SceneState } from "./domain/sceneState";
 import { emptyReviews, outputStatus, readReviews, type Reviews } from "./domain/visualReview";
 import { readLedgers, type Ledgers } from "./domain/correction";
 import { emptyLooks, readLooks, type LookState } from "./domain/grade";
+import { defaultWorld, readWorld, type WorldRules } from "./domain/worldRules";
+import { normalizeShots } from "./domain/shotRecords";
+import { buildDesignRecords } from "./domain/exportRecords";
+import { checkExport, safetyMessage } from "./domain/exportSafety";
 import { DirectView } from "./views/DirectView";
 import { ProjectsView } from "./views/ProjectsView";
 import { StoryView } from "./views/StoryView";
@@ -179,7 +183,8 @@ export default function App() {
     [sceneStates, setSceneStates] = useState<Record<string, SceneState>>({}),
     [reviews, setReviews] = useState<Reviews>(emptyReviews()),
     [corrections, setCorrections] = useState<Ledgers>({}),
-    [lookState, setLookState] = useState<LookState>(emptyLooks());
+    [lookState, setLookState] = useState<LookState>(emptyLooks()),
+    [world, setWorld] = useState<WorldRules>(defaultWorld());
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
@@ -204,8 +209,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}), ...(Object.keys(sceneStates).length ? { sceneStates } : {}), ...(reviews.deterministic.length || reviews.vision.length || Object.keys(reviews.checked).length ? { reviews } : {}), ...(Object.keys(corrections).length ? { corrections } : {}), ...(lookState.looks.length ? { looks: lookState } : {}) }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules, sceneStates, reviews, corrections, lookState],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}), ...(Object.keys(sceneStates).length ? { sceneStates } : {}), ...(reviews.deterministic.length || reviews.vision.length || Object.keys(reviews.checked).length ? { reviews } : {}), ...(Object.keys(corrections).length ? { corrections } : {}), ...(lookState.looks.length ? { looks: lookState } : {}), ...(world.profile || world.notes ? { world } : {}) }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules, sceneStates, reviews, corrections, lookState, world],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -286,9 +291,10 @@ export default function App() {
           setReviews(readReviews(studio.reviews));
           setCorrections(readLedgers(studio.corrections));
           setLookState(readLooks(studio.looks));
+          setWorld(readWorld(studio.world));
           setScript(studio.script);
           setAnalysis(studio.analysis);
-          setShots(studio.shots);
+          setShots(normalizeShots(studio.shots));
           setJobs(studio.jobs);
           setStoryboardsEnabled(studio.storyboardsEnabled);
           setModel(studio.model);
@@ -1010,8 +1016,12 @@ export default function App() {
           .join(","),
       ),
     ].join("\n");
+    const designRecords = JSON.stringify(buildDesignRecords(studioNow), null, 2);
+    const problems = checkExport(Object.values(assetOutputs), [{ name: "design_records.json", text: designRecords }, { name: "style_bible.json", text: JSON.stringify(styleBible) }]);
+    if (problems.length) { setNotice(safetyMessage(problems)); return; }
     const { invoke } = await import("@tauri-apps/api/core");
     const path = await invoke<string>("export_production_package", {
+      designRecords,
       packageName: `${title || "production-one"}-${activeShot.id}`,
       manifest: JSON.stringify(packageManifest, null, 2),
       assetLedgerCsv: ledger,
@@ -1063,7 +1073,7 @@ export default function App() {
     setTitle(file.title);
     setScript(s.script);
     setAnalysis(s.analysis);
-    setShots(s.shots);
+    setShots(normalizeShots(s.shots));
     setJobs(s.jobs);
     setStoryboardsEnabled(s.storyboardsEnabled);
     setModel(s.model);
@@ -1082,6 +1092,7 @@ export default function App() {
     setReviews(readReviews(s.reviews));
     setCorrections(readLedgers(s.corrections));
     setLookState(readLooks(s.looks));
+    setWorld(readWorld(s.world));
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1480,7 +1491,7 @@ export default function App() {
           <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Design" && (
-          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
+          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} world={world} setWorld={setWorld} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} />
         )}
         {workspace === "Review" && (
           <ReviewView shots={shots} style={styleBible} reviews={reviews} setReviews={setReviews} ledgers={corrections} setLedgers={setCorrections} proportions={proportions} setProportions={setProportions} fitRules={fitRules} sceneStates={sceneStates} analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />

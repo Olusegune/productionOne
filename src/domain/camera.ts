@@ -141,3 +141,23 @@ export function cameraWords(camera: CameraDirection | undefined, focalMm: number
   if (focusName || camera.focusTarget) parts.push(`focus on ${focusName ?? camera.focusTarget}`)
   return parts.length ? `Camera direction (a guide, not a simulation): ${parts.join('; ')}.` : ''
 }
+
+const SENSOR_IDS = sensors.map((s) => s.id)
+const HEIGHT_IDS = cameraHeights.map((h) => h.id)
+const DOF_IDS: DepthOfField[] = ['unspecified', 'deep', 'moderate', 'shallow']
+const OPTICAL_IDS: OpticalCharacter[] = ['none', 'clean', 'soft-vintage', 'anamorphic-feel', 'wide-distortion-free']
+
+/** Reads a saved camera record. Unknown values are dropped; the distance is kept in a sensible range. Returns undefined when there is nothing valid. Never throws. */
+export function readCamera(raw: unknown): CameraDirection | undefined {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined
+  const o = raw as Record<string, unknown>
+  const out: CameraDirection = {}
+  if (HEIGHT_IDS.includes(o.height as CameraHeight)) out.height = o.height as CameraHeight
+  if (typeof o.distanceM === 'number' && Number.isFinite(o.distanceM)) out.distanceM = Math.min(500, Math.max(0.1, o.distanceM))
+  if (SENSOR_IDS.includes(o.sensor as SensorId)) out.sensor = o.sensor as SensorId
+  if (typeof o.focusTarget === 'string' && o.focusTarget.length <= 80) out.focusTarget = o.focusTarget
+  if (DOF_IDS.includes(o.dof as DepthOfField)) out.dof = o.dof as DepthOfField
+  if (OPTICAL_IDS.includes(o.optical as OpticalCharacter)) out.optical = o.optical as OpticalCharacter
+  if (typeof o.presetId === 'string' && o.presetId.length <= 60) out.presetId = o.presetId
+  return Object.keys(out).length ? out : undefined
+}
