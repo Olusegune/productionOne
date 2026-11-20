@@ -1,4 +1,5 @@
 import { DirectRoom } from "../components/DirectRoom";
+import type { ProportionProfile } from "../domain/proportions";
 import { Eyebrow } from "../components/Eyebrow";
 import { Clapperboard, Pause, Play, ArrowLeft, ArrowRight, Copy, Trash2, Plus } from "lucide-react";
 import { type ShotRecord } from "../domain/productionStudio";
@@ -39,6 +40,7 @@ export interface DirectViewProps {
   totalAnimaticDuration: number;
   format: string;
   setFormat: (aspect: string) => void;
+  proportions?: Record<string, ProportionProfile>;
 }
 
 export function DirectView(p: DirectViewProps) {
@@ -59,6 +61,7 @@ export function DirectView(p: DirectViewProps) {
               setEnabled={setStoryboardsEnabled}
               title={title}
               format={format}
+              proportions={p.proportions}
               setFormat={setFormat}
               notify={setNotice}
               openProviders={() => setProvidersOpen(true)}

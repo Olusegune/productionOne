@@ -7,6 +7,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, Undo2, X } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { proportionWords, provenanceFor } from "../domain/characterLayers";
+import type { ProportionProfile } from "../domain/proportions";
 import {
   addCleaned,
   betterTake,
@@ -111,6 +113,8 @@ export function SheetStudio(props: {
   openLocal?: () => void;
   /** Extra photos the person attached to each asset (actor, costume, location). Sent with every request to models that accept references. */
   refs: Record<string, string[]>;
+  /** Target proportions per character. A character with none gets exactly the prompts it always did. */
+  proportions?: Record<string, ProportionProfile>;
   setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void } | null };
@@ -201,10 +205,11 @@ export function SheetStudio(props: {
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, anchored: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), anchored: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
       aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
       references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? [])] : [],
       styleName: style.name, styleFp: fingerprint,
+      provenance: provenanceFor(props.proportions?.[asset.id], [...(!reinterpret && modelTakesReferences(provider, modelId) && frontPath && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) ? [{ path: frontPath }] : []), ...(modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []).map((path) => ({ path })) : [])]),
       useAnchor: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));

@@ -1,4 +1,5 @@
 import { primaryViewKeys } from './sheetSpecs'
+import type { Provenance } from './characterLayers'
 
 export type ImageJobStatus = 'pending' | 'queued' | 'generating' | 'validating' | 'completed' | 'needs-review' | 'failed' | 'cancelled'
 export type SubmissionState = 'not-submitted' | 'intent-persisted' | 'accepted' | 'completed' | 'ambiguous' | 'failed'
@@ -47,6 +48,8 @@ export interface ImageJob {
   /** The style the picture was asked for in (name and a fingerprint of its compiled instructions). A later style change marks it as made in an earlier style; it is never re-approved automatically. */
   styleName?: string
   styleFp?: string
+  /** The exact proportion profile and reference pictures this output was made with. */
+  provenance?: Provenance
 }
 
 export interface QueueState {
@@ -77,6 +80,7 @@ export interface JobRequest {
   useAnchor?: boolean
   styleName?: string
   styleFp?: string
+  provenance?: Provenance
   outputName: (revision: number) => string
 }
 
@@ -114,7 +118,7 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
     if (!wouldEnqueue(latest, force)) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
-    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, styleName: request.styleName, styleFp: request.styleFp, outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
+    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, styleName: request.styleName, styleFp: request.styleFp, ...(request.provenance ? { provenance: request.provenance } : {}), outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
     added++
   }
   return { state: { ...state, jobs }, added, skipped }

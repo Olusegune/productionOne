@@ -22,6 +22,10 @@ import type { SheetType, StyleBible } from "../domain/visualDevelopment";
 import type { NewAssetKind } from "../domain/readingActions";
 import type { Dispatch, SetStateAction, RefObject } from "react";
 import { ProportionPanel } from "../components/ProportionPanel";
+import { FitPanel } from "../components/FitPanel";
+import type { FitRule } from "../domain/fit";
+import { madeWithEarlierProportions } from "../domain/characterLayers";
+import { approve as approveJob } from "../domain/generationQueue";
 import type { ProportionProfile } from "../domain/proportions";
 import { enqueue } from "../domain/generationQueue";
 import { readModelChoice } from "../data/modelChoice";
@@ -73,6 +77,8 @@ export interface DesignViewProps {
   setSheetSettings: Dispatch<SetStateAction<Record<string, string>>>;
   sheetSettings: Record<string, string>;
   proportions: Record<string, ProportionProfile>;
+  fitRules: Record<string, FitRule[]>;
+  setFitRules: Dispatch<SetStateAction<Record<string, FitRule[]>>>;
   setProportions: Dispatch<SetStateAction<Record<string, ProportionProfile>>>;
   setStyleBible: Dispatch<SetStateAction<StyleBible>>;
   sheetNotes: Record<string, string>;
@@ -108,7 +114,7 @@ export function DesignView(p: DesignViewProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const wide = useWide();
   const inInspector = wide && section === "sheets";
-  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions } = p;
+  const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, fitRules, setFitRules } = p;
   return (
 <div className="po-design">
             <BibleTree assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
@@ -145,6 +151,27 @@ export function DesignView(p: DesignViewProps) {
                 notify={setNotice}
               />;
             })()}
+            {analysis.assets[selectedAsset]?.type === "character" && proportions[analysis.assets[selectedAsset].id] && (() => {
+              const a = analysis.assets[selectedAsset];
+              const profile = proportions[a.id];
+              const choice = readModelChoice();
+              const ask = (sheetType: string, viewKey: string, label: string, prompt: string, references: string[], name: string) =>
+                setQueue((q) => enqueue(q, [{ assetId: a.id, variant: "default", sheetType, viewKey, label, prompt, aspect: sheetType === "scale-fit" ? "16:9" : "2:3", fullBody: true, provider: choice.provider, model: choice.modelId, references, outputName: (revision: number) => `${a.id}_${name}_v${String(revision).padStart(2, "0")}` }], Date.now(), true).state);
+              return <FitPanel
+                asset={a}
+                profile={profile}
+                rules={fitRules[a.id] ?? []}
+                onRules={(rules: FitRule[]) => setFitRules((cur) => ({ ...cur, [a.id]: rules }))}
+                people={analysis.assets.filter((x) => x.type === "character" && proportions[x.id]).map((x) => ({ name: x.name, profile: proportions[x.id] }))}
+                onGenerateScaleSheet={(prompt) => ask("scale-fit", "sheet", "Scale and Fit reference", prompt, [], "scale-fit")}
+                originalPath={assetRefs[a.id]?.[0]}
+                redesignCandidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "redesign-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status, approved: j.approved }))}
+                onGenerateRedesign={(req) => ask(req.sheetType, req.viewKey, req.label, req.prompt, req.references, "redesign-candidate")}
+                onApproveCandidate={(id) => setQueue((q) => approveJob(q, id))}
+                staleViews={queue.jobs.filter((j) => j.assetId === a.id && j.approved && madeWithEarlierProportions(j.provenance, profile)).length}
+                notify={setNotice}
+              />;
+            })()}
             </div>
             <div id="sec-sheets" role="tabpanel" aria-labelledby="as-tab-sheets" hidden={section !== "sheets"}>
             <CharacterBible onSection={setSection} asset={analysis.assets[selectedAsset]} onSheet={setFocusSheetType} notify={setNotice} jobs={queue.jobs} dialogueLines={analysis.story?.scenes.reduce((n, s) => n + s.dialogue.filter((d) => d.speaker.toUpperCase() === analysis.assets[selectedAsset]?.name.toUpperCase()).length, 0) ?? 0} />
@@ -169,6 +196,7 @@ export function DesignView(p: DesignViewProps) {
               onPatchAsset={(id, patch) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => (a.id === id ? { ...a, ...patch } : a)) }))}
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
+              proportions={proportions}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
               setSettings={setSheetSettings}

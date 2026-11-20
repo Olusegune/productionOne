@@ -81,9 +81,14 @@ export interface ProportionProfile {
   /** 0 (natural) to 100 (fully stylized). Moves the controls that have a stylized target, except those you have overridden. */
   stylization: number
   controls: Record<ControlId, ControlValue>
+  /** The character's real or story height in metres. It turns head units into metres for fit rules and the Scale and Fit sheet; it is an assumption you set, not something measured. */
+  heightM: number
   /** Deliberate departures for this character. A warning for one of these is not shown, and no check treats it as an error. */
   exceptions: ProportionException[]
 }
+
+export const DEFAULT_HEIGHT_M = 1.75
+export const HEIGHT_RANGE_M: [number, number] = [0.2, 3]
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n))
 const round = (n: number, digits = 3) => Math.round(n * 10 ** digits) / 10 ** digits
@@ -101,7 +106,7 @@ export function createProfile(id: string, preset: PresetId = 'natural', stylizat
   const s = clamp(stylization ?? presetFor(preset).stylization, 0, 100)
   const controls = {} as Record<ControlId, ControlValue>
   for (const spec of controlSpecs) controls[spec.id] = { value: derivedValue(spec.id, preset, s), unit: spec.unit, source: 'default' }
-  return { id, schemaVersion: PROPORTION_SCHEMA_VERSION, preset, stylization: s, controls, exceptions: [] }
+  return { id, schemaVersion: PROPORTION_SCHEMA_VERSION, preset, stylization: s, controls, heightM: DEFAULT_HEIGHT_M, exceptions: [] }
 }
 
 /** Recomputes every control that is not an override from the preset and stylization. */
@@ -134,6 +139,8 @@ export function resetControl(p: ProportionProfile, id: ControlId): ProportionPro
 export function resetProfile(p: ProportionProfile): ProportionProfile {
   return createProfile(p.id, p.preset)
 }
+
+export const setHeightM = (p: ProportionProfile, metres: number): ProportionProfile => (Number.isFinite(metres) ? { ...p, heightM: Math.round(clamp(metres, HEIGHT_RANGE_M[0], HEIGHT_RANGE_M[1]) * 100) / 100 } : p)
 
 export function addException(p: ProportionProfile, control: ControlId, note: string): ProportionProfile {
   const rest = p.exceptions.filter((e) => e.control !== control)
@@ -230,6 +237,7 @@ export function readProfile(raw: unknown, id: string): ProportionProfile {
       if (isObject(c) && c.source === 'override' && typeof c.value === 'number') p = setControl(p, cid, c.value)
     }
   }
+  if (typeof raw.heightM === 'number') p = setHeightM(p, raw.heightM)
   if (Array.isArray(raw.exceptions)) for (const e of raw.exceptions) if (isObject(e) && isControl(e.control)) p = addException(p, e.control, typeof e.note === 'string' ? e.note : '')
   return p
 }
@@ -328,4 +336,15 @@ export function describe(p: ProportionProfile | undefined): string {
   if (v('shapeLanguage') >= 40) parts.push('angular, sharp-edged shapes'); else if (v('shapeLanguage') <= -40) parts.push('soft, rounded shapes')
   if (!parts.length) return ''
   return `Body and face proportions (target, keep the same in every view): ${parts.join(', ')}.`
+}
+
+/**
+ * A short, stable identity for the exact content of a profile (its controls, stylization, height and exceptions). Two profiles with the same content have the same
+ * fingerprint, so an output can record which profile it was made with and later tell whether the profile has changed since.
+ */
+export function fingerprint(p: ProportionProfile): string {
+  const body = JSON.stringify([p.preset, p.stylization, p.heightM, controlIds.map((id) => [p.controls[id].value, p.controls[id].source]), p.exceptions.map((e) => [e.control, e.note])])
+  let h = 5381
+  for (let i = 0; i < body.length; i++) h = ((h << 5) + h + body.charCodeAt(i)) | 0
+  return `pp1-${(h >>> 0).toString(16).padStart(8, '0')}`
 }

@@ -19,6 +19,7 @@ import { Lightbox, type LightboxItem } from "./Lightbox";
 import { CleanRender } from "./CleanRender";
 import { ModelPicker } from "./ModelPicker";
 import { ShotCameraLighting } from "./ShotCameraLighting";
+import type { ProportionProfile } from "../domain/proportions";
 import { lightingTestPrompts } from "../domain/lighting";
 
 import { FormatPicker } from "./FormatPicker";
@@ -44,6 +45,7 @@ export function DirectRoom(props: {
   /** The project's shape, for example 9:16. */
   format?: string;
   setFormat?: (aspect: string) => void;
+  proportions?: Record<string, ProportionProfile>;
 }) {
   const { analysis, shots, setShots, queue, setQueue, style, assetRefs, desktop, providersVersion, enabled, setEnabled, title, notify, openProviders, openLocal } = props;
   const aspect = props.format ?? "16:9";
@@ -123,7 +125,7 @@ export function DirectRoom(props: {
       const refs = takesRefs ? shotReferences(s, analysis, queue, assetRefs) : [];
       return {
         assetId: s.id, variant: "Storyboard", sheetType: "Storyboard", viewKey: "frame", label: s.title ?? s.id, aspect, fullBody: false, provider: choice.provider, model: choice.modelId,
-        prompt: buildShotPrompt(s, analysis, style, refs, aspect, choice.modelId), references: refs.map((r) => r.path), outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, "0")}`,
+        prompt: buildShotPrompt(s, analysis, style, refs, aspect, choice.modelId, props.proportions), references: refs.map((r) => r.path), outputName: (rev: number) => `${s.id}_storyboard_v${String(rev).padStart(2, "0")}`,
       };
     });
     const result = enqueue(queue, requests, Date.now(), force);

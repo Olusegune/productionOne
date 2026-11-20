@@ -6,6 +6,7 @@ import { describeStatus, isTool, parseStart } from "../domain/agentTools";
 import { advance, initialState, report, summarize, withBudget, type AutopilotOptions, type AutopilotState, type Depth } from "../domain/autopilot";
 import { planCoverage } from "../domain/direct";
 import { cancelAllWaiting, committedUsd, type ImageJob, type QueueState } from "../domain/generationQueue";
+import type { ProportionProfile } from "../domain/proportions";
 import { chooseWriter, writerOption, writerOptions, writerReady } from "../domain/assistantWriters";
 import { modelTakesReferences } from "../domain/imageCatalog";
 import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
@@ -48,6 +49,7 @@ export const forgetAssistant = () => { kept.messages = []; kept.state = initialS
 
 /** The assistant: chat on the left, the plan and the run on the right. A plan is only ever started by the person pressing Start. */
 export function AssistantView(props: {
+  proportions?: Record<string, ProportionProfile>;
   analysis: AnalysisResult; shots: ShotRecord[]; setShots: (update: (s: ShotRecord[]) => ShotRecord[]) => void;
   queue: QueueState; setQueue: (update: (q: QueueState) => QueueState) => void; style: StyleBible; assetRefs: Record<string, string[]>; format: string; script: string;
   desktop: boolean; providersVersion: number; notify: (message: string) => void; openProviders: () => void; openReview: () => void; openDesign: () => void; openDeliver: () => void;
@@ -86,7 +88,7 @@ export function AssistantView(props: {
 
   const perImageUsd = price.trim() === "" || !(Number(price) >= 0) ? null : Number(price);
   const budgetUsd = budget.trim() === "" || !(Number(budget) > 0) ? null : Number(budget);
-  const options: AutopilotOptions = useMemo(() => ({ depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, provider: choice.provider, model: choice.modelId, takesReferences: modelTakesReferences(choice.provider, choice.modelId), aspect: format }), [depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, choice.provider, choice.modelId, format]);
+  const options: AutopilotOptions = useMemo(() => ({ depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, provider: choice.provider, model: choice.modelId, takesReferences: modelTakesReferences(choice.provider, choice.modelId), aspect: format, proportions: props.proportions }), [depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, choice.provider, choice.modelId, format, props.proportions]);
   const plan = useMemo(() => summarize(analysis, shots, style, queue, assetRefs, options), [analysis, shots, style, queue, assetRefs, options]);
   const running = state.phase !== "idle" && state.phase !== "done" && state.phase !== "stopped";
   const writerSpec = writerOption(writer);

@@ -6,6 +6,7 @@ import { styleGuidance, type StyleBible } from './visualDevelopment'
 import { characterArcs, intensityBand, type CharacterArc, type Emotion } from '../engine/emotion'
 import type { ParsedStory, StoryScene } from '../engine/story'
 import { cameraWords } from './camera'
+import { describe as describeProportions, type ProportionProfile } from './proportions'
 import { describeLighting } from './lighting'
 
 export type ShotSize = 'EWS' | 'WS' | 'MWS' | 'MS' | 'MCU' | 'CU' | 'ECU'
@@ -280,7 +281,7 @@ export function extremeShape(aspect: string): boolean {
   return Number.isFinite(r) && (r >= 1.9 || r <= 0.6)
 }
 
-export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, style: StyleBible, refs: ShotRef[], aspect = '16:9', model = ''): string {
+export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, style: StyleBible, refs: ShotRef[], aspect = '16:9', model = '', profiles?: Record<string, ProportionProfile>): string {
   const scene = analysis.scenes.find((s) => s.id === shot.sceneId)
   const names = shot.assetIds.map((id) => analysis.assets.find((a) => a.id === id)).filter((a): a is ExtractedAsset => !!a)
   const chars = names.filter((a) => a.type === 'character')
@@ -291,6 +292,7 @@ export function buildShotPrompt(shot: ShotRecord, analysis: AnalysisResult, styl
     extremeShape(aspect) ? `The picture may be trimmed to ${aspect} afterwards: keep every person and important object in the middle of the frame and leave the top and bottom (or the sides) free of anything that matters.` : '',
     scene ? `Setting: ${scene.setting}, ${scene.timeOfDay.toLowerCase()}.` : '',
     chars.length ? `In frame: ${chars.map((c) => `${c.name}${shot.looks?.[c.id] && shot.looks[c.id] !== 'Canonical' ? ` (${shot.looks[c.id]})` : ''}`).join(', ')}.${shot.coverage === 'establishing' ? '' : ' Only these people appear in the frame: no other people, creatures, crowd or bystanders, not even small or in the background.'}` : '',
+    chars.some((c) => describeProportions(profiles?.[c.id])) ? `Body proportions (target, keep exactly as in their references): ${chars.filter((c) => describeProportions(profiles?.[c.id])).map((c) => `${c.name}: ${describeProportions(profiles?.[c.id]).replace(/^Body and face proportions \(target, keep the same in every view\): /, '').replace(/\.$/, '')}`).join('; ')}.` : '',
     names.some((n) => n.type === 'costume' && n.prompt) ? `Wardrobe, exactly as the script describes it: ${names.filter((n) => n.type === 'costume' && n.prompt).map((n) => n.prompt!.replace(/^Costume worn by /, '').replace(/, as the script describes it:/, ':')).join(' ')}` : '',
     names.some((n) => n.type === 'prop') ? `Props in frame: ${names.filter((n) => n.type === 'prop').map((n) => n.prompt?.startsWith('As the script describes it') ? `${n.name} (${n.prompt.replace('As the script describes it: ', '')})` : n.name).join(', ')}.${names.some((n) => n.type === 'prop' && n.prompt?.startsWith('As the script describes it')) ? ' What a described prop shows is exactly what its description says and nothing more: add no other people or objects to it.' : ''}` : '',
     refs.some((r) => r.kind === 'set') ? `Set consistency: the picture labelled ${refs.filter((r) => r.kind === 'set').map((r) => `"${r.label}"`).join(', ')} is this exact place. Keep its layout, walls, floor, furniture, doors and windows, colours, materials and light sources identical, and show only the part of it this camera angle would see. Do not redesign, restyle or replace the set.` : '',
