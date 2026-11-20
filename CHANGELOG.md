@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.57.0 (2026-11-20): a sleeker look
+- Cast board cards are much larger and wrap in a grid instead of a small scrolling strip.
+- Panels, cards, chips, checklists, editors and tabs everywhere have softer corners, soft depth and pill tabs, so the app reads as modern rather than boxy.
+
 ## 0.56.0 (2026-11-20): first run, prices on buttons, remove items
 - **First run:** a one-minute tour, a "Make my first picture" quick start (one picture, cost shown first), and a price estimate on every Generate button (typical price, or yours from the spending limit).
 - **Remove from project:** characters, costumes, props and sets can be removed from Design. It asks first, clears the item from shots, notes, proportions, fit rules, the blocking map and review findings, keeps the picture files on your computer, and offers Undo.
