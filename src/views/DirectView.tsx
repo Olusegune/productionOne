@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { DirectRoom } from "../components/DirectRoom";
 import type { ProportionProfile } from "../domain/proportions";
 import type { SceneState } from "../domain/sceneState";
+import type { LookState } from "../domain/grade";
 import { Eyebrow } from "../components/Eyebrow";
 import { Clapperboard, Pause, Play, ArrowLeft, ArrowRight, Copy, Trash2, Plus } from "lucide-react";
 import { type ShotRecord } from "../domain/productionStudio";
@@ -42,6 +43,8 @@ export interface DirectViewProps {
   format: string;
   setFormat: (aspect: string) => void;
   proportions?: Record<string, ProportionProfile>;
+  looks?: LookState;
+  setLooks?: Dispatch<SetStateAction<LookState>>;
   sceneStates?: Record<string, SceneState>;
   setSceneStates?: Dispatch<SetStateAction<Record<string, SceneState>>>;
 }
@@ -65,6 +68,8 @@ export function DirectView(p: DirectViewProps) {
               title={title}
               format={format}
               proportions={p.proportions}
+              looks={p.looks}
+              setLooks={p.setLooks}
               sceneStates={p.sceneStates}
               setSceneStates={p.setSceneStates}
               setFormat={setFormat}

@@ -14,6 +14,7 @@ import { readFitRules, type FitRule } from "./domain/fit";
 import { readSceneStates, type SceneState } from "./domain/sceneState";
 import { emptyReviews, outputStatus, readReviews, type Reviews } from "./domain/visualReview";
 import { readLedgers, type Ledgers } from "./domain/correction";
+import { emptyLooks, readLooks, type LookState } from "./domain/grade";
 import { DirectView } from "./views/DirectView";
 import { ProjectsView } from "./views/ProjectsView";
 import { StoryView } from "./views/StoryView";
@@ -177,7 +178,8 @@ export default function App() {
     [fitRules, setFitRules] = useState<Record<string, FitRule[]>>({}),
     [sceneStates, setSceneStates] = useState<Record<string, SceneState>>({}),
     [reviews, setReviews] = useState<Reviews>(emptyReviews()),
-    [corrections, setCorrections] = useState<Ledgers>({});
+    [corrections, setCorrections] = useState<Ledgers>({}),
+    [lookState, setLookState] = useState<LookState>(emptyLooks());
   const setAssetRefs = (update: (r: Record<string, string[]>) => Record<string, string[]>) => setAssetRefsState(update);
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
@@ -202,8 +204,8 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}), ...(Object.keys(sceneStates).length ? { sceneStates } : {}), ...(reviews.deterministic.length || reviews.vision.length || Object.keys(reviews.checked).length ? { reviews } : {}), ...(Object.keys(corrections).length ? { corrections } : {}) }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules, sceneStates, reviews, corrections],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}), ...(Object.keys(sceneStates).length ? { sceneStates } : {}), ...(reviews.deterministic.length || reviews.vision.length || Object.keys(reviews.checked).length ? { reviews } : {}), ...(Object.keys(corrections).length ? { corrections } : {}), ...(lookState.looks.length ? { looks: lookState } : {}) }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules, sceneStates, reviews, corrections, lookState],
   );
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
@@ -217,6 +219,7 @@ export default function App() {
     storyboards: storyboardsEnabled,
     shotCount: shots.length,
     ready: audit.ready,
+    looks: { looks: lookState.looks.length, scenes: analysis.scenes.length, scenesWithLook: analysis.scenes.filter((sc) => lookState.sceneLooks[sc.id] || lookState.projectLook).length },
     visualReview: { checked: Object.keys(reviews.checked).length, needReview: Object.keys(reviews.checked).filter((id) => outputStatus(reviews, id).status === "needs-review").length },
     camera: { shots: shots.length, withDetails: shots.filter((s) => s.camera || s.lightingRecord).length },
     shape: { characters: analysis.assets.filter((a) => a.type === "character").length, withProfile: Object.keys(proportions).length },
@@ -282,6 +285,7 @@ export default function App() {
           setSceneStates(readSceneStates(studio.sceneStates));
           setReviews(readReviews(studio.reviews));
           setCorrections(readLedgers(studio.corrections));
+          setLookState(readLooks(studio.looks));
           setScript(studio.script);
           setAnalysis(studio.analysis);
           setShots(studio.shots);
@@ -1077,6 +1081,7 @@ export default function App() {
     setSceneStates(readSceneStates(s.sceneStates));
     setReviews(readReviews(s.reviews));
     setCorrections(readLedgers(s.corrections));
+    setLookState(readLooks(s.looks));
     setFilePath(path);
     setSelectedAsset(0);
     setSelectedShot(0);
@@ -1481,7 +1486,7 @@ export default function App() {
           <ReviewView shots={shots} style={styleBible} reviews={reviews} setReviews={setReviews} ledgers={corrections} setLedgers={setCorrections} proportions={proportions} setProportions={setProportions} fitRules={fitRules} sceneStates={sceneStates} analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Direct" && (
-          <DirectView sceneStates={sceneStates} setSceneStates={setSceneStates} proportions={proportions} activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
+          <DirectView looks={lookState} setLooks={setLookState} sceneStates={sceneStates} setSceneStates={setSceneStates} proportions={proportions} activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
         )}
         {workspace === "Deliver" && (
           <DeliveryCenter

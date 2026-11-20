@@ -9,6 +9,7 @@ import type { FitRule } from '../domain/fit'
 import type { SceneState } from '../domain/sceneState'
 import type { Reviews } from '../domain/visualReview'
 import type { Ledgers } from '../domain/correction'
+import type { LookState } from '../domain/grade'
 
 const KEY = 'production-guy:project:v1'
 const STUDIO_KEY = 'production-guy:studio:v1'
@@ -42,6 +43,8 @@ export interface StudioState {
   reviews?: Reviews
   /** Correction attempts and spend per finding. */
   corrections?: Ledgers
+  /** Named looks (grades) and where they apply. Metadata only: grades are never baked into pictures. */
+  looks?: LookState
 }
 
 export const projectStore = {
