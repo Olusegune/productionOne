@@ -14,16 +14,16 @@ function Wrapper({ onClose = () => {} }: { onClose?: () => void }) {
 }
 
 describe('appearance', () => {
-  it('starts in Cinematic without storing anything, applies a chosen look at once, and remembers only a choice', () => {
-    expect(document.documentElement.dataset.look).toBe('cinematic')
+  it('starts in Studio without storing anything, applies a chosen look at once, and remembers only a choice', () => {
+    expect(document.documentElement.dataset.look).toBe('studio')
     expect(localStorage.getItem('po.look.v2')).toBeNull()
     render(<Wrapper />)
-    expect(screen.getByRole('radio', { name: /Cinematic/ }).getAttribute('aria-checked')).toBe('true')
-    fireEvent.click(screen.getByRole('radio', { name: /Studio/ }))
-    expect(document.documentElement.dataset.look).toBe('studio')
-    expect(localStorage.getItem('po.look.v2')).toBe('studio')
     expect(screen.getByRole('radio', { name: /Studio/ }).getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByRole('radio', { name: /Cinematic/ }).getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(screen.getByRole('radio', { name: /Cinematic/ }))
+    expect(document.documentElement.dataset.look).toBe('cinematic')
+    expect(localStorage.getItem('po.look.v2')).toBe('cinematic')
+    expect(screen.getByRole('radio', { name: /Cinematic/ }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('radio', { name: /Studio/ }).getAttribute('aria-checked')).toBe('false')
     fireEvent.click(screen.getByRole('radio', { name: /Futurist/ }))
     expect(document.documentElement.dataset.look).toBe('futurist')
   })

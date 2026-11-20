@@ -90,3 +90,53 @@ export function applyReadAge(assets: ExtractedAsset[], character: string, value:
   if (!target || !age) return { assets, applied: false }
   return { assets: assets.map((a) => (a.id === target.id ? { ...a, age } : a)), applied: true }
 }
+
+export interface ImageTarget {
+  path: string
+  /** Index of the picture in the list given. */
+  index: number
+  asset: ExtractedAsset
+  /** The picture matched a character, prop, place or costume that was already in the project (from the script, for example). */
+  matched: boolean
+}
+
+/** The file name as a name, without making it unique. */
+const stemName = (path: string): string => nameFromFile(path, [], 'character', 1).toLowerCase()
+const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean)
+
+/**
+ * Which existing item (of the same kind) a picture is for, judged only by its file name: "marcus.png" or "Marcus_front_v2.png" is for MARCUS. The name must match whole
+ * words, so "Ann" does not match "Annabel". When several items match, the one with the longest name wins. Returns undefined when nothing matches.
+ */
+export function matchAssetByFileName(assets: ExtractedAsset[], kind: NewAssetKind, path: string): ExtractedAsset | undefined {
+  const stem = words(stemName(path))
+  if (!stem.length) return undefined
+  const joined = ` ${stem.join(' ')} `
+  const hits = assets.filter((a) => a.type === kind && words(a.name).length > 0 && joined.includes(` ${words(a.name).join(' ')} `))
+  return hits.sort((a, b) => b.name.length - a.name.length)[0]
+}
+
+/**
+ * Plans where each picture goes. A picture whose file name matches an item already in the project (a character from the script, say) is attached to that item, so the
+ * story and the picture are about the same person. Any other picture becomes a new item named from its file. An item that already has its own approved picture in this
+ * slot is never given a second one here: that picture is returned as skipped and nothing is replaced.
+ */
+export function planImageAssets(assets: ExtractedAsset[], kind: NewAssetKind, paths: string[], sceneId: string, hasApprovedInSlot: (assetId: string) => boolean, now = Date.now()): { assets: ExtractedAsset[]; targets: ImageTarget[]; skipped: Array<{ path: string; asset: ExtractedAsset }> } {
+  let list = assets
+  const targets: ImageTarget[] = []
+  const skipped: Array<{ path: string; asset: ExtractedAsset }> = []
+  const usedMatches = new Set<string>()
+  paths.forEach((path, index) => {
+    const match = matchAssetByFileName(list, kind, path)
+    if (match) {
+      if (hasApprovedInSlot(match.id) || usedMatches.has(match.id)) { skipped.push({ path, asset: match }); return }
+      usedMatches.add(match.id)
+      targets.push({ path, index, asset: match, matched: true })
+      return
+    }
+    const name = nameFromFile(path, list.map((a) => a.name), kind, index + 1)
+    const result = addProductionAsset(list, kind, name, sceneId, now + index)
+    if (result.added && result.asset) { list = result.assets; targets.push({ path, index, asset: result.asset, matched: false }) }
+  })
+  return { assets: list, targets, skipped }
+}

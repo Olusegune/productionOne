@@ -14,6 +14,7 @@ mod voice_cloud;
 mod suno;
 mod sheet_export;
 use std::{fs, path::PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{Emitter, Manager};
 use serde_json::{json, Value};
 use serde::{Deserialize, Serialize};
@@ -444,16 +445,75 @@ fn write_production_package(output_path: &std::path::Path, input: &ProductionPac
     Ok(())
 }
 
+/// Puts a Production One shortcut on the desktop (Windows). It points at the program that is running now, so it works for the installed app and for the portable
+/// one. An existing shortcut of that name is left alone. Paths go to PowerShell through the environment, never spliced into the command.
+#[tauri::command]
+fn create_desktop_shortcut(app: tauri::AppHandle) -> Result<String, String> {
+    #[cfg(windows)]
+    {
+        let desktop = app.path().desktop_dir().map_err(|e| format!("The desktop folder could not be found: {e}"))?;
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        let link = desktop.join("Production One.lnk");
+        if link.exists() { return Ok(format!("There is already a Production One shortcut on your desktop ({}).", link.display())); }
+        let script = "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:PO_LINK);$s.TargetPath=$env:PO_EXE;$s.WorkingDirectory=$env:PO_DIR;$s.IconLocation=$env:PO_EXE+',0';$s.Description='Production One';$s.Save()";
+        let status = std::process::Command::new("powershell").args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script])
+            .env("PO_LINK", &link).env("PO_EXE", &exe).env("PO_DIR", exe.parent().unwrap_or(std::path::Path::new(".")))
+            .creation_flags_hidden().status().map_err(|e| format!("Could not run PowerShell: {e}"))?;
+        if !status.success() || !link.exists() { return Err("The shortcut could not be created. You can make one yourself: right-click ProductionOne.exe, then Send to, then Desktop (create shortcut).".into()); }
+        Ok(format!("Added a Production One shortcut to your desktop ({}).", link.display()))
+    }
+    #[cfg(not(windows))]
+    { let _ = app; Err("On this system, drag Production One from Applications to the Dock, or to the desktop while holding Option and Command to make an alias.".into()) }
+}
+
+#[cfg(windows)]
+trait HiddenWindow { fn creation_flags_hidden(&mut self) -> &mut Self; }
+#[cfg(windows)]
+impl HiddenWindow for std::process::Command {
+    fn creation_flags_hidden(&mut self) -> &mut Self { use std::os::windows::process::CommandExt; self.creation_flags(0x08000000) }
+}
+
 /// Called by the UI once it has mounted: closes the splash window and shows the main window.
 #[tauri::command]
 fn app_ready(app: tauri::AppHandle, started: tauri::State<StartedAt>) {
     // The splash stays up for a fixed minimum so the brand is actually seen, then the main window appears. Nothing here pretends to load anything.
+    // The person can skip it at any time (the x on the splash, or Esc), or open the guide straight away (Help on the splash).
+    MAIN_READY.store(true, Ordering::SeqCst);
     let wait = SPLASH_MIN.saturating_sub(started.0.elapsed());
     std::thread::spawn(move || {
-        std::thread::sleep(wait);
-        if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
-        if let Some(main) = app.get_webview_window("main") { let _ = main.show(); let _ = main.set_focus(); }
+        let step = std::time::Duration::from_millis(60);
+        let mut waited = std::time::Duration::ZERO;
+        while waited < wait && !SKIP_SPLASH.load(Ordering::SeqCst) { std::thread::sleep(step); waited += step; }
+        show_main(&app);
     });
+}
+
+static MAIN_READY: AtomicBool = AtomicBool::new(false);
+static SKIP_SPLASH: AtomicBool = AtomicBool::new(false);
+static HELP_WANTED: AtomicBool = AtomicBool::new(false);
+
+/// Closes the splash and shows the main window. If the person asked for Help on the splash, the guide is opened once the window is up.
+fn show_main(app: &tauri::AppHandle) {
+    if let Some(splash) = app.get_webview_window("splash") { let _ = splash.close(); }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+        if HELP_WANTED.swap(false, Ordering::SeqCst) { let _ = app.emit("menu-action", "help-docs"); }
+    }
+}
+
+/// The x on the splash: skip it. If the app is not ready yet, the main window appears as soon as it is.
+#[tauri::command]
+fn splash_dismiss(app: tauri::AppHandle) {
+    SKIP_SPLASH.store(true, Ordering::SeqCst);
+    if MAIN_READY.load(Ordering::SeqCst) { show_main(&app); }
+}
+
+/// Help on the splash: skip it and open the guide.
+#[tauri::command]
+fn splash_help(app: tauri::AppHandle) {
+    HELP_WANTED.store(true, Ordering::SeqCst);
+    splash_dismiss(app);
 }
 
 const SPLASH_MIN: std::time::Duration = std::time::Duration::from_millis(2600);
@@ -499,7 +559,7 @@ pub fn run() {
                 desktop::handle_close_request(window, api);
             }
         })
-        .invoke_handler(tauri::generate_handler![ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::forget_recent_project, desktop::clear_recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, assistant::pick_attachments, assistant::read_attachments, assistant::assistant_complete, agent::agent_enable, agent::agent_status, agent::agent_reply, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::missing_files, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::elevenlabs_models, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, suno::make_music, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::read_audio_clip, providers::qa_image, providers::backdrop_colour, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, backup_project, sheet_export::export_contact_sheet, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
+        .invoke_handler(tauri::generate_handler![splash_dismiss, splash_help, create_desktop_shortcut, ledger_append, desktop::open_project_dialog, desktop::open_project_path, desktop::save_project_dialog, desktop::save_project_path, desktop::recent_projects, desktop::forget_recent_project, desktop::clear_recent_projects, desktop::set_dirty, desktop::quit_app, desktop::save_text_dialog, providers::generate_image, local::local_detect, script_file::pick_script_file, script_file::read_script_path, cleanrender::clean_analyze, cleanrender::clean_preview, cleanrender::clean_save, assistant::pick_attachments, assistant::read_attachments, assistant::assistant_complete, agent::agent_enable, agent::agent_status, agent::agent_reply, comfy_install::comfy_install_plan, comfy_install::comfy_install, comfy_install::comfy_start, comfy_install::comfy_model_plan, comfy_install::comfy_download_models, local::local_config_get, local::local_config_set, local::local_llm, local::comfy_templates, local::comfy_custom_workflows, local::comfy_add_workflow, local::pick_workflow_file, local::comfy_generate_image, local::comfy_generate_video, providers::pick_image_files, providers::import_images, providers::missing_files, providers::generate_video, voice::local_voices, voice::speak_local, voice::speak_http, voice_cloud::elevenlabs_voices, voice_cloud::elevenlabs_models, voice_cloud::speak_elevenlabs, voice_cloud::sound_elevenlabs, voice_cloud::design_voice, voice_cloud::save_designed_voice, voice_cloud::voicekiller_voices, voice_cloud::speak_voicekiller, suno::make_music, providers::kie_models, providers::discover_models, providers::model_catalog, providers::image_preview, providers::read_audio_clip, providers::qa_image, providers::backdrop_colour, desktop::set_window_title, launch_file, load_project, save_project, load_studio, save_studio, save_prompt_package, backup_project, sheet_export::export_contact_sheet, credential_status, save_credential, delete_credential, kie_create_task, kie_query_task, openai_generate_image, inspect_image, label_image, import_labeled_asset, export_prompt_archive, export_production_package, app_ready])
         .run(tauri::generate_context!())
         .expect("failed to run Production One");
 }

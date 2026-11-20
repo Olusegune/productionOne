@@ -16,7 +16,7 @@ describe('the version is the same everywhere it is written', () => {
   })
   it('matches the production-guy entry in Cargo.lock and the splash screen', () => {
     expect(new RegExp(`name = "production-guy"\r?\nversion = "${version.replace(/\./g, '\.')}"`).test(read('src-tauri/Cargo.lock'))).toBe(true)
-    expect(read('public/splash.html')).toContain(`VERSION <b>${version}</b>`)
+    expect(read('public/splash.html')).toContain(`Version <b>${version}</b>`)
   })
   it('has a changelog entry and release notes for it', () => {
     expect(read('CHANGELOG.md')).toMatch(new RegExp(`^## ${version.replace(/\./g, '\.')} `, 'm'))

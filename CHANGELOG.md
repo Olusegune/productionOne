@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased (0.53.0): a real guide, a sleeker look, a better splash, and your pictures match your script
+- **A full in-app guide** (Help, Documentation, or F1): 14 chapters with a walkthrough of every screen, steps that name the real buttons, notes on cost and care, 14 screenshots taken from the running app, a search box, next and previous, and "Open this screen". It replaces the one-screen Documentation dialog. About now shows the real version (it said 0.14.0).
+- **A new default look.** Studio is now the default: cool graphite, one blue accent, and one sans (Geist, with Geist Mono for numbers) instead of the warm gold and cream with a serif. Softer corners, one clear focus ring, calmer buttons, light theme updated to match. The warm Cinematic look is still a choice under Appearance. Fraunces and Space Grotesk are no longer bundled.
+- **The Assistant's plan panel** no longer runs off the right edge at 1440 px, and its Quick/Standard buttons are readable.
+- **A new splash screen**: the bundled Geist font, the real app icon, an x to skip it (also Esc), a Help button that opens the guide, and the real version number.
+- **Desktop shortcut.** The installer now adds a desktop shortcut (so you can pin Production One), and **Help, Add Production One to the Desktop** makes one for the portable program.
+- **Your pictures now match your script.** A picture whose file name matches a character, prop, place or costume already in the project (marcus.png for MARCUS from your script) is attached to it as the approved reference instead of making a duplicate (Marcus 2) that the storyboard would never use. An item that already has an approved picture is never overwritten.
+- Housekeeping: 48 merged feature branches deleted.
+
 ## 0.52.0 (2026-11-20): shape, camera and light, review, looks
 Optional design tools, in six parts. Nothing changes in a project until you use it; older projects open and render exactly as before (golden tests). Docs: `docs/design/`, `docs/USER_GUIDE_DESIGN_TOOLS.md`, `docs/MIGRATION_NOTES_0.52.md`, `docs/PROVIDER_LIMITATIONS.md`, `docs/QA_REPORT_0.52.0.md`.
 - **Shape and proportions.** Target proportions per character (17 documented controls, eight starter profiles, Stylization, per-control override, reset, undo and redo, warnings that never block, "intentional" exceptions) with a deterministic schematic preview. Moving a slider makes no provider call; "Generate preview" is a separate, explicit request.

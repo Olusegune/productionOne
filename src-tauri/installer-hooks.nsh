@@ -5,11 +5,15 @@
   WriteRegStr SHCTX "Software\Classes\Production Guy Project\DefaultIcon" "" "$INSTDIR\project-file.ico"
   WriteRegStr SHCTX "Software\Classes\pone\DefaultIcon" "" "$INSTDIR\project-file.ico"
   WriteRegStr SHCTX "Software\Classes\pguy\DefaultIcon" "" "$INSTDIR\project-file.ico"
+  ; A desktop shortcut, so the app can be pinned to the taskbar or Start from it. An existing one is left alone.
+  IfFileExists "$DESKTOP\Production One.lnk" +2 0
+    CreateShortCut "$DESKTOP\Production One.lnk" "$INSTDIR\ProductionOne.exe" "" "$INSTDIR\ProductionOne.exe" 0
   System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend
 
 ; Remove the extra document-icon keys the install hook wrote, so uninstalling leaves nothing behind.
 !macro NSIS_HOOK_POSTUNINSTALL
+  Delete "$DESKTOP\Production One.lnk"
   DeleteRegKey SHCTX "Software\Classes\pone"
   DeleteRegKey SHCTX "Software\Classes\pguy"
   DeleteRegKey SHCTX "Software\Classes\Production Guy Project"

@@ -21,11 +21,11 @@ body { min-width: 1100px; }
 .po-steps li button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 4px; color: #9aa5ae; }
 .po-steps li button:hover { background: #151a1f; color: var(--ivory); }
 .po-steps li button:focus-visible { outline: 2px solid var(--blue); }
-.po-step-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #3a444d; display: inline-grid; place-items: center; color: #15120d; }
+.po-step-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #3a444d; display: inline-grid; place-items: center; color: #0d1015; }
 .po-steps .done { color: #a9b3bb; }
 .po-steps .done .po-step-dot { background: var(--gold); border-color: var(--gold); }
 .po-steps .active button { color: var(--gold); }
-.po-steps .active .po-step-dot { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(209, 180, 123, .18); }
+.po-steps .active .po-step-dot { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(126, 150, 206, .18); }
 .po-hint { margin-left: auto; color: #9aa5ae; font-size: 12px; max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Launcher */
@@ -122,5 +122,5 @@ body { min-width: 1100px; }
 .character-bible-tabs .bible-state{font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:.04em}
 .character-bible-tabs .state-approved .bible-state{color:var(--ok,#6fcf97);opacity:1}
 .character-bible-tabs .state-blocked{opacity:.65}
-.character-bible-tabs button:focus-visible{outline:2px solid var(--gold,#d4a84b);outline-offset:2px}
+.character-bible-tabs button:focus-visible{outline:2px solid var(--gold,#5076cf);outline-offset:2px}
 .character-bible-next{display:flex;flex-wrap:wrap;gap:10px;align-items:center}

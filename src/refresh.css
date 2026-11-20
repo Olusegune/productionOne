@@ -14,7 +14,7 @@ h1 { font-weight: 650; }
 p, .helper, li { text-wrap: pretty; }
 .helper { max-width: 72ch; }
 small { line-height: 1.45; }
-::selection { background: rgba(214, 173, 89, .35); }
+::selection { background: rgba(94, 128, 209, .35); }
 
 /* Focus is always visible: a ring plus a soft halo that works on dark and gold surfaces */
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; box-shadow: 0 0 0 5px rgba(106, 166, 207, .22); }

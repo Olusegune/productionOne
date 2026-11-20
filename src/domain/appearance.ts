@@ -4,15 +4,15 @@ export type Look = 'studio' | 'cinematic' | 'futurist'
 export interface LookInfo { id: Look; name: string; tagline: string; description: string; heading: string }
 
 export const looks: ReadonlyArray<LookInfo> = [
-  { id: 'studio', name: 'Studio', tagline: 'Calm graphite and champagne', description: 'The earlier look: quiet surfaces, one gold accent, geometric headings.', heading: 'Space Grotesk' },
-  { id: 'cinematic', name: 'Cinematic', tagline: 'Warm, serif titles, your colours', description: 'The default: warmer surfaces and serif page titles. The accent is taken from your visual style\'s palette.', heading: 'Fraunces' },
+  { id: 'studio', name: 'Studio', tagline: 'Cool graphite, one blue accent', description: 'The default: quiet graphite surfaces, a single blue accent and one clean sans for everything.', heading: 'Geist' },
+  { id: 'cinematic', name: 'Cinematic', tagline: 'Warm surfaces, your colours', description: "Warmer surfaces, with the accent taken from your project's style palette.", heading: 'Geist' },
   { id: 'futurist', name: 'Futurist', tagline: 'Sharp, cool, glowing', description: 'Near-black blue surfaces, a cyan accent with a soft glow, tighter corners and a sharper body font.', heading: 'Space Grotesk' },
 ]
 
 export const isLook = (value: unknown): value is Look => looks.some((l) => l.id === value)
 
-/** Cinematic is the default. The key is `po.look.v2`: the first version stored its default on every start, so it cannot tell a choice from a default; only a choice is stored now. */
-export const DEFAULT_LOOK: Look = 'cinematic'
+/** Studio is the default (a cool graphite surface with one blue accent and one sans, since 0.53; the warm Cinematic look is a choice). The key is `po.look.v2`: the first version stored its default on every start, so it cannot tell a choice from a default; only a choice is stored now. */
+export const DEFAULT_LOOK: Look = 'studio'
 const KEY = 'po.look.v2'
 export function savedLook(): Look {
   try { const v = localStorage.getItem(KEY); return isLook(v) ? v : DEFAULT_LOOK } catch { return DEFAULT_LOOK }

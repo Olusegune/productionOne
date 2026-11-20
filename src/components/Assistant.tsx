@@ -229,7 +229,7 @@ export function AssistantView(props: {
   const chooseKind = async (msgId: number, kind: NewAssetKind, paths: string[]) => {
     setMessages((list) => { const next = list.map((m) => (m.id === msgId ? { ...m, choose: null } : m)); kept.messages = next; return next; });
     const n = await props.addImages(kind, paths);
-    say("assistant", n ? `Added ${n} item${n === 1 ? "" : "s"}, each with your picture as the approved reference. They are in the plan now.` : "I could not add those pictures.");
+    say("assistant", n ? `Added ${n} item${n === 1 ? "" : "s"}, each with your picture as the approved reference. A picture whose file name matches someone already in the plan (from your script, for example) is attached to them instead of making a duplicate. They are in the plan now.` : "I could not add those pictures.");
   };
 
   const jobs = queue.jobs;

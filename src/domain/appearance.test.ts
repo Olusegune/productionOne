@@ -12,16 +12,16 @@ describe('looks', () => {
     expect(isLook(undefined)).toBe(false)
   })
   it('is Cinematic until a look is chosen, remembers a choice, and falls back to Cinematic for anything else', () => {
-    expect(DEFAULT_LOOK).toBe('cinematic')
-    expect(savedLook()).toBe('cinematic')
+    expect(DEFAULT_LOOK).toBe('studio')
+    expect(savedLook()).toBe('studio')
     storeLook('futurist')
     expect(savedLook()).toBe('futurist')
     localStorage.setItem('po.look.v2', 'garbage')
-    expect(savedLook()).toBe('cinematic')
+    expect(savedLook()).toBe('studio')
   })
   it('ignores a value stored by the first version, which could not tell a choice from a default', () => {
     localStorage.setItem('po.look', 'studio')
-    expect(savedLook()).toBe('cinematic')
+    expect(savedLook()).toBe('studio')
   })
 })
 
