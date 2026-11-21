@@ -38,7 +38,7 @@ export interface ImageJob {
   /** Set when the picture's file went missing: where it was and what you had decided, so finding the file again can put both back. */
   lost?: { path: string; approved: boolean; rejected: boolean }
   /** 'supplied' means the person brought this image themselves; it is stored byte for byte and approved on arrival. */
-  source?: 'generated' | 'supplied' | 'cleaned'
+  source?: 'generated' | 'supplied' | 'cleaned' | 'enhanced'
   createdAt: number
   updatedAt: number
   /** Durable submission provenance. Optional for legacy .pone/.pguy files. */
@@ -222,6 +222,17 @@ export function addCleaned(state: QueueState, from: ImageJob, file: { path: stri
   const same = (j: ImageJob) => j.assetId === from.assetId && j.variant === from.variant && j.sheetType === from.sheetType && j.viewKey === from.viewKey
   const revision = state.jobs.filter(same).reduce((n, j) => Math.max(n, j.revision), 0) + 1
   const job: ImageJob = { ...from, id: `IMG-${from.assetId}-${now.toString(36)}-${state.jobs.length + 1}`, key: [from.assetId, from.variant, from.sheetType, from.viewKey, revision].join('|'), revision, outputName: `${from.outputName}_clean`, outputPath: file.path, width: file.width, height: file.height, status: 'completed', attempts: 0, qaNotes: [], error: undefined, source: 'cleaned', approved: from.approved, rejected: false, createdAt: now, updatedAt: now }
+  return { state: { ...state, jobs: [...state.jobs, job] }, job }
+}
+
+/**
+ * A picture enlarged and sharpened by Topaz, saved as a new revision of the same view. The picture it was made from stays in the history. Unlike a clean-up, an enhanced
+ * picture is NOT approved automatically: it is a new picture, so it waits for your decision.
+ */
+export function addEnhanced(state: QueueState, from: ImageJob, file: { path: string; width: number; height: number }, now = Date.now()): { state: QueueState; job: ImageJob } {
+  const same = (j: ImageJob) => j.assetId === from.assetId && j.variant === from.variant && j.sheetType === from.sheetType && j.viewKey === from.viewKey
+  const revision = state.jobs.filter(same).reduce((n, j) => Math.max(n, j.revision), 0) + 1
+  const job: ImageJob = { ...from, id: `IMG-${from.assetId}-${now.toString(36)}-${state.jobs.length + 1}`, key: [from.assetId, from.variant, from.sheetType, from.viewKey, revision].join('|'), revision, outputName: `${from.outputName}_topaz`, outputPath: file.path, width: file.width, height: file.height, status: 'needs-review', attempts: 0, qaNotes: [], error: undefined, source: 'enhanced', approved: false, rejected: false, createdAt: now, updatedAt: now }
   return { state: { ...state, jobs: [...state.jobs, job] }, job }
 }
 

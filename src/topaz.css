@@ -1,0 +1,21 @@
+.tz-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: rgba(5, 8, 14, .62); backdrop-filter: blur(3px); }
+.tz-dialog { width: min(560px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; display: grid; gap: 12px; padding: 20px; border-radius: var(--radius); background: var(--panel-1); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); box-shadow: var(--lift-hi); }
+.tz-dialog header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.tz-dialog header h3 { margin: 2px 0 0; font: 600 20px/1.2 var(--display); letter-spacing: -.02em; }
+.tz-dialog .helper { margin: 0; }
+.tz-field { display: grid; gap: 6px; font-size: 14px; }
+.tz-field > span { color: var(--text-2); }
+.tz-field select { height: 40px; }
+.tz-field .seg { display: inline-flex; width: fit-content; }
+.tz-field .seg button { min-width: 64px; }
+.tz-key { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, #f0c36a 14%, transparent); border: 1px solid color-mix(in srgb, #f0c36a 40%, transparent); font-size: 13.5px; }
+.tz-key span { flex: 1; min-width: 200px; }
+.tz-cost { margin: 0; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); font-size: 13.5px; line-height: 1.5; }
+.tz-cost.bad { background: color-mix(in srgb, #e07b6a 14%, transparent); }
+.tz-state { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; line-height: 1.5; background: color-mix(in srgb, var(--blue) 12%, transparent); }
+.tz-state.done { background: color-mix(in srgb, #6fcf97 14%, transparent); }
+.tz-state.error { background: color-mix(in srgb, #e07b6a 16%, transparent); }
+.tz-dialog footer { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.tz-dialog footer button { display: inline-flex; align-items: center; gap: 8px; height: 40px; }
+.tz-dialog, .rl-dialog { align-content: start; }
+.tz-dialog > header, .rl-dialog > header { height: auto; min-height: 0; padding: 0; border: 0; margin: 0; }

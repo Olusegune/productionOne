@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.64.0 (2026-11-21): Topaz Labs in the app
+- **Topaz Labs in the app.** On a picture in Review, "Enhance with Topaz…" enlarges and sharpens it (2x or 4x) into a new, larger picture with your own Topaz API key (add it under Providers; create it at topazlabs.com, My account, API keys). Only Topaz's non-generative Enhance models are offered (Standard, High fidelity, Low resolution, CGI and illustration, Text), so faces and costume are not redrawn. The window shows the new size and a likely cost before anything is sent, refuses a result that is too large, and shows your Topaz balance. The result is a new revision that waits for your decision; the original is kept. The key is used only by the app and the download link never receives it.
+- Not tested against the live Topaz service (it needs your key); the request and response handling follow Topaz's published API reference and are covered by tests.
+
 ## 0.63.1 (2026-11-21): the Sheets tab shows the proportions, and the other views are checked
 - **A character's Sheets tab now says whether its proportions are applied** (and how tall), and warns when approved pictures were made with earlier proportions, with a link to the proportions.
 - **Checked live:** after a new front view is approved, the side and rear views keep the proportions (docs/LIVE_TEST_PROPORTIONS_2026-11-21.md). The working order is: apply, make a new front view, approve it, then the other views.

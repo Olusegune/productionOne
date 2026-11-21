@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, MessageSquareWarning, Undo2, X } from "lucide-react";
 import { RealImage } from "../components/RealImage";
-import { approve, reconsider, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
+import { addEnhanced, approve, reconsider, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
+import { TopazEnhance } from "../components/TopazEnhance";
 import type { AnalysisResult, ShotRecord } from "../domain/productionStudio";
 import type { StyleBible } from "../domain/visualDevelopment";
 import type { ProportionProfile } from "../domain/proportions";
@@ -33,6 +34,8 @@ export function ReviewView(props: {
   openAsset: (assetId: string, sheetType: string) => void;
   openDesign: () => void;
   notify: (message: string) => void;
+  /** Opens Provider Settings (on the Topaz key when asked from the Topaz window). */
+  openTopazKey?: () => void;
   shots?: ShotRecord[];
   style?: StyleBible;
   reviews?: Reviews;
@@ -57,6 +60,8 @@ export function ReviewView(props: {
   const reference = job ? approvedReference(queue, job) : null;
   const others = useMemo(() => (job ? otherRevisions(queue, job) : []), [queue, job]);
   const [mode, setMode] = useState<CompareMode>("reference");
+  const [topaz, setTopaz] = useState(false);
+  const desktop = "__TAURI_INTERNALS__" in window;
   const [takeId, setTakeId] = useState<string | null>(null);
   const take = others.find((j) => j.id === takeId) ?? (job ? defaultCompareTarget(queue, job) : null);
   const comparing = mode === "revisions" && !!take;
@@ -207,6 +212,13 @@ export function ReviewView(props: {
               <button className="secondary" disabled={job.rejected} onClick={() => doReject(job, false)}><X size={15} aria-hidden="true" /> Reject</button>
               {(job.approved || job.rejected) && <button className="tertiary" onClick={() => doUndo(job)} title="Takes back this decision. The picture goes back to waiting; nothing is generated or deleted."><Undo2 size={15} aria-hidden="true" /> {job.approved ? "Take back approval" : "Not decided"}</button>}
             </div>
+            {desktop && job.outputPath && (
+              <>
+                <button type="button" className="secondary rv-topaz" onClick={() => setTopaz(true)} title="Enlarges and sharpens this picture with Topaz Labs into a new, larger one. Uses your Topaz credits only when you press its button.">Enhance with Topaz…</button>
+                {topaz && <TopazEnhance path={job.outputPath} width={job.width} height={job.height} name={`${assetName(job.assetId)} · ${job.label}`} onClose={() => setTopaz(false)} onKey={() => { setTopaz(false); props.openTopazKey?.(); }}
+                  onDone={(file) => { const out = addEnhanced(queue, job, file); setQueue(() => out.state); setFilter("waiting"); setPickedId(out.job.id); notify(`${assetName(job.assetId)} · ${job.label}: an enhanced picture (${file.width} by ${file.height}) was added as revision ${out.job.revision}. It waits for your decision; the original is untouched.`); }} />}
+              </>
+            )}
             <p className="rv-hint">Request changes opens the sheet so you can adjust the notes. Generating again is a separate step and never happens from here.</p>
 
             <details className="rv-more"><summary>Generation details</summary>
