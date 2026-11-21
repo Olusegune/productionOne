@@ -100,7 +100,7 @@ import { useLocalAi } from "./data/localAi";
 import { anyLocal } from "./domain/localAi";
 import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
-import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
+import { CommandPalette, QueueDock, TopBar, labelOf, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { primaryViewKeys } from "./domain/sheetSpecs";
 import { autoCheckOn, checkForUpdate, dueForAutoCheck, markChecked, openReleasePage, setAutoCheck, skipVersion, updateSentence, worthShowing, type UpdateInfo } from "./data/updateCheck";
@@ -1315,7 +1315,7 @@ export default function App() {
   };
   const paletteCommands: PaletteCommand[] = [
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
-    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
+    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"].map((name) => ({ id: `go-${name}`, label: `Go to ${labelOf(name)}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
     { id: "appearance", label: "Appearance: choose a look", hint: "View", run: () => setAppearanceOpen(true) },
     ...looks.map((l) => ({ id: `look-${l.id}`, label: `Appearance: ${l.name}`, hint: l.tagline, run: () => setLook(l.id) })),
@@ -1371,6 +1371,14 @@ export default function App() {
       if (scan === null) return;
       // Nothing is linked yet: the person reviews the matches first.
       setRelinkPlan({ folder: scan.folder, found: Object.fromEntries(scan.found.map((h) => [h.name, h.path])) });
+    } catch (e) { setNotice(String(e)); }
+  };
+  /** One missing picture, one file the person chooses for it (when its name did not match). */
+  const locatePicture = async (stem: string) => {
+    try {
+      const { invoke: call } = await import("@tauri-apps/api/core");
+      const hit = await call<{ name: string; path: string } | null>("locate_picture", { name: stem });
+      if (hit) setRelinkPlan((cur) => (cur ? { ...cur, found: { ...cur.found, [hit.name]: hit.path } } : cur));
     } catch (e) { setNotice(String(e)); }
   };
   const confirmRelink = async (jobIds: string[]) => {
@@ -1537,7 +1545,7 @@ export default function App() {
           </div>
         )}
         {relinkPlan && (
-          <RelinkDialog folder={relinkPlan.folder} rows={planRelink(queue, relinkPlan.found, (id) => analysis.assets.find((a) => a.id === id)?.name ?? id)} onConfirm={confirmRelink} onCancel={() => setRelinkPlan(null)} onAnother={() => { setRelinkPlan(null); void findMissingPictures(); }} />
+          <RelinkDialog onLocate={locatePicture} folder={relinkPlan.folder} rows={planRelink(queue, relinkPlan.found, (id) => analysis.assets.find((a) => a.id === id)?.name ?? id)} onConfirm={confirmRelink} onCancel={() => setRelinkPlan(null)} onAnother={() => { setRelinkPlan(null); void findMissingPictures(); }} />
         )}
         {update && (
           <div className="notice update-bar" role="status">

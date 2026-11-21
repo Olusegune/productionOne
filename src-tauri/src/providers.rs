@@ -238,6 +238,21 @@ pub fn adopt_image(source: &Path, dir: &Path) -> Result<PathBuf, String> {
     Ok(target)
 }
 
+/// "Locate file": the person chooses one picture for one missing picture whose name did not match. The file comes from the dialog and is remembered under `name`, so
+/// it can be brought in with the others by `adopt_scanned`. Returns None if they cancel.
+#[tauri::command]
+pub async fn locate_picture(app: tauri::AppHandle, memory: tauri::State<'_, ScanMemory>, name: String) -> Result<Option<FoundPicture>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let key = name.trim().to_lowercase();
+    if key.is_empty() || key.len() > 200 { return Err("That picture has no usable name".into()); }
+    let Some(file) = app.dialog().file().set_title("Choose the picture for this one").add_filter("Images", &PICTURE_EXTENSIONS).blocking_pick_file() else { return Ok(None) };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    let ext_ok = path.extension().and_then(|e| e.to_str()).map(|e| PICTURE_EXTENSIONS.contains(&e.to_lowercase().as_str())).unwrap_or(false);
+    if !ext_ok || !path.is_file() { return Err("Choose a PNG, JPEG or WebP picture".into()); }
+    if let Ok(mut held) = memory.0.lock() { held.insert(key.clone(), path.clone()); }
+    Ok(Some(FoundPicture { name: key, path: path.to_string_lossy().into_owned() }))
+}
+
 /// Brings the pictures the last scan found (by name) into the project's pictures folder, so the app can show and use them like any other picture. Only names the scan returned
 /// are accepted; the page cannot ask for any other file.
 #[tauri::command]
