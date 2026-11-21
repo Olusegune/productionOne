@@ -3,6 +3,7 @@ import { History, X } from "lucide-react";
 import { recentName } from "../appHelpers";
 import { Eyebrow } from "../components/Eyebrow";
 import { FirstRun } from "../components/FirstRun";
+import { StartChoices } from "../components/StartChoices";
 import { GoldenPath } from "../components/GoldenPath";
 import { ProjectHero } from "../components/ProjectHero";
 import { QuickStart, type FirstPicture } from "../components/QuickStart";
@@ -42,6 +43,7 @@ export function ProjectsView(props: {
   return (
     <section className="po-launch">
       <ProjectHero title={title} filePath={filePath} style={props.style} golden={golden} counts={{ scenes: analysis.scenes.length, characters: count("character"), props: count("prop"), sets: count("set", "environment") }} onNew={props.onNew} onOpen={props.onOpen} onSave={props.onSave} onContinue={props.onNext} onWorkspace={props.onWorkspace} />
+      {!golden.hasScript && analysis.assets.length === 0 && <StartChoices onAssistant={() => props.onWorkspace("Assistant")} onScript={() => props.onWorkspace("Story")} onPictures={() => props.onWorkspace("Design")} />}
       <section className="panel po-format" aria-label="Format">
         <div className="po-format-head"><h3>Format</h3><small>Pick the shape first: it sets your storyboard frames and your video.</small></div>
         <FormatPicker value={props.format} onChange={props.onFormat} />

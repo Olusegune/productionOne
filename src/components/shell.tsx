@@ -32,6 +32,9 @@ export function TopBar(props: {
   onAppearance?: () => void;
 }) {
   const { steps, next, progress } = useMemo(() => goldenPath(props.golden), [props.golden]);
+  // The Assistant is the easiest way in, so it says "new" until it has been opened once.
+  const [assistantSeen, setAssistantSeen] = useState(() => { try { return localStorage.getItem("po.assistant.seen") === "1"; } catch { return true; } });
+  useEffect(() => { if (props.workspace === "Assistant" && !assistantSeen) { try { localStorage.setItem("po.assistant.seen", "1"); } catch { /* private window */ } setAssistantSeen(true); } }, [props.workspace, assistantSeen]);
   // Quietly acknowledge a step when it becomes done (not on first load).
   const doneIds = steps.filter((s) => s.state === "done").map((s) => s.id);
   const seen = useRef<string[] | null>(null);
@@ -65,6 +68,7 @@ export function TopBar(props: {
             {(() => { const Icon = workspaceIcons[name]; return <Icon size={18} aria-hidden="true" />; })()}
             <span>{labelOf(name)}</span>
             {name === "Direct" && <em>optional</em>}
+            {name === "Assistant" && !assistantSeen && props.workspace !== "Assistant" && <em className="po-badge new">new</em>}
             {name === "Review" && !!props.reviewCount && <em className="po-badge" aria-label={`${props.reviewCount} waiting`}>{props.reviewCount}</em>}
           </button>
         ))}

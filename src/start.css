@@ -1,0 +1,14 @@
+.start-choices { display: grid; gap: 14px; padding: 22px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--yellow, #f2c14e) 8%, var(--panel-1)), var(--panel-1) 60%); box-shadow: var(--lift); }
+.start-choices h3 { margin: 4px 0 2px; font: 600 22px/1.2 var(--display); letter-spacing: -.02em; }
+.start-choices .helper { margin: 0; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.sc-card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 8px; align-content: start; padding: 18px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 11%, transparent); background: color-mix(in srgb, var(--text) 3.5%, transparent); transition: transform .16s var(--ease-out, ease), border-color .16s, background .16s, box-shadow .16s; }
+.sc-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--yellow, #f2c14e) 60%, transparent); box-shadow: var(--lift-hi); }
+.sc-card:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.sc-card b { font: 600 17px var(--display); }
+.sc-card span:not(.sc-icon) { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.sc-card em { justify-self: start; padding: 3px 10px; border-radius: 999px; font: 600 12px var(--ui); font-style: normal; background: var(--yellow, #f2c14e); color: var(--yellow-ink, #1b1405); }
+.sc-card.best { border-color: color-mix(in srgb, var(--yellow, #f2c14e) 55%, transparent); background: color-mix(in srgb, var(--yellow, #f2c14e) 10%, transparent); }
+.sc-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--blue); }
+.sc-card.best .sc-icon { background: var(--yellow, #f2c14e); color: var(--yellow-ink, #1b1405); }
+@media (prefers-reduced-motion: reduce) { .sc-card { transition: none; } .sc-card:hover { transform: none; } }
