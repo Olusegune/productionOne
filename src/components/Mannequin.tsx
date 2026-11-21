@@ -14,14 +14,19 @@ const CX_SHIFT = 20
 
 const find = (art: Schematic, id: string): SchematicShape | undefined => art.shapes.find((s) => s.id === id)
 
+/** Marks drawn on the face: thin, dark, and not part of the body fill. */
+const faceMark = { stroke: 'rgba(13, 16, 23, .6)', strokeLinecap: 'round' as const }
+
 function Figure({ art, ghost }: { art: Schematic; ghost?: boolean }) {
-  const round = (id: string) => (id === 'torso' ? 14 : id === 'hips' ? 8 : id === 'neck' ? 4 : 3)
+  const round = (s: Schematic['shapes'][number]) => s.corner ?? (s.id === 'neck' ? 4 : 3)
   return (
     <g className={ghost ? 'prop-ghost' : undefined}>
       {art.shapes.filter((s) => s.id !== 'floor').map((s) => {
         if (s.kind === 'ellipse') return <ellipse key={s.id} data-shape={ghost ? undefined : s.id} cx={s.x + (s.w ?? 0) / 2} cy={s.y + (s.h ?? 0) / 2} rx={(s.w ?? 0) / 2} ry={(s.h ?? 0) / 2} />
-        if (s.kind === 'rect') return <rect key={s.id} data-shape={ghost ? undefined : s.id} x={s.x} y={s.y} width={s.w} height={s.h} rx={round(s.id)} />
-        return <line key={s.id} data-shape={ghost ? undefined : s.id} x1={s.x} y1={s.y} x2={s.x2} y2={s.y2} />
+        if (s.kind === 'rect') return <rect key={s.id} data-shape={ghost ? undefined : s.id} x={s.x} y={s.y} width={s.w} height={s.h} rx={round(s)} />
+        if (ghost && (s.id === 'nose' || s.id === 'jaw')) return null
+        const style = s.id === 'nose' || s.id === 'jaw' ? { ...faceMark, strokeWidth: s.weight } : s.weight ? { strokeWidth: s.weight } : undefined
+        return <line key={s.id} data-shape={ghost ? undefined : s.id} x1={s.x} y1={s.y} x2={s.x2} y2={s.y2} style={style} />
       })}
     </g>
   )
@@ -82,6 +87,12 @@ export function Mannequin({ profile, annotate = false, compare = false }: Props)
         <g transform={`translate(${CX_SHIFT} 0)`}><Figure art={art} /></g>
         {annotate && torso && (
           <g className="prop-notes">
+            {Math.abs(floorY - v('heightInHeads') * unit - top) > 1 && (
+              <g className="prop-target-line" aria-label="Target total height">
+                <line x1={44} x2={WIDTH - 20} y1={floorY - v('heightInHeads') * unit} y2={floorY - v('heightInHeads') * unit} />
+                <text x={WIDTH - 20} y={floorY - v('heightInHeads') * unit - 3} textAnchor="end">Target {v('heightInHeads')} heads: the parts do not add up to it</text>
+              </g>
+            )}
             <Bracket x1={44} y1={top} x2={44} y2={floorY} />
             <text x={50} y={(top + floorY) / 2 - 4}>Total</text>
             <text x={50} y={(top + floorY) / 2 + 8}>{v('heightInHeads')} heads</text>

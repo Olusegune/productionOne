@@ -120,3 +120,8 @@
 .prop-back { display: inline-flex; align-items: center; gap: 6px; height: 36px; margin-right: 4px; }
 .prop-start-state.draft { color: #f0c36a; }
 @media (min-width: 1281px) { .prop-overlay .prop-side { grid-column: auto; grid-template-columns: 1fr; } }
+.prop-svg ellipse[data-shape^="knee"], .prop-svg ellipse[data-shape^="elbow"] { fill: #6f86e6; stroke: rgba(255,255,255,.7); stroke-width: .8; filter: none; }
+.prop-svg .prop-target-line line { stroke: #f0c36a; stroke-width: 1.2; stroke-dasharray: 5 3; }
+.prop-svg .prop-target-line text { fill: #f0c36a; font: 600 7.5px var(--ui); }
+:root[data-theme="light"] .prop-svg .prop-target-line line { stroke: #b07a00; }
+:root[data-theme="light"] .prop-svg .prop-target-line text { fill: #8a5a00; }

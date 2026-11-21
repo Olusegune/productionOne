@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyCustomPreset, controlSpecs, createProfile, setControl, setLinked, specFor, stackedOf, tabOf, toCustomPreset } from './proportions'
+import { applyCustomPreset, controlSpecs, createProfile, describe as describeProportions, schematic, setControl, setStylization, setLinked, specFor, stackedOf, tabOf, toCustomPreset } from './proportions'
 
 describe('linked proportions', () => {
   it('moving the legs moves the total height by the same amount', () => {
@@ -56,5 +56,67 @@ describe('control tabs', () => {
   it('names the height control so it is not mistaken for head size', () => {
     expect(specFor('heightInHeads').label).toBe('Total height')
     expect(specFor('heightInHeads').shown).toBe('head units')
+  })
+})
+
+describe('every control shows in the drawing', () => {
+  it('changing any control other than the target height changes the figure', () => {
+    const base = createProfile('a')
+    const before = JSON.stringify(schematic(base))
+    const dead: string[] = []
+    for (const spec of controlSpecs) {
+      if (spec.id === 'heightInHeads') continue
+      const moved = setControl(base, spec.id, spec.default === spec.max ? spec.min : spec.max)
+      if (JSON.stringify(schematic(moved)) === before) dead.push(spec.id)
+    }
+    expect(dead).toEqual([])
+  })
+  it('a larger hand is drawn longer and thicker, and takes its length from the arm', () => {
+    const small = schematic(setControl(createProfile('a'), 'handSize', 0.5))
+    const large = schematic(setControl(createProfile('a'), 'handSize', 1.2))
+    const hand = (art: ReturnType<typeof schematic>) => art.shapes.find((s) => s.id === 'hand-r')!
+    expect(((hand(large).y2 ?? 0) - hand(large).y)).toBeGreaterThan(((hand(small).y2 ?? 0) - hand(small).y))
+    expect(hand(large).weight!).toBeGreaterThan(hand(small).weight!)
+    expect(hand(large).y2).toBeCloseTo(hand(small).y2!, 1)
+  })
+  it('the rounded-to-angular control softens or sharpens the corners', () => {
+    const corner = (score: number) => schematic(setControl(createProfile('a'), 'shapeLanguage', score)).shapes.find((s) => s.id === 'torso')!.corner!
+    expect(corner(-100)).toBeGreaterThan(corner(0))
+    expect(corner(0)).toBeGreaterThan(corner(100))
+  })
+})
+
+describe('the proportions as words for a prompt', () => {
+  it('grades how far a control is from typical, and says nothing for a typical figure', () => {
+    const base = createProfile('a')
+    expect(describeProportions(base)).toBe('')
+    const long = describeProportions(setControl(base, 'legLength', 4))
+    const veryLong = describeProportions(setControl(base, 'legLength', 5.6))
+    expect(long).toMatch(/\blong legs\b/)
+    expect(long).not.toMatch(/very long legs/)
+    expect(veryLong).toMatch(/very long legs|extremely long legs/)
+  })
+  it('gives the same facts once as numbers in head units, for models that can use them', () => {
+    const text = describeProportions(setControl(createProfile('a'), 'legLength', 4.4))
+    expect(text).toMatch(/In head units \(one head = chin to crown\): [\d.]+ tall, legs 4\.4, arms 3, shoulders 2\.6 head widths wide\./)
+  })
+  it('says when the style is stylized, the legs outrun the torso, and the story height is not the usual one', () => {
+    const p = { ...setControl(setStylization(createProfile('a'), 70), 'legLength', 4.8), heightM: 1.95 }
+    const text = describeProportions(p)
+    expect(text).toMatch(/strongly stylized/)
+    expect(text).toMatch(/legs clearly longer than the torso/)
+    expect(text).toMatch(/about 1\.95 m tall in the story/)
+  })
+  it('names the face and hands, not only the body', () => {
+    const p = setControl(setControl(setControl(createProfile('a'), 'handSize', 1.2), 'noseLength', 0.38), 'jawChin', 0.5)
+    const text = describeProportions(p)
+    expect(text).toMatch(/large hands/)
+    expect(text).toMatch(/long nose/)
+    expect(text).toMatch(/pointed chin/)
+  })
+  it('keeps the prefix that the storyboard prompt strips and the whole text on one line', () => {
+    const text = describeProportions(createProfile('a', 'large-headed'))
+    expect(text.startsWith('Body and face proportions (target, keep the same in every view): ')).toBe(true)
+    expect(text).not.toMatch(/\n/)
   })
 })
