@@ -44,10 +44,19 @@ const drafts = new Map<string, History<ProportionProfile>>()
 
 const sameProfile = (a: ProportionProfile | undefined, b: ProportionProfile | undefined) => JSON.stringify(a) === JSON.stringify(b)
 
-/** A number you can type into. It commits when you leave the field or press Enter (clamped to the allowed range), and Escape puts back what was there. */
+/**
+ * A number you can type into. A value inside the allowed range takes effect as you type or use the arrows (so the figure follows); a value outside it waits until you
+ * leave the field or press Enter, and is then pulled back into range. Escape puts back what was there.
+ */
 function NumberField({ id, value, min, max, step, label, onCommit }: { id?: string; value: number; min: number; max: number; step: number; label: string; onCommit: (v: number) => void }) {
   const [text, setText] = useState(String(value))
-  useEffect(() => { setText(String(value)) }, [value])
+  // Follow the value from outside, but never rewrite what is being typed ("1." is on its way to "1.2").
+  useEffect(() => { setText((cur) => (cur.trim() !== '' && Number(cur) === value ? cur : String(value))) }, [value])
+  const live = (raw: string) => {
+    setText(raw)
+    const n = Number(raw)
+    if (raw.trim() !== '' && Number.isFinite(n) && n >= min && n <= max && n !== value) onCommit(n)
+  }
   const commitText = () => {
     const n = Number(text)
     if (text.trim() === '' || !Number.isFinite(n)) { setText(String(value)); return }
@@ -55,7 +64,7 @@ function NumberField({ id, value, min, max, step, label, onCommit }: { id?: stri
     setText(String(clamped))
     if (clamped !== value) onCommit(clamped)
   }
-  return <input id={id} className="prop-num" type="number" inputMode="decimal" aria-label={label} min={min} max={max} step={step} value={text} onChange={(e) => setText(e.target.value)} onBlur={commitText} onKeyDown={(e) => { if (e.key === 'Enter') commitText(); if (e.key === 'Escape') setText(String(value)) }} />
+  return <input id={id} className="prop-num" type="number" inputMode="decimal" aria-label={label} min={min} max={max} step={step} value={text} onChange={(e) => live(e.target.value)} onBlur={commitText} onKeyDown={(e) => { if (e.key === 'Enter') commitText(); if (e.key === 'Escape') setText(String(value)) }} />
 }
 
 function ControlRow({ spec, profile, onSet, onReset, excused }: { spec: ControlSpec; profile: ProportionProfile; onSet: (v: number) => void; onReset: () => void; excused: boolean }) {

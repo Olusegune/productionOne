@@ -91,7 +91,8 @@ describe('ProportionPanel', () => {
     expect(num('Arm length').value).toBe('4.5')
     type('Arm length', '')
     expect(num('Arm length').value).toBe('4.5')
-    fireEvent.change(num('Arm length'), { target: { value: '2' } })
+    fireEvent.change(num('Arm length'), { target: { value: '99' } })
+    expect(num('Arm length').value).toBe('99')
     fireEvent.keyDown(num('Arm length'), { key: 'Escape' })
     expect(num('Arm length').value).toBe('4.5')
   })
@@ -227,5 +228,26 @@ describe('ProportionPanel: every control does something you can see', () => {
     expect(screen.getByTestId('schematic').querySelector('.prop-target-line')).toBeNull()
     type('Total height', '9.5')
     expect(screen.getByTestId('schematic').querySelector('.prop-target-line')).not.toBeNull()
+  })
+})
+
+describe('ProportionPanel: typing and the arrows take effect right away', () => {
+  it('a value in range changes the figure as it is typed, without leaving the field', () => {
+    render(<Harness assetId="LIVE-1" initial={createProfile('LIVE-1')} />)
+    open()
+    const before = screen.getByTestId('schematic').innerHTML
+    fireEvent.change(num('Hand size'), { target: { value: '1.2' } })
+    expect(screen.getByTestId('schematic').innerHTML).not.toBe(before)
+    expect(screen.getByTestId('prop-state').textContent).toMatch(/Draft/)
+  })
+  it('a number out of range waits for you to leave the field, then comes back into range', () => {
+    render(<Harness assetId="LIVE-2" initial={createProfile('LIVE-2')} />)
+    open()
+    fireEvent.change(num('Hand size'), { target: { value: '1.2' } })
+    expect(num('Hand size').value).toBe('1.2')
+    fireEvent.change(num('Hand size'), { target: { value: '7' } })
+    expect(num('Hand size').value).toBe('7')
+    fireEvent.blur(num('Hand size'))
+    expect(num('Hand size').value).toBe('1.3')
   })
 })
