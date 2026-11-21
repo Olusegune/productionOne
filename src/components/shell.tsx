@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, BookText, ClipboardCheck, Clapperboard, FolderOpen, Command as CommandIcon, Check, PackageCheck, Palette, ChevronDown, ChevronUp, WandSparkles , MessageCircle } from "lucide-react";
+import { ArrowRight, BookText, ClipboardCheck, Clapperboard, FolderOpen, Command as CommandIcon, Check, PackageCheck, Palette, ChevronDown, ChevronUp, WandSparkles , MessageCircle, Loader2, Clock, Eye, AlertTriangle } from "lucide-react";
 import { BrandMark } from "./BrandMark";
+import { RealImage } from "./RealImage";
+import { stripItems } from "../domain/queueStrip";
 import { newlyDone } from "../domain/shortcuts";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
 import { spendGate, summarize, waitingForAnchor, type QueueState } from "../domain/generationQueue";
@@ -143,7 +145,7 @@ function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (
   );
 }
 
-export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueState; setQueue: (update: (q: QueueState) => QueueState) => void; onOpen: () => void; children?: ReactNode }) {
+export function QueueDock({ queue, setQueue, onOpen, onReview, nameOf, children }: { queue: QueueState; setQueue: (update: (q: QueueState) => QueueState) => void; onOpen: () => void; /** Opens Review (used by the pictures waiting for your decision). */ onReview?: () => void; /** What to call an asset (its name rather than its id). */ nameOf?: (assetId: string) => string; children?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const s = summarize(queue);
   const busy = s.generating + s.validating;
@@ -151,6 +153,8 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
   const capBlocked = queue.guard && waiting > 0 && !spendGate(queue).ok;
   // Views that match a front view wait until a person approves it. Say so, or a quiet queue looks stuck.
   const anchorWaiting = queue.jobs.filter((j) => j.status === "queued" && waitingForAnchor(queue, j)).length;
+  const items = stripItems(queue);
+  const name = (id: string) => (nameOf ? nameOf(id) : id);
   const line = s.total === 0 ? "Queue is empty" : `${s.queued} queued · ${busy} running · ${s.needsReview} to review · ${s.completed} done${s.failed ? ` · ${s.failed} failed` : ""}${queue.paused ? " · paused" : ""}`;
   return (
     <div className={`po-dock${open ? " open" : ""}`}>
@@ -162,6 +166,23 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
         </button>
         {!capBlocked && anchorWaiting > 0 && busy === 0 && <span className="po-cap-note" role="status">{anchorWaiting} waiting for you to approve a front view, so they can match it. <button onClick={onOpen}>Open sheets</button></span>}
         {capBlocked && <span className="po-cap-note" role="alert">Waiting: your spending cap is reached. <button onClick={() => setQueue((q) => ({ ...q, guard: false }))}>Turn the cap off</button></span>}
+        {items.shown.length > 0 && (
+          <ul className="po-strip" aria-label="Queue">
+            {items.shown.map((it) => (
+              <li key={it.job.id} className={`po-strip-item ${it.kind}`}>
+                {it.kind === "review"
+                  ? <button type="button" onClick={onReview} title="Open Review" aria-label={`${name(it.job.assetId)} · ${it.job.label} is waiting for your decision. Open Review`}><span className="po-strip-thumb"><RealImage path={it.job.outputPath} label="" empty="" /></span><span className="po-strip-text"><b>{name(it.job.assetId)} · {it.job.label}</b><small><Eye size={12} aria-hidden="true" /> Needs your decision</small></span></button>
+                  : (
+                    <>
+                      <span className="po-strip-icon" aria-hidden="true">{it.kind === "running" ? <Loader2 size={15} className="spin" /> : it.kind === "failed" ? <AlertTriangle size={15} /> : <Clock size={15} />}</span>
+                      <span className="po-strip-text"><b>{name(it.job.assetId)} · {it.job.label}</b><small>{it.kind === "running" ? (it.job.status === "validating" ? "Checking" : "Running") : it.kind === "failed" ? "Failed" : it.kind === "held" ? "Waiting for a front view" : "Queued"}</small></span>
+                    </>
+                  )}
+              </li>
+            ))}
+            {items.more > 0 && <li className="po-strip-more"><button type="button" onClick={() => setOpen(true)} aria-label={`${items.more} more in the queue. View the queue`}>+{items.more} more</button></li>}
+          </ul>
+        )}
         <CostChip queue={queue} setQueue={setQueue} />
       </div>
       {open && (
@@ -169,7 +190,7 @@ export function QueueDock({ queue, setQueue, onOpen, children }: { queue: QueueS
           {queue.jobs.length === 0 && <p className="helper">Queued sheet views will appear here with their status.</p>}
           <ul>
             {queue.jobs.slice(-40).reverse().map((j) => (
-              <li key={j.id}><b>{j.label}</b><span>{j.assetId} · {j.sheetType} · v{j.revision}</span><em className={j.status}>{j.status}</em></li>
+              <li key={j.id}><b>{j.label}</b><span>{name(j.assetId)} · {j.sheetType} · v{j.revision}</span><em className={j.status}>{j.status}</em></li>
             ))}
           </ul>
           <button className="secondary" onClick={onOpen}>Open sheets</button>

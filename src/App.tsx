@@ -1650,7 +1650,7 @@ export default function App() {
           />
         )}
       </main>
-      <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} />
+      <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} onReview={() => setWorkspace("Review")} nameOf={(id) => analysis.assets.find((a) => a.id === id)?.name ?? id} />
       {paletteOpen && <CommandPalette commands={paletteCommands} onClose={() => setPaletteOpen(false)} />}
       {appearanceOpen && <AppearanceMenu look={look} onLook={setLook} onClose={() => setAppearanceOpen(false)} />}
     </div>

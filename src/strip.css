@@ -1,0 +1,27 @@
+/* The queue strip: work in progress at a glance, along the bottom of every screen. */
+.po-dock-row { display: flex; align-items: center; gap: 12px; }
+.po-dock-row .po-dock-bar { width: auto; flex: none; }
+.po-strip { list-style: none; margin: 0; padding: 4px 0; display: flex; align-items: stretch; gap: 8px; min-width: 0; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.po-strip::-webkit-scrollbar { display: none; }
+.po-strip-item { flex: none; display: flex; align-items: center; gap: 8px; max-width: 240px; padding: 4px 12px 4px 8px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); background: color-mix(in srgb, var(--text) 4%, transparent); font-size: 12.5px; }
+.po-strip-item button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.po-strip-item button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 8px; }
+.po-strip-icon { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--text-2); background: color-mix(in srgb, var(--text) 7%, transparent); flex: none; }
+.po-strip-item.running .po-strip-icon { color: var(--blue); }
+.po-strip-item.failed { border-color: color-mix(in srgb, #e07b6a 50%, transparent); }
+.po-strip-item.failed .po-strip-icon { color: #e07b6a; }
+.po-strip-item.review { border-color: color-mix(in srgb, #f0c36a 45%, transparent); }
+.po-strip-thumb { width: 28px; height: 28px; border-radius: 7px; overflow: hidden; background: var(--bg); flex: none; display: block; }
+.po-strip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.po-strip-thumb .real-empty { min-height: 0; height: 100%; border: 0; padding: 0; }
+.po-strip-text { display: grid; min-width: 0; line-height: 1.25; }
+.po-strip-text b { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.po-strip-text small { display: inline-flex; align-items: center; gap: 4px; color: var(--text-3); font-size: 11.5px; }
+.po-strip-more { flex: none; display: flex; align-items: center; }
+.po-strip-more button { all: unset; cursor: pointer; font-size: 12.5px; color: var(--text-2); padding: 4px 8px; border-radius: 8px; }
+.po-strip-more button:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.po-strip-more button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.po-strip .spin { animation: po-spin 1.1s linear infinite; }
+@keyframes po-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .po-strip .spin { animation: none; } }
+@media (max-width: 900px) { .po-strip { display: none; } }
