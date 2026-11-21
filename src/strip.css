@@ -31,3 +31,4 @@
 .po-next-bar { display: block; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 12%, transparent); overflow: hidden; }
 .po-next-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .4s var(--ease-out, ease); }
 .po-badge.new { background: var(--yellow, #f2c14e); color: var(--yellow-ink, #1b1405); font-style: normal; font-weight: 700; }
+.po-topaz { margin: 8px 0 0; font-size: 13px; color: var(--text-2); }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.65.0 (2026-11-21): Topaz credits in the spending counter
+- **The spending counter now shows Topaz.** After you enhance pictures with Topaz, the cost chip adds the credits they used (for example "2 Topaz credits"), and its popover says how many pictures were enhanced and how many credits that was in this project, plus your Topaz balance when a key is saved. Topaz is billed by Topaz, separately from image requests, so it is not mixed into the request count or the spending cap.
+- Housekeeping: the old upscaler pull request (#47) was closed as superseded by Topaz; its branch is kept.
+
 ## 0.64.0 (2026-11-21): Topaz Labs in the app
 - **Topaz Labs in the app.** On a picture in Review, "Enhance with Topaz…" enlarges and sharpens it (2x or 4x) into a new, larger picture with your own Topaz API key (add it under Providers; create it at topazlabs.com, My account, API keys). Only Topaz's non-generative Enhance models are offered (Standard, High fidelity, Low resolution, CGI and illustration, Text), so faces and costume are not redrawn. The window shows the new size and a likely cost before anything is sent, refuses a result that is too large, and shows your Topaz balance. The result is a new revision that waits for your decision; the original is kept. The key is used only by the app and the download link never receives it.
 - Not tested against the live Topaz service (it needs your key); the request and response handling follow Topaz's published API reference and are covered by tests.
