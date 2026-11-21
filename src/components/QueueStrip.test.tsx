@@ -54,3 +54,15 @@ describe('the queue strip on screen', () => {
     expect(screen.getByText('Queue is empty')).toBeTruthy()
   })
 })
+
+describe('the strip does not repeat itself', () => {
+  it('shows only the newest failed take of a view, and not pictures whose file is missing', async () => {
+    const { MISSING_FILE_ERROR } = await import('../domain/generationQueue')
+    const q = enqueue(emptyQueue(), [request('front')], 1, false).state
+    const base = q.jobs[0]
+    const failed = (rev: number, error?: string) => ({ ...base, id: `j${rev}`, key: `${base.key}-r${rev}`, revision: rev, status: 'failed' as const, error })
+    const queue = { ...q, jobs: [failed(1, 'The provider said no'), failed(2, 'The provider said no'), failed(3, MISSING_FILE_ERROR)] }
+    expect(stripItems(queue).shown).toEqual([])
+    expect(stripItems({ ...q, jobs: queue.jobs.slice(0, 2) }).shown.map((i) => i.job.revision)).toEqual([2])
+  })
+})

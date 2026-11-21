@@ -73,3 +73,5 @@
 .dc-kind.draft { background: color-mix(in srgb, #f0c36a 12%, transparent); color: #f0c36a; }
 :root[data-theme="light"] .dc-kind.ok { color: #1c7a43; }
 :root[data-theme="light"] .dc-kind.draft { color: #8a5a00; }
+.dc-gp { display: block; min-height: 0; }
+.dc-gp > header { height: auto; align-self: auto; }
