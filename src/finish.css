@@ -121,3 +121,8 @@ input[type="range"]:disabled { opacity: .45; cursor: not-allowed; }
 .po-avatar-pic { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; display: block; }
 .po-avatar-pic img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .po-avatar-pic .real-empty { min-height: 0; height: 100%; border: 0; padding: 0; }
+
+/* Light look: a little more contrast for secondary text and the plan warning (found by the in-page audit) */
+:root[data-theme="light"] { --text-3: #4a535c; }
+:root[data-theme="light"] .asst-warn { color: #7a4b00; background: rgba(224, 178, 126, .28); }
+:root[data-theme="light"] .po-tabs em, :root[data-theme="light"] .po-tabs button em { color: var(--text-2); }
