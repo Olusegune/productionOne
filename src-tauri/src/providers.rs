@@ -238,6 +238,79 @@ pub fn adopt_image(source: &Path, dir: &Path) -> Result<PathBuf, String> {
     Ok(target)
 }
 
+/// Where a standing figure's head probably is, as fractions of the picture (x, y of the top-left corner, then width and height). This is an estimate from the figure's
+/// outline against a plain backdrop, not face recognition: it is meant for the model-sheet pictures this app makes, and says "none" when the background is busy.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct HeadBox { pub x: f32, pub y: f32, pub w: f32, pub h: f32 }
+
+pub fn estimate_head(img: &image::RgbImage) -> Option<HeadBox> {
+    let (ow, oh) = img.dimensions();
+    if ow < 32 || oh < 32 { return None; }
+    // Work on a small copy: the outline does not need more.
+    let scale = (200.0 / ow.max(oh) as f32).min(1.0);
+    let (w, h) = (((ow as f32 * scale) as u32).max(16), ((oh as f32 * scale) as u32).max(16));
+    let small = image::imageops::resize(img, w, h, image::imageops::FilterType::Triangle);
+    // The backdrop colour: the typical colour of the frame's edge.
+    let mut edge: Vec<[u8; 3]> = Vec::new();
+    for x in 0..w { edge.push(small.get_pixel(x, 0).0); edge.push(small.get_pixel(x, h - 1).0); }
+    for y in 0..h { edge.push(small.get_pixel(0, y).0); edge.push(small.get_pixel(w - 1, y).0); }
+    let median = |c: usize| { let mut v: Vec<u8> = edge.iter().map(|p| p[c]).collect(); v.sort_unstable(); v[v.len() / 2] as f32 };
+    let bg = [median(0), median(1), median(2)];
+    // A busy backdrop (the edge is not one plain tone) cannot be told from the figure.
+    let spread = edge.iter().map(|p| ((p[0] as f32 - bg[0]).abs() + (p[1] as f32 - bg[1]).abs() + (p[2] as f32 - bg[2]).abs()) / 3.0).sum::<f32>() / edge.len() as f32;
+    if spread > 14.0 { return None; }
+    let is_subject = |x: u32, y: u32| { let p = small.get_pixel(x, y); ((p[0] as f32 - bg[0]).abs() + (p[1] as f32 - bg[1]).abs() + (p[2] as f32 - bg[2]).abs()) / 3.0 > 28.0 };
+    let row_count = |y: u32| (0..w).filter(|&x| is_subject(x, y)).count() as u32;
+    let total: u32 = (0..h).map(row_count).sum();
+    let coverage = total as f32 / (w * h) as f32;
+    if !(0.02..=0.75).contains(&coverage) { return None; }
+    let min_row = (w / 100).max(1);
+    let top = (0..h).find(|&y| row_count(y) >= min_row)?;
+    let bottom = (0..h).rev().find(|&y| row_count(y) >= min_row)?;
+    let height = (bottom - top) as f32;
+    if height < h as f32 * 0.4 { return None; }
+    // The head is the first blob of rows under the top of the figure; its centre is where the subject sits across those rows.
+    let slice = ((height * 0.10) as u32).max(2);
+    let (mut sum_x, mut count) = (0.0f32, 0u32);
+    for y in top..(top + slice).min(h) { for x in 0..w { if is_subject(x, y) { sum_x += x as f32; count += 1; } } }
+    if count == 0 { return None; }
+    let cx = sum_x / count as f32;
+    let head_h = height / 7.0;
+    let head_w = head_h * 0.85;
+    // A head that spans most of the figure's width is not a head: the figure is something else.
+    let slice_cols: Vec<u32> = (0..w).filter(|&x| (top..(top + slice).min(h)).any(|y| is_subject(x, y))).collect();
+    let slice_w = (slice_cols.last().copied().unwrap_or(0) - slice_cols.first().copied().unwrap_or(0)) as f32;
+    if slice_w > height * 0.45 { return None; }
+    // The crop gives the head room: about two and a half head widths across and a little above and below.
+    let bw = (head_w * 2.6).min(w as f32);
+    let bh = (head_h * 1.9).min(h as f32);
+    let x0 = (cx - bw / 2.0).clamp(0.0, w as f32 - bw);
+    let y0 = (top as f32 - head_h * 0.25).clamp(0.0, h as f32 - bh);
+    Some(HeadBox { x: x0 / w as f32, y: y0 / h as f32, w: bw / w as f32, h: bh / h as f32 })
+}
+
+#[tauri::command]
+pub fn head_box(app: tauri::AppHandle, path: String) -> Result<Option<HeadBox>, String> {
+    let file = inside_assets(&app, &path)?;
+    let img = image::open(&file).map_err(|e| e.to_string())?.to_rgb8();
+    Ok(estimate_head(&img))
+}
+
+/// "Locate file": the person chooses one picture for one missing picture whose name did not match. The file comes from the dialog and is remembered under `name`, so
+/// it can be brought in with the others by `adopt_scanned`. Returns None if they cancel.
+#[tauri::command]
+pub async fn locate_picture(app: tauri::AppHandle, memory: tauri::State<'_, ScanMemory>, name: String) -> Result<Option<FoundPicture>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let key = name.trim().to_lowercase();
+    if key.is_empty() || key.len() > 200 { return Err("That picture has no usable name".into()); }
+    let Some(file) = app.dialog().file().set_title("Choose the picture for this one").add_filter("Images", &PICTURE_EXTENSIONS).blocking_pick_file() else { return Ok(None) };
+    let path = file.into_path().map_err(|e| e.to_string())?;
+    let ext_ok = path.extension().and_then(|e| e.to_str()).map(|e| PICTURE_EXTENSIONS.contains(&e.to_lowercase().as_str())).unwrap_or(false);
+    if !ext_ok || !path.is_file() { return Err("Choose a PNG, JPEG or WebP picture".into()); }
+    if let Ok(mut held) = memory.0.lock() { held.insert(key.clone(), path.clone()); }
+    Ok(Some(FoundPicture { name: key, path: path.to_string_lossy().into_owned() }))
+}
+
 /// Brings the pictures the last scan found (by name) into the project's pictures folder, so the app can show and use them like any other picture. Only names the scan returned
 /// are accepted; the page cannot ask for any other file.
 #[tauri::command]
@@ -844,6 +917,29 @@ The background is one flat, uniform neutral mid-grey field.";
         assert!(adopt_image(&from.join("fake.png"), &to).is_err());
         assert!(adopt_image(&from.join("missing.png"), &to).is_err());
         let _ = fs::remove_dir_all(&root);
+    }
+    #[test]
+    fn estimates_the_head_of_a_figure_on_a_plain_backdrop_and_gives_up_on_a_busy_one() {
+        // a plain light backdrop with a dark figure: a round head, then a body below it
+        let (w, h) = (300u32, 600u32);
+        let mut img = image::RgbImage::from_pixel(w, h, image::Rgb([230, 230, 230]));
+        for y in 0..h { for x in 0..w {
+            let (dx, dy) = (x as f32 - 150.0, y as f32 - 80.0);
+            let head = dx * dx + dy * dy < 36.0 * 36.0;
+            let body = (118..182).contains(&x) && (120..560).contains(&y);
+            if head || body { img.put_pixel(x, y, image::Rgb([40, 40, 60])); }
+        } }
+        let b = estimate_head(&img).expect("the head is found");
+        let (cx, cy) = (b.x + b.w / 2.0, b.y + b.h / 2.0);
+        assert!((cx - 0.5).abs() < 0.08, "centred on the head, got {cx}");
+        assert!(cy < 0.25, "near the top of the picture, got {cy}");
+        assert!(b.w < 0.9 && b.h < 0.4);
+        // a picture of noise has no plain backdrop
+        let mut busy = image::RgbImage::new(w, h);
+        for y in 0..h { for x in 0..w { let v = ((x * 37 + y * 91) % 255) as u8; busy.put_pixel(x, y, image::Rgb([v, 255 - v, v / 2])); } }
+        assert!(estimate_head(&busy).is_none());
+        // a blank picture has no figure
+        assert!(estimate_head(&image::RgbImage::from_pixel(w, h, image::Rgb([200, 200, 200]))).is_none());
     }
     #[test]
     fn scan_finds_pictures_by_name_in_nested_folders_and_ignores_the_rest() {

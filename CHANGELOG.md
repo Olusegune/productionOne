@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.62.0 (2026-11-21): a guided start, update check, Head view, Locate file
+- **A new project opens on "How do you want to start?"**: Ask the Assistant (marked the easiest), Add a script, or Start from my pictures. The Assistant carries a "new" badge until you open it once.
+- **The Assistant starts gentle**: Quick by default (about a tenth of the cost of a full run), and a one-click "Use $X as my budget" that fits the plan.
+- **The yellow button is the next step**: after the script is read it is "Continue to Design" rather than "Analyze script".
+- **Screens renamed on screen**: Story is now Script, Direct is now Storyboards. Storyboards explains itself in three steps before you turn it on. Saved projects are unaffected.
+- **Check for updates**: Project settings and Help. It looks up the latest version number on the public releases page (nothing about you or your project is sent), can run once a day at start (switch it off in Project settings), and opens the download page; it does not install anything.
+- **Review, Head view**: finds the head from the figure's outline and zooms to it (needs a plain backdrop; says so otherwise).
+- **Find missing pictures, Locate file**: choose one file for a picture whose name did not match.
+- **Mac signing** is prepared in the build workflow and switches on when the Apple secrets are added (docs/MAC_SIGNING.md).
+- Smaller: Format on Projects is one line with Change; queue controls show only when there is a queue; light-look fixes; the live check that the proportions wording changes real pictures is in docs/LIVE_TEST_PROPORTIONS_2026-11-21.md.
+
 ## 0.61.0 (2026-11-20): queue strip, Deliver blockers, a sharper proportions workspace, yellow buttons
 - **Yellow primary buttons.** The main action on every screen is now yellow, in both looks.
 - **Queue strip.** Along the bottom of every screen: what is running, waiting, failed (one per view) and the pictures waiting for your decision, with thumbnails. A picture that needs you opens Review.

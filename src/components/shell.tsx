@@ -10,6 +10,9 @@ import { spendGate, summarize, waitingForAnchor, type QueueState } from "../doma
 const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Review: ClipboardCheck, Direct: Clapperboard, Deliver: PackageCheck, Assistant: MessageCircle } as const;
 /** Sidebar order. Alt+1 to Alt+5 keep their old meaning; Review is Alt+6, Assistant Alt+7. */
 export const workspaceNames = ["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"] as const;
+/** What each screen is called on screen. The ids above stay as they are (saved links, shortcuts and tests use them). */
+export const workspaceLabels: Record<string, string> = { Story: "Script", Direct: "Storyboards" };
+export const labelOf = (name: string): string => workspaceLabels[name] ?? name;
 
 export function TopBar(props: {
   title: string;
@@ -29,6 +32,9 @@ export function TopBar(props: {
   onAppearance?: () => void;
 }) {
   const { steps, next, progress } = useMemo(() => goldenPath(props.golden), [props.golden]);
+  // The Assistant is the easiest way in, so it says "new" until it has been opened once.
+  const [assistantSeen, setAssistantSeen] = useState(() => { try { return localStorage.getItem("po.assistant.seen") === "1"; } catch { return true; } });
+  useEffect(() => { if (props.workspace === "Assistant" && !assistantSeen) { try { localStorage.setItem("po.assistant.seen", "1"); } catch { /* private window */ } setAssistantSeen(true); } }, [props.workspace, assistantSeen]);
   // Quietly acknowledge a step when it becomes done (not on first load).
   const doneIds = steps.filter((s) => s.state === "done").map((s) => s.id);
   const seen = useRef<string[] | null>(null);
@@ -58,10 +64,11 @@ export function TopBar(props: {
       </div>
       <nav className="po-tabs" aria-label="Workspaces">
         {workspaceNames.map((name) => (
-          <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name === "Review" && props.reviewCount ? `Review, ${props.reviewCount} waiting` : name} title={name}>
+          <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name === "Review" && props.reviewCount ? `Review, ${props.reviewCount} waiting` : labelOf(name)} title={labelOf(name)}>
             {(() => { const Icon = workspaceIcons[name]; return <Icon size={18} aria-hidden="true" />; })()}
-            <span>{name}</span>
+            <span>{labelOf(name)}</span>
             {name === "Direct" && <em>optional</em>}
+            {name === "Assistant" && !assistantSeen && props.workspace !== "Assistant" && <em className="po-badge new">new</em>}
             {name === "Review" && !!props.reviewCount && <em className="po-badge" aria-label={`${props.reviewCount} waiting`}>{props.reviewCount}</em>}
           </button>
         ))}

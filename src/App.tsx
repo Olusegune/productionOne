@@ -100,9 +100,10 @@ import { useLocalAi } from "./data/localAi";
 import { anyLocal } from "./domain/localAi";
 import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
-import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
+import { CommandPalette, QueueDock, TopBar, labelOf, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { primaryViewKeys } from "./domain/sheetSpecs";
+import { autoCheckOn, checkForUpdate, dueForAutoCheck, markChecked, openReleasePage, setAutoCheck, skipVersion, updateSentence, worthShowing, type UpdateInfo } from "./data/updateCheck";
 import { applyRelink, planRelink, relinkSummary, wantedStems } from "./domain/relink";
 import { RelinkDialog } from "./components/RelinkDialog";
 import { detectDecision, undoDecision, decisionWords, type DecisionSnapshot } from "./domain/decisionUndo";
@@ -1170,8 +1171,8 @@ export default function App() {
       }),
       null,
     );
-    setWorkspace("Story");
-    setNotice(`New production created. Paste or import your script to begin.${kept ? ` Your previous production was kept as a copy: ${kept}` : ""}`);
+    setWorkspace("Projects");
+    setNotice(`New production created. Choose how you want to start.${kept ? ` Your previous production was kept as a copy: ${kept}` : ""}`);
   };
   const openText = async (text: string, path: string | null) => {
     const parsed = parseProjectFile(text);
@@ -1268,7 +1269,7 @@ export default function App() {
     "help-tour": () => setTourOpen(true),
     "help-desktop-shortcut": () => { void addDesktopShortcut(); },
     "help-trouble": () => setHelpTopic("trouble"),
-    "help-updates": () => setHelpTopic("updates"),
+    "help-updates": () => { void lookForUpdate(true); },
     "help-about": () => setHelpTopic("about"),
   };
   useEffect(() => {
@@ -1314,7 +1315,7 @@ export default function App() {
   };
   const paletteCommands: PaletteCommand[] = [
     { id: "generate", label: "Generate a first image (test one)", hint: "Design", run: () => goNext({ id: "generate", label: "Generate", state: "active", detail: "", workspace: "Design", action: "" }) },
-    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"].map((name) => ({ id: `go-${name}`, label: `Go to ${name}`, hint: "Workspace", run: () => setWorkspace(name) })),
+    ...["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"].map((name) => ({ id: `go-${name}`, label: `Go to ${labelOf(name)}`, hint: "Workspace", run: () => setWorkspace(name) })),
     { id: "analyze", label: "Analyze the script", hint: "Story · free, local", run: () => { setWorkspace("Story"); analyze(); } },
     { id: "appearance", label: "Appearance: choose a look", hint: "View", run: () => setAppearanceOpen(true) },
     ...looks.map((l) => ({ id: `look-${l.id}`, label: `Appearance: ${l.name}`, hint: l.tagline, run: () => setLook(l.id) })),
@@ -1332,6 +1333,7 @@ export default function App() {
     { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
     { id: "find-pictures", label: "Find missing pictures in a folder…", hint: "Files", run: () => { void findMissingPictures(); } },
+    { id: "updates", label: "Check for a new version", hint: "Help", run: () => { void lookForUpdate(true); } },
     { id: "tour", label: "Take the quick tour", hint: "Help", run: () => setTourOpen(true) },
     { id: "desktop-shortcut", label: "Add Production One to the Desktop", hint: "Help", run: () => { void addDesktopShortcut(); } },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
@@ -1340,6 +1342,24 @@ export default function App() {
   const trackedPaths = [...Object.values(assetOutputs), ...clips.map((c) => c.path), ...Object.values(assetRefs).flat()];
   /** Files the project points at that are not on this computer: marks what depends on them, and says so. Used when a project loads and again just before a package is made. */
   /** Finds pictures the project lost track of by name in a folder the person chooses, and points the takes at them again. */
+  // Looking for a newer version: once a day at start (unless switched off), and whenever the person asks. Nothing is downloaded or installed.
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [autoUpdate, setAutoUpdate] = useState(autoCheckOn);
+  const lookForUpdate = async (asked: boolean) => {
+    if (!isTauri) { if (asked) setNotice("Looking for updates needs the desktop app."); return; }
+    try {
+      const info = await checkForUpdate();
+      markChecked();
+      if (worthShowing(info) || (asked && info.newer)) setUpdate(info);
+      if (asked) setNotice(updateSentence(info));
+    } catch (e) { if (asked) setNotice(String(e)); }
+  };
+  useEffect(() => {
+    if (!isTauri || !dueForAutoCheck()) return;
+    const timer = window.setTimeout(() => void lookForUpdate(false), 5000);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [relinkPlan, setRelinkPlan] = useState<{ folder: string; found: Record<string, string> } | null>(null);
   const findMissingPictures = async () => {
     const { stems, takes } = wantedStems(queue);
@@ -1351,6 +1371,14 @@ export default function App() {
       if (scan === null) return;
       // Nothing is linked yet: the person reviews the matches first.
       setRelinkPlan({ folder: scan.folder, found: Object.fromEntries(scan.found.map((h) => [h.name, h.path])) });
+    } catch (e) { setNotice(String(e)); }
+  };
+  /** One missing picture, one file the person chooses for it (when its name did not match). */
+  const locatePicture = async (stem: string) => {
+    try {
+      const { invoke: call } = await import("@tauri-apps/api/core");
+      const hit = await call<{ name: string; path: string } | null>("locate_picture", { name: stem });
+      if (hit) setRelinkPlan((cur) => (cur ? { ...cur, found: { ...cur.found, [hit.name]: hit.path } } : cur));
     } catch (e) { setNotice(String(e)); }
   };
   const confirmRelink = async (jobIds: string[]) => {
@@ -1507,11 +1535,26 @@ export default function App() {
               </label>
               <p className="helper">File: {filePath ?? "Not saved to a file yet"}</p>
               <p className="helper">Format: Production One project (.pone). Legacy .pguy files open and are converted by Save As.</p>
+              <div className="settings-field" aria-label="Updates">
+                <span>Updates</span>
+                <label className="po-switch"><input type="checkbox" checked={autoUpdate} onChange={(e) => { setAutoUpdate(e.target.checked); setAutoCheck(e.target.checked); }} /> Look for a new version when the app starts (about once a day)</label>
+                <button className="secondary" onClick={() => void lookForUpdate(true)} disabled={!isTauri}>Check now</button>
+                <small className="helper">Only the version number is looked up, from this project's public releases page. Nothing about you or your project is sent, and nothing is downloaded or installed.</small>
+              </div>
             </section>
           </div>
         )}
         {relinkPlan && (
-          <RelinkDialog folder={relinkPlan.folder} rows={planRelink(queue, relinkPlan.found, (id) => analysis.assets.find((a) => a.id === id)?.name ?? id)} onConfirm={confirmRelink} onCancel={() => setRelinkPlan(null)} onAnother={() => { setRelinkPlan(null); void findMissingPictures(); }} />
+          <RelinkDialog onLocate={locatePicture} folder={relinkPlan.folder} rows={planRelink(queue, relinkPlan.found, (id) => analysis.assets.find((a) => a.id === id)?.name ?? id)} onConfirm={confirmRelink} onCancel={() => setRelinkPlan(null)} onAnother={() => { setRelinkPlan(null); void findMissingPictures(); }} />
+        )}
+        {update && (
+          <div className="notice update-bar" role="status">
+            <Check size={16} />
+            <span>Production One {update.latest} is available (you have {update.current}).</span>
+            <button onClick={() => void openReleasePage(update.url).catch((e) => setNotice(String(e)))}>Download</button>
+            <button onClick={() => { skipVersion(update.latest); setUpdate(null); }}>Skip this version</button>
+            <button onClick={() => setUpdate(null)}>Later</button>
+          </div>
         )}
         {lastDecision && (
           <div className="notice undo-bar" role="status">
@@ -1620,7 +1663,7 @@ export default function App() {
             useScript={assistantUseScript} addImages={addImagesAsAssets} onApproved={onSheetApproved} />
         </div>
         {workspace === "Story" && (
-          <StoryView script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
+          <StoryView onContinue={() => setWorkspace("Design")} script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Design" && (
           <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} world={world} setWorld={setWorld} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} slice={{ analysis, queue, assetOutputs, assetRefs, proportions, fitRules, sheetNotes, sheetSettings, shots, sceneStates, reviews }} applySlice={applySlice} />

@@ -56,3 +56,26 @@ describe('Review matches before relinking', () => {
     expect((screen.getByRole('button', { name: 'Relink 0 files' }) as HTMLButtonElement).disabled).toBe(true)
   })
 })
+
+describe('Locate file', () => {
+  it('offers a button per picture, calls it with the picture\'s name, and says Change for ones already found', () => {
+    const onLocate = vi.fn()
+    setup({ onLocate })
+    fireEvent.click(screen.getByRole('button', { name: 'Locate a file for SAVANNA · Establishing · revision 1' }))
+    expect(onLocate).toHaveBeenCalledWith('savanna_v01')
+    expect(screen.getByRole('button', { name: 'Choose a different file for AMINA · Front · revision 3' })).toBeTruthy()
+  })
+  it('shows no Locate buttons when it is not offered', () => {
+    setup()
+    expect(screen.queryByRole('button', { name: /Locate a file for/ })).toBeNull()
+  })
+  it('a picture located later is ticked, and ticks already set are kept', () => {
+    const fns = { onConfirm: vi.fn(), onCancel: vi.fn(), onAnother: vi.fn() }
+    const { rerender } = render(<RelinkDialog folder="D:/pics/work" rows={rows} {...fns} />)
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Link AMINA · Side · revision 1' }))
+    rerender(<RelinkDialog folder="D:/pics/work" rows={rows.map((r) => (r.jobId === 'c' ? { ...r, path: 'E:/other/savanna_v01.png' } : r))} {...fns} />)
+    expect((screen.getByRole('checkbox', { name: 'Link SAVANNA · Establishing · revision 1' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('checkbox', { name: 'Link AMINA · Side · revision 1' }) as HTMLInputElement).checked).toBe(false)
+    expect(screen.getByRole('button', { name: 'Relink 2 files' })).toBeTruthy()
+  })
+})

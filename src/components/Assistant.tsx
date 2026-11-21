@@ -67,7 +67,7 @@ export function AssistantView(props: {
   const [pending, setPending] = useState<Attachment[]>([]);
   const [busy, setBusy] = useState(false);
   const [state, setStateRaw] = useState<AutopilotState>(kept.state);
-  const [depth, setDepth] = useState<Depth>("standard");
+  const [depth, setDepth] = useState<Depth>("quick");
   const [includeFrames, setIncludeFrames] = useState(false);
   const [stopAfterConcepts, setStop] = useState(true);
   const [price, setPrice] = useState(() => readStored("po.asst.price", ""));
@@ -229,7 +229,7 @@ export function AssistantView(props: {
           if (!out.script) say("assistant", out.notes[0] ?? "I could not make a story from that.");
           else {
             const result = props.useScript("your story outline", "text", out.script);
-            if (result.ok) say("assistant", `I turned your outline into ${out.scenes} scene${out.scenes === 1 ? "" : "s"} using your own words and the characters, places and props you already have. It is in the Story screen if you want to edit it. The plan is on the right: tick storyboard frames to have me plan the shots.${out.notes.length ? `\n\nNotes:\n${out.notes.map((n) => `• ${n}`).join("\n")}` : ""}`);
+            if (result.ok) say("assistant", `I turned your outline into ${out.scenes} scene${out.scenes === 1 ? "" : "s"} using your own words and the characters, places and props you already have. It is in the Script screen if you want to edit it. The plan is on the right: tick storyboard frames to have me plan the shots.${out.notes.length ? `\n\nNotes:\n${out.notes.map((n) => `• ${n}`).join("\n")}` : ""}`);
             else say("assistant", result.error);
           }
         } else if (hasWriter) {
@@ -237,7 +237,7 @@ export function AssistantView(props: {
           const written = await writeScript(text);
           if (written) {
             const result = props.useScript("the script I wrote", "text", written);
-            if (result.ok) say("assistant", `Here is the script I wrote. It is in the Story screen if you want to edit it. I found ${result.scenes} scene${result.scenes === 1 ? "" : "s"} and ${result.assets} characters, props and places. The plan is on the right.\n\n${written.slice(0, 1800)}${written.length > 1800 ? "\n…" : ""}`);
+            if (result.ok) say("assistant", `Here is the script I wrote. It is in the Script screen if you want to edit it. I found ${result.scenes} scene${result.scenes === 1 ? "" : "s"} and ${result.assets} characters, props and places. The plan is on the right.\n\n${written.slice(0, 1800)}${written.length > 1800 ? "\n…" : ""}`);
             else say("assistant", `I wrote a script but could not read it back: ${result.error}`);
           }
         } else if (!pictures.length) {
@@ -332,6 +332,7 @@ export function AssistantView(props: {
                 <label><span>One picture costs me (USD)</span><input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={typicalPrice.usd === null ? "for example 0.05" : `typical ${typicalPrice.usd}`} aria-label="Price per picture in dollars" /></label>
                 <label><span>Budget I allow (USD)</span><input inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="for example 5" aria-label="Budget in dollars" /></label>
               </div>
+              {budget.trim() === "" && plan.costUsd !== null && plan.costUsd > 0 && <div className="asst-budget-hint" data-testid="asst-budget-hint"><span>The plan needs about ${plan.costUsd.toFixed(2)}.</span><button type="button" className="secondary" onClick={() => setBudget(String(Math.ceil(plan.costUsd! * 1.2 * 100) / 100))}>Use ${(Math.ceil(plan.costUsd * 1.2 * 100) / 100).toFixed(2)} as my budget</button></div>}
               {enteredUsd === null && typicalPrice.source === "typical" && typicalPrice.usd !== null && <small className="asst-model" data-testid="asst-typical">Using a typical price of ${typicalPrice.usd} per picture for this model. It is an estimate: type your own price to replace it.</small>}
               <small className="asst-model">Pictures are made with {choice.modelId || "your chosen model"} ({choice.provider}).</small>
             </div>

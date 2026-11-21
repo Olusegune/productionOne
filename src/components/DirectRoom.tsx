@@ -82,6 +82,12 @@ export function DirectRoom(props: {
         <Eyebrow icon={Sparkles}>Optional</Eyebrow>
         <h3>Director's room</h3>
         <p className="helper">Plan shots from your script, make storyboard frames with your approved characters and sets, check continuity and play an animatic. Nothing here is needed to make character sheets or a delivery package.</p>
+        <ol className="dr-off-steps" aria-label="What you get">
+          <li><b>Plan the shots</b><span>It suggests the coverage of each scene: wide, medium, close-up.</span></li>
+          <li><b>Make the frames</b><span>One picture per shot, using your approved characters and sets. You see the cost first.</span></li>
+          <li><b>Play the animatic</b><span>Watch the frames in order with your timing.</span></li>
+        </ol>
+        <p className="helper dr-off-skip">Not ready yet? Finish Design and Review first; this step can wait.</p>
         <button className="primary" onClick={() => setEnabled(true)}><Clapperboard size={15} /> Turn on the Director's room</button>
       </section>
     );
@@ -206,7 +212,7 @@ export function DirectRoom(props: {
               </button>
             );
           })}
-          {analysis.scenes.length === 0 && <p className="helper">Analyze a script in Story and its scenes appear here.</p>}
+          {analysis.scenes.length === 0 && <p className="helper">Analyze a script in Script and its scenes appear here.</p>}
         </nav>
 
         <section className="dr-board">

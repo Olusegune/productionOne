@@ -11,7 +11,7 @@ describe('App workspaces', () => {
     const nav = screen.getByRole('navigation', { name: 'Workspaces' })
     expect(screen.getByRole('heading', { name: 'The Last Horizon' })).toBeTruthy()
 
-    fireEvent.click(within(nav).getByRole('button', { name: /Story/ }))
+    fireEvent.click(within(nav).getByRole('button', { name: /Script/ }))
     expect(screen.getByLabelText('Script source')).toBeTruthy()
 
     fireEvent.click(within(nav).getByRole('button', { name: /Design/ }))
@@ -19,7 +19,7 @@ describe('App workspaces', () => {
     expect(screen.getByRole('tab', { name: 'Sheets', selected: true })).toBeTruthy()
     expect(screen.getByLabelText('Production bible')).toBeTruthy()
 
-    fireEvent.click(within(nav).getByRole('button', { name: /Direct/ }))
+    fireEvent.click(within(nav).getByRole('button', { name: /Storyboards/ }))
     expect(document.querySelector('.dr-wrap')).toBeTruthy()
 
     fireEvent.click(within(nav).getByRole('button', { name: /Deliver/ }))

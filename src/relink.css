@@ -22,3 +22,4 @@
 .rl-dialog footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .rl-spacer { flex: 1; }
 .rl-dialog footer button { display: inline-flex; align-items: center; gap: 8px; height: 38px; }
+.rl-locate { margin-top: 6px; height: 30px; font-size: 12.5px; padding: 0 12px; justify-self: start; }

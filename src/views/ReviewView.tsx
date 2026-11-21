@@ -61,7 +61,7 @@ export function ReviewView(props: {
   const take = others.find((j) => j.id === takeId) ?? (job ? defaultCompareTarget(queue, job) : null);
   const comparing = mode === "revisions" && !!take;
   const assetName = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id;
-  const zoom = useZoomSync(job?.id ?? "");
+  const zoom = useZoomSync(job?.id ?? "", [comparing ? take?.outputPath : reference?.outputPath, job?.outputPath]);
   const position = job ? list.findIndex((j) => j.id === job.id) : -1;
   const nextJob = position >= 0 ? list[position + 1] : undefined;
   const step = (delta: number) => { const to = list[position + delta]; if (to) setPickedId(to.id); };

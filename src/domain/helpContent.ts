@@ -45,7 +45,7 @@ export const helpChapters: HelpChapter[] = [
       {
         title: 'The Golden Path',
         text: [
-          'Every project follows one path: **Create, Analyze, Design, Generate, Review, Deliver**. A seventh step, **Direct** (storyboards and an animatic), appears only if you turn it on.',
+          'Every project follows one path: **Create, Analyze, Design, Generate, Review, Deliver**. A seventh step, **Storyboards** (shots, frames and an animatic), appears only if you turn it on.',
           'The big highlighted button on the Projects screen and in the left sidebar always names the **next step**. If you are ever lost, press it. Optional extras (Shape, Camera and light, Visual review, Looks) show under the path once you start using them; they never block you and never change your progress.',
         ],
         note: { kind: 'tip', text: 'Nothing is made until you press a Generate button, and you approve every picture yourself. The app never approves anything for you.' },
@@ -63,7 +63,7 @@ export const helpChapters: HelpChapter[] = [
       {
         title: 'Where things are',
         text: [
-          'The left sidebar has seven screens: **Projects** (overview and files), **Story** (your script), **Design** (characters, sets, props, style), **Review** (approve pictures), **Direct** (optional storyboards), **Deliver** (audit and export) and **Assistant** (a chat that can do much of this for you).',
+          'The left sidebar has seven screens: **Projects** (overview and files), **Script** (your script), **Design** (characters, sets, props, style), **Review** (approve pictures), **Direct** (optional storyboards), **Deliver** (audit and export) and **Assistant** (a chat that can do much of this for you).',
           'The bottom bar shows the picture queue and how many requests have been made. The icons in the top bar open the command list (Ctrl+K) and Providers and keys; the small icons at the bottom of the sidebar open Appearance and more.',
         ],
       },
@@ -103,10 +103,10 @@ export const helpChapters: HelpChapter[] = [
       {
         title: 'Bring a script',
         text: [
-          'Go to **Story**. Paste a script, or press **Import** and choose a Word (.docx), PDF, text, Fountain or Final Draft file. Press **Analyze script**.',
+          'Go to **Script**. Paste a script, or press **Import** and choose a Word (.docx), PDF, text, Fountain or Final Draft file. Press **Analyze script**.',
           'Production One reads the script and lists the **characters, props, costumes, sets and environments** it found, with the lines they come from. Check the list: you can rename, merge or add anything it missed. Details you confirm (age, role, what must never change) are carried into every picture prompt.',
         ],
-        steps: ['Open Story.', 'Paste your script or press Import.', 'Press Analyze script.', 'Read the found items; add or fix any that are wrong.'],
+        steps: ['Open Script.', 'Paste your script or press Import.', 'Press Analyze script.', 'Read the found items; add or fix any that are wrong.'],
         image: { file: 'help/03-story.webp', caption: 'Story: your script on the left, what Production One found on the right.' },
       },
       {
@@ -189,7 +189,7 @@ export const helpChapters: HelpChapter[] = [
     blocks: [
       {
         title: 'Turn it on and plan the shots',
-        text: ['Direct is optional. Open **Direct** and press **Turn on the Director\'s room**. Press **Plan the coverage for this scene** (or **Plan all**) and Production One proposes a shot list from your script: an establishing shot, a master, over-the-shoulder pairs for dialogue that respect the 180-degree rule, close-ups where feeling peaks, and inserts for important props. It is a starting point to edit.'],
+        text: ['Storyboards is optional. Open **Storyboards** and press **Turn on the Director\'s room**. Press **Plan the coverage for this scene** (or **Plan all**) and Production One proposes a shot list from your script: an establishing shot, a master, over-the-shoulder pairs for dialogue that respect the 180-degree rule, close-ups where feeling peaks, and inserts for important props. It is a starting point to edit.'],
         image: { file: 'help/08-direct.webp', caption: 'The Director\'s room: shots in the middle, the shot editor on the right.' },
       },
       {

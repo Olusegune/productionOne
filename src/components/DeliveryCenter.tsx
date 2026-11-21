@@ -79,7 +79,7 @@ export function DeliveryCenter(props: {
   const checklist = useMemo(() => deliveryChecklist({ analysis, queue, missingAssets: audit.missingAssets, incompleteShots: audit.incompleteShots, styleLocked }), [analysis, queue, audit.missingAssets, audit.incompleteShots, styleLocked]);
   const verified = packageKind(checklist) === "verified";
   const issues = useMemo(() => sceneCoverage.filter((s) => s.missingAssets.length || s.incompleteShots.length || s.warnings.length), [sceneCoverage]);
-  const next = !analysis.assets.length ? { label: "Analyze a script in Story first", go: undefined as (() => void) | undefined }
+  const next = !analysis.assets.length ? { label: "Analyze a script in Script first", go: undefined as (() => void) | undefined }
     : audit.missingAssets.length ? { label: `Make and approve ${audit.missingAssets.length} reference sheet${audit.missingAssets.length === 1 ? "" : "s"}, starting with ${name(audit.missingAssets[0])}`, go: () => openAsset(audit.missingAssets[0]) }
     : audit.incompleteShots.length ? { label: `Finish ${audit.incompleteShots.length} storyboard frame${audit.incompleteShots.length === 1 ? "" : "s"}, starting with ${shotName(audit.incompleteShots[0])}`, go: () => openShot(audit.incompleteShots[0]) }
     : { label: "Everything is approved: export the verified package", go: onBuild };

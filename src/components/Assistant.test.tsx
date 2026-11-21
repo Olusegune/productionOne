@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { StrictMode, useEffect, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { approve, emptyQueue, type QueueState } from '../domain/generationQueue'
@@ -218,6 +218,8 @@ describe('the plan and the run', () => {
 
   it('shows the number of pictures and the cost, and will not start without a price and a budget', () => {
     render(<Harness analysis={filled} />)
+    expect(screen.getByRole('button', { name: 'Quick: one sheet each' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Standard: full sheets' }))
     const sum = () => document.querySelector('.asst-sum')?.textContent ?? ''
     expect(sum()).toMatch(/3 items/)
     expect(sum()).toMatch(/35 pictures/)
@@ -264,6 +266,7 @@ describe('the plan and the run', () => {
       return <AssistantView analysis={filled} shots={[]} setShots={() => {}} queue={queue} setQueue={(u) => setQueue(u)} style={style} assetRefs={{}} format="16:9" script="" desktop providersVersion={0} notify={() => {}} openProviders={() => {}} openReview={() => {}} openDesign={() => {}} openDeliver={() => {}} useScript={(() => ({ ok: true, scenes: 1, assets: 1 })) as never} addImages={async () => 0} onApproved={() => {}} />
     }
     render(<Wrap />)
+    fireEvent.click(screen.getByRole('button', { name: 'Standard: full sheets' }))
     setMoney('0.1', '5')
     fireEvent.click(screen.getByRole('button', { name: /^Start/ }))
     await screen.findByText(/3 concepts waiting for you/, {}, { timeout: 4000 })
@@ -370,5 +373,18 @@ describe('connected agents', () => {
     fireEvent.click(connect)
     expect(await screen.findByText(/listening on 127\.0\.0\.1:4242/)).toBeTruthy()
     expect(calls.some((c) => c.name === 'agent_enable' && c.args.enabled === true)).toBe(true)
+  })
+})
+
+describe('the plan is gentle by default', () => {
+  it('starts with Quick, and offers one click to use a budget that fits the plan', () => {
+    render(<Harness analysis={filled} />)
+    expect(screen.getByRole('button', { name: 'Quick: one sheet each' }).getAttribute('aria-pressed')).toBe('true')
+    const hint = screen.getByTestId('asst-budget-hint')
+    expect(hint.textContent).toMatch(/The plan needs about \$0\.44/)
+    fireEvent.click(within(hint).getByRole('button'))
+    expect((screen.getByLabelText('Budget in dollars') as HTMLInputElement).value).toBe('0.53')
+    expect(screen.queryByTestId('asst-budget-hint')).toBeNull()
+    expect((screen.getByRole('button', { name: /^Start/ }) as HTMLButtonElement).disabled).toBe(false)
   })
 })

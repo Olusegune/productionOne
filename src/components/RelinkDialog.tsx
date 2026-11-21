@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, Check, FolderSearch, ImageOff } from 'lucide-react'
 import { shortPath, type RelinkRow } from '../domain/relink'
@@ -11,6 +11,8 @@ interface Props {
   onCancel: () => void
   /** Choose a different folder and look again. */
   onAnother: () => void
+  /** Lets the person choose a file for one picture whose name did not match. Resolves when they have chosen or cancelled. */
+  onLocate?: (stem: string) => Promise<void> | void
 }
 
 const wasText = (w: RelinkRow['was']) => (w === 'approved' ? 'Was approved: comes back approved' : w === 'rejected' ? 'Was turned down: comes back turned down' : 'Comes back waiting for your decision')
@@ -19,10 +21,16 @@ const wasText = (w: RelinkRow['was']) => (w === 'approved' ? 'Was approved: come
  * Review matches before relinking: every missing picture, the file found for it in the chosen folder (or that there is none), and a tick box for each. Nothing is changed
  * until "Relink N files" is pressed, and only the ticked pictures are linked (a copy goes into the project's pictures folder; the originals are untouched).
  */
-export function RelinkDialog({ folder, rows, onConfirm, onCancel, onAnother }: Props) {
+export function RelinkDialog({ folder, rows, onConfirm, onCancel, onAnother, onLocate }: Props) {
   const found = useMemo(() => rows.filter((r) => r.path), [rows])
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(found.map((r) => r.jobId)))
-  useEffect(() => { setTicked(new Set(found.map((r) => r.jobId))) }, [found])
+  // A picture that turns up later (the person located a file for it) is ticked; the ticks the person already set are kept.
+  const known = useRef(new Set(found.map((r) => r.jobId)))
+  useEffect(() => {
+    const fresh = found.filter((r) => !known.current.has(r.jobId)).map((r) => r.jobId)
+    fresh.forEach((id) => known.current.add(id))
+    if (fresh.length) setTicked((cur) => new Set([...cur, ...fresh]))
+  }, [found])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
     window.addEventListener('keydown', onKey)
@@ -59,7 +67,7 @@ export function RelinkDialog({ folder, rows, onConfirm, onCancel, onAnother }: P
             <div key={r.jobId} className={`rl-row${r.path ? '' : ' none'}`} role="row">
               <span role="cell">{r.path ? <input type="checkbox" aria-label={`Link ${r.name}`} checked={ticked.has(r.jobId)} onChange={() => toggle(r.jobId)} /> : <ImageOff size={15} aria-hidden="true" />}</span>
               <span role="cell"><b>{r.name}</b><small>{r.stem}</small></span>
-              <span role="cell">{r.path ? <><span className="rl-found" title={r.path}>{shortPath(r.path)}</span><small>{wasText(r.was)}</small></> : <span className="rl-missing">Not in this folder</span>}</span>
+              <span role="cell">{r.path ? <><span className="rl-found" title={r.path}>{shortPath(r.path)}</span><small>{wasText(r.was)}</small></> : <span className="rl-missing">Not in this folder</span>}{onLocate && <button type="button" className="secondary rl-locate" onClick={() => void onLocate(r.stem)} aria-label={`${r.path ? 'Choose a different file for' : 'Locate a file for'} ${r.name}`}>{r.path ? 'Change…' : 'Locate file…'}</button>}</span>
             </div>
           ))}
         </div>

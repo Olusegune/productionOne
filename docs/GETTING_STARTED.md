@@ -155,7 +155,7 @@ A set gets an establishing view first. Every shot in that location is given this
 
 **Set consistency in practice**
 - Approve one good establishing view of each set *before* you generate frames. A frame with no set picture has nothing to copy from.
-- Keep the same place text in every scene heading for the same room, or merge the two sets in Story.
+- Keep the same place text in every scene heading for the same room, or merge the two sets in Script.
 - Put fixed details in the set's Notes ("the desk is under the window, the lamp is green").
 - If a frame drifts, press **Regenerate** on that frame. The prompt and the set picture stay the same; a new take is made.
 - A model can still ignore the rule. The rule makes drift less likely; it does not forbid it. Check frames next to each other.
@@ -226,7 +226,7 @@ Pictures that are made and not yet judged appear under **Waiting**, large, next 
 
 | I want to... | Do this |
 |---|---|
-| See sets and props | Analyze a script in Story; then look in Design's bible, or the Projects tiles |
+| See sets and props | Analyze a script in Script; then look in Design's bible, or the Projects tiles |
 | Rename the project | Project > Settings, or Save As with a new file name |
 | Use my own picture for a character, set or prop | Design > **Add to the bible** > **Add from image**, or **Use my image** on a view |
 | Add a whole folder of Midjourney images | Design > **Add to the bible** > pick the kind > **Add several images at once** (up to 24; named from the file names) |
