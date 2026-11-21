@@ -474,7 +474,7 @@ pub(crate) fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBu
     let assets = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
     let canonical = fs::canonicalize(path).map_err(|e| format!("Could not open the image: {e}"))?;
     let root = fs::canonicalize(&assets).map_err(|e| e.to_string())?;
-    if canonical.starts_with(&root) { Ok(canonical) } else { Err("Only images in the Production One assets folder can be previewed".into()) }
+    if canonical.starts_with(&root) { Ok(canonical) } else { Err(format!("Only images in the Production One assets folder can be previewed (this one is at {}, the folder is {})", canonical.display(), root.display())) }
 }
 
 /// A new PNG the app may write: directly inside `root`, a plain file name, a .png extension, so a request from the page can never write elsewhere or overwrite something that is not an image.

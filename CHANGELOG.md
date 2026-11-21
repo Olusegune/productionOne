@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.61.0 (2026-11-20): queue strip, Deliver blockers, a sharper proportions workspace, yellow buttons
+- **Yellow primary buttons.** The main action on every screen is now yellow, in both looks.
+- **Queue strip.** Along the bottom of every screen: what is running, waiting, failed (one per view) and the pictures waiting for your decision, with thumbnails. A picture that needs you opens Review.
+- **Deliver** groups the checklist into Blockers, Review and Optional, with Done collapsed, and shows a package preview (approved pictures, contents, and whether it would be verified or a draft).
+- **Proportions workspace:** every control now shows in the figure (hands, feet, nose, jaw, elbows, knees, rounded to angular); the figure is a shaded, tapered mannequin; typed numbers and the arrows take effect immediately; Total height shows a target line when the parts do not add up to it. The proportion words in prompts are richer: graded (long, very long), a stylization note, the story height, and the same facts once as numbers in head units.
+- **Find missing pictures:** the pictures you choose are copied into the project's pictures folder (the originals are untouched), so they show everywhere. Checked end to end in the packaged app.
+- **Assistant plan:** uses the typical price for the model when you have not entered one (labelled as an estimate), shows how many characters, props and sets are in the plan, and lists the steps as a timeline.
+- **Design** shows each asset's approved picture as its thumbnail; the Next step card says which step of the path you are on.
+- **Light look:** more contrast for secondary text and the plan warning.
+- Review: the zoom toolbar no longer runs under the decision panel.
+
 ## 0.60.0 (2026-11-20): relink preview and Review compare
 - **Find missing pictures now shows a preview first.** After you choose the folder, "Review matches before relinking" lists every missing picture, the file found for it (or that the folder has none), and what you had decided about it. Tick the ones to link, then press Relink N files. Choose another folder is there too. Nothing changes until you press the button.
 - **Review: compare, zoom and keep moving.** Zoom in and out, jump to a Top crop, and keep both pictures in step with Sync zoom (Ctrl and the mouse wheel also zoom). A Review summary strip shows the reference, your decision and the technical checks, and a bar at the bottom shows how many are left, what is Next, and previous and next arrows.
