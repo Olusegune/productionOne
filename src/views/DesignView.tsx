@@ -211,6 +211,7 @@ export function DesignView(p: DesignViewProps) {
               openProviders={() => setProvidersOpen(true)}
               openLocal={() => setLocalOpen(true)}
               controlRef={studioControl}
+              onOpenProportions={() => setSection("identity")}
               refs={assetRefs}
               setRefs={setAssetRefs}
               onPatchAsset={(id, patch) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => (a.id === id ? { ...a, ...patch } : a)) }))}
