@@ -5,7 +5,8 @@ import { RealImage } from "./RealImage";
 import { stripItems } from "../domain/queueStrip";
 import { newlyDone } from "../domain/shortcuts";
 import { goldenPath, type GoldenPathInput, type GoldenStep } from "../domain/goldenPath";
-import { spendGate, summarize, waitingForAnchor, type QueueState } from "../domain/generationQueue";
+import { spendGate, summarize, topazUse, waitingForAnchor, type QueueState } from "../domain/generationQueue";
+import { topazBalance, topazHasKey, type TopazBalance } from "../data/topaz";
 
 const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Review: ClipboardCheck, Direct: Clapperboard, Deliver: PackageCheck, Assistant: MessageCircle } as const;
 /** Sidebar order. Alt+1 to Alt+5 keep their old meaning; Review is Alt+6, Assistant Alt+7. */
@@ -133,7 +134,17 @@ export function CommandPalette({ commands, onClose }: { commands: PaletteCommand
 function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (q: QueueState) => QueueState) => void }) {
   const [open, setOpen] = useState(false);
   const s = summarize(queue);
-  const label = queue.guard && queue.totalCeilingUsd !== null && queue.perImageUsd !== null ? `$${s.committedUsd.toFixed(2)} of $${queue.totalCeilingUsd.toFixed(2)}` : `${s.requests} request${s.requests === 1 ? "" : "s"}`;
+  const topaz = topazUse(queue);
+  const [balance, setBalance] = useState<TopazBalance | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    let live = true;
+    void topazHasKey().then((ok) => { if (ok) void topazBalance().then((b) => { if (live) setBalance(b); }).catch(() => {}); });
+    return () => { live = false; };
+  }, [open]);
+  const topazText = topaz.pictures > 0 ? ` · ${topaz.credits} Topaz credit${topaz.credits === 1 ? "" : "s"}` : "";
+  const label0 = queue.guard && queue.totalCeilingUsd !== null && queue.perImageUsd !== null ? `$${s.committedUsd.toFixed(2)} of $${queue.totalCeilingUsd.toFixed(2)}` : `${s.requests} request${s.requests === 1 ? "" : "s"}`;
+  const label = label0 + topazText;
   const num = (v: string) => { const n = Number(v); return v.trim() === "" || !(n >= 0) ? null : n; };
   return (
     <span className="po-cost">
@@ -141,6 +152,7 @@ function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (
       {open && (
         <div className="po-cost-pop" role="dialog" aria-label="Cost and spending cap">
           <p>Your provider bills the account behind your key. Buttons show a typical price as an estimate; enter your own price here and they use it. The count below includes retries.</p>
+          {(topaz.pictures > 0 || balance) && <p className="po-topaz" data-testid="topaz-use"><b>Topaz Labs</b>: {topaz.pictures} enhanced picture{topaz.pictures === 1 ? "" : "s"}, {topaz.credits} credit{topaz.credits === 1 ? "" : "s"} used in this project{balance ? `. Balance: ${balance.available} credit${balance.available === 1 ? "" : "s"}.` : "."} Billed by Topaz, separate from the image requests.</p>}
           <label className="po-switch"><input type="checkbox" checked={queue.guard} onChange={(e) => setQueue((q) => ({ ...q, guard: e.target.checked }))} /> Stop at a spending cap</label>
           <div className="po-cost-fields">
             <label>Price per request (USD)<input inputMode="decimal" disabled={!queue.guard} value={queue.perImageUsd ?? ""} onChange={(e) => setQueue((q) => ({ ...q, perImageUsd: num(e.target.value) }))} aria-label="Price per request in dollars" /></label>

@@ -66,3 +66,22 @@ describe('the strip does not repeat itself', () => {
     expect(stripItems({ ...q, jobs: queue.jobs.slice(0, 2) }).shown.map((i) => i.job.revision)).toEqual([2])
   })
 })
+
+describe('the cost popover shows Topaz use', () => {
+  it('says how many credits the enhanced pictures used, and puts it on the chip', async () => {
+    const { addEnhanced } = await import('../domain/generationQueue')
+    const base = build([['front', 'completed']])
+    const done = { ...base, jobs: base.jobs.map((j) => ({ ...j, outputPath: 'C:/a.png', width: 100, height: 100 })) }
+    const q = addEnhanced(done, done.jobs[0], { path: 'C:/a_topaz.png', width: 200, height: 200, credits: 2 }, 5).state
+    render(<QueueDock queue={q} setQueue={() => {}} onOpen={() => {}} />)
+    const chip = screen.getByRole('button', { name: /Cost and spending cap|request/ })
+    expect(chip.textContent).toMatch(/2 Topaz credits/)
+    fireEvent.click(chip)
+    expect(screen.getByTestId('topaz-use').textContent).toMatch(/1 enhanced picture, 2 credits used in this project.*Billed by Topaz/)
+  })
+  it('shows nothing about Topaz when nothing was enhanced', () => {
+    render(<QueueDock queue={emptyQueue()} setQueue={() => {}} onOpen={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /request/ }))
+    expect(screen.queryByTestId('topaz-use')).toBeNull()
+  })
+})

@@ -41,3 +41,17 @@ describe('the enhanced picture in the queue', () => {
     expect(out.job).toMatchObject({ revision: 2, status: 'needs-review', approved: false, rejected: false, source: 'enhanced', outputPath: 'C:/a_topaz.png', width: 2048, outputName: 'a_front_1_topaz' })
   })
 })
+
+describe('Topaz credits in the spending counter', () => {
+  it('sums the credits of enhanced pictures and counts them, apart from image requests', async () => {
+    const { addEnhanced, emptyQueue, enqueue, summarize, topazUse } = await import('./generationQueue')
+    const q = enqueue(emptyQueue(), [{ assetId: 'A1', variant: 'Canonical', sheetType: 'Turnaround', viewKey: 'front', label: 'Front', prompt: 'p', aspect: '3:4', fullBody: true, provider: 'kie', model: 'm', references: [], outputName: (r) => `a_front_${r}` }], 1, false).state
+    const done = { ...q, jobs: q.jobs.map((j) => ({ ...j, status: 'completed' as const, outputPath: 'C:/a.png', width: 1024, height: 1536, attempts: 1 })) }
+    expect(topazUse(done)).toEqual({ credits: 0, pictures: 0 })
+    const one = addEnhanced(done, done.jobs[0], { path: 'C:/a_topaz.png', width: 2048, height: 3072, credits: 2 }, 5)
+    const two = addEnhanced(one.state, one.job, { path: 'C:/a_topaz2.png', width: 4096, height: 6144, credits: 3 }, 6)
+    const none = addEnhanced(two.state, two.job, { path: 'C:/a_topaz3.png', width: 4096, height: 6144, credits: null }, 7)
+    expect(topazUse(none.state)).toEqual({ credits: 5, pictures: 3 })
+    expect(summarize(none.state).requests).toBe(summarize(done).requests)
+  })
+})
