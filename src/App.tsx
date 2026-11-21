@@ -1353,15 +1353,23 @@ export default function App() {
       setRelinkPlan({ folder: scan.folder, found: Object.fromEntries(scan.found.map((h) => [h.name, h.path])) });
     } catch (e) { setNotice(String(e)); }
   };
-  const confirmRelink = (jobIds: string[]) => {
+  const confirmRelink = async (jobIds: string[]) => {
     if (!relinkPlan) return;
-    const result = applyRelink(queue, relinkPlan.found, Date.now(), new Set(jobIds));
-    if (result.relinked.length) {
-      setQueueState(result.state);
-      result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
-    }
-    setRelinkPlan(null);
-    setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
+    const plan = relinkPlan;
+    const ticked = new Set(jobIds);
+    const wanted = planRelink(queue, plan.found, (id) => id).filter((r) => r.path && ticked.has(r.jobId)).map((r) => r.stem.toLowerCase());
+    try {
+      // The pictures are copied into the project's pictures folder (the originals are not touched), because the app only reads pictures from there.
+      const { invoke: call } = await import("@tauri-apps/api/core");
+      const adopted = await call<Array<{ name: string; path: string }>>("adopt_scanned", { names: [...new Set(wanted)] });
+      const result = applyRelink(queue, Object.fromEntries(adopted.map((a) => [a.name, a.path])), Date.now(), ticked);
+      if (result.relinked.length) {
+        setQueueState(result.state);
+        result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
+      }
+      setRelinkPlan(null);
+      setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
+    } catch (e) { setRelinkPlan(null); setNotice(String(e)); }
   };
   const handleMissing = (n: number, missing: string[]) => {
     const jobs = dropMissing(queue, missing).state.jobs;
