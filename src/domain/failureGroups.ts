@@ -2,12 +2,12 @@ import { isSuperseded, type ImageJob, type QueueState } from './generationQueue'
 
 export type Cause = 'gone' | 'model-unavailable' | 'credits' | 'key' | 'rate-limit' | 'network' | 'server' | 'content' | 'other'
 /** What a person can do about a cause. Retrying only helps when the cause was temporary. */
-export type FixKind = 'open-design' | 'refresh-models' | 'choose-model' | 'retry' | 'open-providers'
+export type FixKind = 'open-design' | 'find-files' | 'refresh-models' | 'choose-model' | 'retry' | 'open-providers'
 
 interface CauseInfo { label: string; advice: string; fixes: FixKind[] }
 
 export const causeInfo: Record<Cause, CauseInfo> = {
-  gone: { label: 'The picture is not on this computer', advice: 'The project points at a picture that is not here, for example because it was opened on another computer. Retrying cannot bring it back: open the view and press Generate to make it again, or add your own picture with Use my image.', fixes: ['open-design'] },
+  gone: { label: 'The picture is not on this computer', advice: 'The project points at a picture that is not here, for example because it was opened on another computer. Retrying cannot bring it back: open the view and press Generate to make it again, or add your own picture with Use my image. If you still have the file, Find the files looks for it in a folder you choose.', fixes: ['find-files', 'open-design'] },
   'model-unavailable': { label: 'The model is not available', advice: 'The provider no longer lists this model, or has not published how to call it. Refreshing the model list or choosing another model fixes it; retrying alone will not.', fixes: ['refresh-models', 'choose-model', 'retry'] },
   credits: { label: 'Not enough credits', advice: 'The provider says the account is out of credits. Add credits at the provider, then retry.', fixes: ['open-providers', 'retry'] },
   key: { label: 'The key was missing or rejected', advice: 'Check the key in Provider Settings, then retry.', fixes: ['open-providers', 'retry'] },

@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Find missing pictures:** when pictures are not on this computer (a project opened elsewhere, or files moved), Deliver and the failure list now have "Find the files…" (also in the command palette). You choose a folder; it is searched, including folders inside it, for pictures by the name the app saved them under. Found pictures are linked back, with your approve or reject decision restored when the project remembers it (otherwise they return to waiting for you). Nothing is copied, generated or deleted, and links are never followed.
+
 ## 0.58.0 (2026-11-20): modern sliders, a solid mannequin and undo for decisions
 - **Undo for decisions:** after you approve or reject a picture, or take a decision back, a bar offers Undo for 15 seconds on any screen. It puts that one picture, its approved picture and the asset's Approved label back as they were. It never touches a file, and does nothing if the picture has been regenerated or decided again since.
 - Sliders everywhere are redesigned: a thin filled track and a round handle. The shape and proportion rows show the name and value on one line, with the slider beneath.

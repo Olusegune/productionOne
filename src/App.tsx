@@ -102,6 +102,8 @@ import type { DemoClip } from "./domain/demoClips";
 import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
+import { primaryViewKeys } from "./domain/sheetSpecs";
+import { applyRelink, relinkSummary, wantedStems } from "./domain/relink";
 import { detectDecision, undoDecision, decisionWords, type DecisionSnapshot } from "./domain/decisionUndo";
 import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
@@ -1328,6 +1330,7 @@ export default function App() {
     { id: "rail", label: "Show or hide the side panels", hint: "View", run: () => setSidebarHidden((hidden) => !hidden) },
     { id: "help", label: "Getting started", hint: "Help", run: () => setHelpTopic("start") },
     { id: "keys", label: "Keyboard shortcuts", hint: "Help", run: () => setHelpTopic("shortcuts") },
+    { id: "find-pictures", label: "Find missing pictures in a folder…", hint: "Files", run: () => { void findMissingPictures(); } },
     { id: "tour", label: "Take the quick tour", hint: "Help", run: () => setTourOpen(true) },
     { id: "desktop-shortcut", label: "Add Production One to the Desktop", hint: "Help", run: () => { void addDesktopShortcut(); } },
     ...analysis.assets.map((asset, index) => ({ id: `asset-${asset.id}`, label: `Open ${asset.name}`, hint: `${asset.type} · Design`, run: () => { setSelectedAsset(index); setWorkspace("Design"); } })),
@@ -1335,6 +1338,23 @@ export default function App() {
   /** Every file outside the queue that the project records: approved pictures, clips and reference photos. */
   const trackedPaths = [...Object.values(assetOutputs), ...clips.map((c) => c.path), ...Object.values(assetRefs).flat()];
   /** Files the project points at that are not on this computer: marks what depends on them, and says so. Used when a project loads and again just before a package is made. */
+  /** Finds pictures the project lost track of by name in a folder the person chooses, and points the takes at them again. */
+  const findMissingPictures = async () => {
+    const { stems, takes } = wantedStems(queue);
+    if (!takes) { setNotice("No pictures are missing."); return; }
+    if (!isTauri) { setNotice("Finding pictures needs the desktop app."); return; }
+    try {
+      const { invoke: call } = await import("@tauri-apps/api/core");
+      const hits = await call<Array<{ name: string; path: string }> | null>("find_pictures", { names: stems });
+      if (hits === null) return;
+      const result = applyRelink(queue, Object.fromEntries(hits.map((h) => [h.name, h.path])));
+      if (result.relinked.length) {
+        setQueueState(result.state);
+        result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
+      }
+      setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
+    } catch (e) { setNotice(String(e)); }
+  };
   const handleMissing = (n: number, missing: string[]) => {
     const jobs = dropMissing(queue, missing).state.jobs;
     const fixed = reconcileMissing(analysis.assets, assetOutputs, jobs, missing);
@@ -1615,7 +1635,7 @@ export default function App() {
             notify={setNotice}
             format={format}
             styleLocked={styleBible.locked}
-            openProviders={() => setProvidersOpen(true)} openDesign={() => setWorkspace("Design")} onFix={(fix) => { if (fix.kind === "review") setWorkspace("Review"); else if (fix.kind === "script") setWorkspace("Story"); else if (fix.kind === "asset" && fix.assetId) { const i = analysis.assets.findIndex((x) => x.id === fix.assetId); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); } else setWorkspace("Design"); }}
+            openProviders={() => setProvidersOpen(true)} openDesign={() => setWorkspace("Design")} onFindFiles={() => void findMissingPictures()} onFix={(fix) => { if (fix.kind === "relink") void findMissingPictures(); else if (fix.kind === "review") setWorkspace("Review"); else if (fix.kind === "script") setWorkspace("Story"); else if (fix.kind === "asset" && fix.assetId) { const i = analysis.assets.findIndex((x) => x.id === fix.assetId); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); } else setWorkspace("Design"); }}
           />
         )}
       </main>

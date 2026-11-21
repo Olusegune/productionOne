@@ -1,4 +1,4 @@
-import { AlertTriangle, KeyRound, RefreshCw, RotateCcw, Shuffle } from 'lucide-react'
+import { AlertTriangle, FolderSearch, KeyRound, RefreshCw, RotateCcw, Shuffle } from 'lucide-react'
 import { reassignModel, retry, type QueueState } from '../domain/generationQueue'
 import { groupFailures } from '../domain/failureGroups'
 import { useModelChoice } from '../data/modelChoice'
@@ -15,9 +15,11 @@ export function FailureGroups(props: {
   assetName: (id: string) => string
   openProviders: () => void
   openDesign: () => void
+  /** Looks for the missing pictures in a folder the person chooses. */
+  onFindFiles?: () => void
   notify: (message: string) => void
 }) {
-  const { queue, setQueue, desktop, assetName, openProviders, openDesign, notify } = props
+  const { queue, setQueue, desktop, assetName, openProviders, openDesign, onFindFiles, notify } = props
   const choice = useModelChoice(desktop, 0)
   const groups = groupFailures(queue)
   if (groups.length === 0) return null
@@ -41,6 +43,7 @@ export function FailureGroups(props: {
             </div>
             <p className="fg-advice">{g.advice}</p>
             <div className="fg-actions">
+              {g.fixes.includes('find-files') && onFindFiles && <button className="secondary" disabled={!desktop} onClick={onFindFiles}><FolderSearch size={14} aria-hidden="true" /> Find the files…</button>}
               {g.fixes.includes('open-design') && <button className="secondary" onClick={openDesign}>Open Design</button>}
               {g.fixes.includes('refresh-models') && <button className="secondary" disabled={!desktop} onClick={async () => notify(await choice.refresh())}><RefreshCw size={14} aria-hidden="true" /> Refresh models</button>}
               {g.fixes.includes('choose-model') && differs && desktop && <button className="secondary" onClick={() => { setQueue((q) => reassignModel(q, ids, choice.provider, choice.modelId)); notify(`${g.jobs.length} ${g.jobs.length === 1 ? 'view' : 'views'} moved to ${current}. They will run when the queue is next started.`) }}><Shuffle size={14} aria-hidden="true" /> Use {current} for these {g.jobs.length}</button>}

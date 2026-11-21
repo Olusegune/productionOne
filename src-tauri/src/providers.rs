@@ -202,6 +202,54 @@ pub fn missing_files(paths: Vec<String>) -> Vec<String> {
     paths.into_iter().take(5000).filter(|path| !Path::new(path).is_file()).collect()
 }
 
+/// One picture found by name in a folder the person chose.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct FoundPicture { pub name: String, pub path: String }
+
+const PICTURE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "webp"];
+
+/// Looks through `root` for pictures whose file name (without the extension) is one of `wanted` (compared without regard to case). It only reads directory listings:
+/// it does not follow links, stops at a depth of 8 and after 200,000 entries, and when a name turns up more than once keeps the shortest path (then the first alphabetically).
+pub fn scan_for_pictures(root: &Path, wanted: &[String]) -> Vec<FoundPicture> {
+    use std::collections::{HashMap, HashSet};
+    let want: HashSet<String> = wanted.iter().map(|n| n.to_lowercase()).collect();
+    let mut best: HashMap<String, PathBuf> = HashMap::new();
+    let mut stack = vec![(root.to_path_buf(), 0usize)];
+    let mut seen = 0usize;
+    while let Some((dir, depth)) = stack.pop() {
+        let Ok(entries) = fs::read_dir(&dir) else { continue };
+        for entry in entries.flatten() {
+            seen += 1;
+            if seen > 200_000 { break; }
+            let Ok(kind) = entry.file_type() else { continue };
+            let path = entry.path();
+            if kind.is_symlink() { continue; }
+            if kind.is_dir() { if depth < 8 { stack.push((path, depth + 1)); } continue; }
+            let Some(ext) = path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()) else { continue };
+            if !PICTURE_EXTENSIONS.contains(&ext.as_str()) { continue; }
+            let Some(stem) = path.file_stem().and_then(|s| s.to_str()).map(|s| s.to_lowercase()) else { continue };
+            if !want.contains(&stem) { continue; }
+            let better = match best.get(&stem) { None => true, Some(old) => (path.as_os_str().len(), &path) < (old.as_os_str().len(), old) };
+            if better { best.insert(stem, path); }
+        }
+    }
+    let mut out: Vec<FoundPicture> = best.into_iter().map(|(name, path)| FoundPicture { name, path: path.to_string_lossy().into_owned() }).collect();
+    out.sort_by(|a, b| a.name.cmp(&b.name));
+    out
+}
+
+/// "Find missing pictures": the person chooses a folder (the folder always comes from this dialog, never from the page), and the pictures whose names are asked for are
+/// looked up inside it. Returns None if they cancel. Nothing is copied or changed on disk.
+#[tauri::command]
+pub async fn find_pictures(app: tauri::AppHandle, names: Vec<String>) -> Result<Option<Vec<FoundPicture>>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    let names: Vec<String> = names.into_iter().take(5000).collect();
+    if names.is_empty() { return Ok(None); }
+    let Some(folder) = app.dialog().file().set_title("Choose the folder that holds your pictures").blocking_pick_folder() else { return Ok(None) };
+    let root = folder.into_path().map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || scan_for_pictures(&root, &names)).await.map(Some).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn generate_image(app: tauri::AppHandle, provider: String, model: String, prompt: String, aspect: String, quality: String, references: Vec<String>, output_name: String) -> Result<ImportedAsset, String> {
     if prompt.trim().is_empty() { return Err("Prompt is required".into()); }
@@ -723,6 +771,29 @@ The background is one flat, uniform neutral mid-grey field.";
         assert!(parse_models("fal", &json!({})).is_empty());
     }
 
+    #[test]
+    fn scan_finds_pictures_by_name_in_nested_folders_and_ignores_the_rest() {
+        let root = std::env::temp_dir().join(format!("po_scan_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("a/b")).unwrap();
+        fs::create_dir_all(root.join("long/deeper/still")).unwrap();
+        fs::write(root.join("a/b/Marcus_Front_v01.PNG"), b"x").unwrap();
+        fs::write(root.join("long/deeper/still/Marcus_Front_v01.png"), b"x").unwrap();
+        fs::write(root.join("amina_side.jpg"), b"x").unwrap();
+        fs::write(root.join("amina_side.txt"), b"x").unwrap();
+        fs::write(root.join("other.png"), b"x").unwrap();
+        let found = scan_for_pictures(&root, &["marcus_front_v01".to_string(), "AMINA_SIDE".to_string(), "missing_one".to_string()]);
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(found.len(), 2);
+        assert_eq!(found[0].name, "amina_side");
+        assert!(found[0].path.ends_with("amina_side.jpg"));
+        assert_eq!(found[1].name, "marcus_front_v01");
+        assert!(found[1].path.contains("a") && found[1].path.to_lowercase().ends_with("marcus_front_v01.png") && !found[1].path.contains("long"));
+    }
+    #[test]
+    fn scan_of_a_folder_that_is_not_there_finds_nothing() {
+        assert!(scan_for_pictures(Path::new("Z:/definitely/not/here"), &["x".to_string()]).is_empty());
+    }
     #[test]
     fn qa_flags_blank_images_and_cropped_figures() {
         let blank = image::RgbImage::from_pixel(200, 300, image::Rgb([128, 128, 128]));
