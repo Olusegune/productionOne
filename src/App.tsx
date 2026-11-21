@@ -103,7 +103,8 @@ import { AssetInspector, BibleTree } from "./components/bible";
 import { CommandPalette, QueueDock, TopBar, type PaletteCommand } from "./components/shell";
 import { useImageQueue } from "./data/useImageQueue";
 import { primaryViewKeys } from "./domain/sheetSpecs";
-import { applyRelink, relinkSummary, wantedStems } from "./domain/relink";
+import { applyRelink, planRelink, relinkSummary, wantedStems } from "./domain/relink";
+import { RelinkDialog } from "./components/RelinkDialog";
 import { detectDecision, undoDecision, decisionWords, type DecisionSnapshot } from "./domain/decisionUndo";
 import { addSupplied, dropMissing, emptyQueue, recover, type ImageJob, type QueueState } from "./domain/generationQueue";
 import { dropMissingRefs, flagMissingClips, reconcileMissing, reconcileShots } from "./domain/missingFiles";
@@ -1339,21 +1340,28 @@ export default function App() {
   const trackedPaths = [...Object.values(assetOutputs), ...clips.map((c) => c.path), ...Object.values(assetRefs).flat()];
   /** Files the project points at that are not on this computer: marks what depends on them, and says so. Used when a project loads and again just before a package is made. */
   /** Finds pictures the project lost track of by name in a folder the person chooses, and points the takes at them again. */
+  const [relinkPlan, setRelinkPlan] = useState<{ folder: string; found: Record<string, string> } | null>(null);
   const findMissingPictures = async () => {
     const { stems, takes } = wantedStems(queue);
     if (!takes) { setNotice("No pictures are missing."); return; }
     if (!isTauri) { setNotice("Finding pictures needs the desktop app."); return; }
     try {
       const { invoke: call } = await import("@tauri-apps/api/core");
-      const hits = await call<Array<{ name: string; path: string }> | null>("find_pictures", { names: stems });
-      if (hits === null) return;
-      const result = applyRelink(queue, Object.fromEntries(hits.map((h) => [h.name, h.path])));
-      if (result.relinked.length) {
-        setQueueState(result.state);
-        result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
-      }
-      setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
+      const scan = await call<{ folder: string; found: Array<{ name: string; path: string }> } | null>("find_pictures", { names: stems });
+      if (scan === null) return;
+      // Nothing is linked yet: the person reviews the matches first.
+      setRelinkPlan({ folder: scan.folder, found: Object.fromEntries(scan.found.map((h) => [h.name, h.path])) });
     } catch (e) { setNotice(String(e)); }
+  };
+  const confirmRelink = (jobIds: string[]) => {
+    if (!relinkPlan) return;
+    const result = applyRelink(queue, relinkPlan.found, Date.now(), new Set(jobIds));
+    if (result.relinked.length) {
+      setQueueState(result.state);
+      result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
+    }
+    setRelinkPlan(null);
+    setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
   };
   const handleMissing = (n: number, missing: string[]) => {
     const jobs = dropMissing(queue, missing).state.jobs;
@@ -1493,6 +1501,9 @@ export default function App() {
               <p className="helper">Format: Production One project (.pone). Legacy .pguy files open and are converted by Save As.</p>
             </section>
           </div>
+        )}
+        {relinkPlan && (
+          <RelinkDialog folder={relinkPlan.folder} rows={planRelink(queue, relinkPlan.found, (id) => analysis.assets.find((a) => a.id === id)?.name ?? id)} onConfirm={confirmRelink} onCancel={() => setRelinkPlan(null)} onAnother={() => { setRelinkPlan(null); void findMissingPictures(); }} />
         )}
         {lastDecision && (
           <div className="notice undo-bar" role="status">

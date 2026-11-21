@@ -1,0 +1,24 @@
+.rl-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; background: rgba(5, 8, 14, .62); backdrop-filter: blur(3px); }
+.rl-dialog { width: min(760px, 100%); max-height: calc(100vh - 48px); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: 12px; padding: 20px; border-radius: var(--radius); background: var(--panel-1); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); box-shadow: var(--lift-hi); }
+.rl-dialog header { display: flex; gap: 12px; align-items: flex-start; color: var(--blue); }
+.rl-dialog header h3 { margin: 0; color: var(--text); font: 600 20px/1.2 var(--display); letter-spacing: -.02em; }
+.rl-dialog header p { margin: 4px 0 0; }
+.rl-summary { display: flex; gap: 8px; flex-wrap: wrap; }
+.rl-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-1); background: var(--panel-2); font-size: 13px; color: var(--text-2); }
+.rl-chip.ok { border-color: color-mix(in srgb, #6fcf97 55%, transparent); color: #7fe0a5; background: color-mix(in srgb, #6fcf97 12%, transparent); }
+.rl-chip.warn { border-color: color-mix(in srgb, #f0c36a 55%, transparent); color: #f0c36a; background: color-mix(in srgb, #f0c36a 10%, transparent); }
+:root[data-theme="light"] .rl-chip.ok { color: #1c7a43; }
+:root[data-theme="light"] .rl-chip.warn { color: #8a5a00; }
+.rl-table { overflow-y: auto; border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); border-radius: 12px; min-height: 120px; scrollbar-width: thin; }
+.rl-row { display: grid; grid-template-columns: 36px minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid color-mix(in srgb, var(--text) 6%, transparent); font-size: 14px; }
+.rl-row:last-child { border-bottom: 0; }
+.rl-row small { display: block; color: var(--text-3); font-size: 12px; overflow-wrap: anywhere; }
+.rl-row b { font-weight: 600; }
+.rl-head { position: sticky; top: 0; background: var(--panel-2); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-3); z-index: 1; }
+.rl-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--blue); margin: 0; }
+.rl-row.none { color: var(--text-3); }
+.rl-found { color: var(--text); font-family: ui-monospace, monospace; font-size: 12.5px; }
+.rl-missing { font-size: 13px; }
+.rl-dialog footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rl-spacer { flex: 1; }
+.rl-dialog footer button { display: inline-flex; align-items: center; gap: 8px; height: 38px; }

@@ -1,0 +1,35 @@
+/* Review: zoom and compare */
+.rv-zoombar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); background: color-mix(in srgb, var(--text) 3%, transparent); }
+.rv-seg { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+.rv-seg button { all: unset; cursor: pointer; padding: 5px 14px; border-radius: 999px; font: 500 13px var(--ui); color: var(--text-2); }
+.rv-seg button.on { background: color-mix(in srgb, var(--blue) 20%, var(--panel-2)); color: var(--text); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
+.rv-seg button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.rv-sync { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); cursor: pointer; }
+.rv-sync input { width: 16px; height: 16px; accent-color: var(--blue); margin: 0; }
+.rv-zoomctl { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.rv-zoomctl .icon-button { width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: 8px; }
+.rv-zoomctl .icon-button:disabled { opacity: .35; }
+.rv-zoomlevel { min-width: 64px; text-align: center; font: 600 12px ui-monospace, monospace; color: var(--text-2); }
+
+.rv-image.rv-zoom { display: block; overflow: auto; max-height: calc(100vh - 260px); scrollbar-width: thin; }
+.rv-zoom .rv-zoom-inner { min-width: 100%; }
+.rv-zoom:not(.zoomed) { display: grid; place-items: center; overflow: hidden; }
+.rv-zoom.zoomed img { max-height: none; width: 100%; height: auto; object-fit: initial; }
+.rv-zoom.zoomed { cursor: grab; }
+
+/* Review summary and moving through the queue */
+.rv-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); background: color-mix(in srgb, var(--text) 3%, transparent); font-size: 13px; }
+.rv-summary > b { font: 600 14px var(--display); }
+.rv-summary .rv-chip { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-1); background: var(--panel-2); color: var(--text-2); }
+.rv-summary .rv-chip.ok { border-color: color-mix(in srgb, #6fcf97 55%, transparent); color: #7fe0a5; background: color-mix(in srgb, #6fcf97 12%, transparent); }
+.rv-summary .rv-chip.warn { border-color: color-mix(in srgb, #f0c36a 55%, transparent); color: #f0c36a; background: color-mix(in srgb, #f0c36a 10%, transparent); }
+:root[data-theme="light"] .rv-summary .rv-chip.ok { color: #1c7a43; }
+:root[data-theme="light"] .rv-summary .rv-chip.warn { color: #8a5a00; }
+.rv-nav { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 9%, transparent); background: color-mix(in srgb, var(--text) 3%, transparent); }
+.rv-nav .rv-count { font-size: 13px; color: var(--text-2); }
+.rv-nav .rv-next { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); min-width: 0; }
+.rv-nav .rv-next .rv-thumb { width: 36px; height: 36px; flex: none; }
+.rv-nav .rv-next b { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-nav .rv-steps { margin-left: auto; display: inline-flex; gap: 6px; }
+.rv-nav .rv-steps button { width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 10px; }
+.rv-nav .rv-count { white-space: nowrap; }

@@ -206,6 +206,10 @@ pub fn missing_files(paths: Vec<String>) -> Vec<String> {
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct FoundPicture { pub name: String, pub path: String }
 
+/// What a scan found, and which folder was searched.
+#[derive(Serialize, Clone, Debug)]
+pub struct FoundScan { pub folder: String, pub found: Vec<FoundPicture> }
+
 const PICTURE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "webp"];
 
 /// Looks through `root` for pictures whose file name (without the extension) is one of `wanted` (compared without regard to case). It only reads directory listings:
@@ -241,13 +245,14 @@ pub fn scan_for_pictures(root: &Path, wanted: &[String]) -> Vec<FoundPicture> {
 /// "Find missing pictures": the person chooses a folder (the folder always comes from this dialog, never from the page), and the pictures whose names are asked for are
 /// looked up inside it. Returns None if they cancel. Nothing is copied or changed on disk.
 #[tauri::command]
-pub async fn find_pictures(app: tauri::AppHandle, names: Vec<String>) -> Result<Option<Vec<FoundPicture>>, String> {
+pub async fn find_pictures(app: tauri::AppHandle, names: Vec<String>) -> Result<Option<FoundScan>, String> {
     use tauri_plugin_dialog::DialogExt;
     let names: Vec<String> = names.into_iter().take(5000).collect();
     if names.is_empty() { return Ok(None); }
     let Some(folder) = app.dialog().file().set_title("Choose the folder that holds your pictures").blocking_pick_folder() else { return Ok(None) };
     let root = folder.into_path().map_err(|e| e.to_string())?;
-    tauri::async_runtime::spawn_blocking(move || scan_for_pictures(&root, &names)).await.map(Some).map_err(|e| e.to_string())
+    let folder = root.to_string_lossy().into_owned();
+    tauri::async_runtime::spawn_blocking(move || scan_for_pictures(&root, &names)).await.map(|found| Some(FoundScan { folder, found })).map_err(|e| e.to_string())
 }
 
 #[tauri::command]

@@ -132,3 +132,39 @@ describe('Review: compare revisions of one view', () => {
     expect(states()).toBe('p1:approved,p2:rejected')
   })
 })
+
+describe('Review: summary and moving through the queue', () => {
+  const three = () => start([
+    job({ id: 'a', status: 'needs-review', outputPath: 'C:/a.png', label: 'Front', revision: 3 }),
+    job({ id: 'b', key: 'k2', status: 'needs-review', outputPath: 'C:/b.png', label: 'Side', qaNotes: ['The picture is nearly flat'] }),
+    job({ id: 'c', key: 'k3', status: 'needs-review', outputPath: 'C:/c.png', label: 'Back' }),
+  ])
+  it('summarises the picture: reference, decision and technical checks', () => {
+    render(<Harness initial={three()} spies={spies()} />)
+    const summary = screen.getByLabelText('Review summary')
+    expect(summary.textContent).toMatch(/MARA · Front · revision 3/)
+    expect(summary.textContent).toMatch(/Reference: none yet/)
+    expect(summary.textContent).toMatch(/This picture: awaiting your decision/)
+    expect(summary.textContent).toMatch(/Technical checks: no findings/)
+  })
+  it('shows what is next and steps forward and back without deciding anything', () => {
+    render(<Harness initial={three()} spies={spies()} />)
+    const nav = screen.getByRole('group', { name: 'Move through the pictures' })
+    expect(nav.textContent).toMatch(/3 awaiting decision · 1 of 3/)
+    expect(nav.textContent).toMatch(/Next:.*MARA · Side/)
+    expect((screen.getByRole('button', { name: 'Previous picture' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Next picture' }))
+    expect(screen.getByLabelText('Review summary').textContent).toMatch(/MARA · Side/)
+    expect(screen.getByLabelText('Review summary').textContent).toMatch(/Technical checks: 1 finding/)
+    fireEvent.click(screen.getByRole('button', { name: 'Next picture' }))
+    expect((screen.getByRole('button', { name: 'Next picture' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Previous picture' }))
+    expect(screen.getByLabelText('Review summary').textContent).toMatch(/MARA · Side/)
+    expect(states()).toBe('a:needs-review,b:needs-review,c:needs-review')
+  })
+  it('has the zoom toolbar beside the comparison', () => {
+    render(<Harness initial={three()} spies={spies()} />)
+    expect(screen.getByRole('toolbar', { name: 'Zoom' })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: 'Sync zoom' })).toBeTruthy()
+  })
+})

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- **Find missing pictures now shows a preview first.** After you choose the folder, "Review matches before relinking" lists every missing picture, the file found for it (or that the folder has none), and what you had decided about it. Tick the ones to link, then press Relink N files. Choose another folder is there too. Nothing changes until you press the button.
+- **Review: compare, zoom and keep moving.** Zoom in and out, jump to a Top crop, and keep both pictures in step with Sync zoom (Ctrl and the mouse wheel also zoom). A Review summary strip shows the reference, your decision and the technical checks, and a bar at the bottom shows how many are left, what is Next, and previous and next arrows.
+
 ## 0.59.0 (2026-11-20): a proportions workspace and finding missing pictures
 - **Shape & proportions workspace:** the Identity card now has a Set proportions / Edit proportions button (with a new figure-and-measurement icon) that opens a full-window workspace: Body, Face and Advanced controls with typed numbers and per-control reset; a large figure with a head-unit ruler, brackets for total height, arm, leg and shoulder width, and a Compare view against the Natural proportions; a Proportion check panel; the approved picture for reference; an Apply to choice (this character, or also the project world profile); your own saved presets; and Linked proportions, which keep the total height and the parts adding up.
 - **Edits are a draft until you press Apply proportions.** Moving a control only redraws the figure; Apply proportions makes it the character's target for new pictures; Generate design preview is the separate step that asks a model for one picture.
