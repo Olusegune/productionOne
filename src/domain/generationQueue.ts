@@ -35,6 +35,8 @@ export interface ImageJob {
   error?: string
   approved: boolean
   rejected: boolean
+  /** Set when the picture's file went missing: where it was and what you had decided, so finding the file again can put both back. */
+  lost?: { path: string; approved: boolean; rejected: boolean }
   /** 'supplied' means the person brought this image themselves; it is stored byte for byte and approved on arrival. */
   source?: 'generated' | 'supplied' | 'cleaned'
   createdAt: number
@@ -306,7 +308,7 @@ export function dropMissing(state: QueueState, missing: string[], now = Date.now
   const jobs = state.jobs.map((j) => {
     if (!j.outputPath || !gone.has(j.outputPath) || (j.status !== 'completed' && j.status !== 'needs-review')) return j
     dropped++
-    return { ...j, status: 'failed' as const, approved: false, rejected: false, outputPath: undefined, error: MISSING_FILE_ERROR, updatedAt: now }
+    return { ...j, status: 'failed' as const, approved: false, rejected: false, outputPath: undefined, error: MISSING_FILE_ERROR, lost: { path: j.outputPath, approved: j.approved, rejected: j.rejected }, updatedAt: now }
   })
   return dropped ? { state: { ...state, jobs }, dropped } : { state, dropped: 0 }
 }
