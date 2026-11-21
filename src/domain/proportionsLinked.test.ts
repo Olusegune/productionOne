@@ -120,3 +120,17 @@ describe('the proportions as words for a prompt', () => {
     expect(text).not.toMatch(/\n/)
   })
 })
+
+describe('the words never contradict themselves', () => {
+  it('when the Total height control disagrees with the parts, the prompt follows the parts', () => {
+    const p = setControl(setControl(createProfile('a'), 'legLength', 4.9), 'armLength', 4.0)
+    // parts: 1 + 0.3 + 3 + 4.9 = 9.2 head units, while the control still says 7.5
+    const text = describeProportions(p)
+    expect(text).toMatch(/9\.2 tall/)
+    expect(text).not.toMatch(/7\.5 tall/)
+    expect(text).toMatch(/very tall, slender build \(about 9\.2 heads tall\)/)
+  })
+  it('when they agree, the control is used as it is', () => {
+    expect(describeProportions(setLinked(createProfile('a'), 'legLength', 4.9))).toMatch(/9\.2 tall/)
+  })
+})

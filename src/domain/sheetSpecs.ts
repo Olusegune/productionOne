@@ -3,6 +3,7 @@ import { artifactGuidance } from './cleanGuidance'
 import { styleGuidance, type SheetType, type StyleBible } from './visualDevelopment'
 import type { ExpressionNeed } from '../engine/emotion'
 import { anchoredPromptLine } from './identityAnchor'
+import { guideLine } from './proportionGuide'
 import { adaptViewFor2D, twoDAnchoredLine, twoDPhotoLine, twoDReinterpretLine } from './style2d'
 
 /** One separate image inside a reference sheet. Each view is generated and saved as its own original-resolution file. */
@@ -166,6 +167,8 @@ export interface PromptInput {
   reinterpret?: boolean
   /** The character's target proportions in words (see proportions.describe). Empty or absent: the prompt is exactly as it was. */
   proportions?: string
+  /** A proportion guide image is attached as the last reference (see proportionGuide.ts). Only used together with `proportions`. */
+  guide?: boolean
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -181,7 +184,7 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
 export const reshapeLine = "Its body proportions are NOT to be copied: draw the body to the target proportions stated above, even where they differ from this picture. Everything else about who this is stays."
 export const photoReshapeLine = 'The attached photographs show who this is, not how the body is built: draw the body to the target proportions stated above, even where the photographs differ.'
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions, guide }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const twoD = !!style.spec2d
   const place = asset.type === 'set' || asset.type === 'environment'
@@ -202,6 +205,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     reshaped,
     twoD && photoRefs ? twoDPhotoLine : '',
     hasTarget && photoRefs ? photoReshapeLine : '',
+    hasTarget && guide ? guideLine : '',
     twoD && reinterpret ? twoDReinterpretLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style, place ? 'scene' : 'technical')}.`,

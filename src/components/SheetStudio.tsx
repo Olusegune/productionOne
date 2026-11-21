@@ -1,3 +1,4 @@
+import { ensureGuide } from "../data/proportionGuide";
 import { sheetHints, sheetIconFor } from "../domain/categoryIcons";
 import { styleFingerprint } from "../domain/style2d";
 import { StyleGallery } from "./StyleGallery";
@@ -199,15 +200,18 @@ export function SheetStudio(props: {
   }, [backdrop, frontPath, desktop]);
   const backdropHex = backdrop === "front" && frontColour && frontColour.path === frontPath ? frontColour.hex : "";
   /** `only` limits the run to those view keys; `force` makes a new revision even where an image already exists (never for views still in the queue). */
-  const generate = (testOneFirst = false, only?: string[], force = false, reinterpret = false) => {
+  const generate = async (testOneFirst = false, only?: string[], force = false, reinterpret = false) => {
     if (!asset) return;
+    // The proportion guide: a plain figure at the target proportions, attached last, so a reference picture cannot pull the body back to what it shows.
+    const profile = asset.type === "character" ? props.proportions?.[asset.id] : undefined;
+    const guidePath = profile && desktop && modelTakesReferences(provider, modelId) && !reinterpret ? await ensureGuide(profile) : null;
     const pool = only ? views.filter((v) => only.includes(v.key)) : views;
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), anchored: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), guide: !!guidePath, anchored: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
       aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
-      references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? [])] : [],
+      references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? []), ...(guidePath ? [guidePath] : [])] : [],
       styleName: style.name, styleFp: fingerprint,
       provenance: provenanceFor(props.proportions?.[asset.id], [...(!reinterpret && modelTakesReferences(provider, modelId) && frontPath && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) ? [{ path: frontPath }] : []), ...(modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []).map((path) => ({ path })) : [])]),
       useAnchor: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
