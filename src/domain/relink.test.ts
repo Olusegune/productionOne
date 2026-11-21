@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { approve, dropMissing, emptyQueue, enqueue, reject, type QueueState } from './generationQueue'
-import { applyRelink, relinkSummary, savedStem, wantedStems } from './relink'
+import { applyRelink, planRelink, relinkSummary, savedStem, shortPath, wantedStems } from './relink'
 
 const req = (viewKey: string) => ({ assetId: 'MARCUS', variant: 'Canonical', sheetType: 'Turnaround', viewKey, label: viewKey, prompt: 'p', aspect: '3:4', fullBody: true, provider: 'kie', model: 'm', references: [], outputName: (r: number) => `MARCUS Front/${viewKey}_v${r}` })
 
@@ -62,5 +62,31 @@ describe('relinking missing pictures', () => {
     expect(relinkSummary({ relinked: 0, stillMissing: 5 })).toMatch(/None of the missing pictures/)
     expect(relinkSummary({ relinked: 1, stillMissing: 0 })).toBe('Found 1 picture and linked it back. Nothing was copied or generated.')
     expect(relinkSummary({ relinked: 12, stillMissing: 29 })).toMatch(/Found 12 pictures and linked them back\. 29 are still missing/)
+  })
+})
+
+describe('the match preview', () => {
+  it('lists every missing picture with the file found for it, or none, before anything changes', () => {
+    const { queue } = lostQueue()
+    const stems = wantedStems(queue).stems
+    const rows = planRelink(queue, { [stems[0].toLowerCase()]: 'D:/pics/a.png' }, () => 'MARCUS')
+    expect(rows).toHaveLength(3)
+    expect(rows[0]).toMatchObject({ name: 'MARCUS · front · revision 1', path: 'D:/pics/a.png', was: 'approved' })
+    expect(rows[1]).toMatchObject({ path: null, was: 'rejected' })
+    expect(rows[2]).toMatchObject({ path: null, was: 'waiting' })
+    expect(queue.jobs.every((j) => j.status === 'failed')).toBe(true)
+  })
+  it('links only the takes that were ticked', () => {
+    const { queue } = lostQueue()
+    const stems = wantedStems(queue).stems
+    const found = { [stems[0].toLowerCase()]: 'D:/a.png', [stems[1].toLowerCase()]: 'D:/b.png' }
+    const r = applyRelink(queue, found, 1, new Set([queue.jobs[1].id]))
+    expect(r.relinked.map((j) => j.id)).toEqual([queue.jobs[1].id])
+    expect(r.state.jobs[0]).toEqual(queue.jobs[0])
+    expect(r.stillMissing).toBe(2)
+  })
+  it('shortens a long path to its last three parts', () => {
+    expect(shortPath('C:\\Users\\me\\Pictures\\project\\a.png')).toBe('…/Pictures/project/a.png')
+    expect(shortPath('D:/a/b.png')).toBe('D:/a/b.png')
   })
 })

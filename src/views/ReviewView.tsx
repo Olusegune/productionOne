@@ -14,6 +14,8 @@ import { localVision } from "../data/visionReview";
 import { useLocalAi } from "../data/localAi";
 import { approvedPictures, approvedReference, awaitingReview, defaultCompareTarget, keepRevision, otherRevisions, turnedDown } from "../domain/review";
 import { primaryViewKeys } from "../domain/sheetSpecs";
+import { ZoomImage, ZoomToolbar, useZoomSync } from "../components/ZoomCompare";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Filter = "waiting" | "turned-down" | "approved";
 type CompareMode = "reference" | "revisions";
@@ -59,6 +61,10 @@ export function ReviewView(props: {
   const take = others.find((j) => j.id === takeId) ?? (job ? defaultCompareTarget(queue, job) : null);
   const comparing = mode === "revisions" && !!take;
   const assetName = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id;
+  const zoom = useZoomSync(job?.id ?? "");
+  const position = job ? list.findIndex((j) => j.id === job.id) : -1;
+  const nextJob = position >= 0 ? list[position + 1] : undefined;
+  const step = (delta: number) => { const to = list[position + delta]; if (to) setPickedId(to.id); };
 
   const decideNext = (from: ImageJob) => {
     const index = list.findIndex((j) => j.id === from.id);
@@ -136,17 +142,18 @@ export function ReviewView(props: {
                 )}
               </div>
             )}
+            <ZoomToolbar z={zoom} />
             <div className="rv-compare" aria-label="Comparison">
               {comparing && take ? (
                 <>
                   <figure>
                     <figcaption><span className={`rv-tag${take.approved ? " ok" : ""}`}>{take.approved ? "Approved" : take.rejected ? "Turned down" : "Waiting"} · revision {take.revision}</span><small>{take.label}</small></figcaption>
-                    <div className="rv-image"><RealImage path={take.outputPath} label={`${take.label} of ${assetName(take.assetId)}, revision ${take.revision}`} empty="No picture" /></div>
+                    <ZoomImage z={zoom} index={0} path={take.outputPath} label={`${take.label} of ${assetName(take.assetId)}, revision ${take.revision}`} empty="No picture" />
                     <button className="secondary rv-keep" onClick={() => doKeep(take)}><Check size={15} aria-hidden="true" /> Keep revision {take.revision}</button>
                   </figure>
                   <figure>
                     <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : filter === "approved" ? `Approved · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
-                    <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
+                    <ZoomImage z={zoom} index={1} path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" />
                     <button className="secondary rv-keep" onClick={() => doKeep(job)}><Check size={15} aria-hidden="true" /> Keep revision {job.revision}</button>
                   </figure>
                   <p className="rv-note">Keeping one approves it and turns the other down. Nothing is deleted and nothing is generated.</p>
@@ -156,16 +163,31 @@ export function ReviewView(props: {
                   {reference && (
                     <figure>
                       <figcaption><span className="rv-tag ok">Approved reference</span><small>{reference.label} · revision {reference.revision}</small></figcaption>
-                      <div className="rv-image"><RealImage path={reference.outputPath} label={`Approved ${reference.label} of ${assetName(reference.assetId)}`} empty="No picture" /></div>
+                      <ZoomImage z={zoom} index={0} path={reference.outputPath} label={`Approved ${reference.label} of ${assetName(reference.assetId)}`} empty="No picture" />
                     </figure>
                   )}
                   <figure>
                     <figcaption><span className="rv-tag">{filter === "waiting" ? `New · revision ${job.revision}` : filter === "approved" ? `Approved · revision ${job.revision}` : `Turned down · revision ${job.revision}`}</span><small>{job.label}</small></figcaption>
-                    <div className="rv-image"><RealImage path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" /></div>
+                    <ZoomImage z={zoom} index={1} path={job.outputPath} label={`${job.label} of ${assetName(job.assetId)}, revision ${job.revision}`} empty="No picture" />
                   </figure>
                   {!reference && <p className="rv-note">No approved reference exists for {assetName(job.assetId)} yet, so there is nothing to compare against.</p>}
                 </>
               )}
+            </div>
+            <div className="rv-summary" aria-label="Review summary">
+              <b>Review summary</b>
+              <span>{assetName(job.assetId)} · {job.label} · revision {job.revision}</span>
+              <span className={`rv-chip${reference ? " ok" : ""}`}>Reference: {reference ? `approved, revision ${reference.revision}` : "none yet"}</span>
+              <span className={`rv-chip${job.approved ? " ok" : job.rejected ? " warn" : ""}`}>This picture: {job.approved ? "approved" : job.rejected ? "turned down" : "awaiting your decision"}</span>
+              <span className={`rv-chip${job.qaNotes.length ? " warn" : " ok"}`}>Technical checks: {job.qaNotes.length ? `${job.qaNotes.length} finding${job.qaNotes.length === 1 ? "" : "s"}` : "no findings"}</span>
+            </div>
+            <div className="rv-nav" role="group" aria-label="Move through the pictures">
+              <span className="rv-count">{filter === "waiting" ? `${waiting.length} awaiting decision` : filter === "approved" ? `${approvedList.length} approved` : `${down.length} turned down`} · {position + 1} of {list.length}</span>
+              {nextJob && <span className="rv-next">Next: <span className="rv-thumb"><RealImage path={nextJob.outputPath} label="" empty="" /></span> <b>{assetName(nextJob.assetId)} · {nextJob.label} · revision {nextJob.revision}</b></span>}
+              <span className="rv-steps">
+                <button type="button" className="secondary" onClick={() => step(-1)} disabled={position <= 0} aria-label="Previous picture"><ChevronLeft size={16} aria-hidden="true" /></button>
+                <button type="button" className="secondary" onClick={() => step(1)} disabled={position < 0 || position >= list.length - 1} aria-label="Next picture"><ChevronRight size={16} aria-hidden="true" /></button>
+              </span>
             </div>
           </div>
 
