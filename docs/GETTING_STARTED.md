@@ -168,6 +168,10 @@ A set gets an establishing view first. Every shot in that location is given this
 
 Pictures that are made and not yet judged appear under **Waiting**, large, next to the approved reference they must match. **Approve**, **Request changes** or **Reject**. **Turned down** and **Approved** list the rest, and any decision can be changed. In this picture nothing is waiting, so the room says so.
 
+### Enlarge and sharpen with Topaz
+
+On a picture in Review, **Enhance with Topaz…** enlarges and sharpens it into a new, larger picture (2x or 4x) with your own Topaz Labs key. It does not redraw the picture: faces, costume and pose stay as they are, and the original is kept. Set it up once: create an API key at topazlabs.com (My account, API keys), then add it under **Providers** (Topaz Labs). In the window you choose what kind of picture it is, see the new size and a likely cost, and press **Enhance (uses Topaz credits)**. Nothing is sent, and no credit is used, until you press it. Topaz bills your account by output size and the app reports the credits it used. The result is a new revision that waits for your decision; it is not approved automatically.
+
 ---
 
 ## 5. Direct: the storyboard

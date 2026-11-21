@@ -1,5 +1,5 @@
-export type ProviderId = 'openai' | 'google' | 'fal' | 'kie' | 'openrouter' | 'elevenlabs' | 'voicekiller' | 'voicekiller-user'
-export type ProviderCapability = 'image-generation' | 'image-editing' | 'model-discovery' | 'durable-queue' | 'video-generation' | 'voice'
+export type ProviderId = 'openai' | 'google' | 'fal' | 'kie' | 'openrouter' | 'elevenlabs' | 'voicekiller' | 'voicekiller-user' | 'topaz'
+export type ProviderCapability = 'image-generation' | 'image-editing' | 'image-enhance' | 'model-discovery' | 'durable-queue' | 'video-generation' | 'voice'
 
 export interface ProviderDefinition {
   id: ProviderId
@@ -20,6 +20,7 @@ export const providerRegistry: ProviderDefinition[] = [
   { id:'openrouter',name:'OpenRouter',capabilities:['image-generation','image-editing','model-discovery'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-10-20',documentationUrl:'https://openrouter.ai/docs/api/api-reference/images/list-image-models',status:'catalog-ready',notes:'Unified image API exposes model and endpoint capability discovery.' },
   { id:'elevenlabs',name:'ElevenLabs (voice and sound effects)',capabilities:['voice'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-12',documentationUrl:'https://elevenlabs.io/docs/api-reference',status:'catalog-ready',notes:'Speech, voice design and sound effects in the Voice audition. Paid: spends your ElevenLabs credits. Speech checked live on 2026-11-13 (a short line produced valid audio); voice design and sound effects not yet run live.' },
   { id:'voicekiller',name:'VoiceKiller API key',capabilities:['voice'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-12',documentationUrl:'https://voicekiller.com/api-docs',status:'catalog-ready',notes:'Speech in the Voice audition. Needs the API key and the user ID below, both from your VoiceKiller dashboard. Speech checked live on 2026-11-13 (a short line produced valid audio); cloning is not built.' },
+  { id:'topaz',name:'Topaz Labs (picture enhancer)',capabilities:['image-enhance'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-21',documentationUrl:'https://developer.topazlabs.com/',status:'catalog-ready',notes:'Enlarges and sharpens a picture into a new file with the Topaz Enhance models. Uses your own Topaz API key and Topaz credits. Create the key at topazlabs.com/my-account/api-keys.' },
   { id:'voicekiller-user',name:'VoiceKiller user ID',capabilities:['voice'],credentialStorage:'windows-credential-manager',verifiedAt:'2026-11-12',documentationUrl:'https://voicekiller.com/api-docs',status:'catalog-ready',notes:'The user ID that goes with the VoiceKiller API key.' },
 ]
 
