@@ -40,7 +40,9 @@ interface Props {
   others?: Array<{ id: string; name: string }>
   onApplyTo?: (ids: string[], profile: ProportionProfile) => void
   /** Opens this character's Sheets, where pictures are made (used by "Apply and make pictures"). */
-  onOpenSheets?: () => void
+  onOpenSheets?: (makeFrontView?: boolean) => void
+  /** What one picture costs, for the button that makes a new front view. */
+  newViewCost?: string
   notify: (message: string) => void
 }
 
@@ -92,7 +94,7 @@ const tabs: Array<{ id: ControlTab; label: string }> = [{ id: 'body', label: 'Bo
  * Shape and proportions for one character. Three things are kept apart on screen and in what they do: moving a control only redraws the schematic (it never reaches a
  * provider), Apply proportions makes the draft the character's real target (prompts and checks use it), and Generate design preview asks a model for one picture.
  */
-export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, cost, startFrom, world, onSetWorld, referencePath, others = [], onApplyTo, onOpenSheets, notify }: Props) {
+export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, cost, startFrom, world, onSetWorld, referencePath, others = [], onApplyTo, onOpenSheets, newViewCost, notify }: Props) {
   const start = (): History<ProportionProfile> | null => drafts.get(asset.id) ?? (profile ? newHistory(profile) : null)
   const [history, setHistory] = useState<History<ProportionProfile> | null>(start)
   useEffect(() => { setHistory(start()) }, [asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,7 +132,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
     if (scope === 'world' && onSetWorld) {
       onSetWorld({ ...(world ?? { scaleConvention: 'metres' as const }), profile: { preset: current.preset, stylization: current.stylization } })
       notify(`Applied to ${asset.name}. New characters will start from ${presets.find((p) => p.id === current.preset)?.label ?? 'this profile'} at stylization ${current.stylization}; characters that already have proportions are not changed.`)
-    } else notify(`Proportions applied to ${asset.name}. New pictures use them; approved pictures are not changed.`)
+    } else notify(`Proportions applied to ${asset.name}. New pictures use them; approved pictures are not changed. If ${asset.name} already has an approved front view, the model copies that body: use "Apply and make a new front view" to start from the new proportions.`)
     return true
   }
   /** Leaving with edits that are not applied asks first, so a set of changes is never quietly lost (or quietly ignored). */
@@ -300,7 +302,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
           {mine.length > 0 && saving === null && <button type="button" className="linklike" onClick={() => { const last = mine[mine.length - 1]; setMine(deletePreset(last.name)); notify(`Removed the preset "${last.name}".`) }} title="Removes the most recently saved preset"><Trash2 size={13} /> Remove last preset</button>}
           <button type="button" className="linklike" onClick={() => { onChange(undefined); drafts.delete(asset.id); setHistory(null); notify(`Target proportions cleared for ${asset.name}.`) }}>Clear proportions</button>
           {dirty && <button type="button" className="secondary" onClick={discard}>Discard changes</button>}
-          <button type="button" className="secondary" onClick={() => { if (applyNow()) { setOpen(false); onOpenSheets?.() } }} disabled={!dirty && scope === 'character'} title="Applies the proportions and opens the sheets, where you press Generate to make pictures with them">Apply and make pictures</button>
+          {onOpenSheets && <button type="button" className="secondary" onClick={() => { if (applyNow()) { setOpen(false); onOpenSheets(true) } }} disabled={scope !== 'character' && scope !== 'others' ? false : (scope === 'others' && shareWith.size === 0)} title="Applies the proportions and makes ONE new front view with them, without the old picture attached (an attached picture makes the model copy its body). Approve it and the other views follow it.">Apply and make a new front view{newViewCost ? ` · ${newViewCost}` : ''}</button>}
           <button type="button" className="primary" onClick={() => { applyNow() }} disabled={(!dirty && scope === 'character') || (scope === 'others' && shareWith.size === 0)}>Apply proportions</button>
         </div>
       </footer>

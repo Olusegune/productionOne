@@ -309,14 +309,15 @@ describe('ProportionPanel: applying is easy and cannot be forgotten', () => {
     expect(onApplyTo.mock.calls[0][0]).toEqual(['A3'])
     expect(onApplyTo.mock.calls[0][1].controls.legLength.value).toBe(4.4)
   })
-  it('Apply and make pictures applies, closes, and opens the sheets', () => {
+  it('Apply and make a new front view applies, closes, and asks the sheets for a fresh front view', () => {
     const onOpenSheets = vi.fn()
     render(<Rig id="MAKE-1" onOpenSheets={onOpenSheets} />)
     open()
     type('Leg length', '4.0')
-    fireEvent.click(screen.getByRole('button', { name: 'Apply and make pictures' }))
+    fireEvent.click(screen.getByRole('button', { name: /Apply and make a new front view/ }))
     expect(screen.getByTestId('applied').textContent).toBe('4')
     expect(onOpenSheets).toHaveBeenCalledTimes(1)
+    expect(onOpenSheets).toHaveBeenCalledWith(true)
     expect(screen.queryByTestId('schematic')).toBeNull()
   })
 })
