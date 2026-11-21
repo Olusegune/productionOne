@@ -12,3 +12,21 @@
 .sc-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--blue); }
 .sc-card.best .sc-icon { background: var(--yellow, #f2c14e); color: var(--yellow-ink, #1b1405); }
 @media (prefers-reduced-motion: reduce) { .sc-card { transition: none; } .sc-card:hover { transform: none; } }
+
+/* Storyboards before it is turned on */
+.dr-off { max-width: 760px; }
+.dr-off-steps { list-style: none; counter-reset: s; margin: 6px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.dr-off-steps li { counter-increment: s; display: grid; gap: 4px; padding: 14px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); background: color-mix(in srgb, var(--text) 3.5%, transparent); }
+.dr-off-steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--blue) 22%, transparent); font: 700 12px var(--ui); }
+.dr-off-steps b { font: 600 15px var(--display); }
+.dr-off-steps span { font-size: 13.5px; color: var(--text-2); line-height: 1.45; }
+.dr-off-skip { margin: 0; }
+
+/* Assistant plan: the Quick / Standard choice stacks instead of running off the panel */
+.asst-opts .seg { display: grid; grid-template-columns: 1fr; height: auto; }
+.asst-opts .seg button { height: auto; min-height: 40px; text-align: left; padding: 8px 14px; white-space: normal; }
+.asst-budget-hint { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text-2); }
+.asst-budget-hint button { height: 30px; font-size: 12.5px; padding: 0 12px; }
+
+/* Cards that stretched their first row */
+.first-run, .start-choices, .dc-gp { align-content: start; }

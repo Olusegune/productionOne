@@ -328,12 +328,12 @@ export function SheetStudio(props: {
 
   const headActions = (
         <div className="ss-head-actions">
-          {queue.paused ? (
-            <button className="secondary" disabled={!waiting && !stats.generating} onClick={() => setQueue((q) => ({ ...q, paused: false }))}><Play size={14} /> Resume</button>
+          {(waiting > 0 || stats.generating > 0 || queue.paused) && (queue.paused ? (
+            <button className="secondary" onClick={() => setQueue((q) => ({ ...q, paused: false }))}><Play size={14} /> Resume</button>
           ) : (
-            <button className="secondary" disabled={!waiting && !stats.generating} onClick={() => setQueue((q) => ({ ...q, paused: true }))}><Pause size={14} /> Pause</button>
-          )}
-          <button className="secondary" disabled={!waiting} onClick={() => setQueue((q) => cancelAllWaiting(q))}>Cancel waiting</button>
+            <button className="secondary" onClick={() => setQueue((q) => ({ ...q, paused: true }))}><Pause size={14} /> Pause</button>
+          ))}
+          {waiting > 0 && <button className="secondary" onClick={() => setQueue((q) => cancelAllWaiting(q))}>Cancel waiting</button>}
           {style.spec2d && <button className="secondary" disabled={!frontPath || !modelTakesReferences(provider, modelId)} onClick={() => generate(false, [(views.find((v) => primaryViewKeys.includes(v.key)) ?? views[0])?.key].filter(Boolean) as string[], true, true)} title={frontPath ? `Redraw the approved picture in ${style.name} as a new revision for review. The original and its approval are kept. Identity may not carry over exactly. This uses one image request.` : "Approve a picture first: it is what gets reinterpreted."}>Reinterpret in {style.name}</button>}
           {desktop && <button className="secondary" disabled={viewItems.length === 0} onClick={() => setQuality(0)} title="Check colour, noise, highlights and sharpness, and correct them without changing the original"><Wand2 size={14} /> Image quality</button>}
         </div>

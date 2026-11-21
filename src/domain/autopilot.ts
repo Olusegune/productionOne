@@ -145,7 +145,7 @@ export function summarize(analysis: AnalysisResult, shots: ShotRecord[], style: 
   const costUsd = o.perImageUsd === null ? null : images * o.perImageUsd
   let reason = ''
   if (o.perImageUsd === null) reason = 'Enter what one picture costs you, so the cost can be worked out and held to your budget.'
-  else if (o.budgetUsd === null) reason = 'Set a budget. Autopilot never runs without one.'
+  else if (o.budgetUsd === null) reason = 'Set a budget. The Assistant never starts without one.'
   else if (costUsd !== null && costUsd > o.budgetUsd + 1e-9) reason = `The plan needs about $${costUsd.toFixed(2)} and your budget is $${o.budgetUsd.toFixed(2)}. Raise the budget or choose a shorter plan.`
   const steps = [
     `Make a first concept for ${concepts} item${concepts === 1 ? '' : 's'}`,

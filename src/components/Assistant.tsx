@@ -67,7 +67,7 @@ export function AssistantView(props: {
   const [pending, setPending] = useState<Attachment[]>([]);
   const [busy, setBusy] = useState(false);
   const [state, setStateRaw] = useState<AutopilotState>(kept.state);
-  const [depth, setDepth] = useState<Depth>("standard");
+  const [depth, setDepth] = useState<Depth>("quick");
   const [includeFrames, setIncludeFrames] = useState(false);
   const [stopAfterConcepts, setStop] = useState(true);
   const [price, setPrice] = useState(() => readStored("po.asst.price", ""));
@@ -332,6 +332,7 @@ export function AssistantView(props: {
                 <label><span>One picture costs me (USD)</span><input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={typicalPrice.usd === null ? "for example 0.05" : `typical ${typicalPrice.usd}`} aria-label="Price per picture in dollars" /></label>
                 <label><span>Budget I allow (USD)</span><input inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="for example 5" aria-label="Budget in dollars" /></label>
               </div>
+              {budget.trim() === "" && plan.costUsd !== null && plan.costUsd > 0 && <div className="asst-budget-hint" data-testid="asst-budget-hint"><span>The plan needs about ${plan.costUsd.toFixed(2)}.</span><button type="button" className="secondary" onClick={() => setBudget(String(Math.ceil(plan.costUsd! * 1.2 * 100) / 100))}>Use ${(Math.ceil(plan.costUsd * 1.2 * 100) / 100).toFixed(2)} as my budget</button></div>}
               {enteredUsd === null && typicalPrice.source === "typical" && typicalPrice.usd !== null && <small className="asst-model" data-testid="asst-typical">Using a typical price of ${typicalPrice.usd} per picture for this model. It is an estimate: type your own price to replace it.</small>}
               <small className="asst-model">Pictures are made with {choice.modelId || "your chosen model"} ({choice.provider}).</small>
             </div>

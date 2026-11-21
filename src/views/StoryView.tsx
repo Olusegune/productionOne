@@ -1,6 +1,6 @@
 import { useMemo, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { FileInput, FileText, ScanText, X } from "lucide-react";
+import { ArrowRight, FileInput, FileText, ScanText, X } from "lucide-react";
 import { CastBoard } from "../components/CastBoard";
 import { ReadingPanel } from "../components/ReadingPanel";
 import { ScriptTemplatePicker } from "../components/ScriptTemplatePicker";
@@ -30,6 +30,8 @@ export function StoryView(props: {
   onOpenAsset?: (assetId: string) => void;
   /** Folds one set into another. */
   onMergeSets?: (keepId: string, dropId: string) => void;
+  /** The next step on the Golden Path once the script has been read (go to Design). */
+  onContinue?: () => void;
 }) {
   const { script, analysis, notify } = props;
   const [tab, setTab] = useState<Tab>("assets");
@@ -37,6 +39,7 @@ export function StoryView(props: {
   const story = analysis.story;
   const questions = useMemo(() => (story && story.scenes.length ? explainStory(story).needsReview : 0), [story]);
   const empty = script.trim() === "";
+  const analyzed = analysis.assets.length > 0;
   const lines = empty ? 0 : script.split("\n").length;
   const tabs: Array<{ id: Tab; label: string; count?: number }> = [
     { id: "assets", label: "Assets", count: analysis.assets.length },
@@ -55,7 +58,8 @@ export function StoryView(props: {
         <div className="sv-toolbar" role="toolbar" aria-label="Script actions">
           {!empty && <button className="tertiary" onClick={() => setTemplates(true)}><FileText size={15} aria-hidden="true" /> Templates</button>}
           <button className="secondary" onClick={props.onImport}><FileInput size={15} aria-hidden="true" /> Import script</button>
-          <button className="primary" onClick={props.onAnalyze}><ScanText size={15} aria-hidden="true" /> Analyze script</button>
+          <button className={analyzed ? "secondary" : "primary"} onClick={props.onAnalyze}><ScanText size={15} aria-hidden="true" /> Analyze script</button>
+          {analyzed && props.onContinue && <button className="primary" onClick={props.onContinue}>Continue to Design <ArrowRight size={15} aria-hidden="true" /></button>}
         </div>
       </header>
 
