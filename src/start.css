@@ -30,3 +30,6 @@
 
 /* Cards that stretched their first row */
 .first-run, .start-choices, .dc-gp { align-content: start; }
+.po-format-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.po-format-head small { flex: 1; min-width: 200px; }
+.po-format-toggle { margin-left: auto; }
