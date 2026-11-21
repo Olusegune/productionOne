@@ -142,3 +142,11 @@ input[type="range"]:disabled { opacity: .45; cursor: not-allowed; }
 :root:root:root:root .primary svg { color: inherit; }
 :root[data-theme="light"] { --yellow: #f0b92c; --yellow-hi: #f6cb55; --yellow-lo: #e0a312; }
 @media (prefers-reduced-motion: reduce) { :root:root:root:root button.primary:hover:not(:disabled) { transform: none; } }
+
+/* Light look: cards that were written dark-only (found by the audit on a new project) */
+:root[data-theme="light"] .script-template { background: var(--panel-1); border-color: var(--line-1); }
+:root[data-theme="light"] .script-template select { background: #fff; color: var(--text); border-color: var(--line-1); }
+:root[data-theme="light"] .script-template pre, :root[data-theme="light"] .script-template code { background: #f1f3f8; color: var(--text); }
+:root[data-theme="light"] .script-template h4, :root[data-theme="light"] .script-template .eyebrow { color: var(--text-2); }
+:root[data-theme="light"] .dc-ready.ok b { color: #1c7a43; }
+:root[data-theme="light"] .dc-ready small { color: var(--text-2); }

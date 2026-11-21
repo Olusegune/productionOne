@@ -1171,8 +1171,8 @@ export default function App() {
       }),
       null,
     );
-    setWorkspace("Story");
-    setNotice(`New production created. Paste or import your script to begin.${kept ? ` Your previous production was kept as a copy: ${kept}` : ""}`);
+    setWorkspace("Projects");
+    setNotice(`New production created. Choose how you want to start.${kept ? ` Your previous production was kept as a copy: ${kept}` : ""}`);
   };
   const openText = async (text: string, path: string | null) => {
     const parsed = parseProjectFile(text);
