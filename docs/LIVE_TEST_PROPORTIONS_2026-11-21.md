@@ -18,3 +18,13 @@
 **Conclusion.** For this model and this wording, the proportion sentence does move the picture in the asked-for direction, and the effect is easy to see. Two pictures are a spot check, not a measurement: different models and different seeds will vary, a stronger setting gives a stronger effect, and nothing here proves exact head-unit ratios. The numbers are still given once for models that can use them.
 
 **Not done.** No other model was tried, no repeat runs were made to see how much the same prompt varies, and the pictures were not kept in the repository (they are the project's own art).
+
+## Follow-up (same day): why it seemed to do nothing on a character that already had a picture
+
+A character with an approved front view, or with reference photos, did not follow the proportions. Checked live (about US$0.20 more):
+
+- **Reference attached, words only.** The prompt told the model to "keep precisely the same ... body build" of the attached picture while also giving new proportions. The model copied the picture's body. Rewording the prompt so the reference keeps identity but not the body changed very little.
+- **Reference attached, plus a plain proportion guide** (a grey figure with a ruler in head units, attached as a second picture): also changed very little. With a full-body reference, this model reproduces the reference.
+- **No earlier picture attached** (words and guide only), on a different character (ELENA): the front view came out clearly tall and slender with long legs, long arms and large hands, as asked.
+
+What changed because of this: Apply is hard to forget (the app asks before you leave with unapplied changes), proportions can be given to several characters at once, the prompt no longer tells the model to keep the old body, a proportion guide is attached as a reference, and "Apply and make a new front view" makes one front view with no earlier picture attached, so the new proportions have something to start from. Approve that view and the other views follow it.

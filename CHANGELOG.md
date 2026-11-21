@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.63.0 (2026-11-21): proportions that really apply
+- **Why the proportions seemed to do nothing, and the fix.** A character with an approved front view or reference photos was told to "keep precisely the same body build" of the attached picture, which beat the new proportions. The prompt now lets the reference keep identity but not the body, and a plain proportion guide (a grey figure with a ruler in head units) is attached as a reference. Checked live: with an earlier picture attached the model still copies its body, so there is a new button:
+- **Apply and make a new front view** applies the proportions and makes one front view with no earlier picture attached, so it starts from the new proportions (checked live: a clearly tall, long-limbed figure). Approve it and the other views follow it.
+- **Applying is hard to forget.** Going back with changes you did not apply asks first (Apply and go back, Discard, Keep editing), and the Identity card says when changes are waiting, with Apply now.
+- **Give the same proportions to other characters** in one step (Apply to: the character and others you tick); each gets its own copy.
+- The numbers in the prompt follow the parts when the Total height control disagrees with them, so the prompt never contradicts itself.
+
 ## 0.62.0 (2026-11-21): a guided start, update check, Head view, Locate file
 - **A new project opens on "How do you want to start?"**: Ask the Assistant (marked the easiest), Add a script, or Start from my pictures. The Assistant carries a "new" badge until you open it once.
 - **The Assistant starts gentle**: Quick by default (about a tenth of the cost of a full run), and a one-click "Use $X as my budget" that fits the plan.
