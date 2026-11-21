@@ -26,7 +26,24 @@ jobs:
         with: { targets: "${{ matrix.target }}" }
       - run: npm ci
       - run: cargo test --manifest-path src-tauri/Cargo.toml --target ${{ matrix.target }}
-      - run: npx tauri build --target ${{ matrix.target }} --bundles dmg
+      # Signing and notarization happen only when the Apple secrets are set on the repository (see docs/MAC_SIGNING.md). Without them this builds an unsigned app, as before.
+      - name: Build
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npx tauri build --target ${{ matrix.target }} --bundles dmg
+      - name: Say whether the app is signed
+        run: |
+          app=$(ls -d src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app | head -n 1)
+          if codesign --verify --deep --strict "$app" 2>/dev/null && ! codesign -dv "$app" 2>&1 | grep -q "Signature=adhoc"; then
+            echo "SIGNED: $app"; spctl --assess --type execute -vv "$app" || true
+          else
+            echo "UNSIGNED: $app (add the Apple secrets to sign and notarize; see docs/MAC_SIGNING.md)"
+          fi
       - name: Name the disk image
         id: dmg
         run: |
