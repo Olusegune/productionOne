@@ -28,3 +28,11 @@ A character with an approved front view, or with reference photos, did not follo
 - **No earlier picture attached** (words and guide only), on a different character (ELENA): the front view came out clearly tall and slender with long legs, long arms and large hands, as asked.
 
 What changed because of this: Apply is hard to forget (the app asks before you leave with unapplied changes), proportions can be given to several characters at once, the prompt no longer tells the model to keep the old body, a proportion guide is attached as a reference, and "Apply and make a new front view" makes one front view with no earlier picture attached, so the new proportions have something to start from. Approve that view and the other views follow it.
+
+## Follow-up 2 (2026-11-21): do the other views keep the proportions after a new front view is approved?
+
+ELENA's fresh front view (long legs, large hands, about 9 head units tall) was used as the attached reference, with the proportion guide, to make a **side** view and a **rear** view with the same prompt the app builds (about US$0.08).
+
+Both views kept the proportions: the same tall, slender figure, the same long legs and long arms, the hands reaching the same height, and the same dress, hair and shoes. Nothing pulled the body back to a typical build.
+
+So the working order is: apply the proportions, make a new front view, approve it, then make the other views. Total spent on all live proportion checks: about US$0.32 of the US$5 budget.

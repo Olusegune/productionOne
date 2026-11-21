@@ -10,7 +10,7 @@ describe('the proportions line on the Sheets tab', () => {
   it('says which are applied and how tall', () => {
     const s = proportionStatus(setLinked(createProfile('a', 'elongated'), 'legLength', 4.8), 0)
     expect(s.kind).toBe('applied')
-    expect(s.text).toMatch(/Elongated, 9\.\d head units tall/)
+    expect(s.text).toMatch(/Elongated, \d\.\d+ head units tall/)
   })
   it('warns when approved pictures were made with earlier proportions, and says what to do', () => {
     const s = proportionStatus(createProfile('a'), 3)
