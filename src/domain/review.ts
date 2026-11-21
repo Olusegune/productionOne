@@ -62,7 +62,7 @@ export interface ChecklistItem {
   label: string
   detail: string
   /** Where the fix is. */
-  fix?: { kind: 'review' | 'style' | 'asset' | 'script' | 'failed'; assetId?: string; label: string }
+  fix?: { kind: 'review' | 'style' | 'asset' | 'script' | 'failed' | 'relink'; assetId?: string; label: string }
 }
 
 /** What stands between this project and a verified package, in the order a person would fix it. Every line says where to go. */
@@ -86,7 +86,7 @@ export function deliveryChecklist(args: { analysis: AnalysisResult; queue: Queue
   items.push(review === 0
     ? { id: 'review', state: 'ok', label: 'Nothing waiting for review', detail: '' }
     : { id: 'review', state: 'todo', label: `${review} picture${review === 1 ? '' : 's'} waiting for your decision`, detail: 'Approve, request changes or reject each one.', fix: { kind: 'review', label: 'Open Review' } })
-  if (gone.length > 0) items.push({ id: 'gone', state: 'todo', label: `${gone.length} picture${gone.length === 1 ? ' is' : 's are'} not on this computer`, detail: 'Press Generate on the view to make it again, or add your own with Use my image.', fix: { kind: 'failed', label: 'Open Design' } })
+  if (gone.length > 0) items.push({ id: 'gone', state: 'todo', label: `${gone.length} picture${gone.length === 1 ? ' is' : 's are'} not on this computer`, detail: 'If you still have the files, point to the folder and they are linked back. Otherwise press Generate on the view, or add your own with Use my image.', fix: { kind: 'relink', label: 'Find the files…' } })
   if (failed > 0) items.push({ id: 'failed', state: 'todo', label: `${failed} failed job${failed === 1 ? '' : 's'}`, detail: 'Retry them, or choose a different model.', fix: { kind: 'failed', label: 'See failed jobs' } })
   if (incompleteShots.length > 0) items.push({ id: 'shots', state: 'todo', label: `${incompleteShots.length} storyboard frame${incompleteShots.length === 1 ? '' : 's'} not approved`, detail: 'Only matters if you use the optional storyboard.' })
   return items

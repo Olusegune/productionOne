@@ -61,7 +61,7 @@ describe('takes whose picture is gone', () => {
     expect(causeOf(MISSING_FILE_ERROR)).toBe('gone')
     const groups = groupFailures(queue([job({ id: 'g', error: MISSING_FILE_ERROR }), job({ id: 'c', key: 'k2', error: 'Kie.ai request failed (402): Insufficient credits' })]))
     const gone = groups.find((g) => g.cause === 'gone')!
-    expect(gone.fixes).toEqual(['open-design'])
+    expect(gone.fixes).toEqual(['find-files', 'open-design']);
     expect(gone.advice).toMatch(/Generate/)
     expect(gone.advice).not.toMatch(/choose another model|different model/i)
     expect(groups.find((g) => g.cause === 'credits')?.jobs.map((j) => j.id)).toEqual(['c'])

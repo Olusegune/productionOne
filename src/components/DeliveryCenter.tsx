@@ -49,8 +49,9 @@ export function DeliveryCenter(props: {
   onFix: (fix: NonNullable<ChecklistItem["fix"]>) => void;
   openProviders: () => void;
   openDesign: () => void;
+  onFindFiles?: () => void;
 }) {
-  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix, openProviders, openDesign } = props;
+  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix, openProviders, openDesign, onFindFiles } = props;
   const [videoPurpose, setVideoPurpose] = useState<VideoPurpose>("acting");
   const preset = videoPresets[model];
   const [videoPick, setVideoAspect] = useState<string | null>(null);
@@ -122,7 +123,7 @@ export function DeliveryCenter(props: {
       <div className="dc-cols">
         <div className="panel dc-issues">
           <h3>What still needs work</h3>
-          <FailureGroups queue={queue} setQueue={setQueue} desktop={isTauri} assetName={name} openProviders={openProviders} openDesign={openDesign} notify={notify} />
+          <FailureGroups queue={queue} setQueue={setQueue} desktop={isTauri} assetName={name} openProviders={openProviders} openDesign={openDesign} onFindFiles={onFindFiles} notify={notify} />
           {issues.length === 0 && failed.length === 0 && gone === 0 && <p className="helper">Nothing is blocking delivery.</p>}
           {issues.map((s) => (
             <div className="dc-group" key={s.sceneId}>
