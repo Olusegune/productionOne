@@ -163,6 +163,9 @@ export function DesignView(p: DesignViewProps) {
                 approvedViews={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType !== "shape-candidate" && j.approved).length}
                 cost={costShort(1, priceFor(readModelChoice().provider, readModelChoice().modelId, queue.perImageUsd))}
                 referencePath={assetOutputs[a.id]}
+                others={analysis.assets.filter((x) => x.type === "character" && x.id !== a.id).map((x) => ({ id: x.id, name: x.name }))}
+                onApplyTo={(ids, applied) => setProportions((cur) => { const m = { ...cur }; for (const id of ids) m[id] = { ...applied, id }; return m; })}
+                onOpenSheets={() => setSection("sheets")}
                 notify={setNotice}
               />;
             })()}

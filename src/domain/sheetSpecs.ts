@@ -177,10 +177,19 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
   return [facts ? `Confirmed character identity: ${facts}.` : '', never ? `Must never drift: ${never}.` : ''].filter(Boolean).join(' ')
 }
 
+/** Added to the anchoring line when target proportions are set: the reference keeps identity, not the body. */
+export const reshapeLine = "Its body proportions are NOT to be copied: draw the body to the target proportions stated above, even where they differ from this picture. Everything else about who this is stays."
+export const photoReshapeLine = 'The attached photographs show who this is, not how the body is built: draw the body to the target proportions stated above, even where the photographs differ.'
+
 export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const twoD = !!style.spec2d
   const place = asset.type === 'set' || asset.type === 'environment'
+  // Target proportions only mean something if the picture sent along is not told to be copied exactly. The anchoring line says "keep the body build"; when the person has set
+  // target proportions, the body is the one thing that is allowed to change, and the prompt says so.
+  const hasTarget = asset.type === 'character' && !!proportions
+  const anchorLine = !anchored ? '' : twoD ? twoDAnchoredLine : anchoredPromptLine
+  const reshaped = hasTarget && anchorLine ? `${anchorLine.replace('silhouette, body proportions, ', 'silhouette, ').replace('body build, ', '')} ${reshapeLine}` : anchorLine
   const lines = [
     `Production reference image: ${view.label} of ${subject}${variant !== 'Canonical' ? `, story variant "${variant}"` : ''} (${sheetType} sheet).`,
     twoD ? adaptViewFor2D(view.instruction) : view.instruction,
@@ -190,14 +199,15 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     place ? (asset.layout?.trim() ? `Fixed layout of this place, the same in every view: ${asset.layout.trim().replace(/\s+/g, ' ')}. Show the same place from a different position: do not move, add or remove these landmarks.` : 'Every view of this place shows the same architecture, layout, landmarks and prop positions as the others, seen from a different position or in different light.') : '',
     // A costume made from the script's own description of a character keeps those words in every view.
     (asset.type === 'costume' && asset.prompt?.startsWith('Costume worn by')) || (asset.type === 'prop' && asset.prompt?.startsWith('As the script describes it')) ? `${asset.prompt}${asset.type === 'prop' ? ' It shows exactly this and nothing more: add no other people, figures or objects to what it shows.' : ''}` : '',
-    anchored ? (twoD ? twoDAnchoredLine : anchoredPromptLine) : '',
+    reshaped,
     twoD && photoRefs ? twoDPhotoLine : '',
+    hasTarget && photoRefs ? photoReshapeLine : '',
     twoD && reinterpret ? twoDReinterpretLine : '',
     notes ? `Production notes: ${notes}` : '',
     `Visual style bible: ${styleGuidance(style, place ? 'scene' : 'technical')}.`,
     // A set or environment is a place, not a cut-out on a flat field: the place fills the frame edge to edge (a flat grey field made grey bars above and below the room).
     asset.type === 'set' || asset.type === 'environment' ? 'The place fills the entire frame edge to edge, with no grey or blank borders, no letterbox bars, no frame, no text, no labels and no watermark.' : backdropLine(backdrop, anchored, backdropHex),
-    asset.type === 'character' ? 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.' : 'Keep the same design, proportions and materials in every view.',
+    asset.type === 'character' ? (hasTarget ? 'Keep the same face, hairstyle and costume construction in every view of this character, with the target body proportions stated above.' : 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.') : 'Keep the same design, proportions and materials in every view.',
     'Exactly ONE single image of ONE subject in ONE view. Do not make a grid, contact sheet, collage, split-screen, triptych or several views side by side; no repeated copies of the subject.',
     view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',
     artifactGuidance(style, model, notes ?? ''),
