@@ -72,3 +72,26 @@ describe('zoom toolbar', () => {
     expect((screen.getByRole('button', { name: 'Zoom in' }) as HTMLButtonElement).disabled).toBe(true)
   })
 })
+
+describe('head zoom maths', () => {
+  it('zooms so the head box fills the pane, never past the limits', async () => {
+    const { zoomForHead } = await import('./ZoomCompare')
+    expect(zoomForHead({ x: 0.3, y: 0.02, w: 0.4, h: 0.1 })).toBe(2.4)
+    expect(zoomForHead({ x: 0, y: 0, w: 0.01, h: 0.01 })).toBe(MAX_ZOOM)
+    expect(zoomForHead({ x: 0, y: 0, w: 1, h: 1 })).toBe(MIN_ZOOM)
+  })
+  it('centres the box in the pane and stays inside the picture', async () => {
+    const { scrollForBox } = await import('./ZoomCompare')
+    expect(scrollForBox({ x: 0.3, y: 0.0, w: 0.4, h: 0.1 }, 1000, 2000, 400, 500)).toEqual({ left: 300, top: 0 })
+    expect(scrollForBox({ x: 0.9, y: 0.95, w: 0.2, h: 0.2 }, 1000, 2000, 400, 500)).toEqual({ left: 600, top: 1500 })
+  })
+})
+
+describe('the Head view without the desktop app', () => {
+  it('falls back to the top of the picture and says so', async () => {
+    render(<Pair />)
+    fireEvent.click(screen.getByRole('button', { name: 'Head' }))
+    await screen.findByText(/head could not be found/i)
+    expect(levels()).toEqual([String(CROP_ZOOM), String(CROP_ZOOM)])
+  })
+})
