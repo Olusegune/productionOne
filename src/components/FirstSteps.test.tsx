@@ -178,7 +178,8 @@ describe('the cost is on every Generate button', () => {
   const asset: ExtractedAsset = { id: 'C1', name: 'MARCUS', type: 'character', sceneIds: [], status: 'planned' }
   it('Generate preview (proportions)', () => {
     render(<ProportionPanel asset={asset} profile={createProfile('C1')} onChange={() => {}} onGenerate={() => {}} candidates={[]} approvedViews={0} cost="about $0.04" notify={() => {}} />)
-    expect(screen.getByRole('button', { name: 'Generate preview · about $0.04' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Edit proportions/ }))
+    expect(screen.getByRole('button', { name: 'Generate design preview · about $0.04' })).toBeTruthy()
   })
   it('Scale and Fit and redesign', () => {
     render(<FitPanel asset={asset} profile={createProfile('C1')} rules={[]} onRules={() => {}} people={[]} onGenerateScaleSheet={() => {}} originalPath="C:/o.png" redesignCandidates={[]} onGenerateRedesign={() => {}} onApproveCandidate={() => {}} staleViews={0} cost="about $0.04" notify={() => {}} />)

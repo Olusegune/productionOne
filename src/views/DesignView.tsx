@@ -162,6 +162,7 @@ export function DesignView(p: DesignViewProps) {
                 candidates={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType === "shape-candidate").map((j) => ({ id: j.id, path: j.outputPath, status: j.status }))}
                 approvedViews={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType !== "shape-candidate" && j.approved).length}
                 cost={costShort(1, priceFor(readModelChoice().provider, readModelChoice().modelId, queue.perImageUsd))}
+                referencePath={assetOutputs[a.id]}
                 notify={setNotice}
               />;
             })()}

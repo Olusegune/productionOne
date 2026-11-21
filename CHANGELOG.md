@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+- **Shape & proportions workspace:** the Identity card now has a Set proportions / Edit proportions button (with a new figure-and-measurement icon) that opens a full-window workspace: Body, Face and Advanced controls with typed numbers and per-control reset; a large figure with a head-unit ruler, brackets for total height, arm, leg and shoulder width, and a Compare view against the Natural proportions; a Proportion check panel; the approved picture for reference; an Apply to choice (this character, or also the project world profile); your own saved presets; and Linked proportions, which keep the total height and the parts adding up.
+- **Edits are a draft until you press Apply proportions.** Moving a control only redraws the figure; Apply proportions makes it the character's target for new pictures; Generate design preview is the separate step that asks a model for one picture.
+- The height control is now called Total height, in head units (it was "Head size (height in heads)", which read as the size of the head).
 - **Find missing pictures:** when pictures are not on this computer (a project opened elsewhere, or files moved), Deliver and the failure list now have "Find the files…" (also in the command palette). You choose a folder; it is searched, including folders inside it, for pictures by the name the app saved them under. Found pictures are linked back, with your approve or reject decision restored when the project remembers it (otherwise they return to waiting for you). Nothing is copied, generated or deleted, and links are never followed.
 
 ## 0.58.0 (2026-11-20): modern sliders, a solid mannequin and undo for decisions

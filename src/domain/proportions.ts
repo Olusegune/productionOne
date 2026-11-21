@@ -17,6 +17,8 @@ export interface ControlSpec {
   label: string
   group: ControlGroup
   unit: ControlUnit
+  /** What the screen calls the unit, when that differs from the stored one (older projects keep `unit` as saved). */
+  shown?: string
   min: number
   max: number
   /** The Natural preset's value. */
@@ -31,7 +33,7 @@ export interface ControlSpec {
 }
 
 export const controlSpecs: ControlSpec[] = [
-  { id: 'heightInHeads', label: 'Head size (height in heads)', group: 'body', unit: 'heads', min: 3, max: 10, default: 7.5, step: 0.1, measure: 'Total height divided by head height (chin to crown). A smaller number means a larger head.', main: true, stylizedTarget: 5 },
+  { id: 'heightInHeads', label: 'Total height', group: 'body', unit: 'heads', shown: 'head units', min: 3, max: 10, default: 7.5, step: 0.1, measure: 'Whole height measured in head units: total height divided by the height of one head (chin to crown). A smaller number means a larger head for the same body.', main: true, stylizedTarget: 5 },
   { id: 'torsoLength', label: 'Torso length', group: 'body', unit: 'heads', min: 1.5, max: 4.5, default: 3, step: 0.1, measure: 'Shoulder line to crotch, in head heights.', main: false, stylizedTarget: 1.85 },
   { id: 'legLength', label: 'Leg length', group: 'body', unit: 'heads', min: 1.5, max: 6, default: 3.2, step: 0.1, measure: 'Crotch to floor, in head heights.', main: true, stylizedTarget: 2 },
   { id: 'legBalance', label: 'Upper / lower leg balance', group: 'limbs', unit: 'percent', min: 40, max: 60, default: 50, step: 1, measure: 'Thigh length as a share of the whole leg (hip to ankle). 50 is an even split.', main: false },
@@ -348,3 +350,55 @@ export function fingerprint(p: ProportionProfile): string {
   for (let i = 0; i < body.length; i++) h = ((h << 5) + h + body.charCodeAt(i)) | 0
   return `pp1-${(h >>> 0).toString(16).padStart(8, '0')}`
 }
+
+// ---------------------------------------------------------------- linked proportions
+
+/** The height the parts add up to: one head, the neck, the torso and the legs. */
+export const stackedOf = (p: ProportionProfile): number => round(1 + p.controls.neckLength.value + p.controls.torsoLength.value + p.controls.legLength.value)
+
+/**
+ * Sets one control while keeping the body consistent ("linked proportions"). Changing the neck, torso or legs moves the total height by the same amount; changing the
+ * total height moves the legs (and the torso if the legs run out of range) so the parts still add up. Any other control is set on its own.
+ */
+export function setLinked(p: ProportionProfile, id: ControlId, value: number): ProportionProfile {
+  if (!Number.isFinite(value)) return p
+  const total = specFor('heightInHeads')
+  if (id === 'neckLength' || id === 'torsoLength' || id === 'legLength') {
+    const next = setControl(p, id, value)
+    return setControl(next, 'heightInHeads', clamp(stackedOf(next), total.min, total.max))
+  }
+  if (id === 'heightInHeads') {
+    let next = setControl(p, 'heightInHeads', value)
+    let gap = next.controls.heightInHeads.value - stackedOf(next)
+    for (const part of ['legLength', 'torsoLength'] as const) {
+      if (Math.abs(gap) < 0.0005) break
+      const before = next.controls[part].value
+      next = setControl(next, part, before + gap)
+      gap -= next.controls[part].value - before
+    }
+    return next
+  }
+  return setControl(p, id, value)
+}
+
+// ---------------------------------------------------------------- your own presets
+
+export interface CustomPreset { name: string; stylization: number; values: Partial<Record<ControlId, number>> }
+
+/** Every control as it stands, saved under a name so it can be used again for another character. */
+export function toCustomPreset(p: ProportionProfile, name: string): CustomPreset {
+  const values: Partial<Record<ControlId, number>> = {}
+  for (const id of controlIds) values[id] = p.controls[id].value
+  return { name: name.trim().slice(0, 40), stylization: p.stylization, values }
+}
+
+/** The profile with a saved preset applied. The character's story height and recorded intentional departures are kept. */
+export function applyCustomPreset(p: ProportionProfile, c: CustomPreset): ProportionProfile {
+  let next: ProportionProfile = { ...createProfile(p.id, 'custom', c.stylization), heightM: p.heightM, exceptions: p.exceptions }
+  for (const id of controlIds) { const v = c.values[id]; if (typeof v === 'number') next = setControl(next, id, v) }
+  return next
+}
+
+/** Which tab a control sits on in the workspace: the body (with the limbs), the face, or the advanced shape language. */
+export type ControlTab = 'body' | 'face' | 'advanced'
+export const tabOf = (spec: ControlSpec): ControlTab => (spec.group === 'face' ? 'face' : spec.group === 'shape' ? 'advanced' : 'body')
