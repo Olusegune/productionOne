@@ -229,7 +229,7 @@ export function AssistantView(props: {
           if (!out.script) say("assistant", out.notes[0] ?? "I could not make a story from that.");
           else {
             const result = props.useScript("your story outline", "text", out.script);
-            if (result.ok) say("assistant", `I turned your outline into ${out.scenes} scene${out.scenes === 1 ? "" : "s"} using your own words and the characters, places and props you already have. It is in the Story screen if you want to edit it. The plan is on the right: tick storyboard frames to have me plan the shots.${out.notes.length ? `\n\nNotes:\n${out.notes.map((n) => `• ${n}`).join("\n")}` : ""}`);
+            if (result.ok) say("assistant", `I turned your outline into ${out.scenes} scene${out.scenes === 1 ? "" : "s"} using your own words and the characters, places and props you already have. It is in the Script screen if you want to edit it. The plan is on the right: tick storyboard frames to have me plan the shots.${out.notes.length ? `\n\nNotes:\n${out.notes.map((n) => `• ${n}`).join("\n")}` : ""}`);
             else say("assistant", result.error);
           }
         } else if (hasWriter) {
@@ -237,7 +237,7 @@ export function AssistantView(props: {
           const written = await writeScript(text);
           if (written) {
             const result = props.useScript("the script I wrote", "text", written);
-            if (result.ok) say("assistant", `Here is the script I wrote. It is in the Story screen if you want to edit it. I found ${result.scenes} scene${result.scenes === 1 ? "" : "s"} and ${result.assets} characters, props and places. The plan is on the right.\n\n${written.slice(0, 1800)}${written.length > 1800 ? "\n…" : ""}`);
+            if (result.ok) say("assistant", `Here is the script I wrote. It is in the Script screen if you want to edit it. I found ${result.scenes} scene${result.scenes === 1 ? "" : "s"} and ${result.assets} characters, props and places. The plan is on the right.\n\n${written.slice(0, 1800)}${written.length > 1800 ? "\n…" : ""}`);
             else say("assistant", `I wrote a script but could not read it back: ${result.error}`);
           }
         } else if (!pictures.length) {

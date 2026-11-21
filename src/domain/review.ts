@@ -85,7 +85,7 @@ export function deliveryChecklist(args: { analysis: AnalysisResult; queue: Queue
   const items: ChecklistItem[] = []
   items.push(analysis.assets.length
     ? { id: 'script', state: 'ok', group: 'blocker', label: 'Script read', detail: `${analysis.assets.length} asset${analysis.assets.length === 1 ? '' : 's'} found` }
-    : { id: 'script', state: 'todo', group: 'blocker', label: 'No script yet', detail: 'Import or paste a script so there are assets to prepare.', fix: { kind: 'script', label: 'Open Story' } })
+    : { id: 'script', state: 'todo', group: 'blocker', label: 'No script yet', detail: 'Import or paste a script so there are assets to prepare.', fix: { kind: 'script', label: 'Open Script' } })
   items.push(styleLocked
     ? { id: 'style', state: 'ok', group: 'blocker', label: 'Visual style locked', detail: 'Every sheet uses the same look.' }
     : { id: 'style', state: 'todo', group: 'blocker', label: 'Visual style not locked', detail: 'Lock the look so every sheet matches.', fix: { kind: 'style', label: 'Choose a style' } })

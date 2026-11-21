@@ -75,7 +75,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
         </div>,
         document.body,
       )}
-      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Story and the people, props and places it needs appear here. Or add a character, prop or set yourself with the button above.</EmptyState>}
+      {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Script and the people, props and places it needs appear here. Or add a character, prop or set yourself with the button above.</EmptyState>}
       {groups.map(([label, types]) => {
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         return (

@@ -10,6 +10,9 @@ import { spendGate, summarize, waitingForAnchor, type QueueState } from "../doma
 const workspaceIcons = { Projects: FolderOpen, Story: BookText, Design: Palette, Review: ClipboardCheck, Direct: Clapperboard, Deliver: PackageCheck, Assistant: MessageCircle } as const;
 /** Sidebar order. Alt+1 to Alt+5 keep their old meaning; Review is Alt+6, Assistant Alt+7. */
 export const workspaceNames = ["Projects", "Story", "Design", "Review", "Direct", "Deliver", "Assistant"] as const;
+/** What each screen is called on screen. The ids above stay as they are (saved links, shortcuts and tests use them). */
+export const workspaceLabels: Record<string, string> = { Story: "Script", Direct: "Storyboards" };
+export const labelOf = (name: string): string => workspaceLabels[name] ?? name;
 
 export function TopBar(props: {
   title: string;
@@ -58,9 +61,9 @@ export function TopBar(props: {
       </div>
       <nav className="po-tabs" aria-label="Workspaces">
         {workspaceNames.map((name) => (
-          <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name === "Review" && props.reviewCount ? `Review, ${props.reviewCount} waiting` : name} title={name}>
+          <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name === "Review" && props.reviewCount ? `Review, ${props.reviewCount} waiting` : labelOf(name)} title={labelOf(name)}>
             {(() => { const Icon = workspaceIcons[name]; return <Icon size={18} aria-hidden="true" />; })()}
-            <span>{name}</span>
+            <span>{labelOf(name)}</span>
             {name === "Direct" && <em>optional</em>}
             {name === "Review" && !!props.reviewCount && <em className="po-badge" aria-label={`${props.reviewCount} waiting`}>{props.reviewCount}</em>}
           </button>

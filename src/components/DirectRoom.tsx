@@ -206,7 +206,7 @@ export function DirectRoom(props: {
               </button>
             );
           })}
-          {analysis.scenes.length === 0 && <p className="helper">Analyze a script in Story and its scenes appear here.</p>}
+          {analysis.scenes.length === 0 && <p className="helper">Analyze a script in Script and its scenes appear here.</p>}
         </nav>
 
         <section className="dr-board">

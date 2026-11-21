@@ -28,7 +28,7 @@ export interface GoldenStep {
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
-/** Create -> Analyze -> Design -> Generate -> Review -> Deliver, with Direct inserted only when storyboards are on. Every line is derived from real project data. */
+/** Create -> Analyze -> Design -> Generate -> Review -> Deliver, with Storyboards inserted only when they are on. Every line is derived from real project data. */
 export function goldenPath(i: GoldenPathInput): { steps: GoldenStep[]; next: GoldenStep | null; progress: number; extras: GoldenStep[] } {
   const raw: Array<Omit<GoldenStep, 'state'> & { done: boolean }> = [
     { id: 'create', label: 'Create', workspace: 'Story', action: 'Add your script', done: i.hasScript || i.assetCount > 0, detail: i.hasScript ? 'Source material added' : i.assetCount > 0 ? 'Started from your own images' : 'Paste or import a script, lyrics or story, or add your own images in Design' },
@@ -37,7 +37,7 @@ export function goldenPath(i: GoldenPathInput): { steps: GoldenStep[]; next: Gol
     { id: 'generate', label: 'Generate', workspace: 'Design', action: i.jobsActive > 0 ? 'Watch the queue' : 'Generate references', done: i.assetCount > 0 && i.outputsCount >= i.assetCount, detail: i.assetCount === 0 ? 'Needs assets: analyze a script or add your own images' : i.jobsActive > 0 ? `${plural(i.jobsActive, 'job')} in progress` : `${i.outputsCount} of ${i.assetCount} references saved` },
     { id: 'review', label: 'Review', workspace: 'Design', action: 'Review and approve', done: i.assetCount > 0 && i.approvedCount >= i.assetCount, detail: i.assetCount === 0 ? 'Needs assets' : `${i.approvedCount} of ${i.assetCount} approved` },
   ]
-  if (i.storyboards) raw.push({ id: 'direct', label: 'Direct', workspace: 'Direct', action: 'Plan your shots', done: i.shotCount > 0 && i.ready, detail: i.shotCount === 0 ? 'No shots planned yet' : `${plural(i.shotCount, 'shot')} planned` })
+  if (i.storyboards) raw.push({ id: 'direct', label: 'Storyboards', workspace: 'Direct', action: 'Plan your shots', done: i.shotCount > 0 && i.ready, detail: i.shotCount === 0 ? 'No shots planned yet' : `${plural(i.shotCount, 'shot')} planned` })
   raw.push({ id: 'deliver', label: 'Deliver', workspace: 'Deliver', action: 'Export the package', done: i.assetCount > 0 && i.ready, detail: i.assetCount > 0 && i.ready ? 'Ready to export' : 'Audit passes when every asset is approved with a verified file' })
   let activeAssigned = false
   const steps: GoldenStep[] = raw.map(({ done, ...step }) => {

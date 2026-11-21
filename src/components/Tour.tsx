@@ -14,7 +14,7 @@ const nav = () => document.querySelector('nav[aria-label="Workspaces"]')
 const navButton = (label: string) => [...(nav()?.querySelectorAll('button') ?? [])].find((b) => (b.textContent ?? '').trim().startsWith(label)) ?? null
 
 export const tourSteps: TourStep[] = [
-  { id: 'screens', title: 'Seven screens, one path', body: 'Projects, Story, Design, Review, Direct, Deliver and Assistant. They follow the Golden Path: create, analyze, design, generate, review, deliver. Direct (storyboards) is optional.', find: nav },
+  { id: 'screens', title: 'Seven screens, one path', body: 'Projects, Script, Design, Review, Storyboards, Deliver and Assistant. They follow the Golden Path: create, analyze, design, generate, review, deliver. Direct (storyboards) is optional.', find: nav },
   { id: 'next', title: 'It always tells you what is next', body: 'This button names the next step for your project and takes you there. If you are ever lost, press it.', find: () => document.querySelector('.po-next') },
   { id: 'keys', title: 'Connect an image model', body: 'Pictures are made by an image model. Add a key here (it stays on this computer) or use a model on your own computer with Local AI. Nothing costs money until you press a Generate button, and every Generate button shows an estimate first.', find: () => document.querySelector('button[aria-label="Providers and keys"]') },
   { id: 'assistant', title: 'Or hand it to the Assistant', body: 'Give the Assistant your script and your own pictures, or type your story one line per beat. It plans the production, shows the cost, and only starts when you press Start.', find: () => navButton('Assistant') },
