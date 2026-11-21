@@ -123,3 +123,13 @@ describe('approved pictures', () => {
     expect(approvedPictures(q).map((j) => j.id)).toEqual(['b', 'a'])
   })
 })
+
+describe('a failure that a later take replaced', () => {
+  it('is not reported as a failed job, so a delivery is not held back by it', () => {
+    const base = { analysis, missingAssets: [] as string[], incompleteShots: [] as string[], styleLocked: true }
+    const failed = job({ id: 'f', key: 'A1|front|r1', status: 'failed', error: 'Kie.ai request failed (500)' })
+    const retried = job({ id: 'ok', key: 'A1|front|r2', revision: 2, status: 'completed' })
+    expect(deliveryChecklist({ ...base, queue: queue([failed]) }).some((i) => i.id === 'failed')).toBe(true)
+    expect(deliveryChecklist({ ...base, queue: queue([failed, retried]) }).some((i) => i.id === 'failed')).toBe(false)
+  })
+})

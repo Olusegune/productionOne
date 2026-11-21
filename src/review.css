@@ -138,3 +138,7 @@
 .rv-take select { height: 36px; }
 .rv-keep { justify-content: center; width: 100%; }
 .rv-compare .rv-note { grid-row: 2; }
+
+/* A long unbroken file path in a message must wrap, not push the side panel off the screen. */
+.rv-side { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.rv-side p, .rv-side li, .rv-side span, .rv-side h3 { overflow-wrap: anywhere; min-width: 0; }

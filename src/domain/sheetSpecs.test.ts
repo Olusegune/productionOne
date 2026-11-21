@@ -114,3 +114,28 @@ describe('sets are drawn full frame', () => {
     expect(person).toMatch(/mid-grey field/)
   })
 })
+
+describe('close-ups made from a full-body reference', () => {
+  const portrait = viewsFor('character', 'Identity').find((v) => !v.fullBody)!
+  const front = viewsFor('character', 'Identity').find((v) => v.fullBody)!
+  const base = { style: defaultStyleBible, asset: amina, variant: 'Canonical', sheetType: 'Identity' as const }
+  it('says the framing comes from the request, not from the attached picture', () => {
+    expect(buildViewPrompt({ ...base, view: portrait, anchored: true })).toMatch(/FRAMING comes from this request/)
+  })
+  it('does not say it for a full-body view, or when nothing is attached', () => {
+    expect(buildViewPrompt({ ...base, view: front, anchored: true })).not.toMatch(/FRAMING comes from this request/)
+    expect(buildViewPrompt({ ...base, view: portrait })).not.toMatch(/FRAMING comes from this request/)
+  })
+})
+
+describe('a set is drawn empty', () => {
+  it('asks for the place without people, and only for places', async () => {
+    const { buildViewPrompt, emptyPlaceLine } = await import('./sheetSpecs')
+    const view = { key: 'est', label: 'Establishing view', instruction: 'Wide establishing view.' } as never
+    const base = { style: defaultStyleBible, variant: 'Canonical', sheetType: 'Establishing', view, anchored: false } as never
+    const set = buildViewPrompt({ ...(base as object), asset: { id: 'S1', name: 'KITCHEN', type: 'set' } } as never)
+    const prop = buildViewPrompt({ ...(base as object), asset: { id: 'P1', name: 'Vase', type: 'prop' } } as never)
+    expect(set).toContain(emptyPlaceLine)
+    expect(prop).not.toContain(emptyPlaceLine)
+  })
+})

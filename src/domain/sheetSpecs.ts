@@ -184,6 +184,12 @@ export function identityFacts(asset: Partial<Pick<ExtractedAsset, 'type' | 'age'
 export const reshapeLine = "Its body proportions are NOT to be copied: draw the body to the target proportions stated above, even where they differ from this picture. Everything else about who this is stays."
 export const photoReshapeLine = 'The attached photographs show who this is, not how the body is built: draw the body to the target proportions stated above, even where the photographs differ.'
 
+/** A close-up made from a full-body reference: the reference gives identity, not the framing (a model otherwise repeats the full-body picture). */
+export const closeUpReframeLine = 'FRAMING comes from this request, not from the attached picture: this is a close-up. Do not reproduce the full-body framing or pose of the attached picture. Crop in as described above so the face and upper body fill the frame, and show no legs or feet.'
+
+/** A set sheet is the place for every later picture, so it is drawn empty: people in it make the model draw a scene, and a person in a set cannot be reused. */
+export const emptyPlaceLine = 'This is a reference of the place itself, empty of people, creatures and characters: show only the architecture, furniture and fixed props, so any character can be placed in it later.'
+
 export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions, guide }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const twoD = !!style.spec2d
@@ -203,6 +209,8 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     // A costume made from the script's own description of a character keeps those words in every view.
     (asset.type === 'costume' && asset.prompt?.startsWith('Costume worn by')) || (asset.type === 'prop' && asset.prompt?.startsWith('As the script describes it')) ? `${asset.prompt}${asset.type === 'prop' ? ' It shows exactly this and nothing more: add no other people, figures or objects to what it shows.' : ''}` : '',
     reshaped,
+    place ? emptyPlaceLine : '',
+    anchored && !view.fullBody && asset.type === 'character' ? closeUpReframeLine : '',
     twoD && photoRefs ? twoDPhotoLine : '',
     hasTarget && photoRefs ? photoReshapeLine : '',
     hasTarget && guide ? guideLine : '',

@@ -302,7 +302,7 @@ body { min-width: 0; }
 .po-cost { position: relative; padding-right: 20px; }
 .po-cost-chip { height: 30px; padding: 0 13px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--stroke); color: var(--text-2); font-size: 13px; cursor: pointer; }
 .po-cost-chip:hover { color: var(--text); border-color: var(--stroke-strong); }
-.po-cost-pop { position: absolute; right: 16px; bottom: calc(100% + 10px); width: 340px; padding: 16px; z-index: 50; font-size: 14px; color: var(--text-2); background: #12161b; }
+.po-cost-pop { position: absolute; right: 16px; bottom: calc(100% + 10px); width: min(340px, calc(100vw - 32px)); padding: 16px; z-index: 50; font-size: 14px; color: var(--text-2); background: #12161b; }
 .po-cost-pop p { margin: 0 0 12px; line-height: 1.55; font-size: 13px; color: var(--text-3); }
 .po-switch { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); margin-bottom: 12px; }
 .po-cost-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

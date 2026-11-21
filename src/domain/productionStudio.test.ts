@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analyzeScript, animaticDuration, canSpend, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, pauseQueue, resumeQueue, retryJob, sceneCoverageAudit, shotAtTime, type GenerationJob, type ShotRecord } from './productionStudio'
+import { analyzeScript, animaticDuration, canSpend, cancelJob, compileAssetPrompt, compileShotPackage, coverageAudit, normalizeShotOrder, personDescription, pauseQueue, resumeQueue, retryJob, sceneCoverageAudit, shotAtTime, type GenerationJob, type ShotRecord } from './productionStudio'
 
 const shot: ShotRecord = { id:'SHOT-001', sceneId:'SCENE-001', order:1, duration:5, assetIds:['CHAR-AMINA-001','PROP-COMPASS-002'], action:'Amina raises the compass', dialogue:'We are close.', speaker:'AMINA', emotionalObjective:'quiet resolve', facialActing:'focused eyes', bodyLanguage:'steady posture', microAnimation:'one blink and slow breath', cameraFraming:'medium close-up', cameraMovement:'slow push in', lighting:'warm dusk edge light', soundEffects:'cloth movement', ambience:'savanna wind', music:'low strings', transition:'cut', storyboardStatus:'approved' }
 
@@ -33,4 +33,20 @@ describe('release production pipeline', () => {
   })
   it('prevents a paid request from exceeding its ceiling',()=>{expect(canSpend(2,1.25,.5)).toBe(true);expect(canSpend(2,1.25,1)).toBe(false)})
   it('reports scene-level files, shots and continuity warnings',()=>{const analysis=analyzeScript('EXT. SAVANNA - DUSK\nAMINA\nWe are close.\nShe holds the compass.');const result=sceneCoverageAudit(analysis,[{...shot,sceneId:'SCENE-001',assetIds:['UNKNOWN']}],[])[0];expect(result.videoReady).toBe(false);expect(result.missingAssets.length).toBeGreaterThan(0);expect(result.warnings.join(' ')).toContain('UNKNOWN')})
+})
+
+describe('what a script says about a person', () => {
+  it('keeps the bracketed introduction and drops the room around the person', () => {
+    const line = 'A calm bedroom with a wide window onto a spiral galaxy. A GALAXY ALARM pulses on the bedside table. KAEL (40s, weary cosmic engineer, slate-blue tunic) lies motionless beneath the sheets.'
+    const out = personDescription(line, 'KAEL')
+    expect(out).toBe('KAEL (40s, weary cosmic engineer, slate-blue tunic)')
+    expect(out.toLowerCase()).not.toContain('bedroom')
+  })
+  it('falls back to the one sentence that names the person', () => {
+    const out = personDescription('The kitchen glows with morning light. MIRA stirs a pot, humming. The window shows a nebula.', 'MIRA')
+    expect(out).toBe('MIRA stirs a pot, humming.')
+  })
+  it('never breaks on a name with punctuation', () => {
+    expect(personDescription('DR. VOSS (60s, stern) enters.', 'DR. VOSS')).toBe('DR. VOSS (60s, stern)')
+  })
 })
