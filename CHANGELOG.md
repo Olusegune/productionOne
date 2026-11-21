@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.60.0 (2026-11-20): relink preview and Review compare
 - **Find missing pictures now shows a preview first.** After you choose the folder, "Review matches before relinking" lists every missing picture, the file found for it (or that the folder has none), and what you had decided about it. Tick the ones to link, then press Relink N files. Choose another folder is there too. Nothing changes until you press the button.
 - **Review: compare, zoom and keep moving.** Zoom in and out, jump to a Top crop, and keep both pictures in step with Sync zoom (Ctrl and the mouse wheel also zoom). A Review summary strip shows the reference, your decision and the technical checks, and a bar at the bottom shows how many are left, what is Next, and previous and next arrows.
 
