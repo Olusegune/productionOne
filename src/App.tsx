@@ -1624,7 +1624,7 @@ export default function App() {
           <DirectView looks={lookState} setLooks={setLookState} sceneStates={sceneStates} setSceneStates={setSceneStates} proportions={proportions} activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
         )}
         {workspace === "Deliver" && (
-          <DeliveryCenter
+          <DeliveryCenter outputs={assetOutputs}
             analysis={analysis}
             shots={shots}
             audit={audit}
