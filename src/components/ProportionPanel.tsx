@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, Crosshair, Redo2, RotateCcw, Sparkles, Trash2, Undo2 } from 'lucide-react'
@@ -36,6 +36,13 @@ interface Props {
   onSetWorld?: (world: WorldRules) => void
   /** The approved picture of this character, shown for reference beside the figure. */
   referencePath?: string
+  /** The other characters, so the same proportions can be given to them in one step. */
+  others?: Array<{ id: string; name: string }>
+  onApplyTo?: (ids: string[], profile: ProportionProfile) => void
+  /** Opens this character's Sheets, where pictures are made (used by "Apply and make pictures"). */
+  onOpenSheets?: (makeFrontView?: boolean) => void
+  /** What one picture costs, for the button that makes a new front view. */
+  newViewCost?: string
   notify: (message: string) => void
 }
 
@@ -87,7 +94,7 @@ const tabs: Array<{ id: ControlTab; label: string }> = [{ id: 'body', label: 'Bo
  * Shape and proportions for one character. Three things are kept apart on screen and in what they do: moving a control only redraws the schematic (it never reaches a
  * provider), Apply proportions makes the draft the character's real target (prompts and checks use it), and Generate design preview asks a model for one picture.
  */
-export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, cost, startFrom, world, onSetWorld, referencePath, notify }: Props) {
+export function ProportionPanel({ asset, profile, onChange, onGenerate, candidates, approvedViews, cost, startFrom, world, onSetWorld, referencePath, others = [], onApplyTo, onOpenSheets, newViewCost, notify }: Props) {
   const start = (): History<ProportionProfile> | null => drafts.get(asset.id) ?? (profile ? newHistory(profile) : null)
   const [history, setHistory] = useState<History<ProportionProfile> | null>(start)
   useEffect(() => { setHistory(start()) }, [asset.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,26 +105,39 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
   const [tab, setTab] = useState<ControlTab>('body')
   const [view, setView] = useState<'front' | 'compare'>('front')
   const [linked, setLinked_] = useState(true)
-  const [scope, setScope] = useState<'character' | 'world'>('character')
+  const [scope, setScope] = useState<'character' | 'others' | 'world'>('character')
+  const [shareWith, setShareWith] = useState<Set<string>>(new Set())
+  const [leaving, setLeaving] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
-  useEffect(() => { if (!open) return; const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !(e.target instanceof HTMLInputElement)) setOpen(false) }; window.addEventListener('keydown', onKey); const prev = document.body.style.overflow; document.body.style.overflow = 'hidden'; return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev } }, [open])
+  const goBackRef = useRef<() => void>(() => setOpen(false))
+  useEffect(() => { if (!open) return; const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !(e.target instanceof HTMLInputElement)) goBackRef.current() }; window.addEventListener('keydown', onKey); const prev = document.body.style.overflow; document.body.style.overflow = 'hidden'; return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev } }, [open])
   const [mine, setMine] = useState(readPresets)
 
   const keep = (h: History<ProportionProfile> | null) => { if (h && !sameProfile(h.present, profile)) drafts.set(asset.id, h); else drafts.delete(asset.id); setHistory(h) }
   const edit = (next: ProportionProfile) => keep(history ? commit(history, next) : newHistory(next))
   const step = (dir: 'undo' | 'redo') => { if (!history) return; keep(dir === 'undo' ? undo(history) : redo(history)) }
   const setValue = (id: ControlSpec['id'], v: number) => { if (current) edit(linked ? setLinked(current, id, v) : setControl(current, id, v)) }
-  const applyNow = () => {
-    if (!current) return
+  const applyNow = (): boolean => {
+    if (!current) return false
     onChange(current)
     drafts.delete(asset.id)
     setHistory(newHistory(current))
+    if (scope === 'others' && onApplyTo && shareWith.size > 0) {
+      const names = others.filter((o) => shareWith.has(o.id)).map((o) => o.name)
+      onApplyTo([...shareWith], current)
+      notify(`Proportions applied to ${asset.name} and ${names.join(', ')}. New pictures of each use them; approved pictures are not changed.`)
+      return true
+    }
     if (scope === 'world' && onSetWorld) {
       onSetWorld({ ...(world ?? { scaleConvention: 'metres' as const }), profile: { preset: current.preset, stylization: current.stylization } })
       notify(`Applied to ${asset.name}. New characters will start from ${presets.find((p) => p.id === current.preset)?.label ?? 'this profile'} at stylization ${current.stylization}; characters that already have proportions are not changed.`)
-    } else notify(`Proportions applied to ${asset.name}. New pictures use them; approved pictures are not changed.`)
+    } else notify(`Proportions applied to ${asset.name}. New pictures use them; approved pictures are not changed. If ${asset.name} already has an approved front view, the model copies that body: use "Apply and make a new front view" to start from the new proportions.`)
+    return true
   }
+  /** Leaving with edits that are not applied asks first, so a set of changes is never quietly lost (or quietly ignored). */
+  const goBack = () => { if (dirty) setLeaving(true); else setOpen(false) }
+  goBackRef.current = goBack
   const discard = () => { drafts.delete(asset.id); setHistory(profile ? newHistory(profile) : null) }
 
   const warns = useMemo(() => (current ? warnings(current) : []), [current])
@@ -135,6 +155,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
         <h4>Shape &amp; proportions</h4>
         <p className="helper">Define body and facial proportions for {asset.name}: tall or compact, long limbs, large eyes, angular or rounded. Nothing changes for this character until you apply them, and style changes never reset them.</p>
         <p className={`prop-start-state${dirty ? ' draft' : ''}`}><span>Profile</span> {state}</p>
+        {dirty && <p className="prop-start-warn" role="status">These changes are not applied yet, so new pictures will not use them. <button type="button" className="linklike" onClick={() => { applyNow() }}>Apply now</button></p>}
         <button type="button" className="primary" onClick={() => { if (!current) keep(newHistory(startFrom ? startFrom() : createProfile(asset.id))); setOpen(true) }}><ProportionsIcon size={18} /> {current ? 'Edit proportions' : 'Set proportions'}{!current && world?.profile ? ` (from the world default: ${presetLabel(world.profile.preset)})` : ''} <ChevronRight size={16} aria-hidden="true" /></button>
       </div>
     </section>
@@ -152,7 +173,7 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
     <section className="prop-panel prop-ws" aria-label="Shape and proportions workspace">
       <header className="prop-ws-head">
         <div className="prop-ws-title">
-          <button type="button" className="secondary prop-back" onClick={() => setOpen(false)} aria-label={`Back to ${asset.name}`}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
+          <button type="button" className="secondary prop-back" onClick={goBack} aria-label={`Back to ${asset.name}`}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
           <ProportionsIcon size={26} />
           <div><h4>Shape &amp; proportions <span className="prop-ws-name">{asset.name}</span></h4>
             <small className={dirty ? 'prop-state draft' : 'prop-state applied'} data-testid="prop-state">{dirty ? 'Draft · not applied yet' : 'Applied'}</small></div>
@@ -164,6 +185,16 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
         </div>
       </header>
 
+      {leaving && (
+        <div className="prop-leave" role="alertdialog" aria-label="Unapplied changes">
+          <p><b>You changed {asset.name}'s proportions but have not applied them.</b> Pictures are made from the applied proportions only.</p>
+          <div className="prop-leave-actions">
+            <button type="button" className="primary" onClick={() => { if (applyNow()) { setLeaving(false); setOpen(false) } }}>Apply and go back</button>
+            <button type="button" className="secondary" onClick={() => { discard(); setLeaving(false); setOpen(false) }}>Discard changes</button>
+            <button type="button" className="tertiary" onClick={() => setLeaving(false)}>Keep editing</button>
+          </div>
+        </div>
+      )}
       <div className="prop-ws-grid">
         <div className="prop-card prop-controls" aria-label="Target proportions controls">
           <h5>Design controls</h5>
@@ -243,8 +274,15 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
           <fieldset className="prop-card prop-scope">
             <legend>Apply to</legend>
             <label><input type="radio" name={`scope-${asset.id}`} checked={scope === 'character'} onChange={() => setScope('character')} /> {asset.name} only</label>
+            {others.length > 0 && onApplyTo && <label><input type="radio" name={`scope-${asset.id}`} checked={scope === 'others'} onChange={() => setScope('others')} /> {asset.name} and other characters</label>}
+            {scope === 'others' && (
+              <div className="prop-share" role="group" aria-label="Give these proportions to">
+                {others.map((o) => <label key={o.id}><input type="checkbox" checked={shareWith.has(o.id)} onChange={(e) => setShareWith((cur) => { const next = new Set(cur); if (e.target.checked) next.add(o.id); else next.delete(o.id); return next })} /> {o.name}</label>)}
+                <button type="button" className="linklike" onClick={() => setShareWith(shareWith.size === others.length ? new Set() : new Set(others.map((o) => o.id)))}>{shareWith.size === others.length ? 'Clear all' : 'Select all'}</button>
+              </div>
+            )}
             <label><input type="radio" name={`scope-${asset.id}`} checked={scope === 'world'} onChange={() => setScope('world')} disabled={!onSetWorld} /> Project world profile</label>
-            <small className="helper">{scope === 'world' ? 'Also makes this the starting point for new characters. Characters that already have proportions are not changed.' : 'Only this character uses these proportions.'}</small>
+            <small className="helper">{scope === 'world' ? 'Also makes this the starting point for new characters. Characters that already have proportions are not changed.' : scope === 'others' ? 'Each ticked character gets a copy of these proportions as its own target. They keep their own faces, costumes and pictures.' : 'Only this character uses these proportions.'}</small>
           </fieldset>
         </aside>
       </div>
@@ -264,7 +302,8 @@ export function ProportionPanel({ asset, profile, onChange, onGenerate, candidat
           {mine.length > 0 && saving === null && <button type="button" className="linklike" onClick={() => { const last = mine[mine.length - 1]; setMine(deletePreset(last.name)); notify(`Removed the preset "${last.name}".`) }} title="Removes the most recently saved preset"><Trash2 size={13} /> Remove last preset</button>}
           <button type="button" className="linklike" onClick={() => { onChange(undefined); drafts.delete(asset.id); setHistory(null); notify(`Target proportions cleared for ${asset.name}.`) }}>Clear proportions</button>
           {dirty && <button type="button" className="secondary" onClick={discard}>Discard changes</button>}
-          <button type="button" className="primary" onClick={applyNow} disabled={!dirty && scope === 'character'}>Apply proportions</button>
+          {onOpenSheets && <button type="button" className="secondary" onClick={() => { if (applyNow()) { setOpen(false); onOpenSheets(true) } }} disabled={scope !== 'character' && scope !== 'others' ? false : (scope === 'others' && shareWith.size === 0)} title="Applies the proportions and makes ONE new front view with them, without the old picture attached (an attached picture makes the model copy its body). Approve it and the other views follow it.">Apply and make a new front view{newViewCost ? ` · ${newViewCost}` : ''}</button>}
+          <button type="button" className="primary" onClick={() => { applyNow() }} disabled={(!dirty && scope === 'character') || (scope === 'others' && shareWith.size === 0)}>Apply proportions</button>
         </div>
       </footer>
     </section>

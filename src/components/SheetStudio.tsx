@@ -1,3 +1,4 @@
+import { ensureGuide } from "../data/proportionGuide";
 import { sheetHints, sheetIconFor } from "../domain/categoryIcons";
 import { styleFingerprint } from "../domain/style2d";
 import { StyleGallery } from "./StyleGallery";
@@ -117,7 +118,7 @@ export function SheetStudio(props: {
   proportions?: Record<string, ProportionProfile>;
   setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
   /** Lets the top-bar Generate button start a test from outside this panel. */
-  controlRef?: { current: { generateFirst: () => void } | null };
+  controlRef?: { current: { generateFirst: () => void; generateFresh?: () => void } | null };
   focusSheetType?: SheetType;
   /** When given, notes are held by the project and saved with it; otherwise they live only in this panel. */
   notesByAsset?: Record<string, string>;
@@ -199,18 +200,22 @@ export function SheetStudio(props: {
   }, [backdrop, frontPath, desktop]);
   const backdropHex = backdrop === "front" && frontColour && frontColour.path === frontPath ? frontColour.hex : "";
   /** `only` limits the run to those view keys; `force` makes a new revision even where an image already exists (never for views still in the queue). */
-  const generate = (testOneFirst = false, only?: string[], force = false, reinterpret = false) => {
+  /** `fresh` makes the picture with no earlier picture of the character attached (only the person's own photos and the proportion guide), so the new proportions are not copied from an old body. */
+  const generate = async (testOneFirst = false, only?: string[], force = false, reinterpret = false, fresh = false) => {
     if (!asset) return;
+    // The proportion guide: a plain figure at the target proportions, attached last, so a reference picture cannot pull the body back to what it shows.
+    const profile = asset.type === "character" ? props.proportions?.[asset.id] : undefined;
+    const guidePath = profile && desktop && modelTakesReferences(provider, modelId) && !reinterpret ? await ensureGuide(profile) : null;
     const pool = only ? views.filter((v) => only.includes(v.key)) : views;
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), anchored: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), guide: !!guidePath, anchored: !reinterpret && !fresh && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
       aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
-      references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? [])] : [],
+      references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? []), ...(guidePath ? [guidePath] : [])] : [],
       styleName: style.name, styleFp: fingerprint,
-      provenance: provenanceFor(props.proportions?.[asset.id], [...(!reinterpret && modelTakesReferences(provider, modelId) && frontPath && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) ? [{ path: frontPath }] : []), ...(modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []).map((path) => ({ path })) : [])]),
-      useAnchor: !reinterpret && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
+      provenance: provenanceFor(props.proportions?.[asset.id], [...(!reinterpret && !fresh && modelTakesReferences(provider, modelId) && frontPath && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }) ? [{ path: frontPath }] : []), ...(modelTakesReferences(provider, modelId) ? (refs[asset.id] ?? []).map((path) => ({ path })) : [])]),
+      useAnchor: !reinterpret && !fresh && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }),
       outputName: (revision: number) => outputName(asset, activeVariant, activeType, view, revision),
     }));
     const result = enqueue(queue, requests, Date.now(), force);
@@ -224,7 +229,7 @@ export function SheetStudio(props: {
     }
     notify(`Generating ${what}…`);
   };
-  if (controlRef) controlRef.current = { generateFirst: () => generate(true) };
+  if (controlRef) controlRef.current = { generateFirst: () => generate(true), generateFresh: () => generate(true, undefined, true, false, true) };
 
   const refreshModels = async () => { notify(await choice.refresh()); };
 

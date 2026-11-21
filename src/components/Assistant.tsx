@@ -1,4 +1,5 @@
 import { priceFor } from "../domain/pricing";
+import { ensureGuide } from "../data/proportionGuide";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -95,7 +96,15 @@ export function AssistantView(props: {
   // A price you type wins; otherwise the typical price for this model is used and labelled as an estimate, so the plan always shows a cost when one is known.
   const perImageUsd = enteredUsd ?? typicalPrice.usd;
   const budgetUsd = budget.trim() === "" || !(Number(budget) > 0) ? null : Number(budget);
-  const options: AutopilotOptions = useMemo(() => ({ depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, provider: choice.provider, model: choice.modelId, takesReferences: modelTakesReferences(choice.provider, choice.modelId), aspect: format, proportions: props.proportions }), [depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, choice.provider, choice.modelId, format, props.proportions]);
+  // A plain proportion guide per character that has target proportions, attached to its picture requests (see proportionGuide.ts). Made once, reused after.
+  const [guides, setGuides] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let live = true;
+    const entries = Object.entries(props.proportions ?? {});
+    void Promise.all(entries.map(async ([id, profile]) => [id, await ensureGuide(profile)] as const)).then((done) => { if (live) setGuides(Object.fromEntries(done.filter((d): d is readonly [string, string] => !!d[1]))); });
+    return () => { live = false; };
+  }, [props.proportions]);
+  const options: AutopilotOptions = useMemo(() => ({ depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, provider: choice.provider, model: choice.modelId, takesReferences: modelTakesReferences(choice.provider, choice.modelId), aspect: format, proportions: props.proportions, guides }), [depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, choice.provider, choice.modelId, format, props.proportions, guides]);
   const plan = useMemo(() => summarize(analysis, shots, style, queue, assetRefs, options), [analysis, shots, style, queue, assetRefs, options]);
   const running = state.phase !== "idle" && state.phase !== "done" && state.phase !== "stopped";
   const writerSpec = writerOption(writer);

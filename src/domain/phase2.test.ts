@@ -9,6 +9,7 @@ import type { AnalysisResult, ExtractedAsset, ShotRecord } from './productionStu
 import { addException, createProfile, fingerprint, readProfile, setControl, setHeightM, setPreset, setStylization } from './proportions'
 import { WARP_LABEL, compare, confirmLandmark, estimateLandmarks, redesignRequest, uncertain, warpBands } from './redesign'
 import { buildViewPrompt, sheetTypesFor, viewsFor } from './sheetSpecs'
+import { defaultStyleBible } from './visualDevelopment'
 
 const style = styleByName('Clean digital cel animation')
 const assets = demoAssets2D()
@@ -58,7 +59,8 @@ describe('the approved proportions reach every kind of output', () => {
       const without = buildViewPrompt({ style, asset: character, variant: 'Canonical', sheetType: sheet, view, backdrop: 'gray' })
       expect(withIt).toContain(words)
       expect(without).not.toContain('Body and face proportions')
-      expect(withIt.replace(words + '\n', '')).toBe(without)
+      // the only other difference: the closing line stops saying "keep the same body proportions" and points at the target ones
+      expect(withIt.replace(words + '\n', '').replace('Keep the same face, hairstyle and costume construction in every view of this character, with the target body proportions stated above.', 'Keep the same face, body proportions, hairstyle and costume construction in every view of this character.')).toBe(without)
     }
     expect(views).toBeGreaterThan(10)
   })
@@ -221,5 +223,40 @@ describe('redesigning an imported character', () => {
   it('the comparison is ready only when a candidate exists', () => {
     expect(compare(original, undefined).ready).toBe(false)
     expect(compare(original, 'C:/out/c.png')).toEqual({ before: original, after: 'C:/out/c.png', ready: true })
+  })
+})
+
+describe('target proportions are not undone by the reference picture', () => {
+  const words = proportionWords(profile)
+  const view = viewsFor('character', sheetTypesFor('character')[0])[0]
+  const build = (over: Record<string, unknown>) => buildViewPrompt({ style: defaultStyleBible, asset: character, variant: 'Canonical', sheetType: sheetTypesFor('character')[0], view, backdrop: 'gray', ...over } as never)
+  it('an anchored view no longer says to keep the body build, and says the body is the target', () => {
+    const plain = build({ anchored: true })
+    const target = build({ anchored: true, proportions: words })
+    expect(plain).toMatch(/body build/)
+    expect(target).not.toMatch(/body build/)
+    expect(target).toMatch(/body proportions are NOT to be copied/)
+    expect(target).toContain(words)
+    expect(target).toMatch(/keep precisely the same face, hair, skin tone, age/)
+  })
+  it('a 2D anchored view keeps the linework and palette but not the old body proportions', () => {
+    const target = buildViewPrompt({ style, asset: character, variant: 'Canonical', sheetType: sheetTypesFor('character')[0], view, backdrop: 'gray', anchored: true, proportions: words })
+    expect(target).not.toMatch(/silhouette, body proportions/)
+    expect(target).toMatch(/linework, palette/)
+    expect(target).toMatch(/body proportions are NOT to be copied/)
+  })
+  it('attached photographs show who it is, not how the body is built', () => {
+    expect(build({ photoRefs: true, proportions: words })).toMatch(/not how the body is built/)
+    expect(build({ photoRefs: true })).not.toMatch(/not how the body is built/)
+  })
+  it('without target proportions the anchoring is exactly as before', () => {
+    const before = build({ anchored: true })
+    expect(before).toMatch(/keep precisely the same face, hair, skin tone, age, body build/)
+    expect(before).not.toMatch(/NOT to be copied/)
+  })
+  it('a prop never gets the reshape wording', () => {
+    const prop = assets.find((a) => a.type === 'prop') as ExtractedAsset
+    const pv = viewsFor('prop', sheetTypesFor('prop')[0])[0]
+    expect(buildViewPrompt({ style, asset: prop, variant: 'Canonical', sheetType: sheetTypesFor('prop')[0], view: pv, anchored: true, proportions: words })).not.toMatch(/NOT to be copied/)
   })
 })

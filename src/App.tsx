@@ -208,7 +208,7 @@ export default function App() {
   const setClips = (update: (c: DemoClip[]) => DemoClip[]) => setClipsState(update);
   const localAi = useLocalAi(isTauri);
   const scriptArea = useRef<HTMLTextAreaElement>(null),
-    studioControl = useRef<{ generateFirst: () => void } | null>(null),
+    studioControl = useRef<{ generateFirst: () => void; generateFresh?: () => void } | null>(null),
     [pendingConcept, setPendingConcept] = useState<string | null>(null),
     [tourOpen, setTourOpen] = useState(false);
   const setQueue = (update: (q: QueueState) => QueueState) => setQueueState(update);

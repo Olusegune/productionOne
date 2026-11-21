@@ -296,6 +296,31 @@ pub fn head_box(app: tauri::AppHandle, path: String) -> Result<Option<HeadBox>, 
     Ok(estimate_head(&img))
 }
 
+/// Writes a proportion guide (a small PNG the app drew itself) into the pictures folder under a plain name. It checks the name, that the data really is a PNG of a
+/// sensible size, and never overwrites a different file; writing the same guide twice reuses it.
+pub fn write_guide_png(dir: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf, String> {
+    let stem = name.strip_suffix(".png").ok_or("A guide is a .png file")?;
+    if !stem.starts_with("guide_") || stem.len() > 40 || !stem.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') { return Err("That guide name is not valid".into()); }
+    if bytes.len() < 64 || bytes.len() > 2 * 1024 * 1024 { return Err("The guide image is not a sensible size".into()); }
+    if image::guess_format(bytes).ok() != Some(image::ImageFormat::Png) { return Err("The guide is not a PNG image".into()); }
+    let img = image::load_from_memory(bytes).map_err(|e| e.to_string())?;
+    if img.width() > 2048 || img.height() > 4096 { return Err("The guide image is too large".into()); }
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let target = dir.join(name);
+    if target.is_file() && fs::read(&target).map(|existing| existing == bytes).unwrap_or(false) { return Ok(target); }
+    fs::write(&target, bytes).map_err(|e| e.to_string())?;
+    Ok(target)
+}
+
+/// Saves the proportion guide the page drew (a PNG data URL) into the pictures folder and returns its path, so it can be attached to a picture request.
+#[tauri::command]
+pub fn save_guide_image(app: tauri::AppHandle, name: String, data_url: String) -> Result<String, String> {
+    let payload = data_url.strip_prefix("data:image/png;base64,").ok_or("The guide must be a PNG data URL")?;
+    let bytes = ENGINE.decode(payload).map_err(|_| "The guide could not be read".to_string())?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
+    write_guide_png(&dir, &name, &bytes).map(|p| p.to_string_lossy().into_owned())
+}
+
 /// "Locate file": the person chooses one picture for one missing picture whose name did not match. The file comes from the dialog and is remembered under `name`, so
 /// it can be brought in with the others by `adopt_scanned`. Returns None if they cancel.
 #[tauri::command]
@@ -940,6 +965,21 @@ The background is one flat, uniform neutral mid-grey field.";
         assert!(estimate_head(&busy).is_none());
         // a blank picture has no figure
         assert!(estimate_head(&image::RgbImage::from_pixel(w, h, image::Rgb([200, 200, 200]))).is_none());
+    }
+    #[test]
+    fn a_guide_png_is_checked_and_written_once_and_nothing_else_is_accepted() {
+        let root = std::env::temp_dir().join(format!("po_guide_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let mut png = Vec::new();
+        image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(32, 48, image::Rgb([200, 200, 200]))).write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
+        let first = write_guide_png(&root, "guide_pp1-0123abcd.png", &png).unwrap();
+        assert_eq!(first, write_guide_png(&root, "guide_pp1-0123abcd.png", &png).unwrap());
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        assert!(write_guide_png(&root, "../escape.png", &png).is_err());
+        assert!(write_guide_png(&root, "guide_x.jpg", &png).is_err());
+        assert!(write_guide_png(&root, "notaguide.png", &png).is_err());
+        assert!(write_guide_png(&root, "guide_ok.png", b"not a png at all, just some text that is long enough to pass the size check").is_err());
+        let _ = fs::remove_dir_all(&root);
     }
     #[test]
     fn scan_finds_pictures_by_name_in_nested_folders_and_ignores_the_rest() {

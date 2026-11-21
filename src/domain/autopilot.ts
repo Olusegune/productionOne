@@ -29,6 +29,8 @@ export interface AutopilotOptions {
   aspect: string
   /** Target proportions per character, used in every picture request so the same body runs through every sheet and frame. */
   proportions?: Record<string, ProportionProfile>
+  /** A proportion guide picture per character (path), attached as the last reference so the body follows the target proportions. */
+  guides?: Record<string, string>
 }
 
 export interface AutopilotState {
@@ -72,9 +74,9 @@ function request(asset: ExtractedAsset, sheet: SheetType, view: ViewSpec, style:
   const anchored = o.takesReferences && shouldAnchor(queue, { assetId: asset.id, variant: 'Canonical', sheetType: sheet, viewKey: view.key })
   return {
     assetId: asset.id, variant: 'Canonical', sheetType: sheet, viewKey: view.key, label: view.label,
-    prompt: buildViewPrompt({ style, asset, variant: 'Canonical', sheetType: sheet, view, model: o.model, anchored, backdrop: 'gray', photoRefs: refs.length > 0, proportions: proportionWords(o.proportions?.[asset.id]) }),
+    prompt: buildViewPrompt({ style, asset, variant: 'Canonical', sheetType: sheet, view, model: o.model, anchored, backdrop: 'gray', photoRefs: refs.length > 0, proportions: proportionWords(o.proportions?.[asset.id]), guide: !!(o.takesReferences && o.guides?.[asset.id]) }),
     aspect: view.aspect, fullBody: view.fullBody, provider: o.provider, model: o.model,
-    references: o.takesReferences ? refs : [], useAnchor: anchored, styleName: style.name, styleFp: styleFingerprint(style),
+    references: o.takesReferences ? [...refs, ...(o.guides?.[asset.id] ? [o.guides[asset.id]] : [])] : [], useAnchor: anchored, styleName: style.name, styleFp: styleFingerprint(style),
     provenance: provenanceFor(o.proportions?.[asset.id], o.takesReferences ? refs.map((path) => ({ path })) : []),
     outputName: (revision: number) => outputName(asset, 'Canonical', sheet, view, revision),
   }

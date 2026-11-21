@@ -352,7 +352,9 @@ export function describe(p: ProportionProfile | undefined): string {
     else if (delta < -threshold) parts.push(grade(delta, threshold, less))
   }
 
-  const height = v('heightInHeads')
+  // The parts decide how tall the figure is. If the Total height control says something else (the link is off), the prompt follows the parts so it never contradicts itself.
+  const r = ratios(p)
+  const height = Math.abs(r.stackedHeight - v('heightInHeads')) > 0.3 ? r.stackedHeight : v('heightInHeads')
   if (height < 7) parts.push(`${height <= 5 ? 'a large head on a small body' : 'a compact build'} (about ${height} heads tall)`)
   else if (height > 8.2) parts.push(`${height >= 9.2 ? 'a very tall, slender build' : 'a tall, slender build'} (about ${height} heads tall)`)
   pair('legLength', 0.6, 'long legs', 'short legs')
@@ -371,7 +373,6 @@ export function describe(p: ProportionProfile | undefined): string {
   else if (v('shapeLanguage') <= -40) parts.push(v('shapeLanguage') <= -80 ? 'very soft, rounded shapes' : 'soft, rounded shapes')
   if (p.stylization >= 60) parts.push('strongly stylized rather than realistic proportions')
   else if (p.stylization >= 25) parts.push('stylized rather than realistic proportions')
-  const r = ratios(p)
   if (r.legToTorso >= 1.45) parts.push('legs clearly longer than the torso')
   else if (r.legToTorso <= 0.8) parts.push('legs shorter than the torso')
   if (Math.abs(p.heightM - DEFAULT_HEIGHT_M) >= 0.05) parts.push(`about ${p.heightM} m tall in the story`)

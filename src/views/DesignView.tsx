@@ -88,7 +88,7 @@ export interface DesignViewProps {
   setProportions: Dispatch<SetStateAction<Record<string, ProportionProfile>>>;
   setStyleBible: Dispatch<SetStateAction<StyleBible>>;
   sheetNotes: Record<string, string>;
-  studioControl: RefObject<{ generateFirst: () => void; } | null>;
+  studioControl: RefObject<{ generateFirst: () => void; generateFresh?: () => void } | null>;
   styleBible: StyleBible;
   /** Everything a removal touches, and how to put a changed copy back (used by "Remove from project" and its Undo). */
   slice?: ProjectSlice;
@@ -163,6 +163,10 @@ export function DesignView(p: DesignViewProps) {
                 approvedViews={queue.jobs.filter((j) => j.assetId === a.id && j.sheetType !== "shape-candidate" && j.approved).length}
                 cost={costShort(1, priceFor(readModelChoice().provider, readModelChoice().modelId, queue.perImageUsd))}
                 referencePath={assetOutputs[a.id]}
+                others={analysis.assets.filter((x) => x.type === "character" && x.id !== a.id).map((x) => ({ id: x.id, name: x.name }))}
+                onApplyTo={(ids, applied) => setProportions((cur) => { const m = { ...cur }; for (const id of ids) m[id] = { ...applied, id }; return m; })}
+                newViewCost={costShort(1, priceFor(readModelChoice().provider, readModelChoice().modelId, queue.perImageUsd))}
+                onOpenSheets={(fresh) => { setSection("sheets"); if (fresh) window.setTimeout(() => studioControl.current?.generateFresh?.(), 80); }}
                 notify={setNotice}
               />;
             })()}
