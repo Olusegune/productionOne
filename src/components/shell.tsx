@@ -69,6 +69,7 @@ export function TopBar(props: {
       {next && (
         <div className="po-next">
           <small>Next step</small>
+          <span className="po-next-step" aria-label={`Step ${Math.max(1, steps.findIndex((x) => x.id === next.id) + 1)} of ${steps.length}`}><span className="po-next-bar" aria-hidden="true"><i style={{ width: `${Math.round(((Math.max(1, steps.findIndex((x) => x.id === next.id) + 1) - 1) / Math.max(1, steps.length)) * 100)}%` }} /></span>Step {Math.max(1, steps.findIndex((x) => x.id === next.id) + 1)} of {steps.length}</span>
           <p>{next.detail}</p>
           <button className="primary" onClick={() => props.onNext(next)} title={next.detail} aria-label={next.action}>
             <span className="btn-label">{next.action}</span> <ArrowRight size={14} aria-hidden="true" />

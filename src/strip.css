@@ -25,3 +25,8 @@
 @keyframes po-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .po-strip .spin { animation: none; } }
 @media (max-width: 900px) { .po-strip { display: none; } }
+
+/* Next step card: where you are on the Golden Path */
+.po-next-step { display: grid; gap: 4px; font-size: 12px; color: var(--text-3); margin: 2px 0 4px; }
+.po-next-bar { display: block; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 12%, transparent); overflow: hidden; }
+.po-next-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .4s var(--ease-out, ease); }
