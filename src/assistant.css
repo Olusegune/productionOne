@@ -44,3 +44,14 @@
 
 .asst-cap { width: 56px; display: inline-block; margin: 0 4px; }
 .asst-agents { margin-top: 4px; }
+
+/* Plan panel: what is in it, and the steps as a timeline */
+.asst-counts { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.asst-counts li { padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); font-size: 13px; color: var(--text-2); }
+.asst-counts b { color: var(--text); margin-right: 4px; }
+.asst-steps { list-style: none; padding-left: 0; counter-reset: step; gap: 0; position: relative; }
+.asst-steps li { counter-increment: step; position: relative; padding: 4px 0 12px 38px; line-height: 1.45; }
+.asst-steps li::before { content: counter(step); position: absolute; left: 0; top: 2px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--text) 25%, transparent); background: var(--panel-1); font: 600 12px var(--ui); color: var(--text); z-index: 1; }
+.asst-steps li:first-child::before { background: color-mix(in srgb, var(--blue) 30%, var(--panel-1)); border-color: var(--blue); }
+.asst-steps li::after { content: ""; position: absolute; left: 12.5px; top: 30px; bottom: -2px; width: 1px; background: color-mix(in srgb, var(--text) 18%, transparent); }
+.asst-steps li:last-child::after { display: none; }

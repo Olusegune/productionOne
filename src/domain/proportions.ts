@@ -254,7 +254,13 @@ export function readProfiles(raw: unknown): Record<string, ProportionProfile> {
 
 // ---------------------------------------------------------------- schematic preview
 
-export interface SchematicShape { id: string; kind: 'ellipse' | 'rect' | 'line'; x: number; y: number; w?: number; h?: number; x2?: number; y2?: number; label?: string }
+export interface SchematicShape {
+  id: string; kind: 'ellipse' | 'rect' | 'line'; x: number; y: number; w?: number; h?: number; x2?: number; y2?: number; label?: string
+  /** Corner rounding of a rectangle, from the rounded-to-angular control. */
+  corner?: number
+  /** Stroke thickness of a line, where the thickness itself means something (a larger hand is a thicker one). */
+  weight?: number
+}
 export interface Schematic { width: number; height: number; unitPx: number; shapes: SchematicShape[] }
 
 /**
@@ -274,9 +280,17 @@ export function schematic(p: ProportionProfile): Schematic {
   const shoulderW = v('shoulderWidth') * headW
   const hipW = v('hipWidth') * headW
   const armLen = v('armLength') * u
-  const upperArm = armLen * (v('armBalance') / 100) * 0.85
-  const foreArm = armLen * 0.85 - upperArm
-  const handLen = armLen * 0.15
+  // The arm is measured shoulder to fingertip, so the hand is part of it: a larger hand leaves less for the upper arm and forearm.
+  const handLen = Math.min(v('handSize') * u, armLen * 0.4)
+  const upperArm = (armLen - handLen) * (v('armBalance') / 100)
+  const foreArm = armLen - handLen - upperArm
+  const handWeight = 3 + v('handSize') * 5
+  // -100 fully rounded .. 100 fully angular
+  const soft = (100 - v('shapeLanguage')) / 200
+  const torsoCorner = 2 + soft * 24
+  const hipCorner = 2 + soft * 10
+  const noseLen = v('noseLength') * headH
+  const jawW = headW * v('jawChin') * 0.6
   const thigh = legH * (v('legBalance') / 100)
   const shoulderY = top + headH + neckH
   const hipY = shoulderY + torsoH
@@ -289,20 +303,26 @@ export function schematic(p: ProportionProfile): Schematic {
     { id: 'head', kind: 'ellipse', x: cx - headW / 2, y: top, w: headW, h: headH, label: 'head' },
     { id: 'eye-l', kind: 'ellipse', x: cx - eyeGap / 2 - eyeW, y: eyeY, w: eyeW, h: eyeW * 0.5 },
     { id: 'eye-r', kind: 'ellipse', x: cx + eyeGap / 2, y: eyeY, w: eyeW, h: eyeW * 0.5 },
+    { id: 'nose', kind: 'line', x: cx, y: eyeY + eyeW * 0.4, x2: cx, y2: eyeY + eyeW * 0.4 + noseLen, weight: 1.6 },
+    { id: 'jaw', kind: 'line', x: cx - jawW / 2, y: top + headH * 0.8, x2: cx + jawW / 2, y2: top + headH * 0.8, weight: 1.6 },
     { id: 'neck', kind: 'rect', x: cx - headW * 0.15, y: top + headH, w: headW * 0.3, h: neckH },
-    { id: 'torso', kind: 'rect', x: cx - shoulderW / 2, y: shoulderY, w: shoulderW, h: torsoH, label: 'torso' },
-    { id: 'hips', kind: 'rect', x: cx - hipW / 2, y: hipY - torsoH * 0.18, w: hipW, h: torsoH * 0.18 },
+    { id: 'torso', kind: 'rect', x: cx - shoulderW / 2, y: shoulderY, w: shoulderW, h: torsoH, label: 'torso', corner: torsoCorner },
+    { id: 'hips', kind: 'rect', x: cx - hipW / 2, y: hipY - torsoH * 0.18, w: hipW, h: torsoH * 0.18, corner: hipCorner },
     { id: 'arm-l-upper', kind: 'line', x: cx - shoulderW / 2, y: shoulderY, x2: cx - shoulderW / 2 - 4, y2: shoulderY + upperArm },
     { id: 'arm-l-fore', kind: 'line', x: cx - shoulderW / 2 - 4, y: shoulderY + upperArm, x2: cx - shoulderW / 2 - 6, y2: shoulderY + upperArm + foreArm },
-    { id: 'hand-l', kind: 'line', x: cx - shoulderW / 2 - 6, y: shoulderY + upperArm + foreArm, x2: cx - shoulderW / 2 - 6, y2: shoulderY + upperArm + foreArm + handLen },
+    { id: 'hand-l', kind: 'line', x: cx - shoulderW / 2 - 6, y: shoulderY + upperArm + foreArm, x2: cx - shoulderW / 2 - 6, y2: shoulderY + upperArm + foreArm + handLen, weight: handWeight },
+    { id: 'elbow-l', kind: 'ellipse', x: cx - shoulderW / 2 - 4 - 3.2, y: shoulderY + upperArm - 3.2, w: 6.4, h: 6.4 },
     { id: 'arm-r-upper', kind: 'line', x: cx + shoulderW / 2, y: shoulderY, x2: cx + shoulderW / 2 + 4, y2: shoulderY + upperArm },
     { id: 'arm-r-fore', kind: 'line', x: cx + shoulderW / 2 + 4, y: shoulderY + upperArm, x2: cx + shoulderW / 2 + 6, y2: shoulderY + upperArm + foreArm },
-    { id: 'hand-r', kind: 'line', x: cx + shoulderW / 2 + 6, y: shoulderY + upperArm + foreArm, x2: cx + shoulderW / 2 + 6, y2: shoulderY + upperArm + foreArm + handLen },
+    { id: 'hand-r', kind: 'line', x: cx + shoulderW / 2 + 6, y: shoulderY + upperArm + foreArm, x2: cx + shoulderW / 2 + 6, y2: shoulderY + upperArm + foreArm + handLen, weight: handWeight },
+    { id: 'elbow-r', kind: 'ellipse', x: cx + shoulderW / 2 + 4 - 3.2, y: shoulderY + upperArm - 3.2, w: 6.4, h: 6.4 },
     { id: 'leg-l-upper', kind: 'line', x: cx - hipW / 4, y: hipY, x2: cx - hipW / 4, y2: hipY + thigh },
     { id: 'leg-l-lower', kind: 'line', x: cx - hipW / 4, y: hipY + thigh, x2: cx - hipW / 4, y2: floorY },
+    { id: 'knee-l', kind: 'ellipse', x: cx - hipW / 4 - 3.4, y: hipY + thigh - 3.4, w: 6.8, h: 6.8 },
     { id: 'foot-l', kind: 'line', x: cx - hipW / 4, y: floorY, x2: cx - hipW / 4 - footL, y2: floorY },
     { id: 'leg-r-upper', kind: 'line', x: cx + hipW / 4, y: hipY, x2: cx + hipW / 4, y2: hipY + thigh },
     { id: 'leg-r-lower', kind: 'line', x: cx + hipW / 4, y: hipY + thigh, x2: cx + hipW / 4, y2: floorY },
+    { id: 'knee-r', kind: 'ellipse', x: cx + hipW / 4 - 3.4, y: hipY + thigh - 3.4, w: 6.8, h: 6.8 },
     { id: 'foot-r', kind: 'line', x: cx + hipW / 4, y: floorY, x2: cx + hipW / 4 + footL, y2: floorY },
     { id: 'floor', kind: 'line', x: 20, y: floorY, x2: 280, y2: floorY },
   ]
@@ -319,25 +339,46 @@ export function schematic(p: ProportionProfile): Schematic {
 export function describe(p: ProportionProfile | undefined): string {
   if (!p) return ''
   const v = (id: ControlId) => p.controls[id].value
-  const parts: string[] = []
   const d = (id: ControlId) => v(id) - specFor(id).default
-  if (v('heightInHeads') < 7) parts.push(`${v('heightInHeads') <= 5 ? 'a large head on a small body' : 'a compact build'} (about ${v('heightInHeads')} heads tall)`)
-  else if (v('heightInHeads') > 8.2) parts.push(`a tall, slender build (about ${v('heightInHeads')} heads tall)`)
-  if (d('legLength') > 0.6) parts.push('long legs'); else if (d('legLength') < -0.6) parts.push('short legs')
-  if (d('armLength') > 0.4) parts.push('long arms'); else if (d('armLength') < -0.4) parts.push('short arms')
-  if (d('handSize') > 0.15) parts.push('large hands'); else if (d('handSize') < -0.15) parts.push('small hands')
-  if (d('footSize') > 0.15) parts.push('large feet'); else if (d('footSize') < -0.15) parts.push('small feet')
-  if (d('shoulderWidth') > 0.3) parts.push('broad shoulders'); else if (d('shoulderWidth') < -0.3) parts.push('narrow shoulders')
-  if (d('hipWidth') > 0.3) parts.push('wide hips'); else if (d('hipWidth') < -0.3) parts.push('narrow hips')
+  const parts: string[] = []
+  /** "long", "very long" or "extremely long" by how far past its threshold a control is. */
+  const grade = (delta: number, threshold: number, word: string): string => {
+    const m = Math.abs(delta) / threshold
+    return m >= 3 ? `extremely ${word}` : m >= 1.8 ? `very ${word}` : word
+  }
+  const pair = (id: ControlId, threshold: number, more: string, less: string) => {
+    const delta = d(id)
+    if (delta > threshold) parts.push(grade(delta, threshold, more))
+    else if (delta < -threshold) parts.push(grade(delta, threshold, less))
+  }
+
+  const height = v('heightInHeads')
+  if (height < 7) parts.push(`${height <= 5 ? 'a large head on a small body' : 'a compact build'} (about ${height} heads tall)`)
+  else if (height > 8.2) parts.push(`${height >= 9.2 ? 'a very tall, slender build' : 'a tall, slender build'} (about ${height} heads tall)`)
+  pair('legLength', 0.6, 'long legs', 'short legs')
+  pair('armLength', 0.4, 'long arms', 'short arms')
+  pair('handSize', 0.15, 'large hands', 'small hands')
+  pair('footSize', 0.15, 'large feet', 'small feet')
+  pair('shoulderWidth', 0.3, 'broad shoulders', 'narrow shoulders')
+  pair('hipWidth', 0.3, 'wide hips', 'narrow hips')
   if (d('neckLength') > 0.15) parts.push('a long neck'); else if (d('neckLength') < -0.15) parts.push('a very short neck')
-  if (d('eyeSize') > 0.03) parts.push('large eyes'); else if (d('eyeSize') < -0.03) parts.push('small eyes')
-  if (d('eyeSpacing') > 0.25) parts.push('wide-set eyes'); else if (d('eyeSpacing') < -0.25) parts.push('close-set eyes')
-  if (d('noseLength') > 0.04) parts.push('a long nose'); else if (d('noseLength') < -0.04) parts.push('a short nose')
+  pair('eyeSize', 0.03, 'large eyes', 'small eyes')
+  pair('eyeSpacing', 0.25, 'wide-set eyes', 'close-set eyes')
+  pair('noseLength', 0.04, 'a long nose', 'a short nose')
   if (d('jawChin') < -0.08) parts.push('a narrow, pointed chin'); else if (d('jawChin') > 0.08) parts.push('a broad jaw')
-  if (d('facialElongation') > 0.12) parts.push('a long face'); else if (d('facialElongation') < -0.12) parts.push('a short, round face')
-  if (v('shapeLanguage') >= 40) parts.push('angular, sharp-edged shapes'); else if (v('shapeLanguage') <= -40) parts.push('soft, rounded shapes')
+  pair('facialElongation', 0.12, 'a long face', 'a short, round face')
+  if (v('shapeLanguage') >= 40) parts.push(v('shapeLanguage') >= 80 ? 'very angular, sharp-edged shapes' : 'angular, sharp-edged shapes')
+  else if (v('shapeLanguage') <= -40) parts.push(v('shapeLanguage') <= -80 ? 'very soft, rounded shapes' : 'soft, rounded shapes')
+  if (p.stylization >= 60) parts.push('strongly stylized rather than realistic proportions')
+  else if (p.stylization >= 25) parts.push('stylized rather than realistic proportions')
+  const r = ratios(p)
+  if (r.legToTorso >= 1.45) parts.push('legs clearly longer than the torso')
+  else if (r.legToTorso <= 0.8) parts.push('legs shorter than the torso')
+  if (Math.abs(p.heightM - DEFAULT_HEIGHT_M) >= 0.05) parts.push(`about ${p.heightM} m tall in the story`)
   if (!parts.length) return ''
-  return `Body and face proportions (target, keep the same in every view): ${parts.join(', ')}.`
+  // The same facts once as numbers, for the models that can use them. Head units are the figure's own ruler: one head height from chin to crown.
+  const numbers = `In head units (one head = chin to crown): ${height} tall, legs ${v('legLength')}, arms ${v('armLength')}, shoulders ${v('shoulderWidth')} head widths wide.`
+  return `Body and face proportions (target, keep the same in every view): ${parts.join(', ')}. ${numbers}`
 }
 
 /**

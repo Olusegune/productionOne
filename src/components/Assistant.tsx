@@ -1,3 +1,4 @@
+import { priceFor } from "../domain/pricing";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -89,7 +90,10 @@ export function AssistantView(props: {
   useEffect(() => { writeStored("po.agent.allow", allowRuns ? "1" : "0"); writeStored("po.agent.cap", agentCap); }, [allowRuns, agentCap]);
   useEffect(() => { writeStored("po.asst.price", price); writeStored("po.asst.budget", budget); writeStored("po.asst.writer", writer); writeStored("po.asst.writerModel", writerModel); writeStored("po.asst.localUrl", localUrl); }, [price, budget, writer, writerModel, localUrl]);
 
-  const perImageUsd = price.trim() === "" || !(Number(price) >= 0) ? null : Number(price);
+  const typicalPrice = priceFor(choice.provider, choice.modelId, null);
+  const enteredUsd = price.trim() === "" || !(Number(price) >= 0) ? null : Number(price);
+  // A price you type wins; otherwise the typical price for this model is used and labelled as an estimate, so the plan always shows a cost when one is known.
+  const perImageUsd = enteredUsd ?? typicalPrice.usd;
   const budgetUsd = budget.trim() === "" || !(Number(budget) > 0) ? null : Number(budget);
   const options: AutopilotOptions = useMemo(() => ({ depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, provider: choice.provider, model: choice.modelId, takesReferences: modelTakesReferences(choice.provider, choice.modelId), aspect: format, proportions: props.proportions }), [depth, includeFrames, stopAfterConcepts, perImageUsd, budgetUsd, choice.provider, choice.modelId, format, props.proportions]);
   const plan = useMemo(() => summarize(analysis, shots, style, queue, assetRefs, options), [analysis, shots, style, queue, assetRefs, options]);
@@ -311,6 +315,11 @@ export function AssistantView(props: {
         {!items && <p className="helper">Nothing to plan yet. Attach a script or pictures, or describe your film, and the plan appears here.</p>}
         {items > 0 && !running && !finished && (
           <>
+            <ul className="asst-counts" aria-label="What is in the plan">
+              <li><b>{analysis.assets.filter((a) => a.type === "character").length}</b> characters</li>
+              <li><b>{analysis.assets.filter((a) => a.type === "prop").length}</b> props</li>
+              <li><b>{analysis.assets.filter((a) => a.type === "set" || a.type === "environment").length}</b> sets</li>
+            </ul>
             <p className="asst-sum"><b>{items}</b> item{items === 1 ? "" : "s"} · <b>{plan.images}</b> picture{plan.images === 1 ? "" : "s"} · {plan.costUsd === null ? "cost unknown" : `about $${plan.costUsd.toFixed(2)}`}</p>
             <div className="asst-opts">
               <div className="seg" role="group" aria-label="How much to make">
@@ -320,9 +329,10 @@ export function AssistantView(props: {
               <label className="asst-check"><input type="checkbox" checked={includeFrames} onChange={(e) => setIncludeFrames(e.target.checked)} /> Also make storyboard frames ({shots.length || "planned from the script"}) in {format}</label>
               <label className="asst-check"><input type="checkbox" checked={stopAfterConcepts} onChange={(e) => setStop(e.target.checked)} /> Stop after the first concepts so I can approve each one <small>(recommended)</small></label>
               <div className="asst-money">
-                <label><span>One picture costs me (USD)</span><input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="for example 0.05" aria-label="Price per picture in dollars" /></label>
+                <label><span>One picture costs me (USD)</span><input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={typicalPrice.usd === null ? "for example 0.05" : `typical ${typicalPrice.usd}`} aria-label="Price per picture in dollars" /></label>
                 <label><span>Budget I allow (USD)</span><input inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="for example 5" aria-label="Budget in dollars" /></label>
               </div>
+              {enteredUsd === null && typicalPrice.source === "typical" && typicalPrice.usd !== null && <small className="asst-model" data-testid="asst-typical">Using a typical price of ${typicalPrice.usd} per picture for this model. It is an estimate: type your own price to replace it.</small>}
               <small className="asst-model">Pictures are made with {choice.modelId || "your chosen model"} ({choice.provider}).</small>
             </div>
             <ol className="asst-steps">{plan.steps.map((s) => <li key={s}>{s}</li>)}</ol>

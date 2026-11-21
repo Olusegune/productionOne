@@ -206,6 +206,54 @@ pub fn missing_files(paths: Vec<String>) -> Vec<String> {
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct FoundPicture { pub name: String, pub path: String }
 
+/// What the last "find pictures" scan matched, kept here so the page can only ask to bring in pictures the scan really found (it never names a path itself).
+#[derive(Default)]
+pub struct ScanMemory(pub std::sync::Mutex<std::collections::HashMap<String, PathBuf>>);
+
+/// A picture brought into the project's pictures folder.
+#[derive(Serialize, Clone, Debug)]
+pub struct AdoptedPicture { pub name: String, pub path: String }
+
+/// Copies one found picture into `dir` under its own name, after checking it really is a PNG, JPEG or WebP image. If the same file is already there it is reused, so doing
+/// this twice never makes a second copy. The original is never touched.
+pub fn adopt_image(source: &Path, dir: &Path) -> Result<PathBuf, String> {
+    let meta = fs::metadata(source).map_err(|e| format!("Could not open {}: {e}", source.display()))?;
+    if !meta.is_file() { return Err(format!("{} is not a file", source.display())); }
+    if meta.len() == 0 || meta.len() > 50 * 1024 * 1024 { return Err(format!("{} must be between 1 byte and 50 MB", source.display())); }
+    let bytes = fs::read(source).map_err(|e| e.to_string())?;
+    let ext = match image::guess_format(&bytes).map_err(|_| format!("{} is not a PNG, JPEG or WebP image", source.display()))? {
+        image::ImageFormat::Png => "png",
+        image::ImageFormat::Jpeg => "jpg",
+        image::ImageFormat::WebP => "webp",
+        _ => return Err(format!("{} is not a PNG, JPEG or WebP image", source.display())),
+    };
+    image::load_from_memory(&bytes).map_err(|e| format!("{} could not be read as an image: {e}", source.display()))?;
+    let stem = safe_package_name(&source.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default());
+    if stem.is_empty() { return Err(format!("{} has no usable name", source.display())); }
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let same = dir.join(format!("{stem}.{ext}"));
+    if same.is_file() && fs::read(&same).map(|existing| existing == bytes).unwrap_or(false) { return Ok(same); }
+    let target = unique_path(dir, &stem, ext);
+    fs::write(&target, &bytes).map_err(|e| e.to_string())?;
+    Ok(target)
+}
+
+/// Brings the pictures the last scan found (by name) into the project's pictures folder, so the app can show and use them like any other picture. Only names the scan returned
+/// are accepted; the page cannot ask for any other file.
+#[tauri::command]
+pub fn adopt_scanned(app: tauri::AppHandle, memory: tauri::State<'_, ScanMemory>, names: Vec<String>) -> Result<Vec<AdoptedPicture>, String> {
+    if names.len() > 5000 { return Err("Too many pictures at once".into()); }
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
+    let found = memory.0.lock().map_err(|_| "The scan result is not available".to_string())?.clone();
+    let mut out = Vec::new();
+    for name in names {
+        let Some(source) = found.get(&name.to_lowercase()) else { continue };
+        let copied = adopt_image(source, &dir)?;
+        out.push(AdoptedPicture { name: name.to_lowercase(), path: copied.to_string_lossy().into_owned() });
+    }
+    Ok(out)
+}
+
 /// What a scan found, and which folder was searched.
 #[derive(Serialize, Clone, Debug)]
 pub struct FoundScan { pub folder: String, pub found: Vec<FoundPicture> }
@@ -245,14 +293,16 @@ pub fn scan_for_pictures(root: &Path, wanted: &[String]) -> Vec<FoundPicture> {
 /// "Find missing pictures": the person chooses a folder (the folder always comes from this dialog, never from the page), and the pictures whose names are asked for are
 /// looked up inside it. Returns None if they cancel. Nothing is copied or changed on disk.
 #[tauri::command]
-pub async fn find_pictures(app: tauri::AppHandle, names: Vec<String>) -> Result<Option<FoundScan>, String> {
+pub async fn find_pictures(app: tauri::AppHandle, memory: tauri::State<'_, ScanMemory>, names: Vec<String>) -> Result<Option<FoundScan>, String> {
     use tauri_plugin_dialog::DialogExt;
     let names: Vec<String> = names.into_iter().take(5000).collect();
     if names.is_empty() { return Ok(None); }
     let Some(folder) = app.dialog().file().set_title("Choose the folder that holds your pictures").blocking_pick_folder() else { return Ok(None) };
     let root = folder.into_path().map_err(|e| e.to_string())?;
     let folder = root.to_string_lossy().into_owned();
-    tauri::async_runtime::spawn_blocking(move || scan_for_pictures(&root, &names)).await.map(|found| Some(FoundScan { folder, found })).map_err(|e| e.to_string())
+    let found = tauri::async_runtime::spawn_blocking(move || scan_for_pictures(&root, &names)).await.map_err(|e| e.to_string())?;
+    if let Ok(mut held) = memory.0.lock() { *held = found.iter().map(|f| (f.name.to_lowercase(), PathBuf::from(&f.path))).collect(); }
+    Ok(Some(FoundScan { folder, found }))
 }
 
 #[tauri::command]
@@ -424,7 +474,7 @@ pub(crate) fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBu
     let assets = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
     let canonical = fs::canonicalize(path).map_err(|e| format!("Could not open the image: {e}"))?;
     let root = fs::canonicalize(&assets).map_err(|e| e.to_string())?;
-    if canonical.starts_with(&root) { Ok(canonical) } else { Err("Only images in the Production One assets folder can be previewed".into()) }
+    if canonical.starts_with(&root) { Ok(canonical) } else { Err(format!("Only images in the Production One assets folder can be previewed (this one is at {}, the folder is {})", canonical.display(), root.display())) }
 }
 
 /// A new PNG the app may write: directly inside `root`, a plain file name, a .png extension, so a request from the page can never write elsewhere or overwrite something that is not an image.
@@ -776,6 +826,25 @@ The background is one flat, uniform neutral mid-grey field.";
         assert!(parse_models("fal", &json!({})).is_empty());
     }
 
+    #[test]
+    fn adopt_copies_a_real_picture_under_its_own_name_once_and_refuses_anything_else() {
+        let root = std::env::temp_dir().join(format!("po_adopt_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let from = root.join("from");
+        let to = root.join("assets");
+        fs::create_dir_all(&from).unwrap();
+        let img = image::RgbImage::from_pixel(8, 8, image::Rgb([200, 30, 30]));
+        img.save(from.join("Amina_front_v01.png")).unwrap();
+        fs::write(from.join("fake.png"), b"this is not an image").unwrap();
+        let first = adopt_image(&from.join("Amina_front_v01.png"), &to).unwrap();
+        assert_eq!(first.file_name().unwrap().to_str().unwrap(), "Amina_front_v01.png");
+        let again = adopt_image(&from.join("Amina_front_v01.png"), &to).unwrap();
+        assert_eq!(first, again, "the same file is reused, not copied twice");
+        assert_eq!(fs::read_dir(&to).unwrap().count(), 1);
+        assert!(adopt_image(&from.join("fake.png"), &to).is_err());
+        assert!(adopt_image(&from.join("missing.png"), &to).is_err());
+        let _ = fs::remove_dir_all(&root);
+    }
     #[test]
     fn scan_finds_pictures_by_name_in_nested_folders_and_ignores_the_rest() {
         let root = std::env::temp_dir().join(format!("po_scan_{}", std::process::id()));

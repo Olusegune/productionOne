@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowRight, Check, Compass, ShieldCheck, Copy, Download,
 import { committedUsd, isMissingFile, retry, type QueueState } from "../domain/generationQueue";
 import { videoPresets, type AnalysisResult, type CompiledShotPackage, type SceneCoverage, type ShotRecord, type VideoModel } from "../domain/productionStudio";
 import { Fold } from "./Fold";
-import { deliveryChecklist, packageKind, type ChecklistItem } from "../domain/review";
+import { checklistGroups, deliveryChecklist, packageKind, type ChecklistItem } from "../domain/review";
 
 const videoPurposes = {
   turnaround: "Character turnaround · preserve identity across front, side and back views",
@@ -17,6 +17,7 @@ const videoPurposes = {
 type VideoPurpose = keyof typeof videoPurposes;
 import { TaskList } from "./TaskList";
 import { FailureGroups } from "./FailureGroups";
+import { RealImage } from "./RealImage";
 import { isTauri } from "../appHelpers";
 
 type Audit = { ready: boolean; missingAssets: string[]; incompleteShots: string[] };
@@ -50,8 +51,12 @@ export function DeliveryCenter(props: {
   openProviders: () => void;
   openDesign: () => void;
   onFindFiles?: () => void;
+  /** The approved picture of each asset, for the package preview. */
+  outputs?: Record<string, string>;
 }) {
-  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix, openProviders, openDesign, onFindFiles } = props;
+  const { analysis, shots, audit, sceneCoverage, queue, setQueue, compiled, model, setModel, selectedShot, setSelectedShot, kieConfigured, submitting, onExportShot, onBuild, onDirect, openAsset, openShot, notify, styleLocked, onFix, openProviders, openDesign, onFindFiles, outputs } = props;
+  const approvedNames = analysis.assets.filter((a) => !!outputs?.[a.id]).map((a) => ({ id: a.id, name: a.name }));
+  const approvedSheets = queue.jobs.filter((j) => j.approved).length;
   const [videoPurpose, setVideoPurpose] = useState<VideoPurpose>("acting");
   const preset = videoPresets[model];
   const [videoPick, setVideoAspect] = useState<string | null>(null);
@@ -108,16 +113,39 @@ export function DeliveryCenter(props: {
 
       <div className="panel dc-checklist" aria-label="Package checklist">
         <h3>Package checklist <small>{verified ? "ready to export as verified" : "export is a draft until these are done"}</small></h3>
-        <ul>
-          {checklist.map((item) => (
-            <li key={item.id} className={item.state}>
-              <span className="dc-mark" aria-hidden="true">{item.state === "ok" ? <Check size={14} /> : <AlertTriangle size={14} />}</span>
-              <span><b>{item.label}</b>{item.detail && <small>{item.detail}</small>}</span>
-              <span className="dc-state">{item.state === "ok" ? "Done" : "To do"}</span>
-              {item.fix && <button className="secondary" onClick={() => onFix(item.fix!)}>{item.fix.label}</button>}
-            </li>
-          ))}
-        </ul>
+        {checklistGroups.map((g) => {
+          const todo = checklist.filter((i) => i.group === g.id && i.state === "todo");
+          if (todo.length === 0) return null;
+          return (
+            <section key={g.id} className={`dc-gp ${g.id}`} aria-label={`${g.title} (${todo.length})`}>
+              <header><h4>{g.title} <span className="dc-count">{todo.length}</span></h4><small>{g.note}</small></header>
+              <ul>
+                {todo.map((item) => (
+                  <li key={item.id} className="todo">
+                    <span className="dc-mark" aria-hidden="true"><AlertTriangle size={14} /></span>
+                    <span><b>{item.label}</b>{item.detail && <small>{item.detail}</small>}</span>
+                    <span className="dc-state">To do</span>
+                    {item.fix && <button className={g.id === "blocker" ? "primary" : "secondary"} onClick={() => onFix(item.fix!)}>{item.fix.label}</button>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+        {checklist.some((i) => i.state === "ok") && (
+          <details className="dc-gp done">
+            <summary><b>Done</b> <span className="dc-count">{checklist.filter((i) => i.state === "ok").length}</span></summary>
+            <ul>
+              {checklist.filter((i) => i.state === "ok").map((item) => (
+                <li key={item.id} className="ok">
+                  <span className="dc-mark" aria-hidden="true"><Check size={14} /></span>
+                  <span><b>{item.label}</b>{item.detail && <small>{item.detail}</small>}</span>
+                  <span className="dc-state">Done</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </div>
 
       <div className="dc-cols">
@@ -143,6 +171,20 @@ export function DeliveryCenter(props: {
 
         <div className="panel dc-export">
           <h3>Hand it on</h3>
+          <div className="dc-preview" aria-label="Package preview">
+            <div className="dc-thumbs">
+              {approvedNames.slice(0, 4).map((a) => <span key={a.id} className="dc-thumb" title={a.name}><RealImage path={outputs?.[a.id]} label={a.name} empty="" /></span>)}
+              {approvedNames.length > 4 && <span className="dc-thumb more">+{approvedNames.length - 4}</span>}
+              {approvedNames.length === 0 && <small className="helper">No approved pictures yet.</small>}
+            </div>
+            <ul className="dc-contents" aria-label="Package contents">
+              <li><span>References</span><b>{approvedSheets} approved {approvedSheets === 1 ? "sheet" : "sheets"}</b></li>
+              <li><span>Style bible</span><b>{styleLocked ? "locked" : "not locked"}</b></li>
+              <li><span>Revision ledger</span><b>included</b></li>
+              <li><span>Prompts</span><b>{queue.jobs.length} {queue.jobs.length === 1 ? "record" : "records"}</b></li>
+            </ul>
+            <p className={`dc-kind ${verified ? "ok" : "draft"}`} role="status">{verified ? "Ready to export as a verified package." : "Not ready: this would export as a draft."}</p>
+          </div>
           <div className="dc-option">
             <button className="primary" disabled={!audit.ready} onClick={onBuild}><PackageCheck size={15} /> Export verified package</button>
             <small>{audit.ready ? "Every sheet and frame is approved." : `Needs ${audit.missingAssets.length} approved sheet${audit.missingAssets.length === 1 ? "" : "s"} and ${audit.incompleteShots.length} approved frame${audit.incompleteShots.length === 1 ? "" : "s"}.`}</small>

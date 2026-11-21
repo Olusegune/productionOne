@@ -1,3 +1,4 @@
+import { RealImage } from "./RealImage";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
@@ -36,7 +37,7 @@ const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
-export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset, onAddMany }: { assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean, extras?: { description?: string; layout?: string; makeConcept?: boolean }) => void; /** Adds one asset per chosen image, named from the file names. */ onAddMany?: (kind: NewAssetKind) => void }) {
+export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset, onAddMany, outputs }: { /** The approved picture of each asset, shown as its thumbnail. */ outputs?: Record<string, string>; assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean, extras?: { description?: string; layout?: string; makeConcept?: boolean }) => void; /** Adds one asset per chosen image, named from the file names. */ onAddMany?: (kind: NewAssetKind) => void }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState("");
@@ -90,7 +91,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
                 return (
                   <li key={a.id}>
                     <button className={selected === i ? "on" : ""} onClick={() => onSelect(i)} aria-current={selected === i ? "true" : undefined}>
-                      <span className={`po-avatar kind-${a.type}`} aria-hidden="true">{(() => { const Icon = assetIconFor(a.type); return <Icon size={14} />; })()}<i className={`po-dot ${dot}`} title={dotLabel[dot]} /></span>
+                      <span className={`po-avatar kind-${a.type}${outputs?.[a.id] ? " has-pic" : ""}`} aria-hidden="true">{outputs?.[a.id] ? <span className="po-avatar-pic"><RealImage path={outputs[a.id]} label="" empty="" /></span> : (() => { const Icon = assetIconFor(a.type); return <Icon size={14} />; })()}<i className={`po-dot ${dot}`} title={dotLabel[dot]} /></span>
                       <span className="po-name">{a.name}</span>
                       {variants > 0 && <small title="Story variants found in the script">{variants} look{variants === 1 ? "" : "s"}</small>}
                       {dominant && dominant.emotion !== "neutral" && <EmotionChip emotion={dominant.emotion} />}

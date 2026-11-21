@@ -91,7 +91,8 @@ describe('ProportionPanel', () => {
     expect(num('Arm length').value).toBe('4.5')
     type('Arm length', '')
     expect(num('Arm length').value).toBe('4.5')
-    fireEvent.change(num('Arm length'), { target: { value: '2' } })
+    fireEvent.change(num('Arm length'), { target: { value: '99' } })
+    expect(num('Arm length').value).toBe('99')
     fireEvent.keyDown(num('Arm length'), { key: 'Escape' })
     expect(num('Arm length').value).toBe('4.5')
   })
@@ -205,5 +206,48 @@ describe('ProportionPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear proportions' }))
     expect(save).toHaveBeenLastCalledWith(undefined)
     expect(screen.getByText(/Not set · uses existing design/)).toBeTruthy()
+  })
+})
+
+describe('ProportionPanel: every control does something you can see', () => {
+  it('Hand size redraws the figure, and Rounded to angular (Advanced) does too', () => {
+    render(<Harness assetId="SEE-1" initial={createProfile('SEE-1')} />)
+    open()
+    const before = screen.getByTestId('schematic').innerHTML
+    type('Hand size', '1.2')
+    const afterHand = screen.getByTestId('schematic').innerHTML
+    expect(afterHand).not.toBe(before)
+    fireEvent.click(screen.getByRole('tab', { name: 'Advanced' }))
+    fireEvent.change(screen.getByLabelText('Rounded to angular'), { target: { value: '100' } })
+    expect(screen.getByTestId('schematic').innerHTML).not.toBe(afterHand)
+  })
+  it('with the link off, a Total height the parts do not reach is drawn as a target line', () => {
+    render(<Harness assetId="SEE-2" initial={createProfile('SEE-2')} />)
+    open()
+    fireEvent.click(screen.getByRole('switch', { name: 'Linked proportions' }))
+    expect(screen.getByTestId('schematic').querySelector('.prop-target-line')).toBeNull()
+    type('Total height', '9.5')
+    expect(screen.getByTestId('schematic').querySelector('.prop-target-line')).not.toBeNull()
+  })
+})
+
+describe('ProportionPanel: typing and the arrows take effect right away', () => {
+  it('a value in range changes the figure as it is typed, without leaving the field', () => {
+    render(<Harness assetId="LIVE-1" initial={createProfile('LIVE-1')} />)
+    open()
+    const before = screen.getByTestId('schematic').innerHTML
+    fireEvent.change(num('Hand size'), { target: { value: '1.2' } })
+    expect(screen.getByTestId('schematic').innerHTML).not.toBe(before)
+    expect(screen.getByTestId('prop-state').textContent).toMatch(/Draft/)
+  })
+  it('a number out of range waits for you to leave the field, then comes back into range', () => {
+    render(<Harness assetId="LIVE-2" initial={createProfile('LIVE-2')} />)
+    open()
+    fireEvent.change(num('Hand size'), { target: { value: '1.2' } })
+    expect(num('Hand size').value).toBe('1.2')
+    fireEvent.change(num('Hand size'), { target: { value: '7' } })
+    expect(num('Hand size').value).toBe('7')
+    fireEvent.blur(num('Hand size'))
+    expect(num('Hand size').value).toBe('1.3')
   })
 })

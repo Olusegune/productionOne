@@ -60,7 +60,7 @@ describe('relinking missing pictures', () => {
   })
   it('says what happened in plain words', () => {
     expect(relinkSummary({ relinked: 0, stillMissing: 5 })).toMatch(/None of the missing pictures/)
-    expect(relinkSummary({ relinked: 1, stillMissing: 0 })).toBe('Found 1 picture and linked it back. Nothing was copied or generated.')
+    expect(relinkSummary({ relinked: 1, stillMissing: 0 })).toBe("Found 1 picture and linked it back. A copy was placed in the project's pictures folder; the originals are untouched, and nothing was generated.")
     expect(relinkSummary({ relinked: 12, stillMissing: 29 })).toMatch(/Found 12 pictures and linked them back\. 29 are still missing/)
   })
 })

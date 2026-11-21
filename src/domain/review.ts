@@ -56,9 +56,18 @@ export function keepRevision(queue: QueueState, keepId: string, now = Date.now()
   }
 }
 
+export type ChecklistGroup = 'blocker' | 'review' | 'optional'
+export const checklistGroups: Array<{ id: ChecklistGroup; title: string; note: string }> = [
+  { id: 'blocker', title: 'Blockers', note: 'Must be done to export a verified package' },
+  { id: 'review', title: 'Review', note: 'Quality checks and approvals' },
+  { id: 'optional', title: 'Optional', note: 'Recommended to improve the package' },
+]
+
 export interface ChecklistItem {
   id: string
   state: 'ok' | 'todo'
+  /** Blockers stop a verified package; Review is quality checks and approvals; Optional improves the package but is not needed to make one. */
+  group: ChecklistGroup
   label: string
   detail: string
   /** Where the fix is. */
@@ -75,20 +84,20 @@ export function deliveryChecklist(args: { analysis: AnalysisResult; queue: Queue
   const failed = open.length - gone.length
   const items: ChecklistItem[] = []
   items.push(analysis.assets.length
-    ? { id: 'script', state: 'ok', label: 'Script read', detail: `${analysis.assets.length} asset${analysis.assets.length === 1 ? '' : 's'} found` }
-    : { id: 'script', state: 'todo', label: 'No script yet', detail: 'Import or paste a script so there are assets to prepare.', fix: { kind: 'script', label: 'Open Story' } })
+    ? { id: 'script', state: 'ok', group: 'blocker', label: 'Script read', detail: `${analysis.assets.length} asset${analysis.assets.length === 1 ? '' : 's'} found` }
+    : { id: 'script', state: 'todo', group: 'blocker', label: 'No script yet', detail: 'Import or paste a script so there are assets to prepare.', fix: { kind: 'script', label: 'Open Story' } })
   items.push(styleLocked
-    ? { id: 'style', state: 'ok', label: 'Visual style locked', detail: 'Every sheet uses the same look.' }
-    : { id: 'style', state: 'todo', label: 'Visual style not locked', detail: 'Lock the look so every sheet matches.', fix: { kind: 'style', label: 'Choose a style' } })
+    ? { id: 'style', state: 'ok', group: 'blocker', label: 'Visual style locked', detail: 'Every sheet uses the same look.' }
+    : { id: 'style', state: 'todo', group: 'blocker', label: 'Visual style not locked', detail: 'Lock the look so every sheet matches.', fix: { kind: 'style', label: 'Choose a style' } })
   items.push(missingAssets.length === 0
-    ? { id: 'sheets', state: 'ok', label: 'Every asset has an approved sheet', detail: '' }
-    : { id: 'sheets', state: 'todo', label: `${missingAssets.length} asset${missingAssets.length === 1 ? '' : 's'} without an approved sheet`, detail: missingAssets.slice(0, 3).map(name).join(', ') + (missingAssets.length > 3 ? ` and ${missingAssets.length - 3} more` : ''), fix: { kind: 'asset', assetId: missingAssets[0], label: `Open ${name(missingAssets[0])}` } })
+    ? { id: 'sheets', state: 'ok', group: 'blocker', label: 'Every asset has an approved sheet', detail: '' }
+    : { id: 'sheets', state: 'todo', group: 'blocker', label: `${missingAssets.length} asset${missingAssets.length === 1 ? '' : 's'} without an approved sheet`, detail: missingAssets.slice(0, 3).map(name).join(', ') + (missingAssets.length > 3 ? ` and ${missingAssets.length - 3} more` : ''), fix: { kind: 'asset', assetId: missingAssets[0], label: `Open ${name(missingAssets[0])}` } })
   items.push(review === 0
-    ? { id: 'review', state: 'ok', label: 'Nothing waiting for review', detail: '' }
-    : { id: 'review', state: 'todo', label: `${review} picture${review === 1 ? '' : 's'} waiting for your decision`, detail: 'Approve, request changes or reject each one.', fix: { kind: 'review', label: 'Open Review' } })
-  if (gone.length > 0) items.push({ id: 'gone', state: 'todo', label: `${gone.length} picture${gone.length === 1 ? ' is' : 's are'} not on this computer`, detail: 'If you still have the files, point to the folder and they are linked back. Otherwise press Generate on the view, or add your own with Use my image.', fix: { kind: 'relink', label: 'Find the files…' } })
-  if (failed > 0) items.push({ id: 'failed', state: 'todo', label: `${failed} failed job${failed === 1 ? '' : 's'}`, detail: 'Retry them, or choose a different model.', fix: { kind: 'failed', label: 'See failed jobs' } })
-  if (incompleteShots.length > 0) items.push({ id: 'shots', state: 'todo', label: `${incompleteShots.length} storyboard frame${incompleteShots.length === 1 ? '' : 's'} not approved`, detail: 'Only matters if you use the optional storyboard.' })
+    ? { id: 'review', state: 'ok', group: 'review', label: 'Nothing waiting for review', detail: '' }
+    : { id: 'review', state: 'todo', group: 'review', label: `${review} picture${review === 1 ? '' : 's'} waiting for your decision`, detail: 'Approve, request changes or reject each one.', fix: { kind: 'review', label: 'Open Review' } })
+  if (gone.length > 0) items.push({ id: 'gone', state: 'todo', group: 'blocker', label: `${gone.length} picture${gone.length === 1 ? ' is' : 's are'} not on this computer`, detail: 'If you still have the files, point to the folder and they are linked back. Otherwise press Generate on the view, or add your own with Use my image.', fix: { kind: 'relink', label: 'Find the files…' } })
+  if (failed > 0) items.push({ id: 'failed', state: 'todo', group: 'review', label: `${failed} failed job${failed === 1 ? '' : 's'}`, detail: 'Retry them, or choose a different model.', fix: { kind: 'failed', label: 'See failed jobs' } })
+  if (incompleteShots.length > 0) items.push({ id: 'shots', state: 'todo', group: 'optional', label: `${incompleteShots.length} storyboard frame${incompleteShots.length === 1 ? '' : 's'} not approved`, detail: 'Only matters if you use the optional storyboard.' })
   return items
 }
 

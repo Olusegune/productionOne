@@ -33,3 +33,5 @@
 .rv-nav .rv-steps { margin-left: auto; display: inline-flex; gap: 6px; }
 .rv-nav .rv-steps button { width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 10px; }
 .rv-nav .rv-count { white-space: nowrap; }
+.rv-center { grid-template-columns: minmax(0, 1fr); }
+.rv-compare figure { min-width: 0; }

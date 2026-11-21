@@ -17,7 +17,7 @@ const wasText = (w: RelinkRow['was']) => (w === 'approved' ? 'Was approved: come
 
 /**
  * Review matches before relinking: every missing picture, the file found for it in the chosen folder (or that there is none), and a tick box for each. Nothing is changed
- * until "Relink N files" is pressed, and only the ticked pictures are linked. No file is copied, moved, generated or deleted.
+ * until "Relink N files" is pressed, and only the ticked pictures are linked (a copy goes into the project's pictures folder; the originals are untouched).
  */
 export function RelinkDialog({ folder, rows, onConfirm, onCancel, onAnother }: Props) {
   const found = useMemo(() => rows.filter((r) => r.path), [rows])
@@ -63,7 +63,7 @@ export function RelinkDialog({ folder, rows, onConfirm, onCancel, onAnother }: P
             </div>
           ))}
         </div>
-        <p className="helper">Nothing is copied, moved, generated or deleted. Pictures you leave unticked, or that were not found, stay missing.</p>
+        <p className="helper">Ticked pictures are copied into the project's pictures folder, because that is the only place the app reads pictures from. The originals are not moved, changed or deleted, and nothing is generated. Pictures you leave unticked, or that were not found, stay missing.</p>
         <footer>
           <button type="button" className="secondary" onClick={onAnother}><FolderSearch size={15} aria-hidden="true" /> Choose another folder</button>
           <span className="rl-spacer" />

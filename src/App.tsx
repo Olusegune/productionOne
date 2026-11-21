@@ -1353,15 +1353,23 @@ export default function App() {
       setRelinkPlan({ folder: scan.folder, found: Object.fromEntries(scan.found.map((h) => [h.name, h.path])) });
     } catch (e) { setNotice(String(e)); }
   };
-  const confirmRelink = (jobIds: string[]) => {
+  const confirmRelink = async (jobIds: string[]) => {
     if (!relinkPlan) return;
-    const result = applyRelink(queue, relinkPlan.found, Date.now(), new Set(jobIds));
-    if (result.relinked.length) {
-      setQueueState(result.state);
-      result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
-    }
-    setRelinkPlan(null);
-    setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
+    const plan = relinkPlan;
+    const ticked = new Set(jobIds);
+    const wanted = planRelink(queue, plan.found, (id) => id).filter((r) => r.path && ticked.has(r.jobId)).map((r) => r.stem.toLowerCase());
+    try {
+      // The pictures are copied into the project's pictures folder (the originals are not touched), because the app only reads pictures from there.
+      const { invoke: call } = await import("@tauri-apps/api/core");
+      const adopted = await call<Array<{ name: string; path: string }>>("adopt_scanned", { names: [...new Set(wanted)] });
+      const result = applyRelink(queue, Object.fromEntries(adopted.map((a) => [a.name, a.path])), Date.now(), ticked);
+      if (result.relinked.length) {
+        setQueueState(result.state);
+        result.relinked.forEach((job) => { if (job.approved) onSheetApproved(job, primaryViewKeys.includes(job.viewKey)); });
+      }
+      setRelinkPlan(null);
+      setNotice(relinkSummary({ relinked: result.relinked.length, stillMissing: result.stillMissing }));
+    } catch (e) { setRelinkPlan(null); setNotice(String(e)); }
   };
   const handleMissing = (n: number, missing: string[]) => {
     const jobs = dropMissing(queue, missing).state.jobs;
@@ -1624,7 +1632,7 @@ export default function App() {
           <DirectView looks={lookState} setLooks={setLookState} sceneStates={sceneStates} setSceneStates={setSceneStates} proportions={proportions} activeShot={activeShot} addShot={addShot} analysis={analysis} animaticPlaying={animaticPlaying} animaticTime={animaticTime} assetRefs={assetRefs} deleteShot={deleteShot} duplicateShot={duplicateShot} moveShot={moveShot} patchShot={patchShot} providersOpen={providersOpen} queue={queue} selectedShot={selectedShot} setAnimaticPlaying={setAnimaticPlaying} setAnimaticTime={setAnimaticTime} setLocalOpen={setLocalOpen} setNotice={setNotice} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedShot={setSelectedShot} setShots={setShots} setStoryboardsEnabled={setStoryboardsEnabled} shots={shots} storyboardsEnabled={storyboardsEnabled} styleBible={styleBible} title={title} totalAnimaticDuration={totalAnimaticDuration} format={format} setFormat={setFormat} />
         )}
         {workspace === "Deliver" && (
-          <DeliveryCenter
+          <DeliveryCenter outputs={assetOutputs}
             analysis={analysis}
             shots={shots}
             audit={audit}
@@ -1650,7 +1658,7 @@ export default function App() {
           />
         )}
       </main>
-      <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} />
+      <QueueDock queue={queue} setQueue={setQueue} onOpen={() => setWorkspace("Design")} onReview={() => setWorkspace("Review")} nameOf={(id) => analysis.assets.find((a) => a.id === id)?.name ?? id} />
       {paletteOpen && <CommandPalette commands={paletteCommands} onClose={() => setPaletteOpen(false)} />}
       {appearanceOpen && <AppearanceMenu look={look} onLook={setLook} onClose={() => setAppearanceOpen(false)} />}
     </div>

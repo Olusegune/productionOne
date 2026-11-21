@@ -51,7 +51,7 @@ export function applyRelink(queue: QueueState, found: Record<string, string>, no
 export const relinkSummary = (r: { relinked: number; stillMissing: number }): string =>
   r.relinked === 0
     ? 'None of the missing pictures were in that folder. Check that it is the folder the pictures were saved in (a folder inside it is searched too).'
-    : `Found ${r.relinked} picture${r.relinked === 1 ? '' : 's'} and linked ${r.relinked === 1 ? 'it' : 'them'} back.${r.stillMissing ? ` ${r.stillMissing} ${r.stillMissing === 1 ? 'is' : 'are'} still missing.` : ''} Nothing was copied or generated.`
+    : `Found ${r.relinked} picture${r.relinked === 1 ? '' : 's'} and linked ${r.relinked === 1 ? 'it' : 'them'} back.${r.stillMissing ? ` ${r.stillMissing} ${r.stillMissing === 1 ? 'is' : 'are'} still missing.` : ''} ${r.relinked === 1 ? 'A copy was' : 'Copies were'} placed in the project's pictures folder; the originals are untouched, and nothing was generated.`
 
 export interface RelinkRow {
   jobId: string

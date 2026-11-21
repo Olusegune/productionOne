@@ -14,15 +14,74 @@ const CX_SHIFT = 20
 
 const find = (art: Schematic, id: string): SchematicShape | undefined => art.shapes.find((s) => s.id === id)
 
+/** A limb that narrows from one end to the other: a flat-sided shape with a round cap at each end. */
+function Limb({ id, x1, y1, x2, y2, w1, w2 }: { id?: string; x1: number; y1: number; x2: number; y2: number; w1: number; w2: number }) {
+  const dx = x2 - x1, dy = y2 - y1
+  const len = Math.hypot(dx, dy) || 1
+  const nx = -dy / len, ny = dx / len
+  const pt = (x: number, y: number, w: number, side: number) => `${(x + nx * (w / 2) * side).toFixed(2)},${(y + ny * (w / 2) * side).toFixed(2)}`
+  return (
+    <g data-shape={id}>
+      <polygon className="mq-skin" points={`${pt(x1, y1, w1, 1)} ${pt(x2, y2, w2, 1)} ${pt(x2, y2, w2, -1)} ${pt(x1, y1, w1, -1)}`} />
+      <circle className="mq-skin" cx={x1} cy={y1} r={w1 / 2} />
+      <circle className="mq-skin" cx={x2} cy={y2} r={w2 / 2} />
+    </g>
+  )
+}
+
+/**
+ * The figure, built from the schematic's measurements: a shaded torso that narrows to the waist, limbs that taper, an egg-shaped head whose chin follows the jaw control,
+ * mitten hands sized by the hand control, and shoes sized by the foot control. Rounded-to-angular softens or sharpens every corner.
+ */
 function Figure({ art, ghost }: { art: Schematic; ghost?: boolean }) {
-  const round = (id: string) => (id === 'torso' ? 14 : id === 'hips' ? 8 : id === 'neck' ? 4 : 3)
+  const g = (id: string): SchematicShape => find(art, id) as SchematicShape
+  const head = g('head'), torso = g('torso'), hips = g('hips'), neck = g('neck')
+  const cx = head.x + (head.w ?? 0) / 2
+  const hw = (head.w ?? 0) / 2, hh = head.h ?? 0
+  const jaw = g('jaw'), jawW = Math.abs((jaw.x2 ?? jaw.x) - jaw.x)
+  const tw = torso.w ?? 0, th = torso.h ?? 0
+  const hipBottom = hips.y + (hips.h ?? 0), hipW = hips.w ?? 0
+  const soft = Math.min(1, Math.max(0, ((torso.corner ?? 14) - 2) / 24))
+  const waistW = Math.min(tw, hipW) * 0.8
+  const body = [
+    [cx - (neck.w ?? 0) / 2, torso.y - 1], [cx - tw / 2 + 5, torso.y + 1], [cx - tw / 2, torso.y + 7],
+    [cx - waistW / 2, torso.y + th * 0.55], [cx - hipW / 2, hipBottom], [cx + hipW / 2, hipBottom],
+    [cx + waistW / 2, torso.y + th * 0.55], [cx + tw / 2, torso.y + 7], [cx + tw / 2 - 5, torso.y + 1], [cx + (neck.w ?? 0) / 2, torso.y - 1],
+  ].map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
+  const chin = Math.max(2, jawW / 2)
+  const headPath = `M ${cx} ${head.y} C ${cx + hw * 0.98} ${head.y} ${cx + hw} ${head.y + hh * 0.46} ${cx + hw * 0.86} ${head.y + hh * 0.72} C ${cx + hw * 0.72} ${head.y + hh * 0.93} ${cx + chin * 1.15} ${head.y + hh} ${cx} ${head.y + hh} C ${cx - chin * 1.15} ${head.y + hh} ${cx - hw * 0.72} ${head.y + hh * 0.93} ${cx - hw * 0.86} ${head.y + hh * 0.72} C ${cx - hw} ${head.y + hh * 0.46} ${cx - hw * 0.98} ${head.y} ${cx} ${head.y} Z`
+  const side = (k: 'l' | 'r') => {
+    const up = g(`arm-${k}-upper`), fo = g(`arm-${k}-fore`), hd = g(`hand-${k}`)
+    const lu = g(`leg-${k}-upper`), ll = g(`leg-${k}-lower`), ft = g(`foot-${k}`)
+    const handW = (hd.weight ?? 6) * 1.1
+    const handY1 = hd.y, handY2 = hd.y2 ?? hd.y
+    const footL = Math.abs((ft.x2 ?? ft.x) - ft.x)
+    const dir = k === 'r' ? 1 : -1
+    return (
+      <g key={k}>
+        <Limb id={`arm-${k}-upper`} x1={up.x} y1={up.y} x2={up.x2 ?? up.x} y2={up.y2 ?? up.y} w1={10} w2={8} />
+        <Limb id={`arm-${k}-fore`} x1={fo.x} y1={fo.y} x2={fo.x2 ?? fo.x} y2={fo.y2 ?? fo.y} w1={8} w2={6.2} />
+        <ellipse className="mq-skin" data-shape={`hand-${k}`} cx={hd.x} cy={(handY1 + handY2) / 2} rx={handW / 2} ry={Math.max(3, (handY2 - handY1) / 2)} />
+        <Limb id={`leg-${k}-upper`} x1={lu.x} y1={lu.y} x2={lu.x2 ?? lu.x} y2={lu.y2 ?? lu.y} w1={14} w2={10.5} />
+        <Limb id={`leg-${k}-lower`} x1={ll.x} y1={ll.y} x2={ll.x2 ?? ll.x} y2={ll.y2 ?? ll.y} w1={10.5} w2={6.5} />
+        <rect className="mq-shoe" data-shape={`foot-${k}`} x={dir === 1 ? ft.x - 3 : ft.x - footL} y={ft.y - 5.5} width={footL + 3} height={5.5} rx={2.75} />
+      </g>
+    )
+  }
   return (
     <g className={ghost ? 'prop-ghost' : undefined}>
-      {art.shapes.filter((s) => s.id !== 'floor').map((s) => {
-        if (s.kind === 'ellipse') return <ellipse key={s.id} data-shape={ghost ? undefined : s.id} cx={s.x + (s.w ?? 0) / 2} cy={s.y + (s.h ?? 0) / 2} rx={(s.w ?? 0) / 2} ry={(s.h ?? 0) / 2} />
-        if (s.kind === 'rect') return <rect key={s.id} data-shape={ghost ? undefined : s.id} x={s.x} y={s.y} width={s.w} height={s.h} rx={round(s.id)} />
-        return <line key={s.id} data-shape={ghost ? undefined : s.id} x1={s.x} y1={s.y} x2={s.x2} y2={s.y2} />
-      })}
+      {side('l')}
+      {side('r')}
+      <rect className="mq-skin" data-shape="neck" x={neck.x} y={neck.y - 1} width={neck.w} height={(neck.h ?? 0) + 3} rx={3} />
+      <polygon className="mq-body" data-shape="torso" points={body} style={{ strokeWidth: 1 + soft * 14, strokeLinejoin: soft > 0.2 ? 'round' : 'miter' }} />
+      <path className="mq-skin" data-shape="head" d={headPath} />
+      {!ghost && (
+        <>
+          {(['eye-l', 'eye-r'] as const).map((id) => { const e = g(id); return <ellipse key={id} className="mq-eye" data-shape={id} cx={e.x + (e.w ?? 0) / 2} cy={e.y + (e.h ?? 0) / 2} rx={(e.w ?? 0) / 2} ry={(e.h ?? 0) / 2} /> })}
+          {(() => { const n = g('nose'); return <line className="mq-mark" data-shape="nose" x1={n.x} y1={n.y} x2={n.x2} y2={n.y2} /> })()}
+          {(['elbow-l', 'elbow-r', 'knee-l', 'knee-r'] as const).map((id) => { const j = g(id); return <ellipse key={id} className="mq-joint" data-shape={id} cx={j.x + (j.w ?? 0) / 2} cy={j.y + (j.h ?? 0) / 2} rx={(j.w ?? 0) / 2} ry={(j.h ?? 0) / 2} /> })}
+        </>
+      )}
     </g>
   )
 }
@@ -82,6 +141,12 @@ export function Mannequin({ profile, annotate = false, compare = false }: Props)
         <g transform={`translate(${CX_SHIFT} 0)`}><Figure art={art} /></g>
         {annotate && torso && (
           <g className="prop-notes">
+            {Math.abs(floorY - v('heightInHeads') * unit - top) > 1 && (
+              <g className="prop-target-line" aria-label="Target total height">
+                <line x1={44} x2={WIDTH - 20} y1={floorY - v('heightInHeads') * unit} y2={floorY - v('heightInHeads') * unit} />
+                <text x={WIDTH - 20} y={floorY - v('heightInHeads') * unit - 3} textAnchor="end">Target {v('heightInHeads')} heads: the parts do not add up to it</text>
+              </g>
+            )}
             <Bracket x1={44} y1={top} x2={44} y2={floorY} />
             <text x={50} y={(top + floorY) / 2 - 4}>Total</text>
             <text x={50} y={(top + floorY) / 2 + 8}>{v('heightInHeads')} heads</text>
