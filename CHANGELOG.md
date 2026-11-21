@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.63.1 (2026-11-21): the Sheets tab shows the proportions, and the other views are checked
+- **A character's Sheets tab now says whether its proportions are applied** (and how tall), and warns when approved pictures were made with earlier proportions, with a link to the proportions.
+- **Checked live:** after a new front view is approved, the side and rear views keep the proportions (docs/LIVE_TEST_PROPORTIONS_2026-11-21.md). The working order is: apply, make a new front view, approve it, then the other views.
+
 ## 0.63.0 (2026-11-21): proportions that really apply
 - **Why the proportions seemed to do nothing, and the fix.** A character with an approved front view or reference photos was told to "keep precisely the same body build" of the attached picture, which beat the new proportions. The prompt now lets the reference keep identity but not the body, and a plain proportion guide (a grey figure with a ruler in head units) is attached as a reference. Checked live: with an earlier picture attached the model still copies its body, so there is a new button:
 - **Apply and make a new front view** applies the proportions and makes one front view with no earlier picture attached, so it starts from the new proportions (checked live: a clearly tall, long-limbed figure). Approve it and the other views follow it.

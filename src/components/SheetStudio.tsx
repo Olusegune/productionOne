@@ -1,3 +1,4 @@
+import { proportionStatus } from "../domain/proportionStatus";
 import { ensureGuide } from "../data/proportionGuide";
 import { sheetHints, sheetIconFor } from "../domain/categoryIcons";
 import { styleFingerprint } from "../domain/style2d";
@@ -8,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Columns2, Wand2, ImagePlus, LayoutGrid, Maximize2, Pause, Play, RefreshCw, Sparkles, Square, Undo2, X } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { proportionWords, provenanceFor } from "../domain/characterLayers";
+import { madeWithEarlierProportions, proportionWords, provenanceFor } from "../domain/characterLayers";
 import { costText, priceFor } from "../domain/pricing";
 import type { ProportionProfile } from "../domain/proportions";
 import {
@@ -116,6 +117,8 @@ export function SheetStudio(props: {
   refs: Record<string, string[]>;
   /** Target proportions per character. A character with none gets exactly the prompts it always did. */
   proportions?: Record<string, ProportionProfile>;
+  /** Opens this character's proportions (the Identity tab). */
+  onOpenProportions?: () => void;
   setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void; generateFresh?: () => void } | null };
@@ -466,6 +469,12 @@ export function SheetStudio(props: {
         </div>
         {!controlsSlot && headActions}
       </header>
+      {asset?.type === "character" && (() => {
+        const profile = props.proportions?.[asset.id];
+        const stale = profile ? queue.jobs.filter((j) => j.assetId === asset.id && j.approved && madeWithEarlierProportions(j.provenance, profile)).length : 0;
+        const status = proportionStatus(profile, stale);
+        return <p className={`ss-prop-line ${status.kind}`} role="status">{status.text}{props.onOpenProportions && <> <button type="button" className="linklike" onClick={props.onOpenProportions}>{profile ? "Open proportions" : "Set proportions"}</button></>}</p>;
+      })()}
 
       {!controlsSlot && bar}
       {!controlsSlot && more}
