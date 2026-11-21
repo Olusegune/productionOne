@@ -223,7 +223,8 @@ describe('the plan and the run', () => {
     expect(sum()).toMatch(/35 pictures/)
     const start = screen.getByRole('button', { name: /^Start/ }) as HTMLButtonElement
     expect(start.disabled).toBe(true)
-    expect(screen.getByRole('alert').textContent).toMatch(/Enter what one picture costs/)
+    expect(screen.getByRole('alert').textContent).toMatch(/Set a budget/)
+    expect(screen.getByTestId('asst-typical').textContent).toMatch(/typical price of \$0\.04.*estimate/)
     setMoney('0.1', '')
     expect(screen.getByRole('alert').textContent).toMatch(/Set a budget/)
     setMoney('0.1', '2')
