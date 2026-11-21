@@ -39,7 +39,7 @@ The profile has a content fingerprint (`pp1-` plus eight hex digits) over its pr
 
 | Id | Label | Unit | Min | Max | Default | At stylization 100 | How it is measured |
 |---|---|---|---|---|---|---|---|
-| `heightInHeads` | Head size (height in heads) | heads | 3 | 10 | 7.5 | 5 | Total height divided by head height (chin to crown). A smaller number means a larger head. |
+| `heightInHeads` | Total height | heads | 3 | 10 | 7.5 | 5 | Total height divided by head height (chin to crown). A smaller number means a larger head. |
 | `torsoLength` | Torso length | heads | 1.5 | 4.5 | 3 | 1.85 | Shoulder line to crotch, in head heights. |
 | `legLength` | Leg length | heads | 1.5 | 6 | 3.2 | 2 | Crotch to floor, in head heights. |
 | `legBalance` | Upper / lower leg balance | percent | 40 | 60 | 50 | - | Thigh length as a share of the whole leg (hip to ankle). 50 is an even split. |
