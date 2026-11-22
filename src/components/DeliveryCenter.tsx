@@ -3,7 +3,7 @@ import { DEFAULT_FORMAT, videoAspectFor } from "../domain/formats";
 import { useEffect, useMemo, useState } from "react";
 import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, ArrowRight, Check, Compass, ShieldCheck, Copy, Download, PackageCheck, Play, RotateCcw } from "lucide-react";
-import { committedUsd, isMissingFile, retry, type QueueState } from "../domain/generationQueue";
+import { committedUsd, isMissingFile, retry, unresolvedFailures, type QueueState } from "../domain/generationQueue";
 import { videoPresets, type AnalysisResult, type CompiledShotPackage, type SceneCoverage, type ShotRecord, type VideoModel } from "../domain/productionStudio";
 import { Fold } from "./Fold";
 import { checklistGroups, deliveryChecklist, packageKind, type ChecklistItem } from "../domain/review";
@@ -65,7 +65,7 @@ export function DeliveryCenter(props: {
   const kind = (id: string) => analysis.assets.find((a) => a.id === id)?.type ?? "asset";
   const sceneName = (id: string) => analysis.scenes.find((s) => s.id === id)?.heading ?? id;
   const shotName = (id: string) => { const s = shots.find((x) => x.id === id); return s ? `${s.title ?? s.id}` : id; };
-  const failed = queue.jobs.filter((j) => j.status === "failed" && !isMissingFile(j));
+  const failed = unresolvedFailures(queue).filter((j) => !isMissingFile(j));
   const gone = queue.jobs.filter((j) => isMissingFile(j) && !queue.jobs.some((o) => o.key === j.key && o.revision > j.revision)).length;
   const needsReview = queue.jobs.filter((j) => j.status === "needs-review").length;
   const active = queue.jobs.filter((j) => ["queued", "generating", "validating", "pending"].includes(j.status)).length;

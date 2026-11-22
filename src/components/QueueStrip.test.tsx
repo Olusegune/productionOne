@@ -85,3 +85,23 @@ describe('the cost popover shows Topaz use', () => {
     expect(screen.queryByTestId('topaz-use')).toBeNull()
   })
 })
+
+describe('the cost popover closes like any other popover', () => {
+  const open = () => {
+    render(<div><button>elsewhere</button><QueueDock queue={emptyQueue()} setQueue={() => {}} onOpen={() => {}} /></div>)
+    fireEvent.click(screen.getByRole('button', { name: /request/ }))
+    expect(screen.getByRole('dialog', { name: 'Cost and spending cap' })).toBeTruthy()
+  }
+  it('closes on Escape', () => {
+    open()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'Cost and spending cap' })).toBeNull()
+  })
+  it('closes on a click elsewhere, but not on a click inside it', () => {
+    open()
+    fireEvent.mouseDown(screen.getByRole('dialog', { name: 'Cost and spending cap' }))
+    expect(screen.queryByRole('dialog', { name: 'Cost and spending cap' })).not.toBeNull()
+    fireEvent.mouseDown(screen.getByText('elsewhere'))
+    expect(screen.queryByRole('dialog', { name: 'Cost and spending cap' })).toBeNull()
+  })
+})

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.65.1 (2026-11-21): fixes from a full-story stress test
+- **A character's picture no longer turns into the room.** Script import used to copy the whole first scene paragraph that mentioned a character into their description, so a "front view" could come back as a bedroom. It now keeps only the bracketed introduction after the name (for example "KAEL (40s, weary engineer, slate-blue tunic)"), or the one sentence that names them.
+- **Head-and-shoulders pictures are real close-ups.** The prompt now says the framing comes from the request, not from the full-body reference.
+- **Sets are drawn empty.** Set pictures ask for the place without people, so they can be reused.
+- **A retried failure no longer blocks delivery.** A failed job replaced by a later take is not counted in Deliver or in the checklist, so "Export verified package" is available when everything is approved.
+- **The cost popover closes** with Esc or a click elsewhere.
+- **Review no longer clips** when a message holds a long file path.
+- Known and not fixed: no voice-only flag for characters like a voice on a speaker; the queue strip counts pictures waiting for a front view as queued.
+
 ## 0.65.0 (2026-11-21): Topaz credits in the spending counter
 - **The spending counter now shows Topaz.** After you enhance pictures with Topaz, the cost chip adds the credits they used (for example "2 Topaz credits"), and its popover says how many pictures were enhanced and how many credits that was in this project, plus your Topaz balance when a key is saved. Topaz is billed by Topaz, separately from image requests, so it is not mixed into the request count or the spending cap.
 - Housekeeping: the old upscaler pull request (#47) was closed as superseded by Topaz; its branch is kept.

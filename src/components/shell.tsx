@@ -136,6 +136,16 @@ function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (
   const s = summarize(queue);
   const topaz = topazUse(queue);
   const [balance, setBalance] = useState<TopazBalance | null>(null);
+  const box = useRef<HTMLSpanElement>(null);
+  // Esc or a click anywhere else closes it, like every other popover in the app.
+  useEffect(() => {
+    if (!open) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    window.addEventListener("keydown", key);
+    window.addEventListener("mousedown", away);
+    return () => { window.removeEventListener("keydown", key); window.removeEventListener("mousedown", away); };
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     let live = true;
@@ -147,7 +157,7 @@ function CostChip({ queue, setQueue }: { queue: QueueState; setQueue: (update: (
   const label = label0 + topazText;
   const num = (v: string) => { const n = Number(v); return v.trim() === "" || !(n >= 0) ? null : n; };
   return (
-    <span className="po-cost">
+    <span className="po-cost" ref={box}>
       <button className="po-cost-chip" onClick={() => setOpen((o) => !o)} aria-expanded={open} title="Cost and spending cap">{label}{queue.guard ? " · cap on" : ""}</button>
       {open && (
         <div className="po-cost-pop" role="dialog" aria-label="Cost and spending cap">

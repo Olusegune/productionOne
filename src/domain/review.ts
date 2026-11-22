@@ -1,5 +1,5 @@
 import type { ImageJob, QueueState } from './generationQueue'
-import { isMissingFile } from './generationQueue'
+import { isMissingFile, unresolvedFailures } from './generationQueue'
 import type { AnalysisResult } from './productionStudio'
 import { primaryViewKeys } from './sheetSpecs'
 
@@ -79,7 +79,7 @@ export function deliveryChecklist(args: { analysis: AnalysisResult; queue: Queue
   const { analysis, queue, missingAssets, incompleteShots, styleLocked } = args
   const name = (id: string) => analysis.assets.find((a) => a.id === id)?.name ?? id
   const review = queue.jobs.filter((j) => j.status === 'needs-review').length
-  const open = queue.jobs.filter((j) => j.status === 'failed' && !queue.jobs.some((o) => o.key === j.key && o.revision > j.revision))
+  const open = unresolvedFailures(queue)
   const gone = open.filter(isMissingFile)
   const failed = open.length - gone.length
   const items: ChecklistItem[] = []

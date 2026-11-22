@@ -139,7 +139,7 @@ export function analyzeScript(text: string): AnalysisResult {
     if (asset.type === 'character') {
       for (const scene of story.scenes) {
         const line = scene.action.find((a) => mentions(a.text, asset.name) && a.text.trim().split(/\s+/).length > 4)
-        if (line) { asset.description = clip(line.text); break }
+        if (line) { asset.description = clip(personDescription(line.text, asset.name)); break }
       }
     } else if (asset.type === 'set') {
       const scene = story.scenes.find((sc) => sc.setting === asset.name)
@@ -149,6 +149,21 @@ export function analyzeScript(text: string): AnalysisResult {
     }
   }
   return { scenes, assets: [...assets.values()], story }
+}
+
+/**
+ * What a script line says about one person, without the room around them. A line such as
+ * "A calm bedroom with a wide window onto a galaxy. KAEL (40s, weary engineer, slate-blue tunic) lies in bed." is about the
+ * room as much as the man, and a picture asked for "a bedroom" draws the bedroom instead of the character.
+ * So: the bracketed introduction after the name when there is one, else just the sentence that names the person.
+ */
+export function personDescription(text: string, name: string): string {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const intro = new RegExp(`${esc}\\s*\\(([^)]{6,})\\)`, 'i').exec(flat)
+  if (intro) return `${name} (${intro[1].trim()})`
+  const sentence = flat.split(/(?<=[.!?])\s+/).find((x) => new RegExp(`\\b${esc}\\b`, 'i').test(x))
+  return sentence ?? flat
 }
 
 export interface PromptPackage {
