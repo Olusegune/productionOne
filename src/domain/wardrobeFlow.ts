@@ -1,7 +1,7 @@
 import type { ImageJob } from './generationQueue'
 import type { ExtractedAsset } from './productionStudio'
 import { reconcileWithQueue } from './variationSync'
-import { addRevision, approveRevision, approvedPicture, createEntity, findEntity, findRevision, latestApproved, type AgeSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from './variations'
+import { addRevision, approveRevision, approvedPicture, createEntity, findEntity, findRevision, latestApproved, type AgeSpec, type TransformationSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from './variations'
 
 /** The steps of wardrobe work as plain changes to the records. Nothing here generates anything: the screens queue pictures, then `syncWardrobe` follows what the queue made. */
 
@@ -48,7 +48,7 @@ export function startFit(state: VariationState, input: { character: ExtractedAss
   }
   if (input.body) {
     const body = findRevision(state, input.body.ref)
-    if (!body || body.status !== 'approved') throw new Error('Approve the age variant before fitting a garment to it.')
+    if (!body || body.status !== 'approved') throw new Error('Approve the age variant or transformation stage before fitting a garment to it.')
   }
   const worn = input.condition ? `${input.garmentName}, ${input.condition.name}` : input.garmentName
   // The body is part of the name: the same garment on the same person at another age is a separate fit and a separate look.
@@ -79,6 +79,20 @@ function ensureLooks(state: VariationState, now: string): VariationState {
       next = approveRevision(made.state, made.ref)
     }
   }
+  // An approved stage of a transformation is a look of the character in that stage.
+  for (const e of state.entities) {
+    if (e.kind !== 'transformation') continue
+    for (const r of e.revisions) {
+      if (r.status !== 'approved') continue
+      const ref = { id: e.id, revision: r.n }
+      if (next.entities.some((l) => l.kind === 'look' && l.revisions.some((lr) => (lr.spec as LookSpec).transformation?.id === ref.id && (lr.spec as LookSpec).transformation?.revision === ref.revision && !(lr.spec as LookSpec).fit))) continue
+      const spec = r.spec as TransformationSpec
+      const look: LookSpec = { characterId: spec.characterId, transformation: ref, queueVariant: spec.variant ?? e.name }
+      const sameName = next.entities.find((l) => l.kind === 'look' && l.characterId === e.characterId && l.name === e.name)
+      const made = sameName ? addRevision(next, sameName.id, { spec: look, now }) : createEntity(next, 'look', { name: e.name, characterId: e.characterId, spec: look, now })
+      next = approveRevision(made.state, made.ref)
+    }
+  }
   for (const e of state.entities) {
     if (e.kind !== 'fit') continue
     for (const r of e.revisions) {
@@ -88,7 +102,8 @@ function ensureLooks(state: VariationState, now: string): VariationState {
       if (has) continue
       const spec = r.spec as FitSpec
       const sameName = next.entities.find((l) => l.kind === 'look' && l.characterId === e.characterId && l.name === e.name)
-      const look: LookSpec = { characterId: spec.characterId, fit: ref, ...(spec.condition ? { condition: spec.condition } : {}), ...(spec.body ? { age: spec.body } : {}), queueVariant: spec.variant ?? e.name }
+      const bodyEntity = spec.body ? findEntity(next, spec.body.id) : undefined
+      const look: LookSpec = { characterId: spec.characterId, fit: ref, ...(spec.condition ? { condition: spec.condition } : {}), ...(spec.body ? (bodyEntity?.kind === 'transformation' ? { transformation: spec.body } : { age: spec.body }) : {}), queueVariant: spec.variant ?? e.name }
       const made = sameName ? addRevision(next, sameName.id, { spec: look, now }) : createEntity(next, 'look', { name: e.name, characterId: e.characterId, spec: look, now })
       next = approveRevision(made.state, made.ref)
     }

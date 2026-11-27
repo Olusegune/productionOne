@@ -120,6 +120,17 @@ export interface TransformationSpec {
   expectedAnatomy?: string[]
   /** The earlier stage this one continues from. */
   from?: Ref
+  /** A creative target (1 barely recognisable to 5 unmistakably them), reviewed by a person. It is never a measured score. */
+  recognisability?: number
+  /** Free design fields: anatomy and silhouette, skin and surface, features (eyes, hair, teeth, horns, claws), and what changes from the previous stage. */
+  details?: Record<string, string>
+  symmetry?: 'symmetric' | 'asymmetric' | 'mixed'
+  /** What happens to the costume: kept as it is, adapted to the new body, or damaged by the change. */
+  costume?: 'keep' | 'adapt' | 'damage'
+  /** How strong the result may be for the project's audience. */
+  audience?: 'family' | 'teen' | 'mature'
+  /** The name the generation queue files this stage's pictures under (the look's name). */
+  variant?: string
 }
 
 /** A chosen combination. Every slot is a pinned revision. */

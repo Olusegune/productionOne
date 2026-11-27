@@ -103,7 +103,7 @@ export function fitPrompt({ style, character, garmentName, garment, keep, view: 
     v.instruction,
     identityFacts(character),
     proportions ?? '',
-    bodyText ? `Reference image 1 is the approved character ${bodyText}. It fixes who this is and the body the garment must be fitted to: cut, drape and size the garment for this body, not for a younger or older version of it. Reference image 2` : 'Reference image 1 is the approved character. It fixes who this is. Reference image 2 is the approved garment design. It fixes the cut, colours, pattern, closures and trim.',
+    bodyText ? `Reference image 1 is the approved character ${bodyText}. It fixes who this is and the body the garment must be fitted to: cut, drape and size the garment for this body, not for the character's original body. Reference image 2` : 'Reference image 1 is the approved character. It fixes who this is. Reference image 2 is the approved garment design. It fixes the cut, colours, pattern, closures and trim.',
     `Dress the character from reference image 1 in the garment from reference image 2. Do not copy the clothing the character wears in reference image 1: it is being replaced by this garment.`,
     `Garment design: ${garmentText(garment)}`,
     conditionText ? `The garment is worn, damaged or dirty. Show it exactly as it appears in reference image 2, with these requirements kept in place: ${conditionText} Do not repair, clean or add to them. Left and right mean the wearer’s left and right, not the picture’s.` : '',

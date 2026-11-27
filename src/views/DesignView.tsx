@@ -8,6 +8,7 @@ import { CharacterBible } from "../components/CharacterBible";
 import { SheetStudio } from "../components/SheetStudio";
 import { WardrobeStudio } from "../components/WardrobeStudio";
 import { AgeStudio } from "../components/AgeStudio";
+import { TransformStudio } from "../components/TransformStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
 import { MotionDemo } from "../components/MotionDemo";
@@ -102,11 +103,12 @@ export interface DesignViewProps {
   applySlice?: (next: ProjectSlice) => void;
 }
 
-type Section = "sheets" | "wardrobe" | "age" | "identity" | "motion" | "voice";
+type Section = "sheets" | "wardrobe" | "age" | "transform" | "identity" | "motion" | "voice";
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
   { id: "wardrobe", label: "Wardrobe studio" },
   { id: "age", label: "Age & appearance" },
+  { id: "transform", label: "Transformations" },
   { id: "identity", label: "Identity" },
   { id: "motion", label: "Motion" },
   { id: "voice", label: "Voice and sound" },
@@ -147,7 +149,7 @@ export function DesignView(p: DesignViewProps) {
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
-                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>
             </div>
             <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>
@@ -266,6 +268,25 @@ export function DesignView(p: DesignViewProps) {
                 assets={analysis.assets}
                 setAssets={(update) => setAnalysis((cur) => ({ ...cur, assets: update(cur.assets) }))}
                 onOpenAsset={() => setSelectedAsset(analysis.assets.length)}
+                variations={p.variations}
+                updateVariations={p.updateVariations}
+                queue={queue}
+                setQueue={setQueue}
+                style={styleBible}
+                desktop={isTauri}
+                providersVersion={Number(providersOpen)}
+                onApproved={onSheetApproved}
+                onUnapproved={onSheetUnapproved}
+                notify={setNotice}
+                openProviders={() => setProvidersOpen(true)}
+                onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
+              />
+            )}
+            </div>
+            <div id="sec-transform" role="tabpanel" aria-labelledby="as-tab-transform" hidden={section !== "transform"}>
+            {section === "transform" && analysis.assets[selectedAsset]?.type === "character" && (
+              <TransformStudio
+                character={analysis.assets[selectedAsset]}
                 variations={p.variations}
                 updateVariations={p.updateVariations}
                 queue={queue}

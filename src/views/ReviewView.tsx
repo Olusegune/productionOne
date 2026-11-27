@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { VariationState } from "../domain/variations";
 import { AlertTriangle, Check, MessageSquareWarning, Undo2, X } from "lucide-react";
 import { RealImage } from "../components/RealImage";
 import { addEnhanced, approve, reconsider, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
@@ -26,6 +27,8 @@ type CompareMode = "reference" | "revisions";
  * Nothing here starts paid work: "Request changes" turns the picture down and opens its sheet, where changes are made and generation is a separate, deliberate step.
  */
 export function ReviewView(props: {
+  /** Garments, ages and transformations, so a transformed character's declared anatomy reaches the vision review. */
+  variations?: VariationState;
   analysis: AnalysisResult;
   queue: QueueState;
   setQueue: (update: (q: QueueState) => QueueState) => void;
@@ -235,7 +238,7 @@ export function ReviewView(props: {
         </div>
       )}
       {props.reviews && props.setReviews && props.setLedgers && props.setProportions && props.style && (
-      <VisualReviewPanel shots={props.shots ?? []} ledgers={props.ledgers ?? {}} proportions={props.proportions ?? {}} fitRules={props.fitRules ?? {}} sceneStates={props.sceneStates ?? {}} analysis={analysis} queue={queue} setQueue={setQueue} style={props.style} reviews={props.reviews} setReviews={props.setReviews} setLedgers={props.setLedgers} setProportions={props.setProportions} vision={vision} notify={notify} />
+      <VisualReviewPanel variations={props.variations} shots={props.shots ?? []} ledgers={props.ledgers ?? {}} proportions={props.proportions ?? {}} fitRules={props.fitRules ?? {}} sceneStates={props.sceneStates ?? {}} analysis={analysis} queue={queue} setQueue={setQueue} style={props.style} reviews={props.reviews} setReviews={props.setReviews} setLedgers={props.setLedgers} setProportions={props.setProportions} vision={vision} notify={notify} />
       )}
     </section>
   );

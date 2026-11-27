@@ -9,7 +9,7 @@ import { styleFingerprint } from "../domain/style2d";
 import type { StyleBible } from "../domain/visualDevelopment";
 import { editDraft, startDraft, standingOf, type Draft } from "../domain/candidateFlow";
 import { stalenessOf } from "../domain/variationGraph";
-import { approvedPicture, findEntity, latestApproved, type AgeSpec, type ConditionSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from "../domain/variations";
+import { approvedPicture, findEntity, latestApproved, type AgeSpec, type TransformationSpec, type ConditionSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from "../domain/variations";
 import { defaultKeep, fitCapability, fitRequests, garmentCategories, garmentFieldList, garmentRequests, keepChoices } from "../domain/wardrobe";
 import { garmentAssetId, garmentPicture, newGarment, reviseGarment, startFit } from "../domain/wardrobeFlow";
 import { proportionWords } from "../domain/characterLayers";
@@ -19,6 +19,7 @@ import { ConditionStudio } from "./ConditionStudio";
 import { conditionPicture, conditionRequirementsText } from "../domain/conditions";
 import { assignLook, lookForScene } from "../domain/lookAssignments";
 import { agePicture, agesOf } from "../domain/ageFlow";
+import { stagePicture } from "../domain/transformationFlow";
 import "../wardrobe.css";
 
 export interface WardrobeStudioProps {
@@ -40,6 +41,11 @@ export interface WardrobeStudioProps {
   proportions?: Record<string, ProportionProfile>;
   /** The story's scenes, so an outfit can be assigned to the ones it is worn in. */
   scenes?: Array<{ id: string; heading?: string }>;
+}
+
+/** How the body being fitted is described to the model: an age, or a stage of a transformation. */
+function bodyDescription(spec: AgeSpec | TransformationSpec): string {
+  return "targetAge" in spec ? `at age ${spec.targetAge}` : `in the "${spec.stage}" stage of a ${spec.kind} transformation`;
 }
 
 const blank: GarmentSpec = { description: "", category: "Custom", details: {} };
@@ -123,9 +129,10 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
   // ----- fitting -----
   const pic = garment ? garmentPicture(variations, garment.id) : undefined;
   const baseCharacterPicture = anchorFor(queue, { assetId: character.id, variant: "Canonical" } as ImageJob);
-  const bodyOptions = agesOf(variations, character.id).filter((e) => latestApproved(e) && agePicture(variations, e.id));
+  const bodyPictureOf = (id: string) => agePicture(variations, id) ?? stagePicture(variations, id);
+  const bodyOptions = variations.entities.filter((e) => (e.kind === "age" || e.kind === "transformation") && e.characterId === character.id && latestApproved(e) && bodyPictureOf(e.id));
   const chosenBody = bodyOptions.find((e) => e.id === fitBody);
-  const bodyPic = chosenBody ? agePicture(variations, chosenBody.id) : undefined;
+  const bodyPic = chosenBody ? bodyPictureOf(chosenBody.id) : undefined;
   // Reference image 1 is the character at the body being fitted: the base picture, or the approved picture of the age variant.
   const characterPicture = bodyPic ? bodyPic.path : baseCharacterPicture;
   const conditionOptions = garment ? variations.entities.filter((e) => e.kind === "condition" && latestApproved(e) && (latestApproved(e)!.spec as ConditionSpec).garment.id === garment.id) : [];
@@ -147,7 +154,7 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
     const fit = startFit(variations, { character, garment: pic.ref, garmentName: garment.name, keep, now: now(), condition, body });
     updateVariations(() => fit.variations);
     const spec = findEntity(variations, garment.id)!.revisions.find((r) => r.n === pic.ref.revision)!.spec as GarmentSpec;
-    const requests = fitRequests({ style, provider, model: modelId, character, lookName: fit.variant, fit: fit.ref, garment: pic.ref, garmentName: garment.name, garmentSpec: spec, keep, characterPicture, garmentPicture: condition && conditionPic ? conditionPic.path : pic.path, proportions: proportionWords(props.proportions?.[character.id]), styleFp: styleFingerprint(style), ...(condition && conditionPic ? { condition: conditionPic.ref, conditionText: conditionRequirementsText(fit.variations, conditionPic.ref, "costume-front") } : {}), ...(body && chosenBody ? { body: body.ref, bodyText: `at age ${(findEntity(variations, chosenBody.id)!.revisions.find((r) => r.n === body.ref.revision)!.spec as AgeSpec).targetAge}` } : {}) });
+    const requests = fitRequests({ style, provider, model: modelId, character, lookName: fit.variant, fit: fit.ref, garment: pic.ref, garmentName: garment.name, garmentSpec: spec, keep, characterPicture, garmentPicture: condition && conditionPic ? conditionPic.path : pic.path, proportions: proportionWords(props.proportions?.[character.id]), styleFp: styleFingerprint(style), ...(condition && conditionPic ? { condition: conditionPic.ref, conditionText: conditionRequirementsText(fit.variations, conditionPic.ref, "costume-front") } : {}), ...(body && chosenBody ? { body: body.ref, bodyText: bodyDescription(findEntity(variations, chosenBody.id)!.revisions.find((r) => r.n === body.ref.revision)!.spec as AgeSpec | TransformationSpec) } : {}) });
     const result = enqueue(queue, requests, Date.now(), true);
     setQueue(() => result.state);
     notify(`Fitting ${garment.name}${condition ? ` (${condition.name})` : ""} on ${character.name}…`);
