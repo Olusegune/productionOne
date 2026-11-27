@@ -105,7 +105,7 @@ Status: the Wardrobe tab (Design, for a character) lets you design a garment, pr
 
 ## Milestone 2 live provider report (Nano Banana 2.1 through Kie.ai)
 
-Run in a test copy of the app against the real model, on a character with an approved front view. Pictures were looked at by a person; nothing was scored automatically.
+Run in a test copy of the app against the real model, on a character with an approved front view. Pictures were looked at by a person; nothing was scored automatically. Screenshots of these runs are kept with the project deliverable, not in this repository, because they show the user's own story art.
 
 - A garment designed from words only (deep green waxed jacket, corduroy collar, four patch pockets, brass snaps) came back as clothing only, no person, front, back and fabric views, matching the description.
 - Fitting it on the approved character (two references: the character first, the garment second) kept the face and hair and put the jacket on, with the collar and pockets as designed.
