@@ -11,6 +11,7 @@ import type { Reviews } from '../domain/visualReview'
 import type { Ledgers } from '../domain/correction'
 import type { LookState } from '../domain/grade'
 import type { WorldRules } from '../domain/worldRules'
+import type { VariationState } from '../domain/variations'
 
 const KEY = 'production-guy:project:v1'
 const STUDIO_KEY = 'production-guy:studio:v1'
@@ -48,6 +49,8 @@ export interface StudioState {
   looks?: LookState
   /** World rules: the starting profile new characters begin from, and the scale convention. */
   world?: WorldRules
+  /** Garments, fits, conditions, age variants, transformations and production looks. Absent in projects saved before 0.66; older projects are read through variationsOf(). */
+  variations?: VariationState
 }
 
 export const projectStore = {
