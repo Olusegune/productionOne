@@ -64,6 +64,8 @@ export interface FitSpec {
   characterId: string
   /** The age or transformation revision this fit was made for, when the body is not the base one. */
   body?: Ref
+  /** The garment condition worn, when it is not pristine. */
+  condition?: Ref
   /** What the fit must leave alone: face, hair, pose, accessories and so on. */
   keep?: string[]
   /** The name the generation queue files this outfit's pictures under (the look's name). Set when the fit is made so retries and sheets land in the same place. */

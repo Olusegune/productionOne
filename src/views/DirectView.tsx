@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { VariationState } from "../domain/variations";
 import { DirectRoom } from "../components/DirectRoom";
 import type { ProportionProfile } from "../domain/proportions";
 import type { SceneState } from "../domain/sceneState";
@@ -13,6 +14,7 @@ import type { StyleBible } from "../domain/visualDevelopment";
 
 /** The Direct workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DirectViewProps {
+  variations?: VariationState;
   activeShot: ShotRecord;
   addShot: () => void;
   analysis: AnalysisResult;
@@ -54,6 +56,7 @@ export function DirectView(p: DirectViewProps) {
   return (
 <div className="dr-wrap">
             <DirectRoom
+              variations={p.variations}
               analysis={analysis}
               shots={shots}
               setShots={(u) => setShots(u)}

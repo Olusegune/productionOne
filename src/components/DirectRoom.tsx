@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { checkLookAssignments } from "../domain/lookAssignments";
+import type { VariationState } from "../domain/variations";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { Eyebrow } from "./Eyebrow";
 import { AlertTriangle, SlidersHorizontal, ArrowDown, ArrowUp, Check, Clapperboard, Copy, Download, ImagePlus, LayoutGrid, List, Maximize2, MoreHorizontal, Square, Sparkles, Trash2, Undo2, Wand2, X } from "lucide-react";
@@ -32,6 +34,8 @@ import { formatName, isPortrait, ratioOf, sameShape } from "../domain/formats";
 
 /** The Director's room: plan the coverage of each scene, edit every shot like a director would, make storyboard frames from your approved references, check continuity and play the animatic. */
 export function DirectRoom(props: {
+  /** Garments, fits and looks, so a shot's chosen look can be checked against the look assigned to its scene. */
+  variations?: VariationState;
   analysis: AnalysisResult;
   shots: ShotRecord[];
   setShots: (update: (s: ShotRecord[]) => ShotRecord[]) => void;
@@ -72,7 +76,7 @@ export function DirectRoom(props: {
   const scene = analysis.scenes.find((s) => s.id === sceneId) ?? analysis.scenes[0];
   const sceneShots = shots.filter((s) => s.sceneId === scene?.id);
   const shot = shots.find((s) => s.id === selected) ?? sceneShots[0];
-  const findings = useMemo(() => checkContinuity(shots, analysis, queue), [shots, analysis, queue]);
+  const findings = useMemo(() => [...checkContinuity(shots, analysis, queue), ...(props.variations ? checkLookAssignments(shots, props.variations, analysis) : [])], [shots, analysis, queue, props.variations]);
   const characters = analysis.assets.filter((a) => a.type === "character");
   const sets = analysis.assets.filter((a) => a.type === "set" || a.type === "environment");
 

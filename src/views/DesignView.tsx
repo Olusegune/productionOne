@@ -253,6 +253,7 @@ export function DesignView(p: DesignViewProps) {
                 openProviders={() => setProvidersOpen(true)}
                 onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
                 proportions={proportions}
+                scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))}
               />
             )}
             </div>

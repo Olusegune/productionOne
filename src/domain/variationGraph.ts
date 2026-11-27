@@ -10,7 +10,7 @@ export function depsOf(kind: EntityKind, spec: AnySpec): Array<{ ref: Ref; expec
   const out: Array<{ ref: Ref; expects: EntityKind[]; role: string }> = []
   const add = (ref: unknown, expects: EntityKind[], role: string) => { if (ref && typeof ref === 'object') out.push({ ref: ref as Ref, expects, role }) }
   switch (kind) {
-    case 'fit': add(s.garment, ['garment'], 'garment'); add(s.body, ['age', 'transformation'], 'body variant'); break
+    case 'fit': add(s.garment, ['garment'], 'garment'); add(s.condition, ['condition'], 'condition'); add(s.body, ['age', 'transformation'], 'body variant'); break
     case 'condition': add(s.garment, ['garment'], 'garment'); add(s.from, ['condition'], 'earlier condition'); break
     case 'transformation': add(s.from, ['transformation'], 'earlier stage'); break
     case 'look':

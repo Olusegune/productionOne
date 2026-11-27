@@ -39,12 +39,17 @@ export const outfitName = (characterName: string, garmentName: string) => `${cha
  * Starts a fit of an approved garment on a character: a candidate fit record. The same garment gets a separate fit for each character,
  * and a second try for the same pair is a new revision of the same fit.
  */
-export function startFit(state: VariationState, input: { character: ExtractedAsset; garment: Ref; garmentName: string; keep: string[]; now: string }): { variations: VariationState; ref: Ref; variant: string } {
+export function startFit(state: VariationState, input: { character: ExtractedAsset; garment: Ref; garmentName: string; keep: string[]; now: string; condition?: { ref: Ref; name: string } }): { variations: VariationState; ref: Ref; variant: string } {
   const rev = findRevision(state, input.garment)
   if (!rev || rev.status !== 'approved') throw new Error('Approve the garment before fitting it to a character.')
-  const variant = outfitName(input.character.name, input.garmentName)
-  const spec: FitSpec = { garment: input.garment, characterId: input.character.id, keep: [...input.keep], variant }
-  const existing = state.entities.find((e) => e.kind === 'fit' && e.characterId === input.character.id && e.revisions.some((r) => (r.spec as FitSpec).garment.id === input.garment.id))
+  if (input.condition) {
+    const c = findRevision(state, input.condition.ref)
+    if (!c || c.status !== 'approved') throw new Error('Approve the condition before fitting the garment in it.')
+  }
+  const variant = outfitName(input.character.name, input.condition ? `${input.garmentName}, ${input.condition.name}` : input.garmentName)
+  const spec: FitSpec = { garment: input.garment, characterId: input.character.id, keep: [...input.keep], variant, ...(input.condition ? { condition: input.condition.ref } : {}) }
+  // One fit per character, garment and condition: another character, or the same garment in another condition, is a separate fit.
+  const existing = state.entities.find((e) => e.kind === 'fit' && e.characterId === input.character.id && e.revisions.some((r) => (r.spec as FitSpec).garment.id === input.garment.id && (r.spec as FitSpec).condition?.id === input.condition?.ref.id))
   if (existing) { const made = addRevision(state, existing.id, { spec, now: input.now }); return { variations: made.state, ref: made.ref, variant } }
   const made = createEntity(state, 'fit', { name: variant, characterId: input.character.id, spec, now: input.now })
   return { variations: made.state, ref: made.ref, variant }
@@ -62,7 +67,7 @@ function ensureLooks(state: VariationState, now: string): VariationState {
       if (has) continue
       const spec = r.spec as FitSpec
       const sameName = next.entities.find((l) => l.kind === 'look' && l.characterId === e.characterId && l.name === e.name)
-      const look: LookSpec = { characterId: spec.characterId, fit: ref, queueVariant: spec.variant ?? e.name }
+      const look: LookSpec = { characterId: spec.characterId, fit: ref, ...(spec.condition ? { condition: spec.condition } : {}), queueVariant: spec.variant ?? e.name }
       const made = sameName ? addRevision(next, sameName.id, { spec: look, now }) : createEntity(next, 'look', { name: e.name, characterId: e.characterId, spec: look, now })
       next = approveRevision(made.state, made.ref)
     }
