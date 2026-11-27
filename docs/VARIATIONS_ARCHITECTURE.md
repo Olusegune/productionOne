@@ -60,3 +60,45 @@ Configure, preview, compare, approve, then sheets (`candidateFlow.ts`). `standin
 - `collectProject` does not yet gather variation media. No screen can create variation media yet, so nothing is lost today; this must be done before Milestone 2 ships.
 - Conflict detection beyond staleness (clothing intersecting new anatomy, mutually exclusive accessories) is Milestone 6.
 - Scene assignments exist as a field on a look but are not wired to the scene or continuity model (Milestone 3).
+
+
+# Milestone 2: wardrobe design and fitting
+
+Status: the Wardrobe tab (Design, for a character) lets you design a garment, preview it as clothing only, approve it, fit it to a character, approve the outfit and open that outfit's sheets.
+
+## How it reuses what exists
+
+- **A garment is a real costume asset** (`COSTUME-GAR-001`) plus a garment record. Its pictures are ordinary queue jobs, so Review, the queue strip, missing-file relinking and export all work on them. Its previews are filed under the variant name `GAR-001 r1`.
+- **An outfit is a look of the character**, filed in the queue under the variant name `MARA in Field jacket`. That is the mechanism the Look list already uses, so the existing Wardrobe sheet (costume front, side, rear, fabric) is made for the outfit from the Sheets tab, anchored on the approved outfit front.
+- **A fit is a record per character per garment**: the same garment on Tom is a separate fit. A second try for the same pair is a new revision of the same fit.
+- **Approving an outfit makes its production look** (pinned to that fit revision). Combining age, condition and transformation in one look is Milestone 6.
+
+## Jobs carry the link
+
+`ImageJob.variation` (and `JobRequest.variation`) records `{ id, revision, role, uses[] }`: which revision the picture was made for and which reference played which part (`reference-1-character`, `reference-2-garment`, `source-picture`). `syncWardrobe` (run whenever the queue changes) attaches finished pictures to the candidate once, approves a candidate when one of its pictures is approved anywhere (Review included) and records which picture was chosen, rejects it when every picture is turned down, and makes looks for approved outfits. Approved and rejected revisions are never changed by it. Media paths are snapshots: `currentPath` follows a relinked file through the job id.
+
+## Prompts
+
+- **Garment**: clothing only (no person, mannequin head, hands or feet), neutral even lighting, the project's style, three views (front, back, fabric and construction). Free fields (silhouette, fabric, colour, closures, era, occupation, climate, trim, layering, footwear, practical fit) are optional and every list has Custom. A new version of an approved garment is sent with its approved picture as a reference.
+- **Fit**: names the references by role in order (1 the character, 2 the garment), says to dress the character in the garment and not to copy the clothing in reference 1, lists what must stay the same (face and hair, body, pose, accessories; the person's choice), and leaves out the character's own description because it may describe the clothes being replaced.
+- A model that cannot receive reference pictures is refused for fitting, with the reason, instead of guessed at.
+
+## Other changes
+
+- Approving an outfit's or age variant's front view no longer replaces the character's own picture in the bible; only the base look sets it (or any look, when the character has none).
+- The Sheets tab's Look list includes the character's approved outfits; "Make wardrobe sheets for this look" opens it on that outfit.
+- Project files: `variations` is saved when the first garment is made. Older projects are unchanged until then.
+
+## Verified, and what was not
+
+- Tests: domain (revision rules, queue following, prompts, fits, looks, stale marking), the screen (gating, cost shown before anything is requested, three linked requests), and the fixtures from Milestone 1.
+- Acceptance scenarios covered by automated tests: 1 (a jacket that is not in the character picture), 2 (fit keeps face and body: prompt and reference order), 3 (reuse on another character with a separate fit), 13 (changing the base garment marks only its fit, condition and look stale).
+- Live provider check: see the Milestone 2 live report below.
+
+## Not done in this milestone
+
+- Garment condition, age and transformation studios (Milestones 3 to 5).
+- Fits for an age or transformation body variant.
+- A clothing-only layering sheet and a costume turnaround of the garment alone (the garment has front, back and detail).
+- Reference-image limits: a fit sends two references. A strategy for more (identity plus garment plus condition) arrives with conditions.
+- Taking back a picture's approval in Review does not undo an approved revision (decisions are made once); make a new revision instead.

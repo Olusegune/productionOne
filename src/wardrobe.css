@@ -1,0 +1,35 @@
+/* Wardrobe studio: garment library on the left, design, previews and fitting on the right. */
+.wd { display: grid; gap: 16px; padding: 20px; }
+.wd-head h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 18px; }
+.wd-head .helper { margin: 0; }
+.wd-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .wd-body { grid-template-columns: 1fr; } }
+.wd-library { display: grid; gap: 8px; position: sticky; top: 8px; }
+.wd-new, .wd-card { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; border: 1px solid var(--line-1); border-radius: 8px; background: var(--panel-1); color: var(--text); cursor: pointer; }
+.wd-new.on, .wd-card.on { border-color: var(--gold); background: var(--panel-2); }
+.wd-card img, .wd-thumb { width: 44px; height: 56px; object-fit: cover; border-radius: 6px; background: var(--panel-2); display: grid; place-items: center; flex: none; color: var(--text-3); }
+.wd-card span { display: grid; gap: 2px; min-width: 0; }
+.wd-card b { overflow-wrap: anywhere; font-weight: 600; }
+.wd-card small { color: var(--text-3); }
+.wd-work { display: grid; gap: 24px; min-width: 0; }
+.wd-work h3 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.wd-design, .wd-fit { display: grid; gap: 12px; }
+.wd-design label, .wd-fields label { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+.wd-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.wd-more { justify-self: start; background: none; border: 0; color: var(--text-2); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; padding: 2px 0; }
+.wd-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wd-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.wd-strip figure, .wd-compare figure { margin: 0; display: grid; gap: 6px; align-content: start; }
+.wd-strip img, .wd-compare img { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background: var(--panel-2); border-radius: 8px; }
+.wd-empty { aspect-ratio: 3 / 4; display: grid; place-items: center; text-align: center; padding: 12px; border: 1px dashed var(--line-1); border-radius: 8px; color: var(--text-3); font-size: 13px; }
+figcaption { font-size: 12px; color: var(--text-3); }
+.wd-decide { display: flex; gap: 6px; }
+.wd-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.wd-keep { border: 1px solid var(--line-1); border-radius: 8px; padding: 10px 12px; display: flex; gap: 6px 18px; flex-wrap: wrap; }
+.wd-keep legend { padding: 0 6px; font-size: 13px; color: var(--text-2); }
+.wd-keep label { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
+.wd-badge { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-1); color: var(--text-2); }
+.wd-badge.approved { border-color: #3d8f68; color: #7fd0a6; }
+.wd-badge.rejected { border-color: #a05a5a; color: #e0a0a0; }
+.wd-history { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-3); }
+.helper.warn { color: #e0b074; }

@@ -76,3 +76,12 @@ export function deriveFromLegacy(studio: StudioLike): VariationState {
 export function queueVariantOf(look: { revisions: Array<Revision<LookSpec>> }, revision: number): string {
   return look.revisions.find((r) => r.n === revision)?.spec.queueVariant ?? 'Canonical'
 }
+
+/** Reads the saved records back from a project file. Anything that is not a recognisable record set is ignored rather than trusted, so a damaged file cannot break opening the project. */
+export function readVariations(raw: unknown): VariationState | undefined {
+  const v = raw as Partial<VariationState> | undefined
+  if (!v || typeof v !== 'object' || v.schema !== 1 || !Array.isArray(v.entities)) return undefined
+  const counters = v.counters && typeof v.counters === 'object' ? v.counters : {}
+  const entities = v.entities.filter((e) => e && typeof e.id === 'string' && typeof e.kind === 'string' && Array.isArray(e.revisions))
+  return { schema: 1, entities, counters }
+}

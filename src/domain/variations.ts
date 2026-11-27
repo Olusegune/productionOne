@@ -66,6 +66,8 @@ export interface FitSpec {
   body?: Ref
   /** What the fit must leave alone: face, hair, pose, accessories and so on. */
   keep?: string[]
+  /** The name the generation queue files this outfit's pictures under (the look's name). Set when the fit is made so retries and sheets land in the same place. */
+  variant?: string
 }
 
 export type CharacterSide = 'character-left' | 'character-right' | 'centre' | 'both'
@@ -226,3 +228,18 @@ export function attachMedia(state: VariationState, ref: Ref, media: MediaRef): V
   const updated = { ...entity, revisions: entity.revisions.map((r) => (r.n === ref.revision ? { ...r, media: [...r.media, clone(media)] } : r)) } as AnyEntity
   return { ...state, entities: state.entities.map((e) => (e.id === ref.id ? updated : e)) }
 }
+
+/** Approves a candidate and records which of its pictures was chosen (that picture's role becomes 'approved'). Nothing else about the revision changes. */
+export function approveWithPicture(state: VariationState, ref: Ref, jobId: string): VariationState {
+  const entity = findEntity(state, ref.id)
+  const revision = entity?.revisions.find((r) => r.n === ref.revision)
+  if (!entity || !revision) throw new VariationError(`There is no revision ${ref.revision} of ${ref.id} in this project.`)
+  if (!revision.media.some((m) => m.jobId === jobId)) throw new VariationError(`${ref.id} revision ${ref.revision} has no picture from job ${jobId}.`)
+  const approved = approveRevision(state, ref)
+  const e2 = findEntity(approved, ref.id) as AnyEntity
+  const updated = { ...e2, revisions: e2.revisions.map((r) => (r.n === ref.revision ? { ...r, media: r.media.map((m) => (m.jobId === jobId ? { ...m, role: 'approved' } : m)) } : r)) } as AnyEntity
+  return { ...approved, entities: approved.entities.map((e) => (e.id === ref.id ? updated : e)) }
+}
+
+/** The picture that was chosen when a revision was approved. */
+export const approvedPicture = (revision: Revision<AnySpec>): MediaRef | undefined => revision.media.find((m) => m.role === 'approved')

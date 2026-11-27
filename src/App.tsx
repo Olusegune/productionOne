@@ -11,6 +11,9 @@ import { isTauri, initialShot,  downloadJson, downloadText } from "./appHelpers"
 import { Eyebrow } from "./components/Eyebrow";
 import { DesignView } from "./views/DesignView";
 import { readProfiles, type ProportionProfile } from "./domain/proportions";
+import { deriveFromLegacy, readVariations } from "./domain/variationMigration";
+import { syncWardrobe } from "./domain/wardrobeFlow";
+import type { VariationState } from "./domain/variations";
 import { readFitRules, type FitRule } from "./domain/fit";
 import { readSceneStates, type SceneState } from "./domain/sceneState";
 import { emptyReviews, outputStatus, readReviews, type Reviews } from "./domain/visualReview";
@@ -190,6 +193,7 @@ export default function App() {
     [sheetNotes, setSheetNotes] = useState<Record<string, string>>({}),
     [sheetSettings, setSheetSettings] = useState<Record<string, string>>({}),
     [proportions, setProportions] = useState<Record<string, ProportionProfile>>({}),
+    [savedVariations, setSavedVariations] = useState<VariationState | undefined>(undefined),
     [fitRules, setFitRules] = useState<Record<string, FitRule[]>>({}),
     [sceneStates, setSceneStates] = useState<Record<string, SceneState>>({}),
     [reviews, setReviews] = useState<Reviews>(emptyReviews()),
@@ -229,9 +233,19 @@ export default function App() {
     [analysis, shots, storyboardsEnabled, assetOutputs],
   );
   const studioNow: StudioState = useMemo(
-    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}), ...(Object.keys(sceneStates).length ? { sceneStates } : {}), ...(reviews.deterministic.length || reviews.vision.length || Object.keys(reviews.checked).length ? { reviews } : {}), ...(Object.keys(corrections).length ? { corrections } : {}), ...(lookState.looks.length ? { looks: lookState } : {}), ...(world.profile || world.notes ? { world } : {}) }),
-    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules, sceneStates, reviews, corrections, lookState, world],
+    () => ({ script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, ...(Object.keys(proportions).length ? { proportions } : {}), ...(Object.keys(fitRules).length ? { fitRules } : {}), ...(Object.keys(sceneStates).length ? { sceneStates } : {}), ...(reviews.deterministic.length || reviews.vision.length || Object.keys(reviews.checked).length ? { reviews } : {}), ...(Object.keys(corrections).length ? { corrections } : {}), ...(lookState.looks.length ? { looks: lookState } : {}), ...(world.profile || world.notes ? { world } : {}), ...(savedVariations ? { variations: savedVariations } : {}) }),
+    [script, analysis, shots, jobs, storyboardsEnabled, model, assetOutputs, styleBible, title, queue, clips, assetRefs, sheetNotes, sheetSettings, format, proportions, fitRules, sceneStates, reviews, corrections, lookState, world, savedVariations],
   );
+  // Variation records follow the queue: pictures made for a garment or an outfit are attached to it, and approving one in Review approves the record.
+  useEffect(() => {
+    if (!savedVariations && !queue.jobs.some((j) => j.variation)) return;
+    const base = savedVariations ?? deriveFromLegacy({ analysis, queue });
+    const next = syncWardrobe(base, queue.jobs, new Date().toISOString());
+    if (next !== base) setSavedVariations(next);
+  }, [queue.jobs, savedVariations, analysis]);
+  // What the screens read: the saved records, or (for a project that has none yet) the records derived from what it already holds. Nothing is saved until something is made.
+  const variations = useMemo(() => savedVariations ?? deriveFromLegacy({ analysis, queue }), [savedVariations, analysis, queue]);
+  const updateVariations = (update: (v: VariationState) => VariationState) => setSavedVariations((current) => update(current ?? deriveFromLegacy({ analysis, queue })));
   const goldenInput: GoldenPathInput = {
     hasScript: script.trim().length > 0,
     assetCount: analysis.assets.length,
@@ -306,6 +320,7 @@ export default function App() {
           setSheetNotes(studio.sheetNotes ?? {});
           setSheetSettings(studio.sheetSettings ?? {});
           setProportions(readProfiles(studio.proportions));
+          setSavedVariations(readVariations(studio.variations));
           setFitRules(readFitRules(studio.fitRules));
           setSceneStates(readSceneStates(studio.sceneStates));
           setReviews(readReviews(studio.reviews));
@@ -1136,6 +1151,7 @@ export default function App() {
     setSheetNotes(s.sheetNotes ?? {});
     setSheetSettings(s.sheetSettings ?? {});
     setProportions(readProfiles(s.proportions));
+    setSavedVariations(readVariations(s.variations));
     setFitRules(readFitRules(s.fitRules));
     setSceneStates(readSceneStates(s.sceneStates));
     setReviews(readReviews(s.reviews));
@@ -1424,7 +1440,9 @@ export default function App() {
     if (!job.outputPath) return;
     const path = job.outputPath;
     if (job.sheetType === "Storyboard") return;
-    setAssetOutputs((current) => (primary || !current[job.assetId] ? { ...current, [job.assetId]: path } : current));
+    // An outfit or age variant's picture must not replace the character's own picture in the bible: only the base look sets it (or any look, when the character has none yet).
+    const isBase = !job.variant || job.variant === "Canonical" || job.variant === "default";
+    setAssetOutputs((current) => ((primary && isBase) || !current[job.assetId] ? { ...current, [job.assetId]: path } : current));
     if (primary) setAnalysis((current) => ({ ...current, assets: current.assets.map((a) => (a.id === job.assetId ? { ...a, status: "approved" } : a)) }));
   };
   // Taking an approval back: the asset loses the picture and the Approved label unless another approved front view still stands for it.
@@ -1666,7 +1684,7 @@ export default function App() {
           <StoryView onContinue={() => setWorkspace("Design")} script={script} setScript={setScript} scriptArea={scriptArea} analysis={analysis} setAnalysis={setAnalysis} desktop={isTauri} notify={setNotice} onImport={() => void importScriptNative()} onAnalyze={analyze} onJump={jumpToLine} onAddProp={addNamedProp} onUseAge={useAgeFromReading} onAddAsset={addManualAsset} onMergeSets={mergeSetAssets} outputs={assetOutputs} onOpenAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />
         )}
         {workspace === "Design" && (
-          <DesignView activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} world={world} setWorld={setWorld} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} slice={{ analysis, queue, assetOutputs, assetRefs, proportions, fitRules, sheetNotes, sheetSettings, shots, sceneStates, reviews }} applySlice={applySlice} />
+          <DesignView variations={variations} updateVariations={updateVariations} activePromptPackage={activePromptPackage} analysis={analysis} approveAsset={approveAsset} assetOutputs={assetOutputs} assetRefs={assetRefs} clips={clips} copyPrompt={copyPrompt} exportAllPrompts={exportAllPrompts} exportPrompt={exportPrompt} focusSheetType={focusSheetType} generateImageDirect={generateImageDirect} generatingImage={generatingImage} importAsset={importAsset} jobs={jobs} modelRecommendations={modelRecommendations} onAddAsset={(kind, name, gender, withImage, extras) => void addAssetToBible(kind, name, gender, withImage, extras)} onAddMany={(kind) => void addManyFromImages(kind)} onSheetApproved={onSheetApproved} onSheetUnapproved={onSheetUnapproved} openAiConfigured={openAiConfigured} plannedSheets={plannedSheets} promptMode={promptMode} providersOpen={providersOpen} queue={queue} queueAsset={queueAsset} reviseSelectedAsset={reviseSelectedAsset} runQueue={runQueue} selectedAsset={selectedAsset} setAnalysis={setAnalysis} setAssetRefs={setAssetRefs} setClips={setClips} setCredentialProvider={setCredentialProvider} setFocusSheetType={setFocusSheetType} setJobs={setJobs} setLocalOpen={setLocalOpen} setNotice={setNotice} setPromptMode={setPromptMode} setProvidersOpen={setProvidersOpen} setQueue={setQueue} setSelectedAsset={setSelectedAsset} setSheetNotes={setSheetNotes} setSheetSettings={setSheetSettings} sheetSettings={sheetSettings} proportions={proportions} setProportions={setProportions} world={world} setWorld={setWorld} fitRules={fitRules} setFitRules={setFitRules} setStyleBible={setStyleBible} sheetNotes={sheetNotes} studioControl={studioControl} styleBible={styleBible} slice={{ analysis, queue, assetOutputs, assetRefs, proportions, fitRules, sheetNotes, sheetSettings, shots, sceneStates, reviews }} applySlice={applySlice} />
         )}
         {workspace === "Review" && (
           <ReviewView openTopazKey={() => { setCredentialProvider("topaz"); setProvidersOpen(true); }} shots={shots} style={styleBible} reviews={reviews} setReviews={setReviews} ledgers={corrections} setLedgers={setCorrections} proportions={proportions} setProportions={setProportions} fitRules={fitRules} sceneStates={sceneStates} analysis={analysis} queue={queue} setQueue={setQueue} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openDesign={() => setWorkspace("Design")} openAsset={(id) => { const i = analysis.assets.findIndex((x) => x.id === id); if (i >= 0) setSelectedAsset(i); setWorkspace("Design"); }} />

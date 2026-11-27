@@ -6,6 +6,9 @@ import { isTauri } from "../appHelpers";
 import { AssetLab } from "../components/AssetLab";
 import { CharacterBible } from "../components/CharacterBible";
 import { SheetStudio } from "../components/SheetStudio";
+import { WardrobeStudio } from "../components/WardrobeStudio";
+import type { VariationState } from "../domain/variations";
+import { lookNamesFor } from "../domain/wardrobeFlow";
 import { MotionDemo } from "../components/MotionDemo";
 import { VoiceAudition } from "../components/VoiceAudition";
 import { BatchAudio } from "../components/BatchAudio";
@@ -36,6 +39,9 @@ import type { ProjectSlice } from "../domain/removeAsset";
 
 /** The Design workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DesignViewProps {
+  /** Garments, fits and looks (read through variationsOf, so older projects have the records derived from what they hold). */
+  variations: VariationState;
+  updateVariations: (update: (v: VariationState) => VariationState) => void;
   activePromptPackage: PromptPackage | null;
   analysis: AnalysisResult;
   approveAsset: (index: number) => void;
@@ -95,9 +101,10 @@ export interface DesignViewProps {
   applySlice?: (next: ProjectSlice) => void;
 }
 
-type Section = "sheets" | "identity" | "motion" | "voice";
+type Section = "sheets" | "wardrobe" | "identity" | "motion" | "voice";
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
+  { id: "wardrobe", label: "Wardrobe" },
   { id: "identity", label: "Identity" },
   { id: "motion", label: "Motion" },
   { id: "voice", label: "Voice and sound" },
@@ -121,6 +128,7 @@ function useWide(): boolean {
 export function DesignView(p: DesignViewProps) {
   const [section, setSection] = useState<Section>("sheets");
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [focusVariant, setFocusVariant] = useState<string | undefined>(undefined);
   const wide = useWide();
   const inInspector = wide && section === "sheets";
   const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, world, setWorld, fitRules, setFitRules } = p;
@@ -137,7 +145,7 @@ export function DesignView(p: DesignViewProps) {
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
-                {sections.map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+                {sections.filter((x) => x.id !== "wardrobe" || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>
             </div>
             <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>
@@ -222,8 +230,31 @@ export function DesignView(p: DesignViewProps) {
               settings={sheetSettings}
               setSettings={setSheetSettings}
               focusSheetType={focusSheetType}
+              extraLooks={lookNamesFor(p.variations, analysis.assets[selectedAsset]?.id)}
+              focusVariant={focusVariant}
               controlsSlot={inInspector ? slot : null}
             />
+            </div>
+            <div id="sec-wardrobe" role="tabpanel" aria-labelledby="as-tab-wardrobe" hidden={section !== "wardrobe"}>
+            {section === "wardrobe" && analysis.assets[selectedAsset]?.type === "character" && (
+              <WardrobeStudio
+                character={analysis.assets[selectedAsset]}
+                setAssets={(update) => setAnalysis((cur) => ({ ...cur, assets: update(cur.assets) }))}
+                variations={p.variations}
+                updateVariations={p.updateVariations}
+                queue={queue}
+                setQueue={setQueue}
+                style={styleBible}
+                desktop={isTauri}
+                providersVersion={Number(providersOpen)}
+                onApproved={onSheetApproved}
+                onUnapproved={onSheetUnapproved}
+                notify={setNotice}
+                openProviders={() => setProvidersOpen(true)}
+                onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
+                proportions={proportions}
+              />
+            )}
             </div>
             <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>
             <MotionDemo
