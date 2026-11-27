@@ -1,4 +1,5 @@
 import { proportionStatus } from "../domain/proportionStatus";
+import { plainNote } from "../domain/plainNote";
 import { ensureGuide } from "../data/proportionGuide";
 import { sheetHints, sheetIconFor } from "../domain/categoryIcons";
 import { styleFingerprint } from "../domain/style2d";
@@ -520,14 +521,14 @@ export function SheetStudio(props: {
                   </button>
                   <div className="view-meta">
                     <b>{view.label}</b>
-                    {job && job.qaNotes.length === 1 && <small className="qa-note">{job.qaNotes[0]}</small>}
+                    {job && job.qaNotes.length === 1 && <small className="qa-note">{plainNote(job.qaNotes[0])}</small>}
                     {job && job.qaNotes.length > 1 && (
                       <details className="qa-group">
                         <summary>{job.qaNotes.length} quality notes</summary>
-                        {job.qaNotes.map((n) => <small key={n} className="qa-note">{n}</small>)}
+                        {job.qaNotes.map((n) => <small key={n} className="qa-note">{plainNote(n)}</small>)}
                       </details>
                     )}
-                    {job?.error && <small className="qa-note">{job.error}</small>}
+                    {job?.error && <small className="qa-note">{plainNote(job.error)}</small>}
                     {job && job.status === "queued" && waitingForAnchor(queue, job) && <small>Waits for the approved front view, then uses it as its reference.</small>}
                     {job?.width && <small>{job.width}×{job.height}px{job.source === "supplied" ? " · your image" : ""}</small>}
                     {job?.styleFp && job.styleFp !== fingerprint && <small className="qa-note" title="The style changed after this picture was made. Nothing was re-approved: decide whether to keep it or regenerate it.">Made in {job.styleName ?? "an earlier style"}: out of date</small>}

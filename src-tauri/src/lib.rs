@@ -351,6 +351,14 @@ struct ProductionPackageInput { #[serde(default)] design_records: Option<String>
 fn export_production_package(app: tauri::AppHandle, package_name: String, design_records: Option<String>, look_files: Option<Vec<LookFile>>, manifest: String, asset_ledger_csv: String, style_bible: String, model_usage: String, prompt: String, reference_paths: Vec<String>, export_mode: String) -> Result<String, String> {
     let export_dir = app.path().document_dir().map_err(|error| error.to_string())?.join("Production One").join("Exports");
     fs::create_dir_all(&export_dir).map_err(|error| error.to_string())?;
+    // A package is made to be shared, so it only holds pictures and clips the app itself keeps. A project file written by someone else cannot make it copy
+    // any other file that happens to exist on this computer. A file that is not there is reported as missing, as before.
+    for path in &reference_paths {
+        if std::path::Path::new(path).exists() && providers::inside_assets(&app, path).is_err() {
+            let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            return Err(format!("No package was made: {name} is not in the Production One assets folder, and only files the app keeps go into a package. Bring it into the project (Use my image) or remove it, then export again."));
+        }
+    }
     let safe_name = safe_package_name(&package_name);
     if safe_name.is_empty() { return Err("Package name is required".to_string()); }
     let mut output_path = export_dir.join(format!("{safe_name}.zip"));

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { CandidateVision } from "./CandidateVision";
+import type { Reviews } from "../domain/visualReview";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Sparkles, Check, X, Plus, UserPlus, ChevronDown, ChevronRight, Hourglass } from "lucide-react";
 import { useModelChoice } from "../data/modelChoice";
@@ -16,6 +18,10 @@ import { Picture } from "./wardrobeParts";
 import "../wardrobe.css";
 
 export interface AgeStudioProps {
+  /** Where the check against what a picture was made from keeps its results (the Review screen's store). */
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
+  onOpenReview?: () => void;
   character: ExtractedAsset;
   assets: ExtractedAsset[];
   setAssets: (update: (assets: ExtractedAsset[]) => ExtractedAsset[]) => void;
@@ -188,6 +194,7 @@ export function AgeStudio(props: AgeStudioProps) {
                 </figure>
                 <figure><Picture job={portrait} label="Portrait" /><figcaption>At {(newest.spec as AgeSpec).targetAge} · portrait{portrait?.approved ? " · Approved" : ""}</figcaption></figure>
               </div>
+              {props.reviews && props.setReviews && <CandidateVision jobs={candidates} allJobs={queue.jobs} variations={variations} reviews={props.reviews} setReviews={props.setReviews} style={style} desktop={desktop} notify={notify} onOpenReview={props.onOpenReview} />}
               <details className="wd-checks" open={report.state === "needs-review"}>
                 <summary>Setting checks: {report.state === "needs-review" ? "Needs review" : "Passed for the checks performed"}</summary>
                 <p className="helper">{report.summary}</p>

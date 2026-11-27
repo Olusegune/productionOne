@@ -1,4 +1,5 @@
 import { CategoryIcon } from "../components/CategoryIcon";
+import type { Reviews } from "../domain/visualReview";
 import { useEffect, useState } from "react";
 import { BibleTree, AssetInspector } from "../components/bible";
 import { ArtDirectionBar } from "../components/ArtDirectionBar";
@@ -42,6 +43,10 @@ import type { ProjectSlice } from "../domain/removeAsset";
 
 /** The Design workspace. Extracted from App.tsx; everything it needs arrives as props. */
 export interface DesignViewProps {
+  /** The review store, so a candidate can be checked against what it was made from where it is made. */
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
+  onOpenReview?: () => void;
   /** Garments, fits and looks (read through variationsOf, so older projects have the records derived from what they hold). */
   variations: VariationState;
   updateVariations: (update: (v: VariationState) => VariationState) => void;
@@ -244,6 +249,9 @@ export function DesignView(p: DesignViewProps) {
             <div id="sec-wardrobe" role="tabpanel" aria-labelledby="as-tab-wardrobe" hidden={section !== "wardrobe"}>
             {section === "wardrobe" && analysis.assets[selectedAsset]?.type === "character" && (
               <WardrobeStudio
+                reviews={p.reviews}
+                setReviews={p.setReviews}
+                onOpenReview={p.onOpenReview}
                 character={analysis.assets[selectedAsset]}
                 setAssets={(update) => setAnalysis((cur) => ({ ...cur, assets: update(cur.assets) }))}
                 variations={p.variations}
@@ -266,6 +274,9 @@ export function DesignView(p: DesignViewProps) {
             <div id="sec-age" role="tabpanel" aria-labelledby="as-tab-age" hidden={section !== "age"}>
             {section === "age" && analysis.assets[selectedAsset]?.type === "character" && (
               <AgeStudio
+                reviews={p.reviews}
+                setReviews={p.setReviews}
+                onOpenReview={p.onOpenReview}
                 character={analysis.assets[selectedAsset]}
                 assets={analysis.assets}
                 setAssets={(update) => setAnalysis((cur) => ({ ...cur, assets: update(cur.assets) }))}
@@ -288,6 +299,9 @@ export function DesignView(p: DesignViewProps) {
             <div id="sec-transform" role="tabpanel" aria-labelledby="as-tab-transform" hidden={section !== "transform"}>
             {section === "transform" && analysis.assets[selectedAsset]?.type === "character" && (
               <TransformStudio
+                reviews={p.reviews}
+                setReviews={p.setReviews}
+                onOpenReview={p.onOpenReview}
                 character={analysis.assets[selectedAsset]}
                 variations={p.variations}
                 updateVariations={p.updateVariations}

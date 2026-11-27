@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { visionAnatomyRules } from "../domain/transformation";
+import { variationDeterministic } from "../domain/variationReview";
+import { probesFor, runProbes } from "../domain/visionProbes";
 import type { VariationState } from "../domain/variations";
 import { AlertTriangle } from 'lucide-react'
 import type { AnalysisResult, ShotRecord } from '../domain/productionStudio'
@@ -62,7 +64,9 @@ export function VisualReviewPanel(p: Props) {
       const profile = proportions[job.assetId]
       const sc = sceneFor(job)
       const r = deterministicChecks({ job, profile, fitRules: fitRules[job.assetId], scene: sc?.state, shotOrder: sc?.order, currentStyleFp: assetStyleFp(job) })
-      next = recordReview(next, job.id, 'deterministic', applyExceptions(r.findings, profile), r.checked)
+      // Facts about the records behind a garment, outfit, age or stage picture. They say nothing about the picture, so no category is listed as checked for them.
+      const fromRecords = variations ? variationDeterministic(variations, job) : []
+      next = recordReview(next, job.id, 'deterministic', [...applyExceptions(r.findings, profile), ...fromRecords], r.checked)
     }
     setReviews(() => next)
     notify(`Checked ${outputs.length} picture${outputs.length === 1 ? '' : 's'} against your records. Categories that need a vision model were not checked.`)
@@ -75,6 +79,14 @@ export function VisualReviewPanel(p: Props) {
     const asked: Category[] = ['A', 'B', 'C', 'G', 'H', 'J']
     for (const job of outputs.slice(0, 12)) {
       const profile = proportions[job.assetId]
+      // A picture made for a garment, outfit, age or stage is asked closed questions (which side, same person, worn or not) that the app compares itself:
+      // in a labelled test a small local model answered those correctly and could not judge open questions.
+      const probes = variations ? probesFor(variations, job) : []
+      if (probes.length) {
+        const p = await runProbes(vision.provider, job, probes)
+        next = recordReview(next, job.id, 'vision', applyExceptions(p.findings, profile), p.checked, p.unable)
+        continue
+      }
       const rules = [
         profile ? `Target proportions are intentional: ${profile.exceptions.map((e) => e.control).join(', ') || 'none marked'}. Heights and ratios come from the approved profile.` : 'No target proportions are set for this character.',
         `The picture should match the approved references and the art style ${style.name}.`,

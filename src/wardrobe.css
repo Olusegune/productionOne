@@ -120,3 +120,24 @@ figcaption { font-size: 12px; color: var(--text-3); }
   .wd-library { position: static; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px); overflow-x: auto; padding-bottom: 6px; }
 }
 .wd-actions button, .wd button.primary { white-space: normal; text-align: left; height: auto; min-height: 36px; }
+
+/* Section tabs: eight tabs no longer fit on one line. They stay on one line each (never wrapping inside a tab), wrap onto a second row when needed, and the bar never grows past its column or into the panel beside it. */
+.as-tabs { flex-wrap: wrap; max-width: 100%; min-width: 0; box-sizing: border-box; border-radius: 18px; row-gap: 2px; }
+.as-tabs button { white-space: nowrap; flex: 0 0 auto; padding: 8px 14px; }
+
+/* Picture cards: a long word or path in a note must wrap inside the card, never widen it (a wide card stretched the picture and left its neighbour with a gap). */
+.view-grid > .view-card, .view-card .view-meta { min-width: 0; }
+.view-meta, .view-meta small, .view-meta .qa-note { overflow-wrap: anywhere; word-break: break-word; }
+.view-thumb, .view-thumb img { max-width: 100%; }
+
+/* Checking a candidate against what it was made from. */
+.wd-vision { display: grid; gap: 10px; border-top: 1px dashed var(--line-1); padding-top: 12px; grid-template-columns: minmax(0, 1fr); }
+.wd-vision-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 13px; }
+.wd-vision-list ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.wd-find { border: 1px solid var(--line-1); border-radius: 8px; padding: 8px 12px; display: grid; gap: 4px; overflow-wrap: anywhere; }
+.wd-find.vision { border-color: #5a6fa0; }
+.wd-find small { color: var(--text-3); }
+.wd-tag { font-size: 11px; font-weight: 600; letter-spacing: .02em; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line-1); color: var(--text-2); justify-self: start; }
+.wd-find.vision .wd-tag { border-color: #5a6fa0; color: #9db4e8; }
+:root[data-theme="light"] .wd-find.vision .wd-tag { color: #2f4b8c; }
+.wd-why { display: block; color: var(--text-3); margin-top: 2px; }

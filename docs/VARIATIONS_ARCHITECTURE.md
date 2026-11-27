@@ -322,3 +322,69 @@ Found and fixed:
 Results after the fixes: no horizontal overflow in any of the four new tabs at 1440 in either theme; no unnamed controls, nameless buttons or pictures without alt text; no new contrast failures. What remains is the same as on the existing Sheets and Identity tabs and is not new: page-level overflow and small text or small click targets at 1100 and 900 wide, and the existing "contempt" chip at 4.4:1. A disabled button measures below the contrast ratio, which is exempt.
 
 Not done: screen-reader testing, keyboard-only walkthrough of every control, and a phone-sized layout.
+
+# Vision QA, interface fixes and security (after 0.66.0)
+
+## Vision QA: what it does
+
+Under each candidate's pictures (garment previews, conditions, outfits, ages, stages) and in the Review screen there is **Check against what it was made from**. It gives two kinds of result, always labelled and never mixed:
+
+- **Record facts** (free, instant): rules over the records, for example a condition whose change names no side, an age with no named recognisable feature, a picture made without its reference, an outfit made from a garment that has since changed. They say nothing about the picture and never count as "the picture was checked".
+- **Suggestions from a vision model that runs on this computer** (free, opt-in, nothing leaves it): closed questions, compared by the app (below). A suggestion shows how sure it was, what it expected, what the model saw, where, and what to do. It can be dismissed or accepted, and a fix is made in Review as a new candidate for the same record (a correction keeps its link to the record and is never approved automatically).
+
+States are the honest four: Not checked, Needs a look, Passed for the checks performed (with which categories were looked at), Unable to assess (with the reason in plain words, for example the model is not running).
+
+## Why closed questions, not "judge this picture": a labelled test
+
+Model: `qwen2.5vl:7b` through Ollama, on this computer. Pictures: real pictures from the test project, downscaled to 1024 pixels. Where a case needed a known wrong answer, a **mirrored copy** of a correct picture was used (the tear on the other side) or a **different person** was used.
+
+**Open-ended review** (the model is given the rules and asked what is wrong), 13 cases, 7 of them with a known problem:
+- It reported the actual problem in **0 of 7** cases.
+- For the four damage-side pictures it said "no damage" or "the sleeve is not torn" for all four, including the correct picture that has a clear tear.
+- On 5 of the 13 cases (four that compared three pictures, one that compared two) it failed outright, with no usable answer.
+- It missed a wrong person entirely (Lyra given as an aged Kael), and for another wrong person (Voss) described the person without reporting a mismatch.
+- It also filled the findings list with statements that nothing was wrong ("no damage"). Those are now filtered out and never shown as findings.
+
+**Closed questions** (the model only says what it sees; the app holds the expectation and compares), each asked twice with temperature 0:
+- "Is the torn sleeve on the left or the right of the picture?": **14 of 14** correct, over 7 pictures (correct tear, mirrored tear, front and back views, an outfit, and an undamaged garment answered "none").
+- "Are these two pictures the same person?": **14 of 14** (aged Kael, Kael in a jacket, Kael in a torn jacket, a stage of the transformation; Voss and Lyra answered "different").
+- "Is the person wearing this garment?": **10 of 10** (two wearing it, three not).
+- "Which side of the picture is the grey, veined hand on?": **2 of 6**. Not offered.
+
+Only the kinds of question that passed are asked: which side of the picture a described change is on (expected side is the wearer's side turned into the picture's side for that view), same person as the approved picture, and wearing the designed garment. Each is asked twice; two different answers mean "could not tell", never a finding. A finding earns 80% confidence when both answers agree and 50% when the model could not see the change at all (a small model can miss a small tear).
+
+**What this does not show.** One character and one garment. About 40 questions. The tear is large. The "different person" examples were very different people, which is the easy case: a subtle drift between similar people was not tested. No 2D picture was tested. The model was never asked about anatomy or hands. A different or larger model would have to be measured the same way before it is trusted; the questions and the way to run them are above.
+
+## A bug this found in the existing vision feature
+
+A full-size picture (1792 by 2400) used 4183 tokens, more than Ollama's default 4096, so the request was refused and the review said only "Unable to assess". Smaller pictures worked, which is why it had not shown up. Pictures are now shrunk to 1024 pixels on the long edge (JPEG) before they go to a local model; smaller pictures are sent as they are. When a model cannot answer, the screen now says why in plain words.
+
+## Interface fixes (found by the audit and from screenshots)
+
+- Eight section tabs overflowed their column into the right-hand panel, labels wrapped inside the tab, and the active tab became a circle (79 pixels tall). The bar now wraps onto a second row, each tab stays on one line, and nothing overlaps (checked live: bar ends 14 pixels before the panel, tabs 37 pixels tall).
+- A long unbroken path in a note on a picture card widened the card, which blew the picture up and left the card beside it with a large gap. Notes now wrap inside the card, and the cards stay the same width.
+- Notes from the engine were written for developers (two long folder paths and an operating-system message). They are now plain sentences with what to do ("This picture's file is stored outside the Production One folder... use Use my image"), both when the note is made and when old notes are shown. Folder paths are shortened to a file name everywhere.
+- The Wardrobe studio no longer overflows sideways; the studios respond to their own width; light-theme status colours meet contrast; duplicate control names were removed.
+
+## Security review
+
+The scan service could not be used (this account's allowance is used up), so the review was done by hand over the changed surface and the commands that read files.
+
+Already sound: a strict content policy for the page; the picture protocol limited to the app's assets folder; previews, checks, labelling, clean-up renders, sheet exports, Topaz and audio clips all refuse a file outside the assets folder; a block-list stops credentials, keys and model files going into a package, and exported text is scanned for keys and tokens; local model addresses must be this computer or the local network and cannot carry a password.
+
+Found and fixed:
+1. **A shared project could make the app upload any picture on this computer.** The two helpers that read reference pictures (for a cloud provider, and for the local model) read any path and only checked that the bytes were an image. A `.pone` project from someone else could list any picture on the computer as a "reference", and pressing Generate would send it to the provider. Both now only read from inside the app's assets folder, with a 64 MB limit, and a missing file keeps its own message. (Pictures people bring in are copied into that folder first, so nothing legitimate is affected.)
+2. **A shared project could make a package include any existing file.** The package took any existing file a project pointed at (apart from credentials by name) and put it in the zip that is then shared. It now only includes files from the assets folder, and says which file was refused.
+3. **A damaged project file could crash the screens that read the new records.** Reading is now strict (known kinds, valid numbers and decisions, a settings object, a picture list; anything else is dropped) and every reader is tested on a mangled file.
+
+Tested: six new Rust tests on the folder rule (inside, a sub-folder, outside, `..` climbing out, a folder whose name only starts like the assets folder, a missing file), a size limit, a file that is not a picture, and three on shrinking; plus tests for damaged records.
+
+Not fixed: `missing_files` tells the page whether a path exists (it only reveals existence to the page itself). Not reviewed: the scan by file name that finds moved pictures, how provider keys are stored, and the dependencies. A scan by a real tool should be run when the allowance is available.
+
+### Live check through the real app (vision QA)
+
+Run in the test copy of the app, with the real local model and a full-size (not shrunk by hand) picture:
+
+- Correct torn-jacket outfit, checked from the screen: "Passed for the checks performed" (looked at Identity, Costume continuity, Damage and wear placement; about 4 seconds).
+- The same question through the real command, each asked twice: the correct outfit answered "right" (2 of 2); a mirrored copy of it answered "left" (2 of 2). The app expects "right", so the mirrored one would be reported as a suggestion.
+- Not run live: an aged-picture check, 2D styles, a second character.
