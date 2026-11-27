@@ -55,3 +55,12 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .wd-checks li.fail b { color: #e0b074; }
 .wd-checks li.pass b { color: #7fd0a6; }
 .wd-checks li.not-checked b { color: var(--text-3); }
+
+/* The studios need the full width: the story inspector on the right is for the Sheets and Identity screens. */
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])), .po-shell .po-design:has(#sec-age:not([hidden])) { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-age:not([hidden])) > .po-inspector { display: none; }
+
+/* Age: the slider, its number and the plain sentence about direction sit on one line. */
+.wd-age-target { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.wd-age-slider { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); min-width: 220px; flex: 1 1 220px; }
+.wd-age-target input[type="number"] { width: 84px; }

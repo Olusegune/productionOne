@@ -9,7 +9,7 @@ import { styleFingerprint } from "../domain/style2d";
 import type { StyleBible } from "../domain/visualDevelopment";
 import { editDraft, startDraft, standingOf, type Draft } from "../domain/candidateFlow";
 import { stalenessOf } from "../domain/variationGraph";
-import { approvedPicture, findEntity, latestApproved, type ConditionSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from "../domain/variations";
+import { approvedPicture, findEntity, latestApproved, type AgeSpec, type ConditionSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from "../domain/variations";
 import { defaultKeep, fitCapability, fitRequests, garmentCategories, garmentFieldList, garmentRequests, keepChoices } from "../domain/wardrobe";
 import { garmentAssetId, garmentPicture, newGarment, reviseGarment, startFit } from "../domain/wardrobeFlow";
 import { proportionWords } from "../domain/characterLayers";
@@ -18,6 +18,7 @@ import { Picture } from "./wardrobeParts";
 import { ConditionStudio } from "./ConditionStudio";
 import { conditionPicture, conditionRequirementsText } from "../domain/conditions";
 import { assignLook, lookForScene } from "../domain/lookAssignments";
+import { agePicture, agesOf } from "../domain/ageFlow";
 import "../wardrobe.css";
 
 export interface WardrobeStudioProps {
@@ -61,6 +62,7 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
   const [more, setMore] = useState(false);
   const [keep, setKeep] = useState<string[]>(defaultKeep);
   const [fitCondition, setFitCondition] = useState<string>("");
+  const [fitBody, setFitBody] = useState<string>("");
   const [sceneIds, setSceneIds] = useState<string[]>([]);
 
   const open = (id: string | null) => {
@@ -120,11 +122,16 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
 
   // ----- fitting -----
   const pic = garment ? garmentPicture(variations, garment.id) : undefined;
-  const characterPicture = anchorFor(queue, { assetId: character.id, variant: "Canonical" } as ImageJob);
+  const baseCharacterPicture = anchorFor(queue, { assetId: character.id, variant: "Canonical" } as ImageJob);
+  const bodyOptions = agesOf(variations, character.id).filter((e) => latestApproved(e) && agePicture(variations, e.id));
+  const chosenBody = bodyOptions.find((e) => e.id === fitBody);
+  const bodyPic = chosenBody ? agePicture(variations, chosenBody.id) : undefined;
+  // Reference image 1 is the character at the body being fitted: the base picture, or the approved picture of the age variant.
+  const characterPicture = bodyPic ? bodyPic.path : baseCharacterPicture;
   const conditionOptions = garment ? variations.entities.filter((e) => e.kind === "condition" && latestApproved(e) && (latestApproved(e)!.spec as ConditionSpec).garment.id === garment.id) : [];
   const chosenCondition = conditionOptions.find((c) => c.id === fitCondition);
   const conditionPic = chosenCondition ? conditionPicture(variations, chosenCondition.id) : undefined;
-  const fitEntity = garment ? variations.entities.find((e) => e.kind === "fit" && e.characterId === character.id && e.revisions.some((r) => (r.spec as FitSpec).garment.id === garment.id && (r.spec as FitSpec).condition?.id === (chosenCondition?.id ?? undefined))) : undefined;
+  const fitEntity = garment ? variations.entities.find((e) => e.kind === "fit" && e.characterId === character.id && e.revisions.some((r) => (r.spec as FitSpec).garment.id === garment.id && (r.spec as FitSpec).condition?.id === (chosenCondition?.id ?? undefined) && (r.spec as FitSpec).body?.id === (chosenBody?.id ?? undefined))) : undefined;
   const fitNewest = fitEntity?.revisions[fitEntity.revisions.length - 1];
   const fitJobs = fitEntity && fitNewest ? jobsOf(fitEntity.id, fitNewest.n) : [];
   const capability = fitCapability(takesRefs);
@@ -136,10 +143,11 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
     if (!capability.ok) { notify(capability.message); return; }
     if (!ready()) return;
     const condition = chosenCondition && conditionPic ? { ref: conditionPic.ref, name: chosenCondition.name } : undefined;
-    const fit = startFit(variations, { character, garment: pic.ref, garmentName: garment.name, keep, now: now(), condition });
+    const body = chosenBody && bodyPic ? { ref: bodyPic.ref, name: chosenBody.name } : undefined;
+    const fit = startFit(variations, { character, garment: pic.ref, garmentName: garment.name, keep, now: now(), condition, body });
     updateVariations(() => fit.variations);
     const spec = findEntity(variations, garment.id)!.revisions.find((r) => r.n === pic.ref.revision)!.spec as GarmentSpec;
-    const requests = fitRequests({ style, provider, model: modelId, character, lookName: fit.variant, fit: fit.ref, garment: pic.ref, garmentName: garment.name, garmentSpec: spec, keep, characterPicture, garmentPicture: condition && conditionPic ? conditionPic.path : pic.path, proportions: proportionWords(props.proportions?.[character.id]), styleFp: styleFingerprint(style), ...(condition && conditionPic ? { condition: conditionPic.ref, conditionText: conditionRequirementsText(fit.variations, conditionPic.ref, "costume-front") } : {}) });
+    const requests = fitRequests({ style, provider, model: modelId, character, lookName: fit.variant, fit: fit.ref, garment: pic.ref, garmentName: garment.name, garmentSpec: spec, keep, characterPicture, garmentPicture: condition && conditionPic ? conditionPic.path : pic.path, proportions: proportionWords(props.proportions?.[character.id]), styleFp: styleFingerprint(style), ...(condition && conditionPic ? { condition: conditionPic.ref, conditionText: conditionRequirementsText(fit.variations, conditionPic.ref, "costume-front") } : {}), ...(body && chosenBody ? { body: body.ref, bodyText: `at age ${(findEntity(variations, chosenBody.id)!.revisions.find((r) => r.n === body.ref.revision)!.spec as AgeSpec).targetAge}` } : {}) });
     const result = enqueue(queue, requests, Date.now(), true);
     setQueue(() => result.state);
     notify(`Fitting ${garment.name}${condition ? ` (${condition.name})` : ""} on ${character.name}…`);
@@ -223,6 +231,7 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
               <h3>Fit it to {character.name}</h3>
               {!characterPicture && <p className="helper warn">Approve {character.name}'s front view first (Sheets, Identity). The fit needs it to keep the face and body.</p>}
               {characterPicture && !capability.ok && <p className="helper warn">{capability.message}</p>}
+              {bodyOptions.length > 0 && <label className="wd-cond-pick">Fit it to<select value={fitBody} onChange={(e) => setFitBody(e.target.value)}><option value="">{character.name}, as approved</option>{bodyOptions.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>}
               {conditionOptions.length > 0 && <label className="wd-cond-pick">Condition of the garment<select value={fitCondition} onChange={(e) => setFitCondition(e.target.value)}><option value="">Pristine</option>{conditionOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
               <fieldset className="wd-keep"><legend>What must stay exactly the same</legend>
                 {keepChoices.map((k) => <label key={k.key}><input type="checkbox" checked={keep.includes(k.key)} onChange={(e) => setKeep((cur) => (e.target.checked ? [...cur, k.key] : cur.filter((x) => x !== k.key)))} /> {k.label}</label>)}
@@ -233,11 +242,11 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
               </div>
               {fitEntity && fitNewest && (
                 <div className="wd-compare">
-                  <figure><Picture job={queue.jobs.find((j) => j.outputPath === characterPicture)} label="Approved character" /><figcaption>{character.name}, approved</figcaption></figure>
+                  <figure><Picture job={queue.jobs.find((j) => j.outputPath === characterPicture)} label="Approved character" /><figcaption>{chosenBody ? chosenBody.name : character.name}, approved</figcaption></figure>
                   <figure><Picture job={fitJob} label="Fit candidate" /><figcaption>Candidate fit · {fitNewest.status === "approved" ? "Approved" : fitNewest.status === "rejected" ? "Turned down" : "waiting"}</figcaption>
                     {fitJob?.outputPath && fitNewest.status === "candidate" && <div className="wd-decide"><button className="primary" onClick={() => decide(fitJob, true)}><Check size={14} aria-hidden="true" /> Approve outfit</button><button onClick={() => decide(fitJob, false)} aria-label="Turn down this fit"><X size={14} aria-hidden="true" /></button></div>}
                   </figure>
-                  <figure><img src={convertFileSrc(pic.path)} alt="Approved garment" /><figcaption>{garment.name}, approved</figcaption></figure>
+                  <figure><img src={convertFileSrc(chosenCondition && conditionPic ? conditionPic.path : pic.path)} alt={chosenCondition ? "Approved garment in its condition" : "Approved garment"} /><figcaption>{garment.name}{chosenCondition ? `, ${chosenCondition.name}` : ""}, approved</figcaption></figure>
                 </div>
               )}
               {fitStale?.stale && <p className="helper warn">This outfit was fitted to an earlier version of the garment. It keeps working as approved; make a new fit to update it.</p>}

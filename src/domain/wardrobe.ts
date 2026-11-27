@@ -88,20 +88,22 @@ export interface FitPromptInput {
   proportions?: string
   /** What the garment's condition requires, in words, when it is not pristine. */
   conditionText?: string
+  /** When the body is not the base one (an age variant): the garment is fitted to that body, not to the base. */
+  bodyText?: string
 }
 
 /**
  * Puts a garment on a character. The reference pictures are named by role, in order: first the character, then the garment.
  * The character's own description is left out on purpose: it may describe the clothing being replaced.
  */
-export function fitPrompt({ style, character, garmentName, garment, keep, view: v, model, notes, proportions, conditionText }: FitPromptInput): string {
+export function fitPrompt({ style, character, garmentName, garment, keep, view: v, model, notes, proportions, conditionText, bodyText }: FitPromptInput): string {
   const kept = keepChoices.filter((k) => keep.includes(k.key)).map((k) => k.line)
   return [
     `Production reference image: ${v.label} of the character ${character.name} wearing the garment "${garmentName}" (outfit fitting).`,
     v.instruction,
     identityFacts(character),
     proportions ?? '',
-    'Reference image 1 is the approved character. It fixes who this is. Reference image 2 is the approved garment design. It fixes the cut, colours, pattern, closures and trim.',
+    bodyText ? `Reference image 1 is the approved character ${bodyText}. It fixes who this is and the body the garment must be fitted to: cut, drape and size the garment for this body, not for a younger or older version of it. Reference image 2` : 'Reference image 1 is the approved character. It fixes who this is. Reference image 2 is the approved garment design. It fixes the cut, colours, pattern, closures and trim.',
     `Dress the character from reference image 1 in the garment from reference image 2. Do not copy the clothing the character wears in reference image 1: it is being replaced by this garment.`,
     `Garment design: ${garmentText(garment)}`,
     conditionText ? `The garment is worn, damaged or dirty. Show it exactly as it appears in reference image 2, with these requirements kept in place: ${conditionText} Do not repair, clean or add to them. Left and right mean the wearer’s left and right, not the picture’s.` : '',
@@ -169,19 +171,23 @@ export interface FitRequestInput extends Common {
   /** The condition the garment is in, and what it requires in words. `garmentPicture` is then the picture of that condition. */
   condition?: Ref
   conditionText?: string
+  /** The age variant the fit is for, when the body is not the base one. `characterPicture` is then that variant's approved picture. */
+  body?: Ref
+  bodyText?: string
 }
 
 export function fitRequests(input: FitRequestInput): JobRequest[] {
   const v = fitFrontView
   return [{
     assetId: input.character.id, variant: input.lookName, sheetType: 'Wardrobe', viewKey: v.key, label: v.label,
-    prompt: fitPrompt({ style: input.style, character: input.character, garmentName: input.garmentName, garment: input.garmentSpec, keep: input.keep, view: v, model: input.model, notes: input.notes, proportions: input.proportions, conditionText: input.conditionText }),
+    prompt: fitPrompt({ style: input.style, character: input.character, garmentName: input.garmentName, garment: input.garmentSpec, keep: input.keep, view: v, model: input.model, notes: input.notes, proportions: input.proportions, conditionText: input.conditionText, bodyText: input.bodyText }),
     aspect: v.aspect, fullBody: true, provider: input.provider, model: input.model,
     references: [input.characterPicture, input.garmentPicture], useAnchor: false, styleName: input.style.name, ...(input.styleFp ? { styleFp: input.styleFp } : {}),
     variation: { id: input.fit.id, revision: input.fit.revision, role: 'fit-candidate', uses: [
       { id: input.character.id, revision: 0, role: 'reference-1-character', path: input.characterPicture },
       { id: (input.condition ?? input.garment).id, revision: (input.condition ?? input.garment).revision, role: input.condition ? 'reference-2-garment-in-condition' : 'reference-2-garment', path: input.garmentPicture },
       ...(input.condition ? [{ id: input.garment.id, revision: input.garment.revision, role: 'garment' }] : []),
+      ...(input.body ? [{ id: input.body.id, revision: input.body.revision, role: 'body-variant' }] : []),
     ] },
     outputName: (revision: number) => outputName(input.character, input.lookName, 'Wardrobe', v, revision),
   }]

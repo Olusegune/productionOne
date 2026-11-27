@@ -102,6 +102,10 @@ export interface AgeSpec {
   targetAge: string
   adjustments?: Record<string, string>
   keep?: string[]
+  /** What must stay recognisable, in the person's own words. */
+  anchors?: string[]
+  /** The name the generation queue files this age's pictures under (the look's name). */
+  variant?: string
 }
 
 export interface TransformationSpec {
