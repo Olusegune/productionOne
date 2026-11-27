@@ -11,6 +11,7 @@ import { WardrobeStudio } from "../components/WardrobeStudio";
 import { AgeStudio } from "../components/AgeStudio";
 import { TransformStudio } from "../components/TransformStudio";
 import { LooksStudio } from "../components/LooksStudio";
+import { RelationshipsStudio } from "../components/RelationshipsStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
 import { MotionDemo } from "../components/MotionDemo";
@@ -109,13 +110,14 @@ export interface DesignViewProps {
   applySlice?: (next: ProjectSlice) => void;
 }
 
-type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "identity" | "motion" | "voice";
+type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "relationships" | "identity" | "motion" | "voice";
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
   { id: "wardrobe", label: "Wardrobe studio" },
   { id: "age", label: "Age & appearance" },
   { id: "transform", label: "Transformations" },
   { id: "looks", label: "Looks & continuity" },
+  { id: "relationships", label: "Relationships" },
   { id: "identity", label: "Identity" },
   { id: "motion", label: "Motion" },
   { id: "voice", label: "Voice and sound" },
@@ -330,6 +332,19 @@ export function DesignView(p: DesignViewProps) {
                 scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))}
                 onOpenSection={(s) => setSection(s)}
                 onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
+              />
+            )}
+            </div>
+            <div id="sec-relationships" role="tabpanel" aria-labelledby="as-tab-relationships" hidden={section !== "relationships"}>
+            {section === "relationships" && analysis.assets[selectedAsset] && (
+              <RelationshipsStudio
+                asset={analysis.assets[selectedAsset]}
+                assets={analysis.assets}
+                variations={p.variations}
+                updateVariations={p.updateVariations}
+                sceneStates={p.slice?.sceneStates}
+                scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))}
+                notify={setNotice}
               />
             )}
             </div>

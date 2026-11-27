@@ -17,10 +17,18 @@ export function depsOf(kind: EntityKind, spec: AnySpec): Array<{ ref: Ref; expec
       add(s.age, ['age'], 'age'); add(s.transformation, ['transformation'], 'transformation'); add(s.fit, ['fit'], 'outfit fit'); add(s.condition, ['condition'], 'condition')
       for (const a of (s.accessories as Ref[] | undefined) ?? []) add(a, ['garment', 'fit'], 'accessory')
       break
+    case 'relationship': {
+      const pins = ['a', 'b'].map((k) => (s[k] as { pin?: unknown } | undefined)?.pin)
+      add(pins[0], PINNABLE, 'first side'); add(pins[1], PINNABLE, 'second side')
+      break
+    }
     default: break
   }
   return out
 }
+
+/** What a relationship side can be pinned to: any record that describes a body, an outfit or a look. */
+const PINNABLE: EntityKind[] = ['garment', 'fit', 'condition', 'age', 'transformation', 'look']
 
 export type Reason =
   | { kind: 'newer'; dependsOn: Ref; newer: number; role: string }

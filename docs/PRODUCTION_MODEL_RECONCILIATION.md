@@ -126,3 +126,9 @@ Cost: items 1 to 3 and 6 to 7 are modest and improve every studio. Item 4 is a m
 1. Approve the order in section 5, or change it.
 2. Approve the grouping-inside-Design approach for Characters / Assets / Worlds / Production Bible (section 7, item 4) before any restructure.
 3. Decide what happens to PR #80 first (merge and release, or hold). This branch was cut from it.
+
+## Milestone 2 status: asset relationships and dependency tracking
+
+Done: a `relationship` record kind (ownership, interaction, scale, attachment) with immutable revisions, pinned to the body or outfit it was agreed for, so the existing staleness machinery flags it when that changes; a strict reader that drops damaged records; conflicts (two owners, two sizes); approved ownership feeds scene checks (the Direct blocking map and Review) without storing anything twice; scene things can have a footprint so a character standing inside a desk is reported; a Relationships tab in Design (record, approve, turn down, confirm after a change, keep what a scene already says). Tests: 1419 web tests pass, including the VIP chair/desk regression. Checked live in the test copy of the app (record, approve, tab bar fits).
+
+Not done / limits: footprints are axis-aligned rectangles (no rotation); scale relationships are recorded and checked for contradiction but do not yet drive prompts or reference images (Milestone 3); no screenshot-reviewed polish of the new tab beyond the first pass; a fresh live run after the final picker filter was not repeated; the Rust side was not changed or re-run.

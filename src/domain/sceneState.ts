@@ -27,6 +27,8 @@ export interface Thing {
   /** Overall size multiplier, 1 = life size for this scene. */
   scale: number
   zone?: Zone
+  /** Footprint in metres (width across, depth along), for furniture and large props. Used to tell a character standing inside a desk from one standing beside it. */
+  size?: { w: number; d: number }
 }
 
 export type Relation = 'left-of' | 'right-of' | 'in-front-of' | 'behind' | 'next-to' | 'on'
@@ -74,6 +76,14 @@ export function seat(s: SceneState, characterId: string, furnitureId: string): {
   const taken = s.world.things.find((t) => t.id !== characterId && t.occupies === furnitureId)
   if (taken) return { state: s, ok: false, error: `${what.name} is already taken by ${taken.name}.` }
   return { state: { ...s, revision: s.revision + 1, world: { ...s.world, things: s.world.things.map((t) => (t.id === characterId ? { ...t, occupies: furnitureId, posture: 'seated', x: what.x, y: what.y, facing: what.facing } : t)) } }, ok: true }
+}
+
+/** Marks a prop as furniture (so it can be sat on and owned) and gives furniture and props a footprint in metres. A footprint of null clears it. */
+export function shapeThing(s: SceneState, id: string, patch: { kind?: 'furniture' | 'prop'; size?: { w: number; d: number } | null }): SceneState {
+  const t = s.world.things.find((x) => x.id === id)
+  if (!t || (t.kind !== 'furniture' && t.kind !== 'prop')) return s
+  const size = patch.size === null ? undefined : patch.size && patch.size.w > 0 && patch.size.d > 0 ? { w: Math.min(100, round(patch.size.w)), d: Math.min(100, round(patch.size.d)) } : t.size
+  return { ...s, revision: s.revision + 1, world: { ...s.world, things: s.world.things.map((x) => { if (x.id !== id) return x; const { size: _old, ...rest } = x; return { ...rest, kind: patch.kind ?? x.kind, ...(size ? { size } : {}) } }) } }
 }
 
 export function assignOwner(s: SceneState, thingId: string, ownerId: string | undefined): SceneState {
@@ -133,7 +143,7 @@ export function screenPlacement(world: World, camera: Camera, thingId: string): 
   return { ...base, lateral, zone: depth < 2.5 ? 'foreground' : depth < 7 ? 'midground' : 'background' }
 }
 
-export interface WorldIssue { kind: 'chair-taken' | 'chair-not-owned' | 'seated-without-chair' | 'chair-moved'; thingId: string; message: string }
+export interface WorldIssue { kind: 'chair-taken' | 'chair-not-owned' | 'seated-without-chair' | 'chair-moved' | 'intersects'; thingId: string; message: string }
 
 /** Problems in a layout that are about the world itself, not about any picture: two people on one chair, a seat that is not where its sitter is, and so on. */
 export function worldIssues(w: World): WorldIssue[] {
@@ -152,6 +162,12 @@ export function worldIssues(w: World): WorldIssue[] {
   const byChair = new Map<string, Thing[]>()
   for (const c of w.things.filter((t) => t.occupies)) byChair.set(c.occupies!, [...(byChair.get(c.occupies!) ?? []), c])
   for (const [chair, sitters] of byChair) if (sitters.length > 1) for (const s of sitters) out.push({ kind: 'chair-taken', thingId: s.id, message: `${sitters.map((x) => x.name).join(' and ')} are both on ${w.things.find((t) => t.id === chair)?.name ?? chair}.` })
+  // A character standing or walking inside a piece of furniture's footprint (a desk, a table) is passing through it. A seated character is placed at their chair, not at the desk.
+  for (const f of w.things.filter((t) => t.kind === 'furniture' && t.size)) {
+    for (const c of w.things.filter((t) => t.kind === 'character' && t.occupies !== f.id)) {
+      if (Math.abs(c.x - f.x) < f.size!.w / 2 && Math.abs(c.y - f.y) < f.size!.d / 2) out.push({ kind: 'intersects', thingId: c.id, message: `${c.name} is standing inside ${f.name}.` })
+    }
+  }
   return out
 }
 
@@ -182,7 +198,7 @@ export function readSceneStates(raw: unknown): Record<string, SceneState> {
     const things: Thing[] = []
     for (const t of v.world.things) {
       if (!isObject(t) || typeof t.id !== 'string' || typeof t.name !== 'string' || !KINDS.includes(t.kind as ThingKind)) continue
-      things.push({ id: t.id, name: t.name.slice(0, 80), kind: t.kind as ThingKind, x: num(t.x, 0), y: num(t.y, 0), facing: num(t.facing, 0), scale: num(t.scale, 1), interactions: Array.isArray(t.interactions) ? t.interactions.filter((i): i is string => typeof i === 'string').slice(0, 12) : [], ...(POSTURES.includes(t.posture as Posture) ? { posture: t.posture as Posture } : {}), ...(typeof t.occupies === 'string' ? { occupies: t.occupies } : {}), ...(typeof t.ownedBy === 'string' ? { ownedBy: t.ownedBy } : {}) })
+      things.push({ id: t.id, name: t.name.slice(0, 80), kind: t.kind as ThingKind, x: num(t.x, 0), y: num(t.y, 0), facing: num(t.facing, 0), scale: num(t.scale, 1), interactions: Array.isArray(t.interactions) ? t.interactions.filter((i): i is string => typeof i === 'string').slice(0, 12) : [], ...(POSTURES.includes(t.posture as Posture) ? { posture: t.posture as Posture } : {}), ...(isObject(t.size) && num(t.size.w, 0) > 0 && num(t.size.d, 0) > 0 ? { size: { w: Math.min(100, num(t.size.w, 0)), d: Math.min(100, num(t.size.d, 0)) } } : {}), ...(typeof t.occupies === 'string' ? { occupies: t.occupies } : {}), ...(typeof t.ownedBy === 'string' ? { ownedBy: t.ownedBy } : {}) })
     }
     const cameras: Record<string, Camera> = {}
     if (isObject(v.cameras)) for (const [shot, c] of Object.entries(v.cameras)) if (isObject(c)) cameras[shot] = { x: num(c.x, 0), y: num(c.y, 0), facing: num(c.facing, 0), fov: Math.min(170, Math.max(5, num(c.fov, 40))) }

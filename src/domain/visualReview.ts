@@ -3,6 +3,8 @@ import { madeWithEarlierProportions } from './characterLayers'
 import type { FitRule } from './fit'
 import { controlSpecs, type ControlId, type ProportionProfile } from './proportions'
 import { unexplainedDrift, worldAtShot, worldIssues, type SceneState } from './sceneState'
+import { applyRelationships } from './relationships'
+import type { VariationState } from './variations'
 
 /**
  * Visual review. Deterministic checks (rules over the project's own records) and vision-model findings (a model looking at the picture) are kept in separate
@@ -80,6 +82,8 @@ export interface DeterministicInput {
   currentStyleFp?: string
   /** Furniture seat heights actually used in the layout, by furniture id, in metres. */
   seatHeightsM?: Record<string, number>
+  /** Agreed relationships between assets, so the layout is checked against who owns what. */
+  relationships?: VariationState
 }
 
 const base = (job: ImageJob) => ({ targetId: job.assetId, outputJobId: job.id, outputRevision: job.revision, confidence: 1, source: 'deterministic' as const, status: 'open' as const })
@@ -115,7 +119,7 @@ export function deterministicChecks(input: DeterministicInput): { findings: Find
     if (at >= 0) {
       checked.push('E')
       const world = worldAtShot(input.scene, job.assetId, shotIds)
-      for (const issue of worldIssues(world)) findings.push({ ...base(job), id: fid(job, `E-${issue.kind}`), category: 'E', severity: 'high', expected: 'Each chair holds one person, the one it is assigned to, where that chair is.', observed: issue.message, sourceRule: `Scene layout: ${issue.kind}.`, suggestedAction: 'Fix the layout in the blocking map, then regenerate this frame.' })
+      for (const issue of worldIssues(input.relationships ? applyRelationships(world, input.relationships, input.scene.sceneId) : world)) findings.push({ ...base(job), id: fid(job, `E-${issue.kind}`), category: 'E', severity: 'high', expected: 'Each chair holds one person, the one it is assigned to, where that chair is.', observed: issue.message, sourceRule: `Scene layout: ${issue.kind}.`, suggestedAction: 'Fix the layout in the blocking map, then regenerate this frame.' })
       if (at > 0) {
         const explained = new Set(input.scene.changes.filter((c) => c.shotId === job.assetId).map((c) => c.thingId))
         for (const d of unexplainedDrift(worldAtShot(input.scene, shotIds[at - 1], shotIds), world, explained)) findings.push({ ...base(job), id: fid(job, 'E-drift'), category: 'E', severity: 'medium', expected: 'Things stay where they were unless a change between shots says otherwise.', observed: d.what, sourceRule: 'World at this shot differs from the previous shot with no recorded change.', suggestedAction: 'Record the movement as an intentional change, or correct the layout.' })

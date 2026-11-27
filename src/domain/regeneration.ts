@@ -19,7 +19,7 @@ export interface PlanStep {
   order: number
 }
 
-const reasonText = (state: VariationState, r: Reason): string => {
+export const reasonText = (state: VariationState, r: Reason): string => {
   const name = findEntity(state, r.dependsOn.id)?.name ?? r.dependsOn.id
   switch (r.kind) {
     case 'newer': return `${name} (${r.role}) has a newer approved version (${r.newer}); this was made from version ${r.dependsOn.revision}.`
@@ -39,6 +39,7 @@ const actionFor = (state: VariationState, e: AnyEntity, spec: AnySpec): string =
     case 'age': return 'Make this age again, then approve it.'
     case 'garment': return 'Make this garment again, then approve it.'
     case 'look': return 'Update the look to the newer versions once its parts are remade.'
+    case 'relationship': return 'Look at this relationship again: one of the things it was agreed for has changed. Approve a new version if it still holds.'
   }
 }
 

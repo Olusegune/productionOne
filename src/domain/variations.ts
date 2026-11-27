@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -149,14 +149,44 @@ export interface LookSpec {
   queueVariant?: string
 }
 
+// ---------- relationships between assets ----------
+
+export type RelationKind = 'scale' | 'interaction' | 'ownership' | 'attachment'
+
+/** One side of a relationship: an asset (a character, prop, set or environment), and optionally the exact revision of a variation it applies to (a body, an outfit). */
+export interface Subject { asset: string; pin?: Ref }
+
+/**
+ * A fact about two assets that must hold wherever both appear. Read it as "a <relation> b": a owns b, a sits on b, a is `ratio` times as tall as b, a is attached to b.
+ * It is a record like any other: numbered, immutable revisions, approved by a person, and a pinned `Subject.pin` makes it depend on that revision, so when the
+ * body or outfit it was agreed for changes, the relationship is flagged for a look instead of silently going stale.
+ */
+export interface RelationshipSpec {
+  relation: RelationKind
+  a: Subject
+  b: Subject
+  /** For an interaction: what a does with b ("sit", "hold", "wear", "operate", "open", "carry"). */
+  verb?: string
+  /** For ownership: only a may use b. */
+  exclusive?: boolean
+  /** For scale: a's height divided by b's height. */
+  ratio?: number
+  /** Declared by a person, or measured from approved pictures. A declared fact is never presented as measured. */
+  basis: 'declared' | 'measured'
+  note?: string
+  /** Scenes this holds in. Absent: everywhere. */
+  sceneIds?: string[]
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
 export type AgeVariant = Entity<'age', AgeSpec>
 export type Transformation = Entity<'transformation', TransformationSpec>
 export type ProductionLook = Entity<'look', LookSpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec
+export type Relationship = Entity<'relationship', RelationshipSpec>
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec
 
 export interface VariationState {
   schema: typeof VARIATIONS_SCHEMA
@@ -167,7 +197,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

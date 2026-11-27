@@ -63,7 +63,7 @@ export function VisualReviewPanel(p: Props) {
     for (const job of outputs) {
       const profile = proportions[job.assetId]
       const sc = sceneFor(job)
-      const r = deterministicChecks({ job, profile, fitRules: fitRules[job.assetId], scene: sc?.state, shotOrder: sc?.order, currentStyleFp: assetStyleFp(job) })
+      const r = deterministicChecks({ job, profile, fitRules: fitRules[job.assetId], scene: sc?.state, shotOrder: sc?.order, currentStyleFp: assetStyleFp(job), relationships: variations })
       // Facts about the records behind a garment, outfit, age or stage picture. They say nothing about the picture, so no category is listed as checked for them.
       const fromRecords = variations ? variationDeterministic(variations, job) : []
       next = recordReview(next, job.id, 'deterministic', [...applyExceptions(r.findings, profile), ...fromRecords], r.checked)
