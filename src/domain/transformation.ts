@@ -1,7 +1,8 @@
 import { artifactGuidance } from './cleanGuidance'
 import type { ImageJob, JobRequest } from './generationQueue'
 import type { ExtractedAsset } from './productionStudio'
-import { backdropLine, identityFacts, outputName, viewsFor, type ViewSpec } from './sheetSpecs'
+import { backdropLine, closeUpReframeLine, identityFacts, outputName, viewsFor, type ViewSpec } from './sheetSpecs'
+import { sideLineFor } from './sides'
 import { styleGuidance, type StyleBible } from './visualDevelopment'
 import { findEntity, latestApproved, type LookSpec, type Ref, type TransformationSpec, type VariationState } from './variations'
 
@@ -162,6 +163,7 @@ export function transformationPrompt({ style, character, spec, view, source, mod
     d.surface?.trim() ? `Skin and surface: ${d.surface.trim()}.` : '',
     d.features?.trim() ? `Features: ${d.features.trim()}.` : '',
     anatomy.length ? `The body is intentionally designed to have: ${anatomy.map((a) => (a.part ? `${a.part}: ${a.statement}` : a.statement)).join('; ')}. These are deliberate: draw them exactly, and do not correct them to a normal human body.` : '',
+    sideLineFor(view.key, d.anatomy, d.surface, d.features, d.differences, ...(spec.anchors ?? []), ...(spec.expectedAnatomy ?? [])),
     symmetry ?? '',
     costume ?? '',
     audience ?? '',
@@ -172,7 +174,7 @@ export function transformationPrompt({ style, character, spec, view, source, mod
     `Visual style bible: ${styleGuidance(style, 'technical')}.`,
     backdropLine('gray', true, ''),
     'Exactly ONE single image of ONE subject in ONE view. Do not make a grid, contact sheet, collage, split-screen or several views side by side.',
-    view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',
+    view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : closeUpReframeLine,
     artifactGuidance(style, model ?? '', notes ?? ''),
   ].filter(Boolean).join('\n')
 }

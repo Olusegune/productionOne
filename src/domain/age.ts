@@ -1,7 +1,8 @@
 import { artifactGuidance } from './cleanGuidance'
 import type { JobRequest } from './generationQueue'
 import type { ExtractedAsset } from './productionStudio'
-import { backdropLine, identityFacts, outputName, viewsFor, type ViewSpec } from './sheetSpecs'
+import { backdropLine, closeUpReframeLine, identityFacts, outputName, viewsFor, type ViewSpec } from './sheetSpecs'
+import { sideLineFor } from './sides'
 import { styleGuidance, type StyleBible } from './visualDevelopment'
 import type { AgeSpec, Ref } from './variations'
 
@@ -87,6 +88,7 @@ export function agePrompt({ style, character, spec, view, model, notes, anchors 
       : `Show a ${toward === 'a different age' ? '' : `${toward}-looking `}redesign of this character at age ${spec.targetAge}. Keep their role, costume language and overall character, and take more freedom with the face than a same-person aged picture would.`,
     named.length ? `What must stay recognisable: ${named.join('; ')}.` : '',
     adjustments.length ? `Age cues to show:\n${adjustments.join('\n')}` : '',
+    sideLineFor(view.key, ...named, ...adjustments),
     kept.length ? `Keep exactly the same: ${kept.join('; ')}. Change only what age changes.` : 'Change only what age changes.',
     style.spec2d
       ? 'This is a flat 2D drawing. Show age through drawn line, shape and colour. Do not introduce photographic or 3D rendering, skin pores, realistic wrinkle texture or lens effects.'
@@ -95,7 +97,7 @@ export function agePrompt({ style, character, spec, view, model, notes, anchors 
     `Visual style bible: ${styleGuidance(style, 'technical')}.`,
     backdropLine('gray', true, ''),
     'Exactly ONE single image of ONE subject in ONE view. Do not make a grid, contact sheet, collage, split-screen or several views side by side.',
-    view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : '',
+    view.fullBody ? 'The entire figure from the top of the head to the soles of the feet must be fully visible with clear margin; nothing cropped.' : closeUpReframeLine,
     artifactGuidance(style, model ?? '', notes ?? ''),
   ].filter(Boolean).join('\n')
 }

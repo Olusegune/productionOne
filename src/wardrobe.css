@@ -57,8 +57,8 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .wd-checks li.not-checked b { color: var(--text-3); }
 
 /* The studios need the full width: the story inspector on the right is for the Sheets and Identity screens. */
-.po-shell .po-design:has(#sec-wardrobe:not([hidden])), .po-shell .po-design:has(#sec-age:not([hidden])), .po-shell .po-design:has(#sec-transform:not([hidden])) { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
-.po-shell .po-design:has(#sec-wardrobe:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-age:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-transform:not([hidden])) > .po-inspector { display: none; }
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])), .po-shell .po-design:has(#sec-age:not([hidden])), .po-shell .po-design:has(#sec-transform:not([hidden])), .po-shell .po-design:has(#sec-looks:not([hidden])) { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-age:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-transform:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-looks:not([hidden])) > .po-inspector { display: none; }
 
 /* Age: the slider, its number and the plain sentence about direction sit on one line. */
 .wd-age-target { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -71,3 +71,23 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .wd-line ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .wd-sliders { display: flex; gap: 20px; flex-wrap: wrap; }
 .wd-design textarea { width: 100%; }
+
+/* Looks: the parts being combined, the conflicts, and what needs updating. */
+.wd-stale { border: 1px solid #a07b3d; border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; background: rgba(160, 123, 61, .08); }
+.wd-stale h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.wd-stale ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 13px; }
+.wd-stale li { display: grid; gap: 4px; }
+.wd-stale small { color: var(--text-3); }
+.wd-lookrow { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line-1); border-radius: 8px; background: var(--panel-1); }
+.wd-lookrow small { color: var(--text-3); }
+.wd-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.wd-parts figure { margin: 0; display: grid; gap: 4px; align-content: start; }
+.wd-parts img { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background: var(--panel-2); border-radius: 8px; }
+.wd-conflicts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
+.wd-conflicts li { border: 1px solid var(--line-1); border-radius: 8px; padding: 8px 12px; display: grid; gap: 4px; }
+.wd-conflicts li.blocks { border-color: #a05a5a; }
+.wd-conflicts li.blocks b { color: #e0a0a0; }
+.wd-conflicts li.warns { border-color: #a07b3d; }
+.wd-conflicts li.warns b { color: #e0b074; }
+.wd-conflicts small { color: var(--text-3); }
+.wd-scenes { margin: 0; padding-left: 18px; font-size: 13px; display: grid; gap: 2px; }

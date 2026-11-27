@@ -9,6 +9,7 @@ import { SheetStudio } from "../components/SheetStudio";
 import { WardrobeStudio } from "../components/WardrobeStudio";
 import { AgeStudio } from "../components/AgeStudio";
 import { TransformStudio } from "../components/TransformStudio";
+import { LooksStudio } from "../components/LooksStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
 import { MotionDemo } from "../components/MotionDemo";
@@ -103,12 +104,13 @@ export interface DesignViewProps {
   applySlice?: (next: ProjectSlice) => void;
 }
 
-type Section = "sheets" | "wardrobe" | "age" | "transform" | "identity" | "motion" | "voice";
+type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "identity" | "motion" | "voice";
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
   { id: "wardrobe", label: "Wardrobe studio" },
   { id: "age", label: "Age & appearance" },
   { id: "transform", label: "Transformations" },
+  { id: "looks", label: "Looks & continuity" },
   { id: "identity", label: "Identity" },
   { id: "motion", label: "Motion" },
   { id: "voice", label: "Voice and sound" },
@@ -149,7 +151,7 @@ export function DesignView(p: DesignViewProps) {
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
-                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>
             </div>
             <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>
@@ -298,6 +300,21 @@ export function DesignView(p: DesignViewProps) {
                 onUnapproved={onSheetUnapproved}
                 notify={setNotice}
                 openProviders={() => setProvidersOpen(true)}
+                onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
+              />
+            )}
+            </div>
+            <div id="sec-looks" role="tabpanel" aria-labelledby="as-tab-looks" hidden={section !== "looks"}>
+            {section === "looks" && analysis.assets[selectedAsset]?.type === "character" && (
+              <LooksStudio
+                character={analysis.assets[selectedAsset]}
+                variations={p.variations}
+                updateVariations={p.updateVariations}
+                queue={queue}
+                desktop={isTauri}
+                notify={setNotice}
+                scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))}
+                onOpenSection={(s) => setSection(s)}
                 onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
               />
             )}

@@ -1,7 +1,8 @@
 import type { StudioState } from '../data/projectStore'
 import { exportLooks } from './grade'
-import type { ImageJob } from './generationQueue'
+import { emptyQueue, type ImageJob } from './generationQueue'
 import { fingerprint, type ProportionProfile } from './proportions'
+import { variationManifest } from './variationManifest'
 
 /**
  * The design records that go into a production package: approved proportions, world rules, fit rules and the scale convention, camera and lighting direction,
@@ -19,6 +20,8 @@ const approvedRevisions = (jobs: ImageJob[]) => jobs.filter((j) => j.approved &&
   style: j.styleName ?? null, proportionFingerprint: j.provenance?.proportionFp ?? null,
   references: (j.provenance?.references ?? []).map((r) => ({ file: baseName(r.path), ...(r.jobId ? { jobId: r.jobId } : {}), ...(r.revision ? { revision: r.revision } : {}) })),
   correctionOf: j.provenance?.correctionOf ?? null,
+  // Which garment, fit, condition, age, transformation or look revision the picture was made for, so a picture can be traced to the record that asked for it.
+  ...(j.variation ? { variation: { ref: `${j.variation.id}@${j.variation.revision}`, role: j.variation.role } } : {}),
 }))
 
 export function buildDesignRecords(studio: StudioState, hashes: Record<string, string> = {}) {
@@ -37,6 +40,8 @@ export function buildDesignRecords(studio: StudioState, hashes: Record<string, s
     looks: exportLooks(studio.looks ?? { looks: [], sceneLooks: {}, shotLooks: {} }, jobs.filter((j) => j.outputPath).map((j) => ({ id: j.id, path: baseName(j.outputPath!), hash: hashes[j.id] }))),
     review: { deterministic: studio.reviews?.deterministic ?? [], vision: studio.reviews?.vision ?? [], checked: studio.reviews?.checked ?? {}, corrections: studio.corrections ?? {} },
     approvedRevisions: approvedRevisions(jobs),
+    // Present once garments, ages, transformations or looks have been made. Older projects write exactly what they always did.
+    ...(studio.variations && studio.variations.entities.length ? { variations: variationManifest(studio.variations, studio.queue ?? { ...emptyQueue(), jobs }) } : {}),
   }
   return records
 }
