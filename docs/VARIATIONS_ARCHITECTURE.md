@@ -102,3 +102,91 @@ Status: the Wardrobe tab (Design, for a character) lets you design a garment, pr
 - A clothing-only layering sheet and a costume turnaround of the garment alone (the garment has front, back and detail).
 - Reference-image limits: a fit sends two references. A strategy for more (identity plus garment plus condition) arrives with conditions.
 - Taking back a picture's approval in Review does not undo an approved revision (decisions are made once); make a new revision instead.
+
+## Milestone 2 live provider report (Nano Banana 2.1 through Kie.ai)
+
+Run in a test copy of the app against the real model, on a character with an approved front view. Pictures were looked at by a person; nothing was scored automatically.
+
+- A garment designed from words only (deep green waxed jacket, corduroy collar, four patch pockets, brass snaps) came back as clothing only, no person, front, back and fabric views, matching the description.
+- Fitting it on the approved character (two references: the character first, the garment second) kept the face and hair and put the jacket on, with the collar and pockets as designed.
+- Approving the outfit made a look that appears in the Sheets tab's Look list, and the "Make wardrobe sheets" button opens Sheets on it.
+- Cost: 3 pictures for the garment and 1 for the fit, at the price the person entered.
+- Found and fixed from this run: the new tab clashed with the bible's own "Wardrobe" sheet tab (now "Wardrobe studio"); the studio was squeezed by the story inspector (it now takes the full width); the fit comparison showed the pristine garment when a condition was chosen.
+
+# Milestone 3: conditions and continuity
+
+Status: a garment can be put in a condition (wear, damage, dirt, wetness, repair) from the Wardrobe studio, with histories that branch, and the garment in that condition can be fitted on a character and used in scenes.
+
+## Model
+
+- A condition is derived from one garment revision (`ConditionSpec.garment`) and may continue from an approved earlier condition (`from`). Conditions of the same garment form a tree (`conditionTree`); the tree on screen is that.
+- Each change is a region: garment part, **the wearer's side** (wearer's left, wearer's right, centre, both), severity, description, optionally the view it was marked on.
+- What an earlier condition established stays a requirement: `inheritedRegions` collects every region along the history, oldest first, and the prompt for a later condition lists them under "already established ... must stay exactly as in the attached picture". Wet-on-torn therefore keeps the tear; a separate repaired branch is built from the garment and changes nothing in the other branch (tested).
+- A condition is made from the approved picture of its parent (the earlier condition, else the garment) as the single reference.
+- A fit can carry a condition (`FitSpec.condition`): the garment picture sent as reference 2 is the condition's approved picture and the condition's requirements are written into the prompt ("show it exactly as it appears in reference image 2 ... do not repair, clean or add to them"). It is a separate fit with its own look name ("KAEL in Field jacket, Left sleeve torn").
+
+## Left and right
+
+Left and right always mean the wearer's. For a front view the wearer's left is on the right of the picture; for a back view it is on the left; for a detail or any other view the prompt says only "the wearer's left" and states nothing about the picture. A region marked on one view is described to another view as "marked on the X view: place it consistently, do not copy its position". Regions are semantic (part and side) in this version. Normalised coordinates and drawn masks are not implemented.
+
+## Scene assignment
+
+A look can be assigned to scenes (`assignLook`: a new approved revision of the look with `sceneIds`; earlier assignments stay in its history). `checkLookAssignments` appears among the Director's room continuity findings: it warns when a shot's chosen look differs from the look assigned to its scene, and says when the assigned look was approved before something it uses changed. It reads the plan and the records, not the pictures. Story intervals other than a whole scene are not modelled.
+
+## Record checks
+
+`checkCondition` runs fixed rules on the record (every change names a part and a side and says what happened; made from a garment in this project; the garment has not changed since; continues from an approved condition of the same garment). Its states are the honest ones: needs review, or passed for the checks performed. "The changes are in the right place in each picture" is always reported as not checked. There is no image analysis in this version.
+
+## Live provider report
+
+Run in a test copy against the real model. A left-sleeve tear on the jacket: the front view showed the tear on the right of the picture and the back view on the left (the wearer's left in each), and the fit of the character in that condition showed the tear on the same side. Face and hair were kept. Judged by eye.
+
+## Not done in Milestone 3
+
+- Drawn masks, normalised coordinates and per-view annotations.
+- A vision-model suggestion of misplaced damage (nothing reads the pictures).
+- A clothing-only damage and repair detail sheet beyond the three condition previews.
+- Assigning a condition to a story interval other than a whole scene.
+
+# Milestone 4: age variants
+
+Status: the "Age & appearance" tab (Design, for a character) makes the same character at another age, a younger or older redesign, or a relative.
+
+## What is what
+
+- **Same person at another age**: a variant of the character. The prompt asks for the same bone structure, eyes, nose, mouth and ears with only the changes time makes, and lists what the person said must stay recognisable.
+- **Younger- or older-looking redesign**: also a variant, with more freedom in the face.
+- **A relative**: a new, separate character (`ExtractedAsset.relativeOf = { assetId, relation }`), made with no pictures and no cost. It is never an age record.
+
+## Behaviour
+
+- The target-age slider and every advanced control edit a local draft only. No record is made and no request is sent until the button is pressed (tested at the screen level).
+- The character's current age and description are left out of the aging prompt (the age would contradict the target; the description may describe the clothes). Reference image 1 is the approved picture of the character.
+- The costume, pose and marks are kept unless the person unticks them. In a 2D style the prompt says age is drawn, not rendered, and forbids photographic or 3D rendering and realistic wrinkle texture (tested against a 2D and a 3D style).
+- A model that cannot receive reference pictures is refused for this, with the reason.
+- Two candidates are made: full-body front (which the age's sheets are later made from) and a portrait. Approving one approves the age and makes a look of the character at that age, filed in the queue under its name ("MARA at 65"), so Turnaround and the other sheets are made from the Sheets tab on that look, anchored on the approved front.
+- Fitting a garment to an age variant is a separate fit (`FitSpec.body`): reference image 1 is the age variant's approved picture and the prompt says to cut and drape the garment for that body. If the age variant later gets a newer approved version, the fit and the looks pinned to the older one are marked stale; the garment is not.
+- Setting checks (`checkAgeSpec`): the target is a number, differs from now, at least one recognisable feature is named for a same-person variant, the costume is kept. Whether the aged picture is recognisably the same person is "not checked": it is a person's judgement and no number is given.
+
+## Not done in Milestone 4
+
+- The age comparison sheet (an assembled image of the base and each age side by side) is a Milestone 6 export.
+- Updated poses and expressions for an age are made from the Sheets tab on the age's look; they are not queued automatically.
+- No vision-model comparison against the source.
+
+## Milestone 4 live provider report
+
+Run in a test copy against the real model (Nano Banana 2.1 through Kie.ai), judged by eye.
+
+- Moving the target-age slider several times changed nothing on the project and the spend counter stayed the same.
+- Kael at 65 (same person, the face features he said must stay, grey hair, a slight stoop): recognisably the same man, with an older face and grey hair, the same slate-blue tunic and pose, and the same 3D style. No photographic rendering appeared. The portrait kept the same eyes and face structure.
+- Approving it made a look "KAEL at 65" that appears in the Sheets Look list.
+- Fitting the jacket to that body used the aged picture as reference 1: the aged Kael kept his grey hair and wore the jacket as designed.
+- The bible still shows Kael's own base picture, not an age or outfit picture.
+- A 2D style was tested at the prompt level only (the 2D rule is in the prompt and covered by a test); no 2D picture was generated for this milestone.
+- Cost: 2 pictures for the age and 1 for the fit.
+- Found and fixed from this run: two controls were both named "Target age" (found by a test); the slider now has its own name.
+
+## Verified after closing and reopening the test app
+
+The garment, its approval, the tear condition and its tree came back after the app was closed and reopened (project autosave). The studio fills the width with no horizontal scroll and the story inspector hidden.
