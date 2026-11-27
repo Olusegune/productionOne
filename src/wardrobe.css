@@ -1,0 +1,122 @@
+/* Wardrobe studio: garment library on the left, design, previews and fitting on the right. */
+.wd { display: grid; gap: 16px; padding: 20px; }
+.wd-head h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 18px; }
+.wd-head .helper { margin: 0; }
+.wd-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .wd-body { grid-template-columns: 1fr; } }
+.wd-library { display: grid; gap: 8px; position: sticky; top: 8px; }
+.wd-new, .wd-card { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; border: 1px solid var(--line-1); border-radius: 8px; background: var(--panel-1); color: var(--text); cursor: pointer; }
+.wd-new.on, .wd-card.on { border-color: var(--gold); background: var(--panel-2); }
+.wd-card img, .wd-thumb { width: 44px; height: 56px; object-fit: cover; border-radius: 6px; background: var(--panel-2); display: grid; place-items: center; flex: none; color: var(--text-3); }
+.wd-card span { display: grid; gap: 2px; min-width: 0; }
+.wd-card b { overflow-wrap: anywhere; font-weight: 600; }
+.wd-card small { color: var(--text-3); }
+.wd-work { display: grid; gap: 24px; min-width: 0; }
+.wd-work h3 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.wd-design, .wd-fit { display: grid; gap: 12px; }
+.wd-design label, .wd-fields label { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+.wd-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.wd-more { justify-self: start; background: none; border: 0; color: var(--text-2); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; padding: 2px 0; }
+.wd-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wd-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.wd-strip figure, .wd-compare figure { margin: 0; display: grid; gap: 6px; align-content: start; }
+.wd-strip img, .wd-compare img { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background: var(--panel-2); border-radius: 8px; }
+.wd-empty { aspect-ratio: 3 / 4; display: grid; place-items: center; text-align: center; padding: 12px; border: 1px dashed var(--line-1); border-radius: 8px; color: var(--text-3); font-size: 13px; }
+figcaption { font-size: 12px; color: var(--text-3); }
+.wd-decide { display: flex; gap: 6px; }
+.wd-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.wd-keep { border: 1px solid var(--line-1); border-radius: 8px; padding: 10px 12px; display: flex; gap: 6px 18px; flex-wrap: wrap; }
+.wd-keep legend { padding: 0 6px; font-size: 13px; color: var(--text-2); }
+.wd-keep label { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
+.wd-badge { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-1); color: var(--text-2); }
+.wd-badge.approved { border-color: #3d8f68; color: #7fd0a6; }
+.wd-badge.rejected { border-color: #a05a5a; color: #e0a0a0; }
+.wd-history { margin: 0; padding-left: 18px; font-size: 13px; color: var(--text-3); }
+.helper.warn { color: #e0b074; }
+
+/* Conditions: the branching list on the left, the form beside it. */
+.wd-cond { display: grid; gap: 14px; border-top: 1px solid var(--line-1); padding-top: 20px; }
+.wd-cond h3 { margin: 0; }
+.wd-cond-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .wd-cond-body { grid-template-columns: 1fr; } }
+.wd-tree { display: grid; gap: 8px; }
+.wd-tree ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.wd-node { display: grid; gap: 2px; width: calc(100% - var(--indent, 0px)); text-align: left; padding: 6px 10px; border: 1px solid var(--line-1); border-radius: 8px; background: var(--panel-1); color: var(--text); cursor: pointer; }
+.wd-node.on { border-color: var(--gold); background: var(--panel-2); }
+.wd-node small { color: var(--text-3); }
+.wd-cond-form { display: grid; gap: 12px; min-width: 0; }
+.wd-cond-form label, .wd-cond-pick { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+.wd-regions { border: 1px solid var(--line-1); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
+.wd-regions legend { padding: 0 6px; font-size: 13px; color: var(--text-2); }
+.wd-region { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wd-region select { flex: 1 1 120px; }
+.wd-region input { flex: 3 1 200px; }
+.wd-region button { flex: 0 0 auto; }
+.wd-checks { border: 1px solid var(--line-1); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.wd-checks ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.wd-checks li.fail b { color: #e0b074; }
+.wd-checks li.pass b { color: #7fd0a6; }
+.wd-checks li.not-checked b { color: var(--text-3); }
+
+/* The studios need the full width: the story inspector on the right is for the Sheets and Identity screens. */
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])), .po-shell .po-design:has(#sec-age:not([hidden])), .po-shell .po-design:has(#sec-transform:not([hidden])), .po-shell .po-design:has(#sec-looks:not([hidden])) { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-age:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-transform:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-looks:not([hidden])) > .po-inspector { display: none; }
+
+/* Age: the slider, its number and the plain sentence about direction sit on one line. */
+.wd-age-target { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.wd-age-slider { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); min-width: 220px; flex: 1 1 220px; }
+.wd-age-target input[type="number"] { width: 84px; }
+
+/* Transformations: stage lines in the library, two sliders side by side. */
+.wd-line { display: grid; gap: 6px; }
+.wd-line > b { font-size: 13px; color: var(--text-2); }
+.wd-line ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.wd-sliders { display: flex; gap: 20px; flex-wrap: wrap; }
+.wd-design textarea { width: 100%; }
+
+/* Looks: the parts being combined, the conflicts, and what needs updating. */
+.wd-stale { border: 1px solid #a07b3d; border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; background: rgba(160, 123, 61, .08); }
+.wd-stale h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.wd-stale ol { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 13px; }
+.wd-stale li { display: grid; gap: 4px; }
+.wd-stale small { color: var(--text-3); }
+.wd-lookrow { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line-1); border-radius: 8px; background: var(--panel-1); }
+.wd-lookrow small { color: var(--text-3); }
+.wd-parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.wd-parts figure { margin: 0; display: grid; gap: 4px; align-content: start; }
+.wd-parts img { width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background: var(--panel-2); border-radius: 8px; }
+.wd-conflicts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
+.wd-conflicts li { border: 1px solid var(--line-1); border-radius: 8px; padding: 8px 12px; display: grid; gap: 4px; }
+.wd-conflicts li.blocks { border-color: #a05a5a; }
+.wd-conflicts li.blocks b { color: #e0a0a0; }
+.wd-conflicts li.warns { border-color: #a07b3d; }
+.wd-conflicts li.warns b { color: #e0b074; }
+.wd-conflicts small { color: var(--text-3); }
+.wd-scenes { margin: 0; padding-left: 18px; font-size: 13px; display: grid; gap: 2px; }
+
+/* Fit: a fieldset will not shrink below its content by default, and a dropdown will not shrink below its longest option. */
+.wd-regions, .wd-keep, .wd-cond-form, .wd-design, .wd-work { min-width: 0; }
+.wd-design select, .wd-fields select, .wd-cond-pick select, .wd-cond-form select { max-width: 100%; width: 100%; min-width: 0; text-overflow: ellipsis; }
+
+/* Light theme: the status colours above are made for a dark page and are too pale on a light one. */
+:root[data-theme="light"] .wd-badge.approved { color: #1d6b45; border-color: #2f8a5f; }
+:root[data-theme="light"] .wd-badge.rejected { color: #8f2f2f; border-color: #b04a4a; }
+:root[data-theme="light"] .helper.warn, :root[data-theme="light"] .wd-checks li.fail b, :root[data-theme="light"] .wd-conflicts li.warns b { color: #85560f; }
+:root[data-theme="light"] .wd-checks li.pass b { color: #1d6b45; }
+:root[data-theme="light"] .wd-conflicts li.blocks b { color: #8f2f2f; }
+:root[data-theme="light"] .wd-stale { background: rgba(160, 123, 61, .12); }
+
+/* A grid's single column grows to its widest input unless it is told it may shrink. */
+.wd-design, .wd-fit, .wd-cond, .wd-cond-form, .wd-work, .wd-candidates, .wd-stale { grid-template-columns: minmax(0, 1fr); }
+.wd-design input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .wd-design textarea, .wd-cond-form input:not([type="checkbox"]) { min-width: 0; max-width: 100%; box-sizing: border-box; }
+
+/* The studios sit beside other panels, so they respond to their own width, not the window's. */
+.wd { container-type: inline-size; }
+.wd-work { container-type: inline-size; }
+.wd-cond-body { grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 640px) { .wd-cond-body { grid-template-columns: 220px minmax(0, 1fr); } }
+@container (max-width: 760px) {
+  .wd-body { grid-template-columns: minmax(0, 1fr); }
+  .wd-library { position: static; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px); overflow-x: auto; padding-bottom: 6px; }
+}
+.wd-actions button, .wd button.primary { white-space: normal; text-align: left; height: auto; min-height: 36px; }

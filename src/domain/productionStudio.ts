@@ -41,6 +41,8 @@ export interface ExtractedAsset {
   prompt?: string
   /** What the person says this is, in their own words (assets made by hand). Used in every picture's prompt. */
   description?: string
+  /** A relative made from another character (a parent, child, sibling): a separate character linked to the first, never an age variant of it. */
+  relativeOf?: { assetId: string; relation: string }
   /** Sets only: where the main things are. Kept the same in every view of the place and in every shot set there. */
   layout?: string
   /** An explicit style for this asset only. Absent means it inherits the project's style. */

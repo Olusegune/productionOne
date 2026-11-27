@@ -1,3 +1,4 @@
+import type { VariationLink } from './variationLink'
 import { primaryViewKeys } from './sheetSpecs'
 import type { Provenance } from './characterLayers'
 
@@ -54,6 +55,8 @@ export interface ImageJob {
   styleFp?: string
   /** The exact proportion profile and reference pictures this output was made with. */
   provenance?: Provenance
+  /** The variation record revision this picture was made for (a garment design, a fit, a look). Lets the project tie pictures to revisions and keep them across retries. */
+  variation?: VariationLink
 }
 
 export interface QueueState {
@@ -85,6 +88,7 @@ export interface JobRequest {
   styleName?: string
   styleFp?: string
   provenance?: Provenance
+  variation?: VariationLink
   outputName: (revision: number) => string
 }
 
@@ -122,7 +126,7 @@ export function enqueue(state: QueueState, requests: JobRequest[], now = Date.no
     const latest = same.reduce<ImageJob | undefined>((a, b) => (!a || b.revision > a.revision ? b : a), undefined)
     if (!wouldEnqueue(latest, force)) { skipped++; continue }
     const revision = latest ? latest.revision + 1 : 1
-    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, styleName: request.styleName, styleFp: request.styleFp, ...(request.provenance ? { provenance: request.provenance } : {}), outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
+    jobs = [...jobs, { id: `IMG-${request.assetId}-${now.toString(36)}-${jobs.length + 1}`, key: keyOf(request, revision), assetId: request.assetId, variant: request.variant, sheetType: request.sheetType, viewKey: request.viewKey, label: request.label, prompt: request.prompt, aspect: request.aspect, fullBody: request.fullBody, provider: request.provider, model: request.model, references: request.references, useAnchor: request.useAnchor ?? false, styleName: request.styleName, styleFp: request.styleFp, ...(request.provenance ? { provenance: request.provenance } : {}), ...(request.variation ? { variation: request.variation } : {}), outputName: request.outputName(revision), revision, status: 'queued', attempts: 0, maxAttempts: 3, qaNotes: [], approved: false, rejected: false, submissionState: 'not-submitted', createdAt: now, updatedAt: now }]
     added++
   }
   return { state: { ...state, jobs }, added, skipped }

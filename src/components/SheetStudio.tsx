@@ -123,6 +123,10 @@ export function SheetStudio(props: {
   /** Lets the top-bar Generate button start a test from outside this panel. */
   controlRef?: { current: { generateFirst: () => void; generateFresh?: () => void } | null };
   focusSheetType?: SheetType;
+  /** Outfit looks made in the Wardrobe studio for this asset, added to the Look list beside the story's own variants. */
+  extraLooks?: string[];
+  /** Switches the Look to this one (set when leaving the Wardrobe studio for an outfit's sheets). */
+  focusVariant?: string;
   /** When given, notes are held by the project and saved with it; otherwise they live only in this panel. */
   notesByAsset?: Record<string, string>;
   setNotesByAsset?: (update: (m: Record<string, string>) => Record<string, string>) => void;
@@ -144,8 +148,10 @@ export function SheetStudio(props: {
   const style = asset?.style ?? props.style;
   const fingerprint = styleFingerprint(style);
   const [pickingStyle, setPickingStyle] = useState(false);
-  const variants = useMemo(() => (asset ? detectStoryVariants(asset, scenes, story) : []), [asset, scenes, story]);
+  const extraLooks = props.extraLooks;
+  const variants = useMemo(() => { const found = asset ? detectStoryVariants(asset, scenes, story) : []; return [...found, ...(extraLooks ?? []).filter((v) => !found.includes(v))]; }, [asset, scenes, story, extraLooks]);
   const [variant, setVariant] = useState("Canonical");
+  useEffect(() => { if (props.focusVariant) setVariant(props.focusVariant); }, [props.focusVariant]);
   const sheetTypes = asset ? sheetTypesFor(asset.type) : [];
   const [sheetType, setSheetType] = useState<SheetType>("Turnaround");
   const [intensity, setIntensity] = useState<Intensity>("moderate");

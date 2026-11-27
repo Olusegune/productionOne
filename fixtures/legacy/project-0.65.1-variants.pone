@@ -1,0 +1,261 @@
+{
+  "format": "production-one-project",
+  "version": 1,
+  "title": "Variation fixture 0.65.1",
+  "savedAt": "2026-11-27T00:00:00.000Z",
+  "graph": {
+    "schemaVersion": 1,
+    "nodes": [],
+    "edges": []
+  },
+  "studio": {
+    "script": "",
+    "analysis": {
+      "scenes": [],
+      "assets": [
+        {
+          "id": "DEMO-CHAR-001",
+          "name": "Mira",
+          "type": "character",
+          "sceneIds": [],
+          "status": "planned",
+          "age": "30s",
+          "gender": "female",
+          "role": "harbour pilot",
+          "description": "A weathered harbour pilot with a short grey-streaked braid, a long navy coat with brass buttons, a patched satchel and a small scar through her left eyebrow.",
+          "never": "never without the scar"
+        },
+        {
+          "id": "DEMO-PROP-001",
+          "name": "Brass lantern",
+          "type": "prop",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A squat brass storm lantern with a cracked blue glass shade, a looped leather handle and a dented base."
+        },
+        {
+          "id": "DEMO-SET-001",
+          "name": "Harbour office",
+          "type": "set",
+          "sceneIds": [],
+          "status": "planned",
+          "description": "A cramped harbour master's office above the quay: wood panelling, charts pinned to the walls, a big brass telescope.",
+          "layout": "The door is on the left wall. A large desk sits in the centre facing the door. A tall window with the quay behind it is directly behind the desk. A chart table runs along the right wall. The brass telescope stands in the right corner by the window."
+        },
+        {
+          "id": "DEMO-COST-001",
+          "name": "Mira costume",
+          "type": "costume",
+          "sceneIds": [],
+          "status": "approved",
+          "description": "A long navy coat with brass buttons and a patched satchel."
+        }
+      ],
+      "story": {
+        "variants": [
+          {
+            "character": "Mira",
+            "kind": "age",
+            "value": "Age 65",
+            "sceneId": "SCENE-002",
+            "evidence": {
+              "sceneId": "SCENE-002",
+              "line": 1,
+              "text": "MIRA (65)"
+            }
+          },
+          {
+            "character": "Mira",
+            "kind": "wardrobe",
+            "value": "Storm coat",
+            "sceneId": "SCENE-003",
+            "evidence": {
+              "sceneId": "SCENE-003",
+              "line": 4,
+              "text": "in a storm coat"
+            }
+          }
+        ]
+      }
+    },
+    "shots": [],
+    "jobs": [],
+    "storyboardsEnabled": false,
+    "model": "Seedance 2.0",
+    "styleBible": {
+      "name": "Clean digital cel animation",
+      "description": "Crisp digital cel look: confident uniform outlines, flat fills and one clear shadow shape.",
+      "palette": [
+        "#1c2330",
+        "#e0635a",
+        "#4aa3b5",
+        "#f4ecd8"
+      ],
+      "materials": "None: smooth flat colour",
+      "rendering": "Flat 2D: Flat fills with one hard-edged shadow shape and an optional highlight shape; no gradients",
+      "lighting": "Flat, even lighting that suits the style (no studio or cinematic light)",
+      "locked": false,
+      "revision": 1,
+      "family": "2D · Drawn and cel animation",
+      "animationApproach": "Digital cel animation with simple shadow shapes",
+      "shapeLanguage": "Simple, clear, geometric-organic shapes that animate cleanly",
+      "surfaceTreatment": "None: smooth flat colour",
+      "lineTreatment": "Clean, smooth vector-like outline of even weight, closed shapes, no sketchiness",
+      "detailLevel": "Low to moderate; patterns simplified",
+      "spec2d": {
+        "id": "2d-clean-digital-cel",
+        "version": 1,
+        "family2d": "2D · Drawn and cel animation",
+        "summary": "Crisp digital cel look: confident uniform outlines, flat fills and one clear shadow shape.",
+        "line": "Clean, smooth vector-like outline of even weight, closed shapes, no sketchiness",
+        "shape": "Simple, clear, geometric-organic shapes that animate cleanly",
+        "proportions": "Consistent, designed proportions; model-sheet precise",
+        "palette": "Flat local colours with a small, harmonised palette per character",
+        "shading": "Flat fills with one hard-edged shadow shape and an optional highlight shape; no gradients",
+        "texture": "None: smooth flat colour",
+        "perspective": "Drawn perspective with clear, simple vanishing points; characters sit in the picture plane like animation layouts",
+        "background": "Painted or inked background kept simpler and softer than the characters so they read first",
+        "edges": "Crisp and clean everywhere",
+        "detail": "Low to moderate; patterns simplified",
+        "technical": "Animation model-sheet clarity: the subject alone on the plain flat field, even flat lighting, no cast shadow, no scenery, construction and proportions easy to read.",
+        "scene": "A drawn layout in this style: clear staging, simple readable depth by overlap and size, no camera lens effects.",
+        "avoid": [
+          "soft airbrushed gradients",
+          "photographic or 3D shading",
+          "painterly texture",
+          "sketchy overlapping lines"
+        ],
+        "animation": "Digital cel animation with simple shadow shapes",
+        "output": "One flat 2D raster reference picture per view. Not vector artwork, not a layered file, not a rigged puppet, not an animation file, and not frame-by-frame animation.",
+        "intentionalTexture": false,
+        "providerNote": "Request construction is supported on every image provider here. Visual quality has not been checked on any model for this style: make one view first and look at it before generating a whole sheet.",
+        "visualStatus": "live-tested",
+        "liveNote": "Live-tested 2026-11-19 on Kie.ai (google/pro-image-to-image): one character front view made from a text description. The style was clearly followed, on a flat neutral background with no photographic look. One test only: other models, other views and other subjects are not checked. Clean digital cel animation was also taken through a whole in-app workflow with one model: a character made from a description, then her turnaround (5 views), 8 expressions, 8 poses and a costume sheet, a prop (6 views) and a place (4 views). Linework, palette, costume and identity held across views; weaknesses are listed in docs/2D_LIVE_TEST_2026-11-19.md.",
+        "preview": {
+          "kind": "schematic",
+          "provenance": "A schematic swatch drawn by the app from this preset's settings. It is not an example image made by a model."
+        }
+      }
+    },
+    "title": "2D style demo: Clean digital cel animation",
+    "format": "16:9",
+    "queue": {
+      "jobs": [
+        {
+          "id": "J1",
+          "key": "k",
+          "assetId": "DEMO-CHAR-001",
+          "variant": "Canonical",
+          "sheetType": "Turnaround",
+          "viewKey": "front",
+          "label": "Front",
+          "prompt": "p",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "kie",
+          "model": "m",
+          "references": [],
+          "useAnchor": false,
+          "outputName": "o",
+          "revision": 1,
+          "status": "completed",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": true,
+          "rejected": false,
+          "createdAt": 1,
+          "updatedAt": 1,
+          "outputPath": "assets/mira_front.jpg"
+        },
+        {
+          "id": "J2",
+          "key": "k",
+          "assetId": "DEMO-CHAR-001",
+          "variant": "Age 65",
+          "sheetType": "Turnaround",
+          "viewKey": "front",
+          "label": "Front",
+          "prompt": "p",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "kie",
+          "model": "m",
+          "references": [],
+          "useAnchor": false,
+          "outputName": "o",
+          "revision": 1,
+          "status": "completed",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": true,
+          "rejected": false,
+          "createdAt": 1,
+          "updatedAt": 1,
+          "outputPath": "assets/mira_65_front.jpg"
+        },
+        {
+          "id": "J3",
+          "key": "k",
+          "assetId": "DEMO-CHAR-001",
+          "variant": "Storm coat",
+          "sheetType": "Turnaround",
+          "viewKey": "front",
+          "label": "Front",
+          "prompt": "p",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "kie",
+          "model": "m",
+          "references": [],
+          "useAnchor": false,
+          "outputName": "o",
+          "revision": 1,
+          "status": "needs-review",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": false,
+          "rejected": false,
+          "createdAt": 1,
+          "updatedAt": 1,
+          "outputPath": "assets/mira_storm_front.jpg"
+        },
+        {
+          "id": "J4",
+          "key": "k",
+          "assetId": "DEMO-COST-001",
+          "variant": "Canonical",
+          "sheetType": "Wardrobe",
+          "viewKey": "front",
+          "label": "Front",
+          "prompt": "p",
+          "aspect": "3:4",
+          "fullBody": true,
+          "provider": "kie",
+          "model": "m",
+          "references": [],
+          "useAnchor": false,
+          "outputName": "o",
+          "revision": 1,
+          "status": "completed",
+          "attempts": 1,
+          "maxAttempts": 3,
+          "qaNotes": [],
+          "approved": true,
+          "rejected": false,
+          "createdAt": 1,
+          "updatedAt": 1,
+          "outputPath": "assets/mira_costume.jpg"
+        }
+      ],
+      "paused": false,
+      "concurrency": 2,
+      "guard": false,
+      "perImageUsd": null,
+      "totalCeilingUsd": null,
+      "quality": "medium"
+    }
+  }
+}

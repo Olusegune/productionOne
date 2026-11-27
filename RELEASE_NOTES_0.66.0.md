@@ -1,0 +1,13 @@
+# Production One 0.66.0
+
+- **Wardrobe studio.** Design a garment from words as clothing only, approve it, fit it to a character (the approved face and body are the starting point), approve the outfit and make its sheets. The same garment on another character is a separate fit. Changing a garment marks only what was built on it as out of date.
+- **Conditions.** Put an approved garment in a condition (wear, damage, dirt, wetness, repair) by garment part and the **wearer's** side. Conditions continue from earlier ones and keep what those established, so histories branch (dusty, torn, wet; and separately repaired, faded). The garment in a condition can be fitted on a character.
+- **Age & appearance.** The same person at another age, a younger or older redesign, or a relative (a separate linked character). The age slider and advanced controls cost nothing until you press the button. Costume, pose and marks are kept; a 2D style stays drawn.
+- **Transformations.** Stage a change (subtle, partial, full) with what must stay recognisable, a recognisability target you judge by eye, what the body is meant to have (so a six-finger hand is judged as intended and is given to the vision review), and how the costume and the audience are handled. Presets only fill the boxes.
+- **Looks & continuity.** Compose a look from a body, an outfit, a condition and accessories, with clashes shown and a fix for each; approve it pinned to the exact versions. A list of what needs updating after a change, in the order to remake it, with a button to bring a look up to date. Look assignment to scenes, and a warning in the Director's room when a shot uses a different look. Comparison sheets (age, transformation stages, garment conditions).
+- **Export.** Design records in a verified package list every record with version ids, dependencies, what is out of date, and for each picture the provider, model, attempts, estimated cost, prompt and reference roles. Older projects are unchanged.
+- Projects keep working: the records are an optional addition, older projects open and save exactly as before (tested against fixtures from 0.51.2 and 0.65.1).
+- A picture of an outfit or an age no longer replaces the character's own picture in the bible.
+- Known: models can put a named left or right on the wrong side, especially on the body and face; the screens warn and the guide says to check. Nothing reads pictures: placement, recognisability and anatomy are for you. Mac files are not included in this release (the signing certificate setting needs fixing).
+- Guide: docs/WARDROBE_AGE_TRANSFORMATION_GUIDE.md. Architecture, acceptance table and exact remaining work: docs/VARIATIONS_ARCHITECTURE.md.
+

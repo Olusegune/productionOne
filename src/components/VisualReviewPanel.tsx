@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { visionAnatomyRules } from "../domain/transformation";
+import type { VariationState } from "../domain/variations";
 import { AlertTriangle } from 'lucide-react'
 import type { AnalysisResult, ShotRecord } from '../domain/productionStudio'
 import type { ImageJob, QueueState } from '../domain/generationQueue'
@@ -18,6 +20,8 @@ import { costShort, priceFor } from '../domain/pricing'
 const STATUS_LABEL = { passed: 'Passed', 'needs-review': 'Needs review', 'not-checked': 'Not checked', 'unable-to-assess': 'Unable to assess' } as const
 
 interface Props {
+  /** Garments, ages and transformations: a transformed character's declared anatomy is given to the vision review. */
+  variations?: VariationState
   analysis: AnalysisResult
   shots: ShotRecord[]
   queue: QueueState
@@ -41,6 +45,7 @@ interface Props {
  * computer. Every output starts as "Not checked", and a model that cannot tell says "Unable to assess": neither is shown as clean.
  */
 export function VisualReviewPanel(p: Props) {
+  const variations = p.variations
   const { analysis, shots, queue, setQueue, style, reviews, setReviews, ledgers, setLedgers, proportions, setProportions, fitRules, sceneStates, vision, notify } = p
   const outputs = useMemo(() => queue.jobs.filter((j) => j.outputPath && !['scale-fit', 'shape-candidate', 'redesign-candidate', 'Lighting test'].includes(j.sheetType)), [queue.jobs])
   const [openFinding, setOpenFinding] = useState<string | null>(null)
@@ -73,6 +78,8 @@ export function VisualReviewPanel(p: Props) {
       const rules = [
         profile ? `Target proportions are intentional: ${profile.exceptions.map((e) => e.control).join(', ') || 'none marked'}. Heights and ratios come from the approved profile.` : 'No target proportions are set for this character.',
         `The picture should match the approved references and the art style ${style.name}.`,
+        // A transformed character's declared anatomy (six fingers, a longer arm) is intended: say so, so it is not reported as a mistake.
+        ...(variations ? visionAnatomyRules(variations, job) : []),
       ]
       const imagePaths = [job.outputPath!, ...job.references.slice(0, 2)]
       const r = await runVisionReview(vision.provider, { job, categories: asked, rules, imagePaths })
