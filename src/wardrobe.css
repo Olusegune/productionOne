@@ -48,8 +48,10 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .wd-cond-form label, .wd-cond-pick { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
 .wd-regions { border: 1px solid var(--line-1); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
 .wd-regions legend { padding: 0 6px; font-size: 13px; color: var(--text-2); }
-.wd-region { display: grid; grid-template-columns: 150px 130px 110px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
-@media (max-width: 900px) { .wd-region { grid-template-columns: 1fr 1fr; } .wd-region input { grid-column: 1 / -1; } }
+.wd-region { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wd-region select { flex: 1 1 120px; }
+.wd-region input { flex: 3 1 200px; }
+.wd-region button { flex: 0 0 auto; }
 .wd-checks { border: 1px solid var(--line-1); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
 .wd-checks ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
 .wd-checks li.fail b { color: #e0b074; }
@@ -91,3 +93,30 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .wd-conflicts li.warns b { color: #e0b074; }
 .wd-conflicts small { color: var(--text-3); }
 .wd-scenes { margin: 0; padding-left: 18px; font-size: 13px; display: grid; gap: 2px; }
+
+/* Fit: a fieldset will not shrink below its content by default, and a dropdown will not shrink below its longest option. */
+.wd-regions, .wd-keep, .wd-cond-form, .wd-design, .wd-work { min-width: 0; }
+.wd-design select, .wd-fields select, .wd-cond-pick select, .wd-cond-form select { max-width: 100%; width: 100%; min-width: 0; text-overflow: ellipsis; }
+
+/* Light theme: the status colours above are made for a dark page and are too pale on a light one. */
+:root[data-theme="light"] .wd-badge.approved { color: #1d6b45; border-color: #2f8a5f; }
+:root[data-theme="light"] .wd-badge.rejected { color: #8f2f2f; border-color: #b04a4a; }
+:root[data-theme="light"] .helper.warn, :root[data-theme="light"] .wd-checks li.fail b, :root[data-theme="light"] .wd-conflicts li.warns b { color: #85560f; }
+:root[data-theme="light"] .wd-checks li.pass b { color: #1d6b45; }
+:root[data-theme="light"] .wd-conflicts li.blocks b { color: #8f2f2f; }
+:root[data-theme="light"] .wd-stale { background: rgba(160, 123, 61, .12); }
+
+/* A grid's single column grows to its widest input unless it is told it may shrink. */
+.wd-design, .wd-fit, .wd-cond, .wd-cond-form, .wd-work, .wd-candidates, .wd-stale { grid-template-columns: minmax(0, 1fr); }
+.wd-design input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), .wd-design textarea, .wd-cond-form input:not([type="checkbox"]) { min-width: 0; max-width: 100%; box-sizing: border-box; }
+
+/* The studios sit beside other panels, so they respond to their own width, not the window's. */
+.wd { container-type: inline-size; }
+.wd-work { container-type: inline-size; }
+.wd-cond-body { grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 640px) { .wd-cond-body { grid-template-columns: 220px minmax(0, 1fr); } }
+@container (max-width: 760px) {
+  .wd-body { grid-template-columns: minmax(0, 1fr); }
+  .wd-library { position: static; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px); overflow-x: auto; padding-bottom: 6px; }
+}
+.wd-actions button, .wd button.primary { white-space: normal; text-align: left; height: auto; min-height: 36px; }

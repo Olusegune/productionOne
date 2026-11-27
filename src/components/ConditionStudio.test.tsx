@@ -45,7 +45,7 @@ describe('the condition screen', () => {
   it('makes a condition from the garment with the wearer’s side, and queues three pictures starting from the garment’s approved picture', () => {
     const p = props()
     render(<ConditionStudio {...p} />)
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Left sleeve torn' } })
+    fireEvent.change(screen.getByLabelText('Name of this condition'), { target: { value: 'Left sleeve torn' } })
     fireEvent.change(screen.getByLabelText('Description 1'), { target: { value: 'torn open at the elbow' } })
     fireEvent.click(screen.getByRole('button', { name: /Make previews/ }))
     const update = (p.updateVariations as unknown as { mock: { calls: Array<[(v: VariationState) => VariationState]> } }).mock.calls[0][0]

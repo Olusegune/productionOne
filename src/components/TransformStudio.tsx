@@ -11,6 +11,7 @@ import { editDraft, startDraft, standingOf, type Draft } from "../domain/candida
 import { audienceChoices, checkTransformation, costumeChoices, detailFields, intensityWords, recognisabilityWords, stageIntensity, stageNames, symmetryChoices, transformationCapability, transformationPresets, transformationRequests, transformationViews } from "../domain/transformation";
 import { lastApprovedStage, newStage, stageLines, stageLookName, stagePicture } from "../domain/transformationFlow";
 import { findEntity, latestApproved, type TransformationSpec, type VariationState } from "../domain/variations";
+import { mentionsSide, sideCheckWarning } from "../domain/sides";
 import { Picture } from "./wardrobeParts";
 import "../wardrobe.css";
 
@@ -181,6 +182,7 @@ export function TransformStudio(props: TransformStudioProps) {
               <label>The costume<select value={spec.costume ?? "keep"} onChange={(e) => setDraft((d) => editDraft(d, { costume: e.target.value as TransformationSpec["costume"] }))}>{costumeChoices.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
               <label>How strong may it be<select value={spec.audience ?? "teen"} onChange={(e) => setDraft((d) => editDraft(d, { audience: e.target.value as TransformationSpec["audience"] }))}>{audienceChoices.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
             </div>
+            {mentionsSide(spec.details?.anatomy, spec.details?.surface, spec.details?.features, spec.details?.differences, anchorText, anatomyText) && <p className="helper warn" role="note">{sideCheckWarning}</p>}
             {!characterPicture && <p className="helper warn">Approve {character.name}'s front view first (Sheets, Identity). Every stage is made from it.</p>}
             {characterPicture && !capability.ok && <p className="helper warn">{capability.message}</p>}
             <div className="wd-actions">

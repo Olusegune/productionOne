@@ -4,6 +4,9 @@
  */
 export const mentionsSide = (...texts: Array<string | undefined>): boolean => /\b(left|right)\b/i.test(texts.filter(Boolean).join(' '))
 
+/** Shown beside the settings whenever a side is named: the prompt asks for the right side but a model can still get it wrong, so a person checks. */
+export const sideCheckWarning = 'You named a side (left or right). The prompt says which side is meant, but image models often put it on the wrong side, especially on the body and face. Check it in the candidate, and say it in picture terms if it is wrong (for example “on the right of the picture”).'
+
 /** For a view where the character faces the camera (front, three-quarter front, portrait) their left is on the right of the picture. */
 export const facingCameraSideLine = 'Left and right here always mean the character’s own left and right, not the left and right of the picture. The character faces the camera, so their left side is on the RIGHT of the picture and their right side is on the LEFT.'
 

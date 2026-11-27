@@ -44,6 +44,15 @@ describe('the age screen', () => {
     expect(p.notify).not.toHaveBeenCalled()
   })
 
+  it('warns that a named side may be put on the wrong side, only when a side is named', () => {
+    render(<AgeStudio {...props()} />)
+    expect(screen.queryByRole('note')).toBeNull()
+    fireEvent.change(screen.getByPlaceholderText(/the scar through the left eyebrow/), { target: { value: 'the scar through the left eyebrow' } })
+    expect(screen.getByRole('note').textContent).toMatch(/image models often put it on the wrong side/)
+    fireEvent.change(screen.getByPlaceholderText(/the scar through the left eyebrow/), { target: { value: 'the strong jaw' } })
+    expect(screen.queryByRole('note')).toBeNull()
+  })
+
   it('says whether the target is older or younger than now', () => {
     render(<AgeStudio {...props()} />)
     fireEvent.change(screen.getByLabelText('Target age'), { target: { value: '65' } })

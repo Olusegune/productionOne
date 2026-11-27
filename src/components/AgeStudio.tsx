@@ -11,6 +11,7 @@ import { editDraft, startDraft, standingOf, type Draft } from "../domain/candida
 import { ageAdjustmentList, ageCapability, ageDirection, ageKeepChoices, ageModes, ageRequests, ageViews, checkAgeSpec, defaultAgeKeep } from "../domain/age";
 import { agePicture, agesOf, newAgeVariant, newRelative } from "../domain/ageFlow";
 import { findEntity, latestApproved, type AgeSpec, type VariationState } from "../domain/variations";
+import { mentionsSide, sideCheckWarning } from "../domain/sides";
 import { Picture } from "./wardrobeParts";
 import "../wardrobe.css";
 
@@ -164,6 +165,7 @@ export function AgeStudio(props: AgeStudioProps) {
               </fieldset>
               <button className="wd-more" onClick={() => setMore((m) => !m)} aria-expanded={more}>{more ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />} More controls</button>
               {more && <div className="wd-fields">{ageAdjustmentList.map((a) => <label key={a.key}>{a.label}<input value={spec.adjustments?.[a.key] ?? ""} onChange={(e) => setAdjustment(a.key, e.target.value)} placeholder={a.hint} /></label>)}</div>}
+              {mentionsSide(anchorText, ...Object.values(spec.adjustments ?? {})) && <p className="helper warn" role="note">{sideCheckWarning}</p>}
               {!characterPicture && <p className="helper warn">Approve {character.name}'s front view first (Sheets, Identity). The age picture is made from it.</p>}
               {characterPicture && !capability.ok && <p className="helper warn">{capability.message}</p>}
               <div className="wd-actions">

@@ -121,7 +121,7 @@ export function ConditionStudio(props: ConditionStudioProps) {
           {tree.length === 0 ? <p className="helper">No conditions yet. The garment is pristine.</p> : <ul aria-label="Conditions">{tree.map((n) => <Branch key={n.entityId} node={n} selected={selected} onPick={open} />)}</ul>}
         </div>
         <div className="wd-cond-form">
-          <label>Name<input value={name} onChange={(e) => setName(e.target.value)} placeholder="for example Left sleeve torn" disabled={!!cond} /></label>
+          <label>Name of this condition<input value={name} onChange={(e) => setName(e.target.value)} placeholder="for example Left sleeve torn" disabled={!!cond} /></label>
           <label>Start from<select value={from} onChange={(e) => setFrom(e.target.value)} disabled={!!cond}><option value="">The pristine garment</option>{approvedConditions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           <label>Kind<select value={kind} onChange={(e) => setKind(e.target.value)}>{conditionKinds.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}</select></label>
           <fieldset className="wd-regions"><legend>What changed, and where</legend>

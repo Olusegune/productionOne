@@ -190,3 +190,135 @@ Run in a test copy against the real model (Nano Banana 2.1 through Kie.ai), judg
 ## Verified after closing and reopening the test app
 
 The garment, its approval, the tear condition and its tree came back after the app was closed and reopened (project autosave). The studio fills the width with no horizontal scroll and the story inspector hidden.
+
+# Milestone 5: transformations
+
+Status: the "Transformations" tab (Design, for a character) makes a character change in stages, with the character kept recognisable.
+
+## Model
+
+- A transformation is a **line of stages** (subtle symptoms, partial transformation, full form, or your own). Each stage is a record with its own revisions. A stage continues from the approved stage before it (`TransformationSpec.from`), which must be the same character and the same kind; the first stage starts from the character's approved picture. So a later stage is stale when an earlier one is replaced.
+- Each stage stores intensity, a **recognisability target** (1 to 5, a creative target a person judges, never a score), what must remain recognisable, free design fields (anatomy and silhouette, skin and surface, features, what changes from the previous stage), symmetry, what happens to the costume (kept, adapted, damaged), and how strong it may be for the audience.
+- Presets (zombie or infected, monster, supernatural, robotic, hybrid, elemental, custom) only fill the boxes; every field stays editable and Custom starts empty. Saving your own presets is not implemented.
+- The art style is not part of a transformation: a 2D style stays drawn and a rendered style stays rendered (tested at the prompt level).
+- Approving a stage makes a look of the character in that stage. A garment can be fitted to a transformed body (`FitSpec.body` may be a stage); that fit goes stale when the stage is replaced.
+
+## Expected anatomy
+
+`expectedAnatomy` lines such as `fingers: six on each hand` replace the human default for that part (`anatomyRules`): the default human rules (five fingers, two arms, two legs, two eyes, one head) apply to anything not declared. The declared anatomy is written into the generation prompt as deliberate, and **given to the existing vision review** (`visionAnatomyRules`, used by the Review screen) so a six-finger hand is not reported as a mistake. This was tested with a six-finger case and with the rule broken on purpose. The vision review itself was not run live (it needs a vision model on this computer).
+
+## Checks
+
+`checkTransformation` runs on the settings: anchors named, recognisability set, the change described, declared anatomy when the anatomy changes, a later stage goes further than the one before and says what changed. Only anchors, a target and a described change stop a candidate; the rest are shown as "needs a look". "The picture is still recognisably the character" and "the picture's anatomy matches what was declared" are always reported as not checked.
+
+## Live provider report (Nano Banana 2.1, judged by eye)
+
+- Subtle stage: red-rimmed, tired eyes and a slightly paler look; recognisably the same man in the same tunic.
+- Partial stage: grey, veined arm and hand, a clouded eye, same man and tunic.
+- **Left and right were wrong in both attempts**: "the left arm/hand" and "the left eye" were drawn on the left of the picture (the character's right). The prompt says which side is meant and where it lands, but this model did not follow it for body parts (it did for the jacket tear). Screens therefore show a warning whenever a side is named, and the guide says to check it. This is a known limitation, not a fixed one.
+- The portrait first came out full body; a close-up framing line was added for the non-full-body view, and the second attempt was a proper close-up.
+- Whether the changed hand had six fingers was not confirmed at the size inspected.
+- The full-form stage was not generated.
+
+# Milestone 6: looks, continuity and export
+
+Status: the "Looks & continuity" tab composes looks, shows conflicts and what needs updating, and the package records the revision ids.
+
+## Composing a look
+
+A look is only a combination of parts that already exist and are approved: a body (as approved, an age, or a transformation stage), an outfit, a condition, accessories. Nothing makes every combination. `checkComposition` reports what clashes, each with a fix:
+
+- an outfit fitted to a different body than the one chosen (blocks); for a transformed body the message says the clothes may not fit or may clash with the new anatomy;
+- a condition the outfit picture does not show, or made from a different version of the garment than the outfit uses (blocks);
+- two accessories that go on the same place (blocks);
+- a part that is not approved, missing, or another character's (blocks);
+- a part approved before something it uses changed (warns);
+- an age and a transformation stage together, for which no picture exists (warns).
+
+A warning can be accepted by the person; a block cannot. `composeLook` approves the look pinned to exactly the chosen revisions; composing the same name again is a new revision. Choosing an outfit fills in the body and condition it was made for.
+
+## Targeted regeneration
+
+`regenerationPlan` lists only the current approved version of each record that is out of date, why, and the order to remake it (what depends on nothing stale first), and counts the approvals that are untouched. It makes nothing and spends nothing. `refreshLook` moves a look to the newest approved versions of its parts, and refuses while any part is still out of date; the earlier look revision stays.
+
+## Export
+
+- The design records in a verified package gain a `variations` section once any record exists: every record with revision ids, status, dependencies, whether it is out of date, its pictures (file names only), and the quality state of the checks that were run; the out-of-date list with what to do; and for each picture made for them the provider, model, attempts, provider task id, estimated cost (from the price you entered, else none), prompt, and each reference with the part it played. Approved pictures carry the revision they were made for. Older projects write exactly what they always did (tested).
+- Comparison sheets (age, transformation stages, a garment and its conditions) use the existing contact-sheet export; labels carry the version ids.
+- Variation pictures are ordinary queue pictures, so the project's existing missing-file relinking covers them; `variationFiles` lists every file the records point at so none is silently left out (tested).
+
+## Live report
+
+Run against the real app and a real export. The Looks screen listed the looks, caught "torn-jacket outfit with the 65-year-old body" as blocked with the fix, approved the matching look, and exported an age comparison sheet (base and age 65, labelled with the version id). A verified package was exported and its design records contained 23 records, 17 generation records, version links, providers, attempts, costs and reference roles, with no folder paths.
+
+Not run live: bringing a look up to date after a real change, the Director's room warning, the transformation and condition comparison sheets, opening an exported project on a second computer.
+
+# Acceptance scenarios
+
+"Automated" means a test that runs on every build. "Live" means it was run in the real app against the real model and judged by eye. Nothing was verified on a second computer, in a 2D style, or with a vision model.
+
+| # | Scenario | Automated | Live |
+|---|---|---|---|
+| 1 | Design a jacket absent from the original picture | wardrobe.test | yes |
+| 2 | Fit it, preserving face and body | wardrobe.test (prompt, reference order) | yes (face kept) |
+| 3 | Reuse the garment on another character, separate fit | wardrobe.test | no |
+| 4 | Threadbare cuffs, rest of the garment kept | conditions.test | no (a tear was tested) |
+| 5 | Character-left sleeve tear, kept across views | conditions.test | yes (front, back, fit) |
+| 6 | Wetness keeps the approved tear | conditions.test | no |
+| 7 | Repaired branch leaves the original history alone | conditions.test | no |
+| 8 | Age, keeping identity and art style | age.test | yes (3D; 2D prompt only) |
+| 9 | Update clothing fit for an age | age.test | yes |
+| 10 | Partial and full transformation with protected anchors | transformation.test | subtle and partial; side was wrong |
+| 11 | Intentional creature anatomy in QA | transformation.test (rules, vision rules) | no vision review run |
+| 12 | Assemble an age, outfit, condition (and transformation) look | looksAndRelease.test | yes (outfit and condition; age and transformation as a record only) |
+| 13 | Change the base garment, mark only dependents stale | variations.test, looksAndRelease.test | no |
+| 14 | Retry a failed generation, keep costs, no duplicate request | looksAndRelease.test | no |
+| 15 | Reopen a collected project on another computer | looksAndRelease.test, variationFixture.test | reopened on the same computer only |
+| 16 | Load an older project without losing looks or approvals | variationFixture.test (0.51.2 and 0.65.1 fixtures) | no |
+
+# Known limitations
+
+- Nothing reads pictures. Placement of damage, recognisability, and the anatomy of a picture are for a person; the vision review only suggests.
+- Left and right are asked for in the prompt but models can get them wrong, especially for the body and face. Screens warn and the guide says to check.
+- Damage is by garment part and wearer's side, not drawn masks or coordinates.
+- An age and a transformation stage cannot be shown in one picture; a look that combines them is a record only.
+- A fit sends two reference pictures (the character, then the garment). There is no strategy yet for more references than a model accepts.
+- Relative and transformation presets cannot be saved as your own.
+- Seeds are not recorded.
+- Taking back a picture's approval in Review does not undo an approved record; make a new version.
+
+# Exact remaining work
+
+- Garments from reference pictures and from combinations of inputs; the same garment in different art styles as explicit variants; garment preset thumbnails.
+- Drawn masks, normalised coordinates and per-view annotations for damage.
+- Vision-model suggestions for garment cut drift, damage on the wrong side, clothing intersections and inconsistent views, with evidence and affected regions.
+- A reference-limit strategy when identity, garment and condition pictures exceed a model's limit.
+- A clothing-only layering sheet, a damage and repair detail sheet, and automatic updated poses and expressions when anatomy changes.
+- Story intervals other than a whole scene for assigning a look.
+- Live checks not yet run: a 2D style, a second character wearing the same garment, threadbare, wet and repaired conditions, the full-form stage, the vision review with declared anatomy, a second computer.
+- Mac builds are not signed (the signing certificate secret is not valid), so there is no Mac file for this release.
+
+# QA record for 0.66.0
+
+## Automated
+
+- Unit and screen tests: 154 files, 1355 tests passing; Rust tests 119 passing; type check clean.
+- Test coverage of the new domain code (measured once with the coverage tool, which is not part of the project): about 93% of statements and 84% of branches before the edge-case tests were added. The tests added afterwards cover the stale-reason texts, damaged-file reading, condition-history failures, record validation and look naming.
+- Tests were checked against deliberate breakage: removing the staleness rule, the body-mismatch conflict rule and the declared-anatomy override each made tests fail.
+- The legacy golden prompts and project fixtures (0.51.2 and 0.65.1) pass; saving an older project writes back exactly what it read.
+- A security review was done by hand because the scan service's allowance for this account was used up (1 of 1). It found that a damaged or hand-edited project file with a record missing its settings could crash the screens that read the records. Reading is now strict (known kinds, valid revision numbers and decisions, a settings object, a picture list; anything else is dropped), with tests that every reader keeps working on a mangled file. Other points checked: the export writes file names only, never folders or keys (tested); loops in histories and stage lines are guarded; no shell, network or credential use was added.
+
+## Interface and accessibility audit (live app, dark and light themes, 1440, 1100 and 900 wide)
+
+Run with the project's own in-page audit plus checks for unnamed controls, duplicate control names, buttons without names, pictures without alt text and overflow.
+
+Found and fixed:
+- Two controls both named "Target age" (age slider and number).
+- Two fields both named "Name" in the Wardrobe studio (now "Name of this condition").
+- Sideways overflow in the Wardrobe studio (a fieldset and a grid that would not shrink) and 9px in Looks (a dropdown stretched by a long option name).
+- Status colours (Approved badge, warnings, conflicts) too pale in the light theme.
+- Layout that was cramped when the panel was narrow: the studios now respond to their own width, stacking the condition tree above the form and letting button text wrap.
+
+Results after the fixes: no horizontal overflow in any of the four new tabs at 1440 in either theme; no unnamed controls, nameless buttons or pictures without alt text; no new contrast failures. What remains is the same as on the existing Sheets and Identity tabs and is not new: page-level overflow and small text or small click targets at 1100 and 900 wide, and the existing "contempt" chip at 4.4:1. A disabled button measures below the contrast ratio, which is exempt.
+
+Not done: screen-reader testing, keyboard-only walkthrough of every control, and a phone-sized layout.

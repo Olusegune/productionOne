@@ -72,6 +72,15 @@ describe('the transformations screen', () => {
     expect(p.setQueue).not.toHaveBeenCalled()
   })
 
+  it('warns that a named side may be put on the wrong side, only when a side is named', () => {
+    render(<TransformStudio {...props()} />)
+    expect(screen.queryByRole('note')).toBeNull()
+    fireEvent.change(screen.getByPlaceholderText(/the veins spread to the neck/), { target: { value: 'the left hand changes' } })
+    expect(screen.getByRole('note').textContent).toMatch(/image models often put it on the wrong side/)
+    fireEvent.change(screen.getByPlaceholderText(/the veins spread to the neck/), { target: { value: 'the hands change' } })
+    expect(screen.queryByRole('note')).toBeNull()
+  })
+
   it('says the recognisability slider is a target, not a score', () => {
     render(<TransformStudio {...props()} />)
     expect(screen.getByText(/creative target that you judge by eye. It is not a score/)).toBeTruthy()

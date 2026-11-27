@@ -77,11 +77,26 @@ export function queueVariantOf(look: { revisions: Array<Revision<LookSpec>> }, r
   return look.revisions.find((r) => r.n === revision)?.spec.queueVariant ?? 'Canonical'
 }
 
-/** Reads the saved records back from a project file. Anything that is not a recognisable record set is ignored rather than trusted, so a damaged file cannot break opening the project. */
+const KINDS = new Set(['garment', 'fit', 'condition', 'age', 'transformation', 'look'])
+const STATUSES = new Set(['candidate', 'approved', 'rejected'])
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/**
+ * Reads the saved records back from a project file. A project file can be damaged or edited by hand, and the screens read these records on every change,
+ * so nothing is trusted: a record needs a known kind, and each revision needs a number, a known decision, a settings object and a list of pictures.
+ * Anything that does not is dropped (a record with no valid revision is dropped whole), so a bad file cannot break opening the project.
+ */
 export function readVariations(raw: unknown): VariationState | undefined {
-  const v = raw as Partial<VariationState> | undefined
-  if (!v || typeof v !== 'object' || v.schema !== 1 || !Array.isArray(v.entities)) return undefined
-  const counters = v.counters && typeof v.counters === 'object' ? v.counters : {}
-  const entities = v.entities.filter((e) => e && typeof e.id === 'string' && typeof e.kind === 'string' && Array.isArray(e.revisions))
+  if (!isObj(raw) || raw.schema !== 1 || !Array.isArray(raw.entities)) return undefined
+  const counters: Record<string, number> = {}
+  if (isObj(raw.counters)) for (const [k, v] of Object.entries(raw.counters)) if (typeof v === 'number' && Number.isFinite(v)) counters[k] = v
+  const entities: AnyEntity[] = []
+  for (const e of raw.entities) {
+    if (!isObj(e) || typeof e.id !== 'string' || !e.id || typeof e.kind !== 'string' || !KINDS.has(e.kind) || !Array.isArray(e.revisions)) continue
+    const revisions = e.revisions.filter((r): r is Record<string, unknown> => isObj(r) && typeof r.n === 'number' && Number.isInteger(r.n) && r.n > 0 && typeof r.status === 'string' && STATUSES.has(r.status) && isObj(r.spec) && Array.isArray(r.media))
+      .map((r) => ({ ...r, media: (r.media as unknown[]).filter((m) => isObj(m) && typeof m.path === 'string' && typeof m.role === 'string') }))
+    if (revisions.length === 0) continue
+    entities.push({ ...e, name: typeof e.name === 'string' ? e.name : e.id, revisions } as unknown as AnyEntity)
+  }
   return { schema: 1, entities, counters }
 }
