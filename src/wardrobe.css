@@ -59,8 +59,8 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .wd-checks li.not-checked b { color: var(--text-3); }
 
 /* The studios need the full width: the story inspector on the right is for the Sheets and Identity screens. */
-.po-shell .po-design:has(#sec-wardrobe:not([hidden])), .po-shell .po-design:has(#sec-age:not([hidden])), .po-shell .po-design:has(#sec-transform:not([hidden])), .po-shell .po-design:has(#sec-looks:not([hidden])) { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
-.po-shell .po-design:has(#sec-wardrobe:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-age:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-transform:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-looks:not([hidden])) > .po-inspector { display: none; }
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])), .po-shell .po-design:has(#sec-age:not([hidden])), .po-shell .po-design:has(#sec-transform:not([hidden])), .po-shell .po-design:has(#sec-looks:not([hidden])), .po-shell .po-design:has(#sec-relationships:not([hidden])), .po-shell .po-design:has(#sec-anatomy:not([hidden])) { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
+.po-shell .po-design:has(#sec-wardrobe:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-age:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-transform:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-looks:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-relationships:not([hidden])) > .po-inspector, .po-shell .po-design:has(#sec-anatomy:not([hidden])) > .po-inspector { display: none; }
 
 /* Age: the slider, its number and the plain sentence about direction sit on one line. */
 .wd-age-target { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -150,6 +150,12 @@ figcaption { font-size: 12px; color: var(--text-3); }
 @container (max-width: 380px) { .an-limb { grid-template-columns: 1fr 1fr; } .an-limb .an-x { grid-column: 1 / -1; justify-self: start; } }
 
 /* Optional blocks inside a tab: closed by default so the first screen stays short. */
-.wd-more { margin-top: 12px; }
-.wd-more > summary { cursor: pointer; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,.12)); font-weight: 600; }
-.wd-more[open] > summary { margin-bottom: 8px; }
+.an-fold { margin-top: 12px; display: block; }
+.an-fold > summary { cursor: pointer; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--stroke, rgba(255,255,255,.12)); font-weight: 600; }
+.an-fold[open] > summary { margin-bottom: 8px; }
+
+/* The Anatomy tab stacks its sections in one column, full width. */
+.an-stack { display: flex; flex-direction: column; gap: 12px; width: 100%; min-width: 0; }
+.an-stack > * { width: 100%; min-width: 0; box-sizing: border-box; }
+/* Buttons that sit beside a field are their normal size, not stretched to the row. */
+.wd-fields > button { align-self: end; height: auto; }

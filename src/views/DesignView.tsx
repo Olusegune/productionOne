@@ -363,12 +363,12 @@ export function DesignView(p: DesignViewProps) {
             </div>
             <div id="sec-anatomy" role="tabpanel" aria-labelledby="as-tab-anatomy" hidden={section !== "anatomy"}>
             {section === "anatomy" && analysis.assets[selectedAsset]?.type === "character" && (
-              <>
+              <div className="an-stack">
                 <AnatomyStudio key={analysis.assets[selectedAsset].id} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} />
-                <details className="wd-more"><summary>Machine parts (robot, android, mech, armour)</summary><MachineStudio key={`m-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
-                <details className="wd-more"><summary>Species and factions</summary><ProfilesStudio key={`p-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
-                <details className="wd-more"><summary>Powers</summary><AbilityStudio key={`a-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
-              </>
+                <details className="an-fold"><summary>Machine parts (robot, android, mech, armour)</summary><MachineStudio key={`m-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+                <details className="an-fold"><summary>Species and factions</summary><ProfilesStudio key={`p-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+                <details className="an-fold"><summary>Powers</summary><AbilityStudio key={`a-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+              </div>
             )}
             </div>
             <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>
