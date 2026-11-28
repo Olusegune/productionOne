@@ -9,9 +9,11 @@
  * Older projects have no `variations` field at all; see variationMigration.ts for how those are read.
  */
 
+import type { LightingRecord } from './lighting'
+
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile' | 'vehicle' | 'skin'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile' | 'vehicle' | 'skin' | 'lighting-test'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -310,6 +312,18 @@ export interface SkinSpec extends SkinControls {
   conditions: string[]
 }
 
+/**
+ * A lighting test for a photorealistic character: the lighting setups, stored apart from the skin profile, pinned to the exact approved skin revision they
+ * were made with. A newer approved skin revision marks the test out of date.
+ */
+export interface LightingTestSpec {
+  characterId: string
+  skin: Ref
+  setups: Array<{ id: string; label: string; record: LightingRecord }>
+  /** The look name the test's pictures are filed under. */
+  variant?: string
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
@@ -320,12 +334,13 @@ export type Relationship = Entity<'relationship', RelationshipSpec>
 export type Prop = Entity<'prop', PropSpec>
 export type Creature = Entity<'creature', CreatureSpec>
 export type Profile = Entity<'profile', ProfileSpec>
+export type LightingTest = Entity<'lighting-test', LightingTestSpec>
 export type Skin = Entity<'skin', SkinSpec>
 export type Vehicle = Entity<'vehicle', VehicleSpec>
 export type Machine = Entity<'machine', MachineSpec>
 export type Ability = Entity<'ability', AbilitySpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile | Vehicle | Skin
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec | VehicleSpec | SkinSpec
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile | Vehicle | Skin | LightingTest
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec | VehicleSpec | SkinSpec | LightingTestSpec
 
 /** A frozen record of a scene: the exact revisions it was made with. Append-only; never edited. */
 export interface SceneSnapshot {
@@ -351,7 +366,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF', vehicle: 'VHC', skin: 'SKN' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF', vehicle: 'VHC', skin: 'SKN', 'lighting-test': 'LGT' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

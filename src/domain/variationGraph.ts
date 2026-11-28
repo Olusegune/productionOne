@@ -23,6 +23,7 @@ export function depsOf(kind: EntityKind, spec: AnySpec): Array<{ ref: Ref; expec
       break
     }
     case 'profile': add(s.parent, ['profile'], 'species'); break
+    case 'lighting-test': add(s.skin, ['skin'], 'skin profile'); break
     default: break
   }
   return out

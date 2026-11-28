@@ -6,6 +6,7 @@ import { recordMachine, approvedMachine } from './machineLab'
 import { recordAbility, approvedAbilities } from './abilityLab'
 import { recordPropSize, approvedPropSize } from './propFit'
 import { recordVehicle, approvedVehicle, vehicleOccupancyIssues } from './vehicleLab'
+import { startLightingTest, lightingTestStanding } from './skinLighting'
 import { startSkinRefinement, refinementCost } from './skinRefine'
 import { recordSkin, approvedSkin, skinPromptFor, newSkin, withPreset } from './skin'
 import { recordProfile, approvedProfiles, proposals, inheritedFor, profilesOf } from './profiles'
@@ -70,7 +71,7 @@ function useEverything(state: VariationState) {
   relationshipViews(state); approvedRelationships(state, 'SC-1'); relationshipConflicts(state, (id) => id, 'SC-1'); relationshipProblems(state, new Set(['C1']))
   applyRelationships({ things: [{ id: 'P1', kind: 'furniture', name: 'Chair', x: 0, y: 0, facing: 0, interactions: [], scale: 1 }], relationships: [] }, state, 'SC-1')
   proposeFromScene({ things: [], relationships: [] }, state, 'SC-1')
-  for (const id of ['C1', 'C2', 'P1']) { approvedCreature(state, id); approvedMachine(state, id); approvedAbilities(state, id); approvedPropSize(state, id); approvedVehicle(state, id); approvedSkin(state, id); startSkinRefinement(state, { character: { id, name: 'X', type: 'character', sceneIds: [], status: 'approved' } as never, now: 'n' }); refinementCost({ ...emptyQueue(), jobs: [] }, 'SKN-001'); skinPromptFor(state, id, { family: 'Realistic 3D' }); inheritedFor(state, id); profilesOf(state, id) }
+  for (const id of ['C1', 'C2', 'P1']) { approvedCreature(state, id); approvedMachine(state, id); approvedAbilities(state, id); approvedPropSize(state, id); approvedVehicle(state, id); approvedSkin(state, id); startLightingTest(state, { character: { id, name: 'X', type: 'character', sceneIds: [], status: 'approved' } as never, now: 'n' }); lightingTestStanding(state, id); startSkinRefinement(state, { character: { id, name: 'X', type: 'character', sceneIds: [], status: 'approved' } as never, now: 'n' }); refinementCost({ ...emptyQueue(), jobs: [] }, 'SKN-001'); skinPromptFor(state, id, { family: 'Realistic 3D' }); inheritedFor(state, id); profilesOf(state, id) }
   approvedProfiles(state); proposals(state); vehicleOccupancyIssues(state)
   for (const e of state.entities) for (const r of e.revisions) dependentsOf(state, { id: e.id, revision: r.n })
   const snap = latestSnapshot(state, 'SC-1'); if (snap) { resolveSnapshot(state, snap); driftSince(state, snap) }

@@ -8,6 +8,7 @@ import { readMachineSpec } from './machineLab'
 import { readProfileSpec } from './profiles'
 import { readVehicleSpec } from './vehicleLab'
 import { readSkinSpec } from './skin'
+import { readLightingTestSpec } from './skinLighting'
 import { readContinuity } from './sceneContinuity'
 import { readAbilitySpec } from './abilityLab'
 import { emptyVariations, type AnyEntity, type MediaRef, type Revision, type VariationState, type GarmentSpec, type LookSpec } from './variations'
@@ -86,9 +87,9 @@ export function queueVariantOf(look: { revisions: Array<Revision<LookSpec>> }, r
   return look.revisions.find((r) => r.n === revision)?.spec.queueVariant ?? 'Canonical'
 }
 
-const KINDS = new Set(['garment', 'fit', 'condition', 'age', 'transformation', 'look', 'relationship', 'prop', 'creature', 'machine', 'ability', 'profile', 'vehicle', 'skin'])
+const KINDS = new Set(['garment', 'fit', 'condition', 'age', 'transformation', 'look', 'relationship', 'prop', 'creature', 'machine', 'ability', 'profile', 'vehicle', 'skin', 'lighting-test'])
 /** Kinds whose settings are checked and rewritten in a known shape when read. */
-const SPEC_READERS: Record<string, (raw: unknown) => unknown> = { relationship: readRelationshipSpec, prop: readPropSpec, creature: readCreatureSpec, machine: readMachineSpec, ability: readAbilitySpec, profile: readProfileSpec, vehicle: readVehicleSpec, skin: readSkinSpec }
+const SPEC_READERS: Record<string, (raw: unknown) => unknown> = { relationship: readRelationshipSpec, prop: readPropSpec, creature: readCreatureSpec, machine: readMachineSpec, ability: readAbilitySpec, profile: readProfileSpec, vehicle: readVehicleSpec, skin: readSkinSpec, 'lighting-test': readLightingTestSpec }
 const STATUSES = new Set(['candidate', 'approved', 'rejected'])
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
