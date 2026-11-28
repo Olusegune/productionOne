@@ -5,6 +5,8 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Sparkles, Check, X, Plus, Wand2 } from "lucide-react";
 import { useModelChoice } from "../data/modelChoice";
 import { modelTakesReferences, providerLabels } from "../domain/imageCatalog";
+import { PreflightCard } from "./PreflightCard";
+import { affectedBy, buildPreflight } from "../domain/preflight";
 import { anchorFor, approve, costPreview, enqueue, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { styleFingerprint } from "../domain/style2d";
@@ -191,6 +193,13 @@ export function TransformStudio(props: TransformStudioProps) {
             {mentionsSide(spec.details?.anatomy, spec.details?.surface, spec.details?.features, spec.details?.differences, anchorText, anatomyText) && <p className="helper warn" role="note">{sideCheckWarning}</p>}
             {!characterPicture && <p className="helper warn">Approve {character.name}'s front view first (Sheets, Identity). Every stage is made from it.</p>}
             {characterPicture && !capability.ok && <p className="helper warn">{capability.message}</p>}
+            <PreflightCard plan={buildPreflight({
+              count: transformationViews.length, what: `${character.name}, ${spec.stage || "next stage"} of ${spec.kind || "the change"}`, costLabel: cost.label,
+              protectedItems: [...(spec.anchors ?? []), ...(spec.expectedAnatomy ?? []).map((a) => `Intended: ${a}`)],
+              approvedUntouched: variations.entities.reduce((n, e) => n + e.revisions.filter((r) => r.status === "approved").length, 0),
+              affects: affectedBy(variations, entity && latestApproved(entity) ? { id: entity.id, revision: latestApproved(entity)!.n } : undefined),
+              uses: [characterPicture ? `${character.name}'s approved front view` : "", prior ? "the earlier stage it continues from" : "", `${modelId} on ${providerLabels[provider]}`],
+            })} />
             <div className="wd-actions">
               <button className="primary" onClick={makeCandidates} disabled={!characterPicture || !capability.ok}>
                 <Sparkles size={15} aria-hidden="true" /> {entity ? "Save as a new version and preview" : "Make candidates"} · {cost.label}

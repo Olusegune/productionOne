@@ -5,6 +5,8 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { Sparkles, Check, X, Plus, UserPlus, ChevronDown, ChevronRight, Hourglass } from "lucide-react";
 import { useModelChoice } from "../data/modelChoice";
 import { modelTakesReferences, providerLabels } from "../domain/imageCatalog";
+import { PreflightCard } from "./PreflightCard";
+import { affectedBy, buildPreflight } from "../domain/preflight";
 import { anchorFor, approve, costPreview, enqueue, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { styleFingerprint } from "../domain/style2d";
@@ -174,6 +176,13 @@ export function AgeStudio(props: AgeStudioProps) {
               {mentionsSide(anchorText, ...Object.values(spec.adjustments ?? {})) && <p className="helper warn" role="note">{sideCheckWarning}</p>}
               {!characterPicture && <p className="helper warn">Approve {character.name}'s front view first (Sheets, Identity). The age picture is made from it.</p>}
               {characterPicture && !capability.ok && <p className="helper warn">{capability.message}</p>}
+              <PreflightCard plan={buildPreflight({
+                count: ageViews.length, what: `${character.name} at ${spec.targetAge || "the chosen age"}${spec.mode === "redesign" ? " (a redesign)" : ""}`, costLabel: cost.label,
+                protectedItems: [...(spec.anchors ?? []), ...(spec.keep ?? []).map((k) => `Kept: ${k}`)],
+                approvedUntouched: variations.entities.reduce((n, e) => n + e.revisions.filter((r) => r.status === "approved").length, 0),
+                affects: affectedBy(variations, entity && latestApproved(entity) ? { id: entity.id, revision: latestApproved(entity)!.n } : undefined),
+                uses: [characterPicture ? `${character.name}'s approved front view` : "", `${modelId} on ${providerLabels[provider]}`],
+              })} />
               <div className="wd-actions">
                 <button className="primary" onClick={makeCandidate} disabled={!characterPicture || !capability.ok}>
                   <Sparkles size={15} aria-hidden="true" /> {entity && unchanged ? "Make more candidates" : entity ? "Save as a new version and preview" : "Make candidates"} · {cost.label}

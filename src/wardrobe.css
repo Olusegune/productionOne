@@ -159,3 +159,10 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .an-stack > * { width: 100%; min-width: 0; box-sizing: border-box; }
 /* Buttons that sit beside a field are their normal size, not stretched to the row. */
 .wd-fields > button { align-self: end; height: auto; }
+
+/* Preflight: a closed card above the generate button; its cost stays visible. */
+.pf-card { margin: 8px 0; border: 1px solid var(--stroke, rgba(255,255,255,.12)); border-radius: 12px; padding: 8px 12px; display: block; }
+.pf-card > summary { cursor: pointer; font-weight: 600; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pf-card > summary span { font-weight: 400; opacity: .85; }
+.pf-body { display: grid; gap: 8px; margin-top: 8px; font-size: 13px; }
+.pf-row ul { margin: 2px 0 0; padding-left: 18px; }

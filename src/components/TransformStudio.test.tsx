@@ -48,6 +48,16 @@ describe('the transformations screen', () => {
     expect(screen.getByText(/The preset only fills the boxes below; change anything/)).toBeTruthy()
   })
 
+  it('says before anything is made what will be made, what is kept, what is left alone and the cost', () => {
+    render(<TransformStudio {...props()} />)
+    const card = screen.getByLabelText('Before you press the button')
+    expect(card.textContent).toMatch(/Before you press the button/)
+    expect(card.textContent).toMatch(/Will make/)
+    expect(card.textContent).toMatch(/candidate pictures:/)
+    expect(card.textContent).toMatch(/Left alone/)
+    expect(card.textContent).toMatch(/New pictures are candidates until you approve them/)
+  })
+
   it('a preset fills the boxes and they stay editable; Custom empties them', () => {
     render(<TransformStudio {...props()} />)
     const anatomy = screen.getByPlaceholderText(/broader shoulders/) as HTMLInputElement

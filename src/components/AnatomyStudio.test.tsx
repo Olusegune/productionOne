@@ -54,3 +54,18 @@ describe('declared anatomy reaches the picture prompt', () => {
     expect(buildViewPrompt(base as never)).not.toMatch(/Declared anatomy/)
   })
 })
+
+describe('templates fill the form but never save', () => {
+  it('choosing "Monster or beast" fills in four legs and claws, saves nothing, and "Custom" leaves the form as it is', () => {
+    render(<Harness />)
+    fireEvent.change(screen.getByLabelText('Template'), { target: { value: 'monster' } })
+    expect((screen.getByLabelText('Body plan') as HTMLSelectElement).value).toBe('quadruped')
+    expect((screen.getByLabelText('Limb 1 name') as HTMLInputElement).value).toBe('leg')
+    expect((screen.getByLabelText('Limb 1 count') as HTMLInputElement).value).toBe('4')
+    expect((screen.getByLabelText(/Intentional/) as HTMLTextAreaElement).value).toBe('claws')
+    expect(screen.getByText(/Nothing is saved until you press Save and approve/)).toBeTruthy()
+    expect(approvedCreature(latest, 'CHAR-VEN')).toBeUndefined()
+    fireEvent.change(screen.getByLabelText('Template'), { target: { value: 'custom' } })
+    expect((screen.getByLabelText('Limb 1 name') as HTMLInputElement).value).toBe('leg')
+  })
+})

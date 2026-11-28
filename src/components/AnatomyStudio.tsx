@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Bone, Plus, X } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
+import { CREATURE_TEMPLATES, CUSTOM, templateById } from "../domain/templates";
 import { anatomyLine, approvedCreature, BODY_PLANS, recordCreature, ROLES } from "../domain/creatureLab";
 import { approveRevision, type BodyPlan, type CreatureSpec, type NarrativeRole, type VariationState } from "../domain/variations";
 import "../wardrobe.css";
@@ -36,6 +37,16 @@ export function AnatomyStudio({ asset, variations, updateVariations, notify }: A
   const [eyes, setEyes] = useState(current?.eyes !== undefined ? String(current.eyes) : "");
   const [symmetry, setSymmetry] = useState<CreatureSpec["symmetry"]>(current?.symmetry ?? "symmetric");
   const [limbs, setLimbs] = useState<Limb[]>(current?.limbs.map((l) => ({ name: l.name, count: String(l.count), digits: l.digits !== undefined ? String(l.digits) : "" })) ?? STARTERS.humanoid.map((l) => ({ ...l })));
+  const [tpl, setTpl] = useState(CUSTOM);
+  const applyTemplate = (id: string) => {
+    setTpl(id);
+    const t = templateById(CREATURE_TEMPLATES, id);
+    if (!t || id === CUSTOM) return;
+    const f = t.fill;
+    setBodyPlan(f.bodyPlan); setSymmetry(f.symmetry); setEyes(f.eyes !== undefined ? String(f.eyes) : ""); setPlan(f.plan ?? "");
+    setLimbs(f.limbs.map((l) => ({ name: l.name, count: String(l.count), digits: l.digits !== undefined ? String(l.digits) : "" })));
+    setIntentional(f.intentional.join("\n")); setNever(f.never.join("\n"));
+  };
   const [intentional, setIntentional] = useState((current?.intentional ?? []).join("\n"));
   const [never, setNever] = useState((current?.never ?? []).join("\n"));
 
@@ -59,6 +70,8 @@ export function AnatomyStudio({ asset, variations, updateVariations, notify }: A
       <div className="wd-work">
         <div className="wd-design">
           {current ? <p className="helper">Approved: {anatomyLine(current)}</p> : <p className="helper">Nothing declared yet, so pictures follow the description alone.</p>}
+          <label>Start from a template<select aria-label="Template" value={tpl} onChange={(e) => applyTemplate(e.target.value)}>{CREATURE_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select></label>
+          {tpl !== CUSTOM && <p className="helper">{templateById(CREATURE_TEMPLATES, tpl)?.blurb} Nothing is saved until you press Save and approve; change anything you like.</p>}
           <div className="wd-fields">
             <label>Body plan<select value={bodyPlan} onChange={(e) => { const next = e.target.value as BodyPlan; setLimbs((cur) => (same(cur, STARTERS[bodyPlan]) ? STARTERS[next].map((l) => ({ ...l })) : cur)); setBodyPlan(next); }}>{BODY_PLANS.map((b) => <option key={b} value={b}>{b}</option>)}</select></label>
             <label>Role in the story<select value={role} onChange={(e) => setRole(e.target.value as NarrativeRole | "")}><option value="">Not set</option>{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</select></label>
