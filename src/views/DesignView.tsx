@@ -12,6 +12,8 @@ import { AgeStudio } from "../components/AgeStudio";
 import { TransformStudio } from "../components/TransformStudio";
 import { LooksStudio } from "../components/LooksStudio";
 import { bodyMetres } from "../domain/fit";
+import { anatomyLine, approvedCreature } from "../domain/creatureLab";
+import { AnatomyStudio } from "../components/AnatomyStudio";
 import { RelationshipsStudio } from "../components/RelationshipsStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
@@ -111,7 +113,7 @@ export interface DesignViewProps {
   applySlice?: (next: ProjectSlice) => void;
 }
 
-type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "relationships" | "identity" | "motion" | "voice";
+type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "relationships" | "anatomy" | "identity" | "motion" | "voice";
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
   { id: "wardrobe", label: "Wardrobe studio" },
@@ -119,6 +121,7 @@ const sections: Array<{ id: Section; label: string }> = [
   { id: "transform", label: "Transformations" },
   { id: "looks", label: "Looks & continuity" },
   { id: "relationships", label: "Relationships" },
+  { id: "anatomy", label: "Anatomy" },
   { id: "identity", label: "Identity" },
   { id: "motion", label: "Motion" },
   { id: "voice", label: "Voice and sound" },
@@ -159,7 +162,7 @@ export function DesignView(p: DesignViewProps) {
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
-                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
               </div>
             </div>
             <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>
@@ -240,6 +243,7 @@ export function DesignView(p: DesignViewProps) {
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               proportions={proportions}
+              anatomyFor={(id) => { const c = approvedCreature(p.variations, id); return c ? anatomyLine(c.spec) : undefined; }}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
               setSettings={setSheetSettings}
@@ -348,6 +352,11 @@ export function DesignView(p: DesignViewProps) {
                 notify={setNotice}
                 bodyOf={(id) => (analysis.assets.find((a) => a.id === id)?.type === "character" ? bodyMetres(proportions[id] ?? profileFromWorld(world, id)) : undefined)}
               />
+            )}
+            </div>
+            <div id="sec-anatomy" role="tabpanel" aria-labelledby="as-tab-anatomy" hidden={section !== "anatomy"}>
+            {section === "anatomy" && analysis.assets[selectedAsset]?.type === "character" && (
+              <AnatomyStudio key={analysis.assets[selectedAsset].id} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} />
             )}
             </div>
             <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>

@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -192,6 +192,25 @@ export interface PropSpec {
   note?: string
 }
 
+export type BodyPlan = 'humanoid' | 'quadruped' | 'serpentine' | 'avian' | 'insectoid' | 'amorphous' | 'other'
+/** What a being does in the story. It says nothing about its body. */
+export type NarrativeRole = 'hero' | 'villain' | 'ally' | 'neutral' | 'background'
+
+/** The anatomy a being is meant to have, declared by a person. Quality checks hold pictures to these facts. */
+export interface CreatureSpec {
+  assetId: string
+  bodyPlan: BodyPlan
+  plan?: string
+  limbs: Array<{ name: string; count: number; digits?: number }>
+  eyes?: number
+  symmetry: 'symmetric' | 'asymmetric' | 'mixed'
+  /** Features that are deliberate, so they are not read as mistakes. */
+  intentional: string[]
+  /** Features it must never have. */
+  never: string[]
+  role?: NarrativeRole
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
@@ -200,8 +219,9 @@ export type Transformation = Entity<'transformation', TransformationSpec>
 export type ProductionLook = Entity<'look', LookSpec>
 export type Relationship = Entity<'relationship', RelationshipSpec>
 export type Prop = Entity<'prop', PropSpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec
+export type Creature = Entity<'creature', CreatureSpec>
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec
 
 export interface VariationState {
   schema: typeof VARIATIONS_SCHEMA
@@ -212,7 +232,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

@@ -118,6 +118,8 @@ export function SheetStudio(props: {
   refs: Record<string, string[]>;
   /** Target proportions per character. A character with none gets exactly the prompts it always did. */
   proportions?: Record<string, ProportionProfile>;
+  /** The declared anatomy sentence for a being, when one is approved. */
+  anatomyFor?: (assetId: string) => string | undefined;
   /** Opens this character's proportions (the Identity tab). */
   onOpenProportions?: () => void;
   setRefs: (update: (r: Record<string, string[]>) => Record<string, string[]>) => void;
@@ -220,7 +222,7 @@ export function SheetStudio(props: {
     const chosen = testOneFirst ? (pool.filter((v) => primaryViewKeys.includes(v.key))[0] ? [pool.filter((v) => primaryViewKeys.includes(v.key))[0]] : pool.slice(0, 1)) : pool;
     const requests = chosen.map((view) => ({
       assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key, label: view.label,
-      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), guide: !!guidePath, anchored: !reinterpret && !fresh && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
+      prompt: buildViewPrompt({ style, asset, variant: activeVariant, sheetType: activeType, view, notes, model: modelId, backdrop, backdropHex, proportions: proportionWords(props.proportions?.[asset.id]), anatomy: props.anatomyFor?.(asset.id), guide: !!guidePath, anchored: !reinterpret && !fresh && modelTakesReferences(provider, modelId) && shouldAnchor(queue, { assetId: asset.id, variant: activeVariant, sheetType: activeType, viewKey: view.key }), photoRefs: (refs[asset.id]?.length ?? 0) > 0, reinterpret }),
       aspect: shapeFor(view, shapeOverride), fullBody: view.fullBody, provider, model: modelId,
       references: modelTakesReferences(provider, modelId) ? [...(reinterpret && frontPath ? [frontPath] : []), ...(refs[asset.id] ?? []), ...(guidePath ? [guidePath] : [])] : [],
       styleName: style.name, styleFp: fingerprint,
