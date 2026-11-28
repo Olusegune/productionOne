@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { approveRevision, emptyVariations, findEntity, latestApproved, type SkinSpec, type VariationState } from './variations'
 import { approvedSkin, newSkin, recordSkin, withPreset } from './skin'
-import { canApproveRefinement, originalFor, providerLead, refinementBlocker, refinementCost, refinementSummary, skinCapability, skinLookName, skinRefinementPrompt, skinRequests, skinViews, sourceForView, startSkinRefinement } from './skinRefine'
+import { canApproveRefinement, refusedLocally, originalFor, providerLead, refinementBlocker, refinementCost, refinementSummary, skinCapability, skinLookName, skinRefinementPrompt, skinRequests, skinViews, sourceForView, startSkinRefinement } from './skinRefine'
 import { emptyQueue, enqueue, type ImageJob, type QueueState } from './generationQueue'
 import { defaultStyleBible } from './visualDevelopment'
 import type { ExtractedAsset } from './productionStudio'
@@ -120,11 +120,23 @@ describe('3 and 10: requests, explicit execution and cost history', () => {
   })
   it('retries add to the spend and never replace it', () => {
     const jobs = [job({ id: 'A', attempts: 1, variation: { id: 'SKN-001', revision: 2, role: 'skin-candidate' } }), job({ id: 'B', attempts: 3, variation: { id: 'SKN-001', revision: 2, role: 'skin-candidate' } }), job({ id: 'C', attempts: 5, variation: { id: 'SKN-002', revision: 1, role: 'skin-candidate' } })]
-    expect(refinementCost(queue(jobs), 'SKN-001')).toEqual({ pictures: 2, attempts: 4, usd: 0.16 })
+    expect(refinementCost(queue(jobs), 'SKN-001')).toEqual({ pictures: 2, attempts: 4, refused: 0, usd: 0.16 })
     const retried = jobs.map((j) => (j.id === 'A' ? { ...j, attempts: 2 } : j))
-    expect(refinementCost(queue(retried), 'SKN-001')).toEqual({ pictures: 2, attempts: 5, usd: 0.2 })
+    expect(refinementCost(queue(retried), 'SKN-001')).toEqual({ pictures: 2, attempts: 5, refused: 0, usd: 0.2 })
     expect(refinementCost(queue(jobs, null), 'SKN-001').usd).toBeNull()
-    expect(refinementCost(queue([]), 'SKN-001')).toEqual({ pictures: 0, attempts: 0, usd: 0 })
+    expect(refinementCost(queue([]), 'SKN-001')).toEqual({ pictures: 0, attempts: 0, refused: 0, usd: 0 })
+  })
+})
+
+describe('requests refused on this computer are not charged', () => {
+  const outside = 'Only images in the Production One assets folder can be previewed (this one is at C:/other/a.png) The request was not accepted.'
+  it('are recognised, counted apart, and left out of the estimate; a real failure still counts', () => {
+    const linked = { id: 'SKN-001', revision: 2, role: 'skin-candidate' }
+    const jobs = [job({ id: 'A', status: 'failed', attempts: 1, error: outside, variation: linked, approved: false }), job({ id: 'B', status: 'failed', attempts: 1, error: 'Provider error 500', variation: linked, approved: false }), job({ id: 'C', status: 'completed', attempts: 2, variation: linked })]
+    expect(refusedLocally(jobs[0])).toBe(true)
+    expect(refusedLocally(jobs[1])).toBe(false)
+    expect(refusedLocally({ ...jobs[0], providerTaskId: 'T1' })).toBe(false)
+    expect(refinementCost(queue(jobs), 'SKN-001')).toEqual({ pictures: 3, attempts: 3, refused: 1, usd: 0.12 })
   })
 })
 

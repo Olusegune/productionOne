@@ -124,9 +124,17 @@ export function refinementSummary(spec: SkinSpec): { protectedItems: string[]; i
   return { protectedItems, intended }
 }
 
-/** What refinements have cost so far, from the queue's own attempt counts (a retry adds to it and never replaces it). Null when no price is known. */
-export function refinementCost(queue: QueueState, skinId: string): { pictures: number; attempts: number; usd: number | null } {
+/** True when a request was refused on this computer before it could reach the provider (a picture outside the app's folder, a file that cannot be opened). Such an attempt is not charged. */
+export const refusedLocally = (j: Pick<ImageJob, 'status' | 'error' | 'providerTaskId'>): boolean =>
+  j.status === 'failed' && !j.providerTaskId && /Only images in the Production One assets folder|Could not open the image|cannot find the (file|path)|No such file/i.test(j.error ?? '')
+
+/**
+ * What refinements have cost so far, from the queue's own attempt counts (a retry adds to it and never replaces it). Attempts refused on this computer before
+ * sending are counted separately and are not part of the estimate. Null when no price is known.
+ */
+export function refinementCost(queue: QueueState, skinId: string): { pictures: number; attempts: number; refused: number; usd: number | null } {
   const jobs = queue.jobs.filter((j) => j.variation?.id === skinId)
-  const attempts = jobs.reduce((n, j) => n + j.attempts, 0)
-  return { pictures: jobs.length, attempts, usd: queue.perImageUsd === null ? null : Math.round(attempts * queue.perImageUsd * 100) / 100 }
+  const refused = jobs.filter(refusedLocally).reduce((n, j) => n + j.attempts, 0)
+  const attempts = jobs.reduce((n, j) => n + j.attempts, 0) - refused
+  return { pictures: jobs.length, attempts, refused, usd: queue.perImageUsd === null ? null : Math.round(attempts * queue.perImageUsd * 100) / 100 }
 }

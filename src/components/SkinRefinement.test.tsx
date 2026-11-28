@@ -124,6 +124,19 @@ describe('skin refinement', () => {
     expect(screen.getByText(/Spent on refinements so far: 4 attempts, about \$0\.16\. Retries add to this and never replace it\./)).toBeTruthy()
   })
 
+  it('says in plain words why a picture could not be made, and that a request refused on this computer cost nothing', () => {
+    const g = generated()
+    const outside = 'Only images in the Production One assets folder can be previewed (this one is at C:/other/a.png, the folder is C:/app/assets) The request was not accepted.'
+    const refused = { ...g.queue, jobs: g.queue.jobs.map((j) => (j.variation ? { ...j, status: 'failed', error: outside, attempts: 1, outputPath: undefined } : j)) as ImageJob[] }
+    render(<SkinRefinement {...props({ variations: g.variations, queue: refused })} />)
+    const alert = screen.getAllByRole('alert').find((a) => /could not be made/.test(a.textContent ?? ''))!
+    expect(alert.textContent).toMatch(/2 pictures could not be made/)
+    expect(alert.textContent).toMatch(/stored outside the Production One folder/)
+    expect(alert.textContent).toMatch(/Nothing reached the provider, so nothing was charged/)
+    expect(alert.textContent).not.toMatch(/C:\/other|assets\)/)
+    expect(screen.getByText(/2 more were refused on this computer before sending, so they were not charged/)).toBeTruthy()
+  })
+
   it('once a refinement is approved, new sheets are offered from the approved skin reference', () => {
     const g = generated()
     const approvedState = approveRevision(g.variations, { id: 'SKN-001', revision: 2 })

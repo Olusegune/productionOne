@@ -8,9 +8,10 @@ import { styleFingerprint } from "../domain/style2d";
 import type { StyleBible } from "../domain/visualDevelopment";
 import { findEntity, latestApproved, type SkinSpec, type VariationState } from "../domain/variations";
 import { approvedSkin, isPhotorealStyle } from "../domain/skin";
-import { canApproveRefinement, refinementBlocker, refinementCost, refinementSummary, skinCapability, skinRequests, skinViews, sourceForView, startSkinRefinement } from "../domain/skinRefine";
+import { canApproveRefinement, refinementBlocker, refusedLocally, refinementCost, refinementSummary, skinCapability, skinRequests, skinViews, sourceForView, startSkinRefinement } from "../domain/skinRefine";
 import { affectedBy, buildPreflight } from "../domain/preflight";
 import { PreflightCard } from "./PreflightCard";
+import { plainNote } from "../domain/plainNote";
 import { ZoomImage, ZoomToolbar, useZoomSync } from "./ZoomCompare";
 import "../wardrobe.css";
 
@@ -56,6 +57,7 @@ export function SkinRefinement(props: SkinRefinementProps) {
   const [mode, setMode] = useState<Mode>("both");
   const [identityOk, setIdentityOk] = useState(false);
   const [surfaceOk, setSurfaceOk] = useState(false);
+  const failed = candidates.filter((j) => j.status === "failed");
   const pending = newest?.status === "candidate" && candidates.length > 0;
   const shown = candidates.find((j) => j.viewKey === viewKey);
   const original = sources[viewKey];
@@ -106,8 +108,15 @@ export function SkinRefinement(props: SkinRefinementProps) {
       <PreflightCard plan={plan} />
       <div className="wd-actions">
         <button className="primary" onClick={generate} disabled={!!blocker}><Sparkles size={15} aria-hidden="true" /> Generate refinement · {cost.label}</button>
-        {spent && spent.pictures > 0 && <span className="helper">Spent on refinements so far: {spent.attempts} attempt{spent.attempts === 1 ? "" : "s"}{spent.usd !== null ? `, about $${spent.usd.toFixed(2)}` : ""}. Retries add to this and never replace it.</span>}
+        {spent && spent.pictures > 0 && <span className="helper">Spent on refinements so far: {spent.attempts} attempt{spent.attempts === 1 ? "" : "s"}{spent.usd !== null ? `, about $${spent.usd.toFixed(2)}` : ""}. Retries add to this and never replace it.{spent.refused > 0 ? ` ${spent.refused} more ${spent.refused === 1 ? "was" : "were"} refused on this computer before sending, so ${spent.refused === 1 ? "it was" : "they were"} not charged.` : ""}</span>}
       </div>
+      {failed.length > 0 && (
+        <div className="wd-stale" role="alert">
+          <b>{failed.length} picture{failed.length === 1 ? "" : "s"} could not be made.</b>
+          <ul>{[...new Set(failed.map((j) => plainNote(j.error ?? "It failed without a message.")))].map((m) => <li key={m}>{m}</li>)}</ul>
+          {failed.every(refusedLocally) && <p className="helper">Nothing reached the provider, so nothing was charged. Fix the cause, then press Generate refinement again.</p>}
+        </div>
+      )}
 
       {entity && newest && pending && summary && (
         <div className="wd-candidates" aria-live="polite">

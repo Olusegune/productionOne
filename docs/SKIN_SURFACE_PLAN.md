@@ -71,3 +71,11 @@ Done and tested (deterministic and component tests, including a queue contract t
 - **Downstream.** An approved refinement makes its look name available in the sheet studio, whose sheets anchor on the approved front view of that look, and the skin wording is applied for the character.
 
 Not done: the real-provider run (it spends money on the user's project; see the handoff question), masks (no adapter supports them), lighting tests, skin QA categories, age and transformation integration, and a head-and-shoulders close-up of the original when none was ever approved (the front view is used and the head is cropped for comparison).
+
+## 9. First real-provider attempt, and what it found
+
+The user approved one real refinement of LILA (two pictures) from the Summit Sprout project, which was open in the test window. **No pictures were made and nothing was spent.** Both requests were refused on this computer before they reached the provider: LILA's pictures live in the real app's assets folder, and the test window uses its own, so the app's file-access rule from 0.67.0 (only files in the app's own folder may be read for a provider) correctly refused them. That is the rule working, not a fault in the refinement.
+
+What it changed in the app: the screen now says in plain words why pictures could not be made and that a request refused on this computer was not charged; the spend line counts such refusals separately and leaves them out of the dollar estimate, so a refusal can no longer look like spend.
+
+Why the run was not repeated on a stand-in character: the request has the same shape as the age studio's, which has run against the provider before, so a second run would only test the provider's picture quality on a stylized test character, which says nothing about realistic skin. The meaningful run is on a realistic character in the installed app (its own folder holds the pictures) and judging the result needs a person.
