@@ -342,6 +342,7 @@ export function DirectRoom(props: {
                     shot={shot}
                     shotOrder={sceneShots.map((s) => s.id)}
                     notify={notify}
+                    variations={props.variations}
                   />
                 </Fold>
               )}

@@ -11,6 +11,17 @@ import { WardrobeStudio } from "../components/WardrobeStudio";
 import { AgeStudio } from "../components/AgeStudio";
 import { TransformStudio } from "../components/TransformStudio";
 import { LooksStudio } from "../components/LooksStudio";
+import { bodyMetres } from "../domain/fit";
+import { anatomyLine, approvedCreature } from "../domain/creatureLab";
+import { AnatomyStudio } from "../components/AnatomyStudio";
+import { tabListKeys } from "../data/tabKeys";
+import { ProductionBibleOverview } from "../components/ProductionBibleOverview";
+import { bibleOverview, groupOf, startingGroup, type BibleView } from "../domain/bibleGroups";
+import { ContinuityPanel } from "../components/ContinuityPanel";
+import { ProfilesStudio } from "../components/ProfilesStudio";
+import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
+import { approvedMachine, machineLine } from "../domain/machineLab";
+import { RelationshipsStudio } from "../components/RelationshipsStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
 import { MotionDemo } from "../components/MotionDemo";
@@ -18,7 +29,7 @@ import { VoiceAudition } from "../components/VoiceAudition";
 import { BatchAudio } from "../components/BatchAudio";
 import { type ProviderId } from "../domain/providerRegistry";
 import { Eyebrow } from "../components/Eyebrow";
-import { Library, Copy, Plus, ListOrdered, Pause, Play, Download } from "lucide-react";
+import { Activity, Bone, Dna, Hourglass, LayoutGrid, Layers, Link2, Mic, ScanFace, Shirt, Library, Copy, Plus, ListOrdered, Pause, Play, Download } from "lucide-react";
 import { RealImage } from "../components/RealImage";
 import { type PromptPackage, pauseQueue, resumeQueue, cancelJob, retryJob } from "../domain/productionStudio";
 import type { ImageModelRecord, SheetPlan } from "../domain/visualDevelopment";
@@ -109,13 +120,16 @@ export interface DesignViewProps {
   applySlice?: (next: ProjectSlice) => void;
 }
 
-type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "identity" | "motion" | "voice";
+type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "relationships" | "anatomy" | "identity" | "motion" | "voice";
+const tabIcons: Record<Section, typeof Activity> = { sheets: LayoutGrid, wardrobe: Shirt, age: Hourglass, transform: Dna, looks: Layers, relationships: Link2, anatomy: Bone, identity: ScanFace, motion: Activity, voice: Mic };
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
   { id: "wardrobe", label: "Wardrobe studio" },
   { id: "age", label: "Age & appearance" },
   { id: "transform", label: "Transformations" },
   { id: "looks", label: "Looks & continuity" },
+  { id: "relationships", label: "Relationships" },
+  { id: "anatomy", label: "Anatomy" },
   { id: "identity", label: "Identity" },
   { id: "motion", label: "Motion" },
   { id: "voice", label: "Voice and sound" },
@@ -141,11 +155,28 @@ export function DesignView(p: DesignViewProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [focusVariant, setFocusVariant] = useState<string | undefined>(undefined);
   const wide = useWide();
+  const [view, setView] = useState<BibleView>(() => startingGroup(p.analysis.assets, p.selectedAsset));
+  // Choosing a group also opens its first piece when the current one belongs to another group, so the workspace never shows something from a group you left.
+  const changeView = (v: BibleView) => {
+    setView(v);
+    if (v === "bible") return;
+    const cur = p.analysis.assets[p.selectedAsset];
+    if (cur && groupOf(cur.type) === v) return;
+    const first = p.analysis.assets.findIndex((a) => groupOf(a.type) === v);
+    if (first >= 0) p.setSelectedAsset(first);
+  };
+  // Opening an asset from somewhere else (Review, a link) moves the list to the group that holds it.
+  useEffect(() => { const t = p.analysis.assets[p.selectedAsset]?.type; if (t && view !== "bible" && groupOf(t) !== view) setView(groupOf(t)); }, [p.selectedAsset]); // eslint-disable-line react-hooks/exhaustive-deps
   const inInspector = wide && section === "sheets";
+  const isCharacter = p.analysis.assets[p.selectedAsset]?.type === "character";
+  const visibleTabs = sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || isCharacter);
   const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, world, setWorld, fitRules, setFitRules } = p;
   return (
-<div className="po-design">
-            <BibleTree outputs={assetOutputs} assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
+<div className={`po-design${view === "bible" ? " bible-mode" : ""}`}>
+            <BibleTree view={view} onView={changeView} outputs={assetOutputs} assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
+            {view === "bible" ? (
+              <div className="po-canvas design-workspace"><ProductionBibleOverview overview={bibleOverview({ assets: analysis.assets, variations: p.variations, styleName: styleBible.name })} onGroup={changeView} /></div>
+            ) : (<>
             <div className="po-canvas design-workspace">
             <ArtDirectionBar
               style={styleBible}
@@ -155,8 +186,8 @@ export function DesignView(p: DesignViewProps) {
             <div className="as-head">
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
-              <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
-                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+              <div className="as-tabs" role="tablist" aria-label="Asset Studio sections" onKeyDown={tabListKeys(visibleTabs.map((t) => t.id), section, (id) => setSection(id as Section), (id) => `as-tab-${id}`)}>
+                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" data-tab={x.id} id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{(() => { const Icon = tabIcons[x.id]; return <Icon size={14} aria-hidden="true" />; })()}{x.label}</button>)}
               </div>
             </div>
             <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>
@@ -237,6 +268,7 @@ export function DesignView(p: DesignViewProps) {
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               proportions={proportions}
+              anatomyFor={(id) => { const c = approvedCreature(p.variations, id); const m = approvedMachine(p.variations, id); const out = [c ? anatomyLine(c.spec) : "", m ? machineLine(m.spec) : ""].filter(Boolean).join(" "); return out || undefined; }}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
               setSettings={setSheetSettings}
@@ -331,6 +363,33 @@ export function DesignView(p: DesignViewProps) {
                 onOpenSection={(s) => setSection(s)}
                 onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
               />
+            )}
+            {section === "looks" && (
+              <ContinuityPanel variations={p.variations} updateVariations={p.updateVariations} scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))} characters={analysis.assets.filter((a) => a.type === "character")} notify={setNotice} />
+            )}
+            </div>
+            <div id="sec-relationships" role="tabpanel" aria-labelledby="as-tab-relationships" hidden={section !== "relationships"}>
+            {section === "relationships" && analysis.assets[selectedAsset] && (
+              <RelationshipsStudio
+                asset={analysis.assets[selectedAsset]}
+                assets={analysis.assets}
+                variations={p.variations}
+                updateVariations={p.updateVariations}
+                sceneStates={p.slice?.sceneStates}
+                scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))}
+                notify={setNotice}
+                bodyOf={(id) => (analysis.assets.find((a) => a.id === id)?.type === "character" ? bodyMetres(proportions[id] ?? profileFromWorld(world, id)) : undefined)}
+              />
+            )}
+            </div>
+            <div id="sec-anatomy" role="tabpanel" aria-labelledby="as-tab-anatomy" hidden={section !== "anatomy"}>
+            {section === "anatomy" && analysis.assets[selectedAsset]?.type === "character" && (
+              <div className="an-stack">
+                <AnatomyStudio key={analysis.assets[selectedAsset].id} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} />
+                <details className="an-fold"><summary>Machine parts (robot, android, mech, armour)</summary><MachineStudio key={`m-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+                <details className="an-fold"><summary>Species and factions</summary><ProfilesStudio key={`p-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+                <details className="an-fold"><summary>Powers</summary><AbilityStudio key={`a-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+              </div>
             )}
             </div>
             <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>
@@ -610,6 +669,7 @@ export function DesignView(p: DesignViewProps) {
             </details>
             </div>
             <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} slotRef={inInspector ? setSlot : undefined} />
+            </>)}
           </div>
   );
 }

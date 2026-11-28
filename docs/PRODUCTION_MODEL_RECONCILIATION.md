@@ -1,0 +1,227 @@
+# Production model expansion: reconciliation
+
+Status: **reconciliation only. No application code was changed for this document.** It is written against the code on `feat/vision-qa` (0.66.0 plus the vision QA work in PR #80). Where I have not verified something in the code, it says so.
+
+## 1. What is implemented today
+
+**Project and assets**
+- One project state (`StudioState`, `src/data/projectStore.ts`) with optional blocks added over time: `proportions`, `fitRules`, `sceneStates`, `reviews`, `corrections`, `looks` (grades), `world`, `variations`. Older projects open because every block is optional and has a reader that tolerates absence.
+- Asset types today: `character | costume | prop | set | environment` (`AssetType`, `productionStudio.ts`). There is no vehicle, creature, robot, species, faction or world-profile type. Words like "creature" appear only in prompts and style text, not in data.
+- Reference sheets per asset (`sheetSpecs.ts`), a generation queue with jobs, revisions and approval, a Review workspace, packages for hand-off.
+
+**Variation model (0.66.0)** (`src/domain/variations.ts` and neighbours)
+- Six entity kinds: garment, fit, condition, age, transformation, look. Every entity has immutable numbered revisions (`Ref {id, revision}`), a status (candidate/approved/rejected), media with roles, and a typed spec.
+- Dependency graph (`variationGraph.ts`): which revision depends on which, staleness (newer, missing, not approved, wrong kind, upstream stale, cycle), `dependentsOf`, regeneration plans.
+- Looks pin exact revisions per slot and carry scene assignments; composition conflicts are checked.
+- Provenance: jobs carry a `variation` link (`id, revision, role, uses[]`); packages include a `variationManifest`.
+- Migration: `variationsOf`/`deriveFromLegacy`, strict `readVariations`.
+- Transformation spec already has `expectedAnatomy` (intentional features), `anchors`, `symmetry`, `costume` behaviour, `audience`, free `details`.
+
+**Space and scale**
+- `sceneState.ts`: world-space things (character/furniture/prop/landmark), positions, posture, `occupies`, `ownedBy`, relationships, per-shot cameras, explicit changes with reasons, `worldIssues` (chair taken / not owned / seated without chair / chair moved), drift detection.
+- `proportions.ts`, `fit.ts`: body proportions in heads and metres, fit rules proposed per character and approved by a person, a scale sheet (lineup, doorway, chair, desk, stair, prop).
+- `worldRules.ts`: the **project-level** default body profile and scale convention. Inheritance is project to character only; the file says no group behaviour exists.
+
+**QA**
+- Deterministic checks, a local vision model with closed questions compared by the app (side, same person, wearing), honest four-state status, corrections that keep their link to the record.
+
+**Interface**
+- Six workspaces: Projects, Story, Design, Direct (optional), Deliver, Assistant. Design holds the character bible with eight section tabs and the Wardrobe/Age/Transform/Looks studios. A golden-path component and a first-run exist.
+
+## 2. What remains (against the new brief)
+
+| Brief area | State | Gap |
+|---|---|---|
+| Shared production model (asset type/subtype, typed specs, relationships, provenance, QA, staleness, portable manifests) | Partly | Variation entities are character-bound (`characterId` in each spec). Assets (props, sets) are a separate older record with no revisions. No cross-asset relationship records. |
+| Specialist templates (human, creature, alien, hero, villain, robot, mech, props, vehicles, environments) | Not started | One generic character path. No subtype, no per-type spec. |
+| Creature & Anatomy Lab | Foundation only | `expectedAnatomy` exists on transformations; no creature spec, no anatomy rules that the checks read for non-transformations, no limb/digit counts. |
+| Power & Ability Designer | Not started | Nothing models abilities or their states. |
+| Robot & Mech Workshop | Not started | No joints/sensors/panels spec, no cutaway/design-reference labelling. |
+| Prop & Vehicle Workshop | Not started | Props are plain assets; no hand/body fit, no scale reference. |
+| Scale / Interaction / Ownership relationships | Partly | Scene state has `occupies`/`ownedBy` and chair issues, but it is per scene, not a reusable relationship between assets, and not tied to references, QA, or staleness. |
+| World / Species / Faction profiles | Partly | Project-level defaults only. No species, no faction, no overrides with provenance, no proposals. |
+| Scene-state continuity with branches and exact revision refs | Partly | Looks pin revisions and carry scene ids; scene states do not reference revisions and have no branches. |
+| UI grouping (Characters / Assets / Worlds / Production Bible) | Not started | Today: Design workspace with a character bible. |
+| Agent behaviour (show intended changes, protected features, affected assets/scenes, inputs, deliverables, cost before executing) | Partly | Cost is shown before generation and the assistant works from approved scope; the full pre-flight plan view is not built (I have not audited every agent path). |
+
+## 3. What the architecture already supports
+
+- **Immutable revisions, pinned refs, staleness and regeneration plans** are generic over `EntityKind`; adding kinds is additive (`PREFIX`, `depsOf`, readers).
+- **`depsOf` is the single place** that says what depends on what, so asset relationships can be added as dependencies and staleness follows without new machinery.
+- **Optional project blocks + strict readers** give a safe path for migration: add a block, add a reader, never rewrite old data.
+- **Package manifests** already carry variation data; relationships can ride the same route.
+- **The vision checks** take expectations from records and ask closed questions, so "six fingers" and "robot joints visible" can be expressed as probes, with the same honesty rules. Hand-level questions were measured as unreliable (2 of 6), so those stay record-facts and human review until a model proves otherwise.
+- **`ownedBy`/`occupies` and `worldIssues`** already encode the VIP chair rule at scene level.
+
+## 4. Schema and interface adjustments needed
+
+1. **Generalise the owner of an entity.** Replace the implicit "character" with a subject ref `{ kind: 'character'|'asset'|'world', id }` on specs. Existing specs keep `characterId`; a reader maps it to a subject. No file rewrite.
+2. **New entity kinds** (additive): `relationship`, `ability`, `profile` (species/faction/world), and typed asset specs (`creature`, `robot`, `prop`, `vehicle`). Assets with revisions are needed for props and vehicles; today they are unrevisioned.
+3. **Relationship record**: `{ a: Ref|subject, b: Ref|subject, kind: scale | interaction | ownership | attachment, params (heights, hand/grip, occupies), basis: declared | measured }`. It is a dependency in `depsOf`, so changing either side marks the other's references stale. Scene `ownedBy`/`occupies` become views over approved relationships rather than a parallel store (migrated by reading, not rewriting).
+4. **Profiles with inheritance**: world, then species, then faction, then character, each with `overrides` and provenance. Changing a profile produces **proposals** against approved assets (a list the person accepts per item); it never edits an approved revision.
+5. **Scene-state branches**: a scene state holds exact `Ref`s (no "current condition" field) and a `branchOf`. Historical states keep the revisions they used by construction, since refs are immutable.
+6. **Declared vs generated**: every spec field carries whether it is a declared fact or a generated suggestion, so QA reads only declared facts as expectations.
+7. **Version flags**: `variations.schema` stays at 1 for additive kinds; a reader drops unknown kinds, so an older app opens a newer file without crashing. A new block (`relationships`, `profiles`) is optional. The project file version stays 1.
+8. **Interface**: no change to existing navigation in the first milestones. New studios appear inside Design.
+
+## 5. Recommended order (revised)
+
+Your order stands, with two adjustments marked.
+
+1. **Finish the original wardrobe/age/transformation work.** Remaining from earlier lists: garments from reference images or styles, drawn masks, reference-limit strategy, extra sheets, preset thumbnails, more live checks. PR #80 (vision QA) awaits your decision.
+2. **Asset relationships and dependency tracking.** Subject refs, the relationship entity, `depsOf` and staleness for it, migration from scene `ownedBy`/`occupies`. *Adjustment: include the VIP chair/desk regression here as the first acceptance test, because it exercises ownership, scale and scene together.*
+3. **Props and scale/interaction references.** Revisioned prop assets, hand/body fit, scale reference sheets generated from declared sizes.
+4. **Creature Lab and robot specs.** Typed specs, intentional-anatomy rules read by the checks, labelled design-reference views. *Adjustment: hero/villain are narrative roles on a character (a field), not body types, so they land with the templates, not as a separate model.*
+5. **Abilities.** Inactive/activation/controlled/peak/recovery/aftermath as pinned references; no "transparent" label unless the picture has real alpha (a check on the file).
+6. **Species, faction and world profiles** with overrides and proposals.
+7. **Scene-state continuity and release QA**, including portable-project and migration scenarios.
+
+After each: working code, verification results, screenshots, docs, known limitations, next step.
+
+## 6. The thirteen verification scenarios
+
+Each is tagged with the test layer it needs. They stay separate and are reported separately: **D** deterministic unit test, **M** mocked provider, **R** real provider (costs money, run sparingly), **H** human visual review (I cannot judge these for you).
+
+| # | Scenario | Planned layers | Milestone |
+|---|---|---|---|
+| 1 | Nonhumanoid creature fields | D | 4 |
+| 2 | Six-finger QA (intentional vs artifact) | D (declared count), M, R, H | 4 |
+| 3 | Hero and villain share a body | D | 4 |
+| 4 | Power visual language across intensity | D, R, H | 5 |
+| 5 | Clothing reacts to transformation only where requested | D (exists for `costume`), H | 4 to 5 |
+| 6 | Robot joints/sensors/panels across views | D, R, H | 4 |
+| 7 | Prop fits hand/body scale | D | 3 |
+| 8 | Chair ownership distinct; rapper not in Venomspur's chair or through the desk | D | 2 |
+| 9 | World rules produce proposals, never overwrite approved | D | 6 |
+| 10 | Faction exceptions | D | 6 |
+| 11 | Historical scene states keep original revisions | D | 7 |
+| 12 | Portable project carries specs, refs, relationships, media | D | 7 |
+| 13 | Existing projects migrate | D (fixture from 0.65/0.66 saves) | every milestone |
+
+Honest expectation: deterministic tests will cover the model and rules thoroughly; they will **not** prove a picture looks right. Picture quality claims will come only from labelled real-model runs, with numbers and limits stated as for the vision QA.
+
+## 7. Interface direction: "sleek, futuristic, magical", golden path, not overwhelming
+
+I recommend against a redesign. The app already has six workspaces, a golden-path component and a lot of power; the risk is that each new studio adds another tab bar and another long page. My recommendation:
+
+1. **One guided next step per screen.** A single, visible "what to do next" per character/asset, computed from state (the golden path already does this at project level). Everything else is secondary.
+2. **Progressive disclosure.** Each studio opens on a short form with the few fields that matter and a quiet "More options" for the rest. Creature, ability and robot specs use the same pattern: pick a template, fill three to five fields, generate, then refine.
+3. **The picture is the hero.** Large previews first, controls beside or beneath, status as small chips. The vision-QA state and staleness appear as one calm line, not a panel.
+4. **Group by what people think about:** Characters, Assets, Worlds, Production Bible. Introduce as a **grouping inside Design** (a left rail or segmented control) first, leaving the six top-level workspaces untouched, and move to a full restructure only if you approve it after seeing it.
+5. **Restrained motion and glow.** Soft depth, a single accent, subtle transitions on state change (a revision appearing, a look composing), all honouring reduced-motion. "Magical" should be felt in generation moments (a shimmer while a picture is made, a gentle reveal) rather than decoration everywhere.
+6. **Preflight before spending.** Before any agent action: what will change, what is protected, what is affected, inputs, deliverables, cost, and stop-points. This is one reusable component used by every studio and the assistant.
+7. **Plain words, everywhere.** The same rule as the notes fix: no paths, ids or engine messages in front of people.
+
+Cost: items 1 to 3 and 6 to 7 are modest and improve every studio. Item 4 is a medium change. Item 5 is small if done with the existing theme tokens. I would do them with each milestone, not as a separate project, so every new screen is born in the new style. I will show screenshots at each milestone; tell me if the direction misses.
+
+## 8. Risks and limits stated up front
+
+- Small local vision models are poor at anatomy and hand detail (measured); anatomy QA will be mostly declared rules and human review.
+- Generated pictures of cutaways, power effects and "transparent" glows cannot be guaranteed; the app labels what it can verify (alpha present or not) and says the rest is a design reference.
+- Real-provider testing has a $5 budget on top of a $9 project cap, about $4.24 spent. Live tests will be few and targeted.
+- This work is large; I will not merge or release anything until you say "Merge and release".
+
+## 9. Decisions I need from you
+
+1. Approve the order in section 5, or change it.
+2. Approve the grouping-inside-Design approach for Characters / Assets / Worlds / Production Bible (section 7, item 4) before any restructure.
+3. Decide what happens to PR #80 first (merge and release, or hold). This branch was cut from it.
+
+## Milestone 2 status: asset relationships and dependency tracking
+
+Done: a `relationship` record kind (ownership, interaction, scale, attachment) with immutable revisions, pinned to the body or outfit it was agreed for, so the existing staleness machinery flags it when that changes; a strict reader that drops damaged records; conflicts (two owners, two sizes); approved ownership feeds scene checks (the Direct blocking map and Review) without storing anything twice; scene things can have a footprint so a character standing inside a desk is reported; a Relationships tab in Design (record, approve, turn down, confirm after a change, keep what a scene already says). Tests: 1419 web tests pass, including the VIP chair/desk regression. Checked live in the test copy of the app (record, approve, tab bar fits).
+
+Not done / limits: footprints are axis-aligned rectangles (no rotation); scale relationships are recorded and checked for contradiction but do not yet drive prompts or reference images (Milestone 3); no screenshot-reviewed polish of the new tab beyond the first pass; a fresh live run after the final picker filter was not repeated; the Rust side was not changed or re-run.
+
+## Milestone 3 status: props and scale/interaction
+
+Done: a revisioned `prop` record (declared length, grip width, how it is held); fit guidance against a character's declared body (one hand, two hands, worn: too long, too wide, too thin, longer than the person), labelled as guidance, not measurement; a sentence stating the size against the person's hand and height, ready for prompts; a size form on prop assets and fit notes on "holds" relationships in the Relationships tab; strict reading of saved sizes. 1429 web tests pass (scenario 7: prop fits hand/body scale).
+
+Not done: the size sentence is not yet added to generation prompts automatically, and no scale reference pictures are generated (they would cost provider credits); the guidance thresholds are simple rules chosen for clarity and have not been tuned against real pictures; not checked in the live app after this change.
+
+## Milestone 4 status: creature anatomy (robot specs not started)
+
+Done: a revisioned `creature` record (body plan, limbs with counts and digits, eyes, symmetry, intentional features, never-list, story role); the declared anatomy is written into every new character picture prompt; counts seen in a picture can be compared with what was declared (a deliberate six-fingered hand is never flagged, six on a hand declared as five is); hero/villain are a story role field and two beings can share one body; an Anatomy tab on characters; strict reading of saved records. Scenarios covered by deterministic tests: 1 (nonhumanoid fields), 2 (six-finger rule), 3 (hero and villain share a body). 1440 web tests pass.
+
+Not done: nothing yet *looks* at a picture to count fingers or limbs (the measured model could not locate hands reliably, so counts must come from a person; there is no screen yet for entering what a picture shows); the Robot and Mech workshop (joints, sensors, panels, cutaway labelling) is not started; creature templates (alien, monster) are not yet one-click presets; not checked in the live app.
+
+## Milestones 4 (rest) and 5 status: machine parts and powers
+
+Done: revisioned `machine` records (robot, android, mech, powered armour; joints, sensors and access panels with counts, location and the views each must be visible in; power source; intentional and never lists) with a one-line-per-part editor that reports lines it cannot read; a comparison of parts seen per view against the declared list (missing, undeclared); cutaway/exploded views carry a fixed "design reference, not an engineering diagram" label; the declared parts are written into character prompts. Revisioned `ability` records: one visual language (colour, shape, motion) held constant across six states (inactive to aftermath) with only the strength changing, per-state descriptions, and a rule that a picture may only be called transparent if the PNG really has an alpha channel or tRNS chunk (read from the file header). Both live inside the Anatomy tab as closed-by-default sections. A table-driven reader now handles every record kind. Scenarios covered by deterministic tests: 4 (power language across intensity), 6 (robot parts across views). 1457 web tests pass.
+
+Not done: the per-view and alpha checks are not yet run automatically on generated pictures (parts seen must be entered by a person; the alpha check is not yet applied to files in the review flow); no cutaway pictures were generated, so how well a model draws them from these specs is untested; no per-state reference pictures are generated yet; not checked in the live app after this change; species, faction and world profiles (Milestone 6) and scene-state continuity (Milestone 7) are not started.
+
+## Milestone 6 status: species and faction profiles
+
+Done: revisioned `profile` records (species or faction) stating body plan, eyes, symmetry, intentional and never lists, free traits and members; a faction can be tied to the exact version of a species, so it is flagged when that species changes. Inheritance runs species, then faction (a faction overrides single values; lists add up), with where each value came from. Differences between a profile and a member's own approved anatomy are PROPOSALS only: accepting makes a new candidate revision of the being's record for the person to approve, "Keep mine" records an exception on the profile, and the approved record is never edited. Joining and leaving a profile is a new version with history. A "Species and factions" section sits in the Anatomy tab. Scenarios 9 (world rules become proposals, no overwrite) and 10 (faction exceptions) are covered by deterministic tests.
+
+Not done: world-level rules still live in the older project-level defaults (proportion preset and scale), not in this profile chain; profiles carry free-text traits that are not yet written into prompts or checked; only anatomy fields are proposed (no palette or dress-code proposals); not checked in the live app after this change.
+
+## Milestone 7 status: scene-state continuity and release QA
+
+Done: append-only scene snapshots that pin the EXACT revision of each person's look and of the relationships in force (no "current" reference anywhere); branches copied from another branch's latest snapshot, each with its own numbered history; plain-words notes when something newer has been approved since a snapshot (informational, never changes the snapshot); stored inside the existing `variations` block so it travels in the project file and package manifest, and older or damaged files read without it; a Scene continuity panel under Looks & continuity.
+
+### The 13 scenarios: what is actually tested
+
+Legend: D deterministic unit/component test (passing); M mocked provider; R real provider; H human visual review. Only D has been run for these milestones. No M, R or H testing of the new records was done, and no pictures were generated, so nothing here shows that a picture model draws these specs well.
+
+| # | Scenario | Tested at | Result |
+|---|---|---|---|
+| 1 | Nonhumanoid creature fields | D | pass |
+| 2 | Six-finger rule (declared vs mistake) | D | pass; no picture is read, counts must be entered |
+| 3 | Hero and villain share a body | D | pass |
+| 4 | Power language across intensity | D (prompt wording and states) | pass; picture result untested (R, H needed) |
+| 5 | Clothing reacts to transformation only where requested | D (existing `costume` rule from 0.66.0) | pass; not re-tested here |
+| 6 | Robot joints, sensors, panels across views | D (comparison of entered parts) | pass; no automatic reading of pictures |
+| 7 | Prop fits hand and body scale | D | pass; thresholds are rough guidance |
+| 8 | Chair ownership and desk | D | pass |
+| 9 | World rules produce proposals, no overwrite | D | pass |
+| 10 | Faction exceptions | D | pass |
+| 11 | Historical scene states keep revisions | D | pass |
+| 12 | Portable project carries new records | D (save and reload round trip, manifest) | pass; no real package export run with the new records |
+| 13 | Existing projects migrate | D (records absent or damaged) | pass; not run against the 0.65 stress-test project file |
+
+### Known limitations and what remains
+
+- No new record is yet used by the automatic review: parts seen, limb counts and alpha are not read from pictures. They compare what a person enters. The measured local vision model could not locate hands reliably, so it is not used for counts.
+- Prop and scale facts are not yet added to generation prompts automatically (anatomy and machine parts are).
+- Species and factions propose anatomy fields only; free traits are stored but unused.
+- Templates (alien, monster, hero, villain, vehicle, environment) are not one-click presets; vehicles and environments have no specialist record.
+- The Characters / Assets / Worlds / Production Bible grouping was not built; new studios sit inside the Anatomy and Relationships tabs. The agent preflight component (intended changes, protected features, affected assets, cost before running) was not built.
+- Live checks in the running app: Relationships, Anatomy and the prop form were checked at Milestone 4; Machine, Powers, Species and factions and Scene continuity were not checked live after being built.
+- Branch state: this work sits on `docs/production-model-reconciliation`, which is cut from `feat/vision-qa` (PR #80). Nothing is merged or released.
+
+### Live check in the running app (test copy)
+
+Run after Milestone 7 with the rebuilt test app (no provider calls, no pictures generated):
+- Machine parts: an unreadable line ("@underneath") showed its message and disabled Save; a valid entry showed the prompt sentence and saved.
+- Powers: the sentence shows one colour and shape; saving listed the power with its described states.
+- Species and factions: created and joined; no proposal appeared because the being's own anatomy already matched.
+- Scene continuity: composed and approved a look assigned to a scene, froze the scene (main, version 1, pinned to the look version), started "night version" from it (shown as "from main 1").
+- Bugs the live check found and fixed: the Anatomy and Relationships tabs were squeezed into the narrow column with the inspector showing; the new foldable sections reused an existing class name (`wd-more`, a button style) and rendered as a flex row; "Start branch" was stretched. All three were fixed and re-measured (full-width panel, sections stacked, button 26 px high).
+- Not exercised live: accepting a proposal, a prop's size form after the layout fix, and the comparison of parts seen per view (no screen for entering what a picture shows).
+
+## Follow-up: templates and preflight
+
+Done: one-click starting points that only fill the form (nothing is saved or generated until Save): seven for beings (human, monster or beast, alien or other species, serpent, winged, insect-like, plus Custom), five for machines (service robot, android, mech, powered armour, Custom) and four for powers (fire, lightning, shadow, Custom). Every template passes the same checks as a hand-made record, every power template describes all six states, and hero/villain are deliberately not templates (a story role on any being). A preflight card above the generate button on the Age and Transformations studios says what will be made, what is kept recognisable, what is left alone, which approved things depend on it, what it starts from, what you get, and the cost; it is closed by default with the cost always visible. Checked live in the test copy (template fills, mech joints, lightning states, preflight text on both studios). 1485 web tests pass.
+
+Not done: the preflight card is not yet on the Wardrobe studio, the Assistant or batch generation; it does not enforce a budget stop (the existing cost ceiling still does that); vehicles and environments still have no specialist record or templates; the Characters / Assets / Worlds / Production Bible grouping is not built.
+
+## Grouping, colour cues and QA pass
+
+**Grouping (inside Design, nothing restructured).** The bible list has a switcher: Characters, Assets (costumes and props), Worlds (sets and environments) and an Overview page. Choosing a group opens its first piece when the current one belongs elsewhere; opening an asset from another screen moves the list to its group. The Overview reads the records (art style, counts approved, species and factions with members, relationships that need a look or disagree, frozen scenes and branches, and anything out of date) and changes nothing. The old six workspaces are untouched.
+
+**Colour and icons.** Each area has a hue applied to icons only (text stays neutral): Projects amber, Script sky, Design violet, Review mint, Storyboards coral, Deliver orange, Assistant cyan; bible kinds blue, lilac and green; every asset tab, status (approved, waiting, needs a look, turned down), preflight row and overview card has an icon. A test checks every hue against the page and panel colours in both themes (3:1 minimum for meaningful icons).
+
+**QA run (this pass).** Checks run: type-check, 1503 web tests, 128 Rust tests, production web build, the static accessibility gate, the project's acceptance script; a fuzz test that damages a rich saved project 1500 ways (never crashes any screen's reader, and reading is stable); a scale test (60 characters, about 840 records: every summary under 15 ms); a live audit of every workspace and every group and tab at 1440, 1100 and 900 px (console errors, controls cut off by their container, unnamed buttons, duplicate ids, images without alt, unlabeled inputs); a keyboard test; light and dark themes.
+
+Defects found and fixed:
+1. Script: the selected-asset card clipped its kind selector, name, scene heading and merge button (columns did not stack at that panel width).
+2. Asset tabs and Story tabs could not be used from the keyboard: only the open tab was focusable and arrow keys did nothing. Left, Right, Home and End now work.
+3. At 900 px the bible list became a one-item sideways strip; it is a vertical list again. The icon rail's buttons were 18 px wide (hard to hit); they now fill the rail.
+4. Long names in the list pushed buttons past the panel edge; they are now shortened with an ellipsis.
+5. Studio headers were shorter than their wrapped intro text, so the rule under them cut through a line.
+6. The tab bar was an oval when it wrapped to several rows.
+7. Earlier in this work (found by live checks): Anatomy and Relationships tabs squeezed into the narrow column, foldable sections overlapping because of a clashing class name, a stretched "Start branch" button.
+
+Not covered, honestly: no screen-reader run (only static name checks and the keyboard test); no test below 900 px or on a high-DPI display; no real provider calls were made in this pass, so picture quality of anything generated from the new records is untested; Mac and signing unchanged; Rafter's scan did not run (allowance used up).

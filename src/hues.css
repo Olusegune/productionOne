@@ -1,0 +1,134 @@
+/* ===== Colour cues: each area and kind of thing has its own hue, applied to icons only (text stays neutral). Loaded last. ===== */
+:root {
+  --hue-projects: #f4b860;
+  --hue-story: #62b8f6;
+  --hue-design: #b794ff;
+  --hue-review: #4ed6a4;
+  --hue-direct: #ff8f80;
+  --hue-deliver: #ffab57;
+  --hue-assistant: #5ee0e8;
+  --hue-character: #6f94f2;
+  --hue-asset: #d79be6;
+  --hue-world: #6fd3ae;
+  --hue-bible: #f4c15e;
+  --hue-ok: #4ed6a4;
+  --hue-wait: #e7c25b;
+  --hue-warn: #ff9a6b;
+  --hue-link: #8aa8ff;
+  --hue-lock: #9aa8c4;
+}
+:root[data-theme="light"] {
+  --hue-projects: #b36b00;
+  --hue-story: #1b73b8;
+  --hue-design: #6d3fd1;
+  --hue-review: #0c8a5f;
+  --hue-direct: #c2412f;
+  --hue-deliver: #b85a00;
+  --hue-assistant: #0a8a92;
+  --hue-character: #2f56c2;
+  --hue-asset: #9a3fb0;
+  --hue-world: #12805c;
+  --hue-bible: #a66f00;
+  --hue-ok: #0c8a5f;
+  --hue-wait: #946b00;
+  --hue-warn: #b34a14;
+  --hue-link: #3556c7;
+  --hue-lock: #56627a;
+}
+
+/* Main left navigation. */
+.po-tabs button svg { transition: color .15s, transform .15s; }
+.po-tabs button[data-ws="Projects"] svg { color: var(--hue-projects); }
+.po-tabs button[data-ws="Story"] svg { color: var(--hue-story); }
+.po-tabs button[data-ws="Design"] svg { color: var(--hue-design); }
+.po-tabs button[data-ws="Review"] svg { color: var(--hue-review); }
+.po-tabs button[data-ws="Direct"] svg { color: var(--hue-direct); }
+.po-tabs button[data-ws="Deliver"] svg { color: var(--hue-deliver); }
+.po-tabs button[data-ws="Assistant"] svg { color: var(--hue-assistant); }
+.po-tabs button.active svg { transform: scale(1.08); filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 55%, transparent)); }
+.po-actions .icon-button[data-hue="cmd"] svg { color: var(--hue-assistant); }
+.po-actions .icon-button[data-hue="keys"] svg { color: var(--hue-design); }
+.po-actions .icon-button[data-hue="look"] svg { color: var(--hue-direct); }
+
+/* The bible list: the heading icon takes the colour of its kind, and so does the avatar ring. */
+.po-bible h4 svg { color: var(--hue-character); }
+.po-bible h4.kind-character svg { color: var(--hue-character); }
+.po-bible h4.kind-costume svg { color: var(--hue-asset); }
+.po-bible h4.kind-prop svg { color: var(--hue-asset); }
+.po-bible h4.kind-set svg { color: var(--hue-world); }
+.po-avatar.kind-character { --c: var(--hue-character); }
+.po-avatar.kind-costume, .po-avatar.kind-prop { --c: var(--hue-asset); }
+.po-avatar.kind-set, .po-avatar.kind-environment { --c: var(--hue-world); }
+
+/* The group switcher. */
+.bg-switch button svg { flex: none; }
+.bg-switch button[data-g="characters"] svg { color: var(--hue-character); }
+.bg-switch button[data-g="assets"] svg { color: var(--hue-asset); }
+.bg-switch button[data-g="worlds"] svg { color: var(--hue-world); }
+.bg-switch button[data-g="bible"] svg { color: var(--hue-bible); }
+.bg-switch button.on[data-g="characters"] { box-shadow: inset 0 -2px var(--hue-character); }
+.bg-switch button.on[data-g="assets"] { box-shadow: inset 0 -2px var(--hue-asset); }
+.bg-switch button.on[data-g="worlds"] { box-shadow: inset 0 -2px var(--hue-world); }
+.bg-switch button.on[data-g="bible"] { box-shadow: inset 0 -2px var(--hue-bible); }
+
+/* Asset tabs: a small icon in front of each label. */
+.as-tabs button { display: inline-flex; align-items: center; gap: 6px; }
+.as-tabs button svg { flex: none; opacity: .9; }
+.as-tabs button[data-tab="sheets"] svg { color: var(--hue-link); }
+.as-tabs button[data-tab="wardrobe"] svg { color: var(--hue-asset); }
+.as-tabs button[data-tab="age"] svg { color: var(--hue-wait); }
+.as-tabs button[data-tab="transform"] svg { color: var(--hue-design); }
+.as-tabs button[data-tab="looks"] svg { color: var(--hue-story); }
+.as-tabs button[data-tab="relationships"] svg { color: var(--hue-link); }
+.as-tabs button[data-tab="anatomy"] svg { color: var(--hue-warn); }
+.as-tabs button[data-tab="identity"] svg { color: var(--hue-character); }
+.as-tabs button[data-tab="motion"] svg { color: var(--hue-world); }
+.as-tabs button[data-tab="voice"] svg { color: var(--hue-assistant); }
+
+/* Status: icon and colour as well as words, so a list can be scanned. */
+.st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.st svg { flex: none; }
+.st.ok svg { color: var(--hue-ok); }
+.st.wait svg { color: var(--hue-wait); }
+.st.warn svg { color: var(--hue-warn); }
+.st.off svg { color: var(--hue-lock); }
+
+/* Preflight and overview rows. */
+.pf-row > b { display: inline-flex; align-items: center; gap: 6px; }
+.pf-row > b svg { color: var(--hue-link); flex: none; }
+.pf-row[data-k="make"] > b svg { color: var(--hue-design); }
+.pf-row[data-k="keep"] > b svg { color: var(--hue-warn); }
+.pf-row[data-k="alone"] > b svg { color: var(--hue-lock); }
+.pf-row[data-k="affects"] > b svg { color: var(--hue-wait); }
+.pf-row[data-k="uses"] > b svg { color: var(--hue-story); }
+.pf-row[data-k="get"] > b svg { color: var(--hue-ok); }
+.bo-grid h3 { display: flex; align-items: center; gap: 8px; }
+.bo-grid h3 svg { flex: none; }
+.bo-grid .wd-design { background: var(--surface); border: 1px solid var(--stroke); border-radius: 12px; padding: 14px 16px; }
+
+/* ===== Layout fixes found in QA ===== */
+/* Script: the selected-asset card clipped its kind selector, name and merge button when the panel was narrow. It now stacks by its own width. */
+.cb { container-type: inline-size; }
+@container (max-width: 640px) {
+  .cb-detail { grid-template-columns: minmax(0, 1fr); }
+  .cb-hero { max-width: 240px; }
+  .cb-line { grid-template-columns: minmax(0, 1fr); }
+  .cb-line select, .cb-line input { width: 100%; }
+}
+/* Narrow windows. The bible list stays a vertical list (it was turning into a one-item sideways strip beside the studio), the icon rail's buttons are big enough to hit, and the tab bar is a rounded panel, not an oval. */
+@media (max-width: 900px) {
+  .po-shell .po-bible ul { display: grid; overflow-x: visible; gap: 2px; padding-bottom: 0; }
+  .po-shell .po-bible li { flex: none; }
+}
+@media (max-width: 1280px) {
+  .po-shell .po-tabs button { width: 100%; min-width: 44px; }
+}
+.as-tabs { border-radius: 22px; }
+/* The bible list never grows wider than its panel: long names are shortened with an ellipsis instead of pushing the buttons past the edge. */
+.po-bible ul { grid-template-columns: minmax(0, 1fr); }
+.po-bible li { min-width: 0; }
+.po-bible li > button { width: 100%; min-width: 0; }
+/* Keyboard focus is always visible on buttons, tabs and section toggles. */
+:where(button, summary, [role="tab"], a[href]):focus-visible { outline: 2px solid var(--blue, #79d8e8); outline-offset: 2px; }
+/* Studio headers grow with their text: the rule under them used to cut through a long intro that wrapped onto an extra line. */
+.wd-head { height: auto; min-height: 0; padding-bottom: 12px; }

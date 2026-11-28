@@ -65,7 +65,7 @@ export function TopBar(props: {
       </div>
       <nav className="po-tabs" aria-label="Workspaces">
         {workspaceNames.map((name) => (
-          <button key={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name === "Review" && props.reviewCount ? `Review, ${props.reviewCount} waiting` : labelOf(name)} title={labelOf(name)}>
+          <button key={name} data-ws={name} className={props.workspace === name ? "active" : ""} onClick={() => props.onWorkspace(name)} aria-current={props.workspace === name ? "page" : undefined} aria-label={name === "Review" && props.reviewCount ? `Review, ${props.reviewCount} waiting` : labelOf(name)} title={labelOf(name)}>
             {(() => { const Icon = workspaceIcons[name]; return <Icon size={18} aria-hidden="true" />; })()}
             <span>{labelOf(name)}</span>
             {name === "Direct" && <em>optional</em>}
@@ -86,9 +86,9 @@ export function TopBar(props: {
       )}
       <div className="po-actions">
         {props.onLocal && <button className={`po-local${props.localUp ? " up" : ""}`} onClick={props.onLocal} title="Local AI: Ollama, LM Studio, ComfyUI"><span />Local AI</button>}
-        <button className="icon-button" onClick={props.onPalette} title="Command palette (Ctrl+K)" aria-label="Open command palette"><CommandIcon size={16} /></button>
-        <button className="icon-button" onClick={props.onProviders} title="Providers and keys" aria-label="Providers and keys"><WandSparkles size={16} /></button>
-        {props.onAppearance && <button className="icon-button" onClick={props.onAppearance} title="Appearance" aria-label="Appearance"><Palette size={16} /></button>}
+        <button className="icon-button" onClick={props.onPalette} data-hue="cmd" title="Command palette (Ctrl+K)" aria-label="Open command palette"><CommandIcon size={16} /></button>
+        <button className="icon-button" onClick={props.onProviders} data-hue="keys" title="Providers and keys" aria-label="Providers and keys"><WandSparkles size={16} /></button>
+        {props.onAppearance && <button className="icon-button" onClick={props.onAppearance} data-hue="look" title="Appearance" aria-label="Appearance"><Palette size={16} /></button>}
       </div>
     </div>
   );

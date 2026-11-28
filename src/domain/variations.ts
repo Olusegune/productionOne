@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -149,25 +149,155 @@ export interface LookSpec {
   queueVariant?: string
 }
 
+// ---------- relationships between assets ----------
+
+export type RelationKind = 'scale' | 'interaction' | 'ownership' | 'attachment'
+
+/** One side of a relationship: an asset (a character, prop, set or environment), and optionally the exact revision of a variation it applies to (a body, an outfit). */
+export interface Subject { asset: string; pin?: Ref }
+
+/**
+ * A fact about two assets that must hold wherever both appear. Read it as "a <relation> b": a owns b, a sits on b, a is `ratio` times as tall as b, a is attached to b.
+ * It is a record like any other: numbered, immutable revisions, approved by a person, and a pinned `Subject.pin` makes it depend on that revision, so when the
+ * body or outfit it was agreed for changes, the relationship is flagged for a look instead of silently going stale.
+ */
+export interface RelationshipSpec {
+  relation: RelationKind
+  a: Subject
+  b: Subject
+  /** For an interaction: what a does with b ("sit", "hold", "wear", "operate", "open", "carry"). */
+  verb?: string
+  /** For ownership: only a may use b. */
+  exclusive?: boolean
+  /** For scale: a's height divided by b's height. */
+  ratio?: number
+  /** Declared by a person, or measured from approved pictures. A declared fact is never presented as measured. */
+  basis: 'declared' | 'measured'
+  note?: string
+  /** Scenes this holds in. Absent: everywhere. */
+  sceneIds?: string[]
+}
+
+/** How a prop is held or used by a person. */
+export type PropGrip = 'one-hand' | 'two-hand' | 'worn' | 'carried' | 'none'
+
+/** A prop's declared size, so how it sits in a hand or against a body is a stated fact and not a guess made by the picture model. */
+export interface PropSpec {
+  /** The prop asset this describes. */
+  assetId: string
+  /** Longest dimension, and the grip width (the smallest cross-section a hand closes around), in metres. Declared by a person. */
+  lengthM: number
+  gripM?: number
+  grip: PropGrip
+  note?: string
+}
+
+export type BodyPlan = 'humanoid' | 'quadruped' | 'serpentine' | 'avian' | 'insectoid' | 'amorphous' | 'other'
+/** What a being does in the story. It says nothing about its body. */
+export type NarrativeRole = 'hero' | 'villain' | 'ally' | 'neutral' | 'background'
+
+/** The anatomy a being is meant to have, declared by a person. Quality checks hold pictures to these facts. */
+export interface CreatureSpec {
+  assetId: string
+  bodyPlan: BodyPlan
+  plan?: string
+  limbs: Array<{ name: string; count: number; digits?: number }>
+  eyes?: number
+  symmetry: 'symmetric' | 'asymmetric' | 'mixed'
+  /** Features that are deliberate, so they are not read as mistakes. */
+  intentional: string[]
+  /** Features it must never have. */
+  never: string[]
+  role?: NarrativeRole
+}
+
+export type PartView = 'front' | 'back' | 'side' | 'top'
+/** A joint, sensor or panel: how many, where, and the views it must be visible in. */
+export interface MachinePart { name: string; count: number; where?: string; views: PartView[] }
+
+/** The parts a robot, android, mech or suit of powered armour must have, declared by a person. */
+export interface MachineSpec {
+  assetId: string
+  kind: 'robot' | 'android' | 'mech' | 'powered-armor'
+  joints: MachinePart[]
+  sensors: MachinePart[]
+  panels: MachinePart[]
+  powerSource?: string
+  intentional: string[]
+  never: string[]
+}
+
+export type AbilityState = 'inactive' | 'activation' | 'controlled' | 'peak' | 'recovery' | 'aftermath'
+
+/** A power: one visual language held constant across six states. */
+export interface AbilitySpec {
+  assetId: string
+  name: string
+  language: { colour: string; shape: string; motion?: string }
+  states: Partial<Record<AbilityState, string>>
+  /** 'alpha-required' means a picture may only be called transparent when the file really has transparency. */
+  transparency: 'none' | 'translucent' | 'alpha-required'
+}
+
+/** What the members of a species or faction have in common. Members inherit these; the being's own approved record is never overwritten by them. */
+export interface ProfileSpec {
+  level: 'species' | 'faction'
+  name: string
+  /** Asset ids of the beings that belong to it. */
+  members: string[]
+  /** A faction can be tied to the exact version of a species it is drawn from, so it is flagged when that species changes. */
+  parent?: Ref
+  bodyPlan?: BodyPlan
+  eyes?: number
+  symmetry?: 'symmetric' | 'asymmetric' | 'mixed'
+  intentional: string[]
+  never: string[]
+  /** Free design traits such as palette or dress code. */
+  traits: Record<string, string>
+  /** Beings that keep their own value for a field, by asset id. */
+  exceptions: Record<string, Array<'bodyPlan' | 'eyes' | 'symmetry' | 'intentional' | 'never'>>
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
 export type AgeVariant = Entity<'age', AgeSpec>
 export type Transformation = Entity<'transformation', TransformationSpec>
 export type ProductionLook = Entity<'look', LookSpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec
+export type Relationship = Entity<'relationship', RelationshipSpec>
+export type Prop = Entity<'prop', PropSpec>
+export type Creature = Entity<'creature', CreatureSpec>
+export type Profile = Entity<'profile', ProfileSpec>
+export type Machine = Entity<'machine', MachineSpec>
+export type Ability = Entity<'ability', AbilitySpec>
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec
+
+/** A frozen record of a scene: the exact revisions it was made with. Append-only; never edited. */
+export interface SceneSnapshot {
+  /** 1, 2, 3 ... within its branch. */
+  n: number
+  branch: string
+  createdAt: string
+  /** Each person in the scene, with the exact revision of their look and of the relationships that applied. There is no "current" reference. */
+  cast: Array<{ assetId: string; look?: Ref; relationships: Ref[] }>
+  /** For the first snapshot of a branch: where it was copied from. */
+  fromBranch?: { branch: string; n: number }
+  note?: string
+}
 
 export interface VariationState {
   schema: typeof VARIATIONS_SCHEMA
   entities: AnyEntity[]
   /** Last number used per id prefix, so ids are never reused even after something is archived. */
   counters: Record<string, number>
+  /** Frozen scene snapshots by scene id. Absent in projects saved before continuity existed. */
+  continuity?: Record<string, SceneSnapshot[]>
 }
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

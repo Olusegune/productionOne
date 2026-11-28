@@ -1,4 +1,5 @@
 import { useMemo, useState, type RefObject } from "react";
+import { tabListKeys } from "../data/tabKeys";
 import { createPortal } from "react-dom";
 import { ArrowRight, FileInput, FileText, ScanText, X } from "lucide-react";
 import { CastBoard } from "../components/CastBoard";
@@ -80,7 +81,7 @@ export function StoryView(props: {
         </div>
 
         <div className="sv-breakdown">
-          <div className="sv-tabs" role="tablist" aria-label="Breakdown">
+          <div className="sv-tabs" role="tablist" aria-label="Breakdown" onKeyDown={tabListKeys(tabs.map((t) => t.id), tab, (id) => setTab(id as typeof tab), (id) => `sv-tab-${id}`)}>
             {tabs.map((t) => (
               <button key={t.id} role="tab" id={`sv-tab-${t.id}`} aria-selected={tab === t.id} aria-controls="sv-panel" tabIndex={tab === t.id ? 0 : -1} className={tab === t.id ? "on" : ""} onClick={() => setTab(t.id)}>
                 {t.label}{t.count !== undefined && <span className={`sv-count${t.id === "questions" && t.count > 0 ? " warn" : ""}`}>{t.count}</span>}

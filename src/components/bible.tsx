@@ -1,8 +1,9 @@
 import { RealImage } from "./RealImage";
+import { GROUPS, groupCounts, type BibleView } from "../domain/bibleGroups";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
-import { ImagePlus, Sparkles, Users, X } from "lucide-react";
+import { BookOpen, ImagePlus, Mountain, Shapes, Sparkles, UserRound, Users, X } from "lucide-react";
 import { assetIconFor } from "../domain/categoryIcons";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { newAssetKinds, type NewAssetKind } from "../domain/readingActions";
@@ -37,7 +38,7 @@ const dotFor = (asset: ExtractedAsset, queue: QueueState): Dot => {
 const dotLabel: Record<Dot, string> = { approved: "Approved", review: "Needs your review", busy: "In the queue", failed: "A view failed", planned: "Planned" };
 
 /** The production bible: every character, prop and set the script needs, with where it stands. */
-export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset, onAddMany, outputs }: { /** The approved picture of each asset, shown as its thumbnail. */ outputs?: Record<string, string>; assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean, extras?: { description?: string; layout?: string; makeConcept?: boolean }) => void; /** Adds one asset per chosen image, named from the file names. */ onAddMany?: (kind: NewAssetKind) => void }) {
+export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset, onAddMany, outputs, view, onView }: { /** The approved picture of each asset, shown as its thumbnail. */ outputs?: Record<string, string>; assets: ExtractedAsset[]; story?: ParsedStory; queue: QueueState; selected: number; onSelect: (index: number) => void; /** Adds a character, costume, prop or set; with an image (the person chooses a file) or without one. */ onAddAsset?: (kind: NewAssetKind, name: string, gender: string, withImage: boolean, extras?: { description?: string; layout?: string; makeConcept?: boolean }) => void; /** Adds one asset per chosen image, named from the file names. */ onAddMany?: (kind: NewAssetKind) => void; /** When given, the list shows one group at a time with a switcher on top; "bible" shows none. Without it every group is listed, as before. */ view?: BibleView; onView?: (view: BibleView) => void }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState("");
@@ -51,6 +52,8 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
   const arcs = useMemo(() => new Map<string, CharacterArc>((story ? characterArcs(story) : []).map((a) => [a.character.toUpperCase(), a])), [story]);
   const groups: Array<[string, ExtractedAsset["type"][]]> = [["Characters", ["character"]], ["Costumes", ["costume"]], ["Props", ["prop"]], ["Sets", ["set", "environment"]]];
   const approved = assets.filter((a) => a.status === "approved").length;
+  const counts = groupCounts(assets);
+  const shown = view === undefined ? groups : view === "bible" ? [] : groups.filter(([, types]) => GROUPS.find((g) => g.id === view)?.types.some((t) => types.includes(t)));
   return (
     <aside className="po-bible" aria-label="Production bible">
       <div className="po-bible-head"><span className="eyebrow">PRODUCTION BIBLE</span><small>{approved} of {assets.length} approved</small></div>
@@ -76,11 +79,18 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
         document.body,
       )}
       {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Script and the people, props and places it needs appear here. Or add a character, prop or set yourself with the button above.</EmptyState>}
-      {groups.map(([label, types]) => {
+      {view !== undefined && onView && (
+        <div className="bg-switch" role="group" aria-label="Browse the bible by group">
+          {GROUPS.map((g) => <button key={g.id} type="button" data-g={g.id} className={view === g.id ? "on" : ""} aria-pressed={view === g.id} onClick={() => onView(g.id)}>{(() => { const Icon = g.id === "characters" ? UserRound : g.id === "assets" ? Shapes : Mountain; return <Icon size={14} aria-hidden="true" />; })()}{g.label}<small>{counts[g.id].total}</small></button>)}
+          <button type="button" data-g="bible" className={view === "bible" ? "on" : ""} aria-pressed={view === "bible"} onClick={() => onView("bible")}><BookOpen size={14} aria-hidden="true" />Overview</button>
+        </div>
+      )}
+      {view === "bible" && <p className="helper po-none">The overview is open. Pick a group to browse its pieces.</p>}
+      {shown.map(([label, types]) => {
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         return (
           <section key={label}>
-            <h4>{(() => { const Icon = assetIconFor(types[0]); return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
+            <h4 className={`kind-${types[0]}`}>{(() => { const Icon = assetIconFor(types[0]); return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
             {!items.length && <p className="helper po-none">None yet.{onAddAsset ? " Use Add to the bible, or analyze a script that has them." : ""}</p>}
             <ul>
               {items.map(({ a, i }) => {
