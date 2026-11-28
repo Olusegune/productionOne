@@ -142,9 +142,9 @@ figcaption { font-size: 12px; color: var(--text-3); }
 :root[data-theme="light"] .wd-find.vision .wd-tag { color: #2f4b8c; }
 .wd-why { display: block; color: var(--text-3); margin-top: 2px; }
 
-/* Anatomy: one compact row per limb, with small buttons. */
-.an-limb { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 6px; }
-.an-limb label { min-width: 0; }
-.an-x, .an-add { width: auto; height: auto; align-self: end; padding: 6px 10px; }
+/* Anatomy: one compact row per limb, labels above their boxes, small buttons. */
+.an-limb { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+.an-limb label { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 12px; }
+.an-x, .an-add { width: auto; height: auto; align-self: end; padding: 8px 12px; }
 .an-add { margin-top: 4px; }
-@container (max-width: 520px) { .an-limb { grid-template-columns: 1fr 1fr; } }
+@container (max-width: 380px) { .an-limb { grid-template-columns: 1fr 1fr; } .an-limb .an-x { grid-column: 1 / -1; justify-self: start; } }
