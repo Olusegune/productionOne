@@ -4,6 +4,8 @@ import type { StoryVariant } from '../engine/story'
 import { readRelationshipSpec } from './relationships'
 import { readPropSpec } from './propFit'
 import { readCreatureSpec } from './creatureLab'
+import { readMachineSpec } from './machineLab'
+import { readAbilitySpec } from './abilityLab'
 import { emptyVariations, type AnyEntity, type MediaRef, type Revision, type VariationState, type GarmentSpec, type LookSpec } from './variations'
 
 /**
@@ -80,7 +82,9 @@ export function queueVariantOf(look: { revisions: Array<Revision<LookSpec>> }, r
   return look.revisions.find((r) => r.n === revision)?.spec.queueVariant ?? 'Canonical'
 }
 
-const KINDS = new Set(['garment', 'fit', 'condition', 'age', 'transformation', 'look', 'relationship', 'prop', 'creature'])
+const KINDS = new Set(['garment', 'fit', 'condition', 'age', 'transformation', 'look', 'relationship', 'prop', 'creature', 'machine', 'ability'])
+/** Kinds whose settings are checked and rewritten in a known shape when read. */
+const SPEC_READERS: Record<string, (raw: unknown) => unknown> = { relationship: readRelationshipSpec, prop: readPropSpec, creature: readCreatureSpec, machine: readMachineSpec, ability: readAbilitySpec }
 const STATUSES = new Set(['candidate', 'approved', 'rejected'])
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
@@ -99,7 +103,7 @@ export function readVariations(raw: unknown): VariationState | undefined {
     const revisions = e.revisions.filter((r): r is Record<string, unknown> => isObj(r) && typeof r.n === 'number' && Number.isInteger(r.n) && r.n > 0 && typeof r.status === 'string' && STATUSES.has(r.status) && isObj(r.spec) && Array.isArray(r.media))
       .map((r) => ({ ...r, media: (r.media as unknown[]).filter((m) => isObj(m) && typeof m.path === 'string' && typeof m.role === 'string') }))
       // A relationship's settings are checked and rewritten in a known shape; a revision whose settings cannot be read is dropped.
-      .flatMap((r) => { if (e.kind !== 'relationship' && e.kind !== 'prop' && e.kind !== 'creature') return [r]; const raw = (r as Record<string, unknown>).spec; const spec = e.kind === 'prop' ? readPropSpec(raw) : e.kind === 'creature' ? readCreatureSpec(raw) : readRelationshipSpec(raw); return spec ? [{ ...r, spec }] : [] })
+      .flatMap((r) => { const read = SPEC_READERS[e.kind as string]; if (!read) return [r]; const spec = read((r as Record<string, unknown>).spec); return spec ? [{ ...r, spec }] : [] })
     if (revisions.length === 0) continue
     entities.push({ ...e, name: typeof e.name === 'string' ? e.name : e.id, revisions } as unknown as AnyEntity)
   }

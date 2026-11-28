@@ -148,3 +148,8 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .an-x, .an-add { width: auto; height: auto; align-self: end; padding: 8px 12px; }
 .an-add { margin-top: 4px; }
 @container (max-width: 380px) { .an-limb { grid-template-columns: 1fr 1fr; } .an-limb .an-x { grid-column: 1 / -1; justify-self: start; } }
+
+/* Optional blocks inside a tab: closed by default so the first screen stays short. */
+.wd-more { margin-top: 12px; }
+.wd-more > summary { cursor: pointer; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border, rgba(255,255,255,.12)); font-weight: 600; }
+.wd-more[open] > summary { margin-bottom: 8px; }

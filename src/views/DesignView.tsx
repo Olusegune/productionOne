@@ -14,6 +14,8 @@ import { LooksStudio } from "../components/LooksStudio";
 import { bodyMetres } from "../domain/fit";
 import { anatomyLine, approvedCreature } from "../domain/creatureLab";
 import { AnatomyStudio } from "../components/AnatomyStudio";
+import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
+import { approvedMachine, machineLine } from "../domain/machineLab";
 import { RelationshipsStudio } from "../components/RelationshipsStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
@@ -243,7 +245,7 @@ export function DesignView(p: DesignViewProps) {
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               proportions={proportions}
-              anatomyFor={(id) => { const c = approvedCreature(p.variations, id); return c ? anatomyLine(c.spec) : undefined; }}
+              anatomyFor={(id) => { const c = approvedCreature(p.variations, id); const m = approvedMachine(p.variations, id); const out = [c ? anatomyLine(c.spec) : "", m ? machineLine(m.spec) : ""].filter(Boolean).join(" "); return out || undefined; }}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
               setSettings={setSheetSettings}
@@ -356,7 +358,11 @@ export function DesignView(p: DesignViewProps) {
             </div>
             <div id="sec-anatomy" role="tabpanel" aria-labelledby="as-tab-anatomy" hidden={section !== "anatomy"}>
             {section === "anatomy" && analysis.assets[selectedAsset]?.type === "character" && (
-              <AnatomyStudio key={analysis.assets[selectedAsset].id} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} />
+              <>
+                <AnatomyStudio key={analysis.assets[selectedAsset].id} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} />
+                <details className="wd-more"><summary>Machine parts (robot, android, mech, armour)</summary><MachineStudio key={`m-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+                <details className="wd-more"><summary>Powers</summary><AbilityStudio key={`a-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+              </>
             )}
             </div>
             <div id="sec-motion" role="tabpanel" aria-labelledby="as-tab-motion" hidden={section !== "motion"}>

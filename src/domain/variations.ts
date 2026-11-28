@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -211,6 +211,34 @@ export interface CreatureSpec {
   role?: NarrativeRole
 }
 
+export type PartView = 'front' | 'back' | 'side' | 'top'
+/** A joint, sensor or panel: how many, where, and the views it must be visible in. */
+export interface MachinePart { name: string; count: number; where?: string; views: PartView[] }
+
+/** The parts a robot, android, mech or suit of powered armour must have, declared by a person. */
+export interface MachineSpec {
+  assetId: string
+  kind: 'robot' | 'android' | 'mech' | 'powered-armor'
+  joints: MachinePart[]
+  sensors: MachinePart[]
+  panels: MachinePart[]
+  powerSource?: string
+  intentional: string[]
+  never: string[]
+}
+
+export type AbilityState = 'inactive' | 'activation' | 'controlled' | 'peak' | 'recovery' | 'aftermath'
+
+/** A power: one visual language held constant across six states. */
+export interface AbilitySpec {
+  assetId: string
+  name: string
+  language: { colour: string; shape: string; motion?: string }
+  states: Partial<Record<AbilityState, string>>
+  /** 'alpha-required' means a picture may only be called transparent when the file really has transparency. */
+  transparency: 'none' | 'translucent' | 'alpha-required'
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
@@ -220,8 +248,10 @@ export type ProductionLook = Entity<'look', LookSpec>
 export type Relationship = Entity<'relationship', RelationshipSpec>
 export type Prop = Entity<'prop', PropSpec>
 export type Creature = Entity<'creature', CreatureSpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec
+export type Machine = Entity<'machine', MachineSpec>
+export type Ability = Entity<'ability', AbilitySpec>
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec
 
 export interface VariationState {
   schema: typeof VARIATIONS_SCHEMA
@@ -232,7 +262,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 
