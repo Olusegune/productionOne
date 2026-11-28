@@ -311,6 +311,58 @@ pub fn head_box(app: tauri::AppHandle, path: String) -> Result<Option<HeadBox>, 
     Ok(estimate_head(&img))
 }
 
+/// Real measurements of the face area of one picture, for the skin surface check. These are plain facts about pixels, not quality scores: fine-detail energy
+/// (variance of a Laplacian over brightness), the share of very bright pixels, and the average colour. They say nothing about whether a face is right.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct SkinMetrics { pub texture: f32, pub highlight: f32, pub r: f32, pub g: f32, pub b: f32, pub used_head: bool }
+
+/// The part of the picture that is measured: the middle of the detected head, or, when no head is found, a fixed middle region.
+fn skin_region(img: &image::RgbImage, head: Option<&HeadBox>) -> (u32, u32, u32, u32, bool) {
+    let (w, h) = img.dimensions();
+    let (fx, fy, fw, fh, used) = match head {
+        Some(b) if b.w > 0.05 && b.h > 0.05 => (b.x + b.w * 0.2, b.y + b.h * 0.15, b.w * 0.6, b.h * 0.7, true),
+        _ => (0.3, 0.1, 0.4, 0.5, false),
+    };
+    let x = ((fx.clamp(0.0, 1.0)) * w as f32) as u32;
+    let y = ((fy.clamp(0.0, 1.0)) * h as f32) as u32;
+    let rw = ((fw.clamp(0.0, 1.0)) * w as f32) as u32;
+    let rh = ((fh.clamp(0.0, 1.0)) * h as f32) as u32;
+    (x.min(w.saturating_sub(1)), y.min(h.saturating_sub(1)), rw.max(1).min(w - x.min(w - 1)), rh.max(1).min(h - y.min(h - 1)), used)
+}
+
+pub fn skin_metrics_of(img: &image::RgbImage, head: Option<&HeadBox>) -> SkinMetrics {
+    let (x, y, rw, rh, used_head) = skin_region(img, head);
+    let crop = image::imageops::crop_imm(img, x, y, rw, rh).to_image();
+    // Every picture is measured at the same size, so a bigger file is not mistaken for finer detail.
+    let small = image::imageops::resize(&crop, 256, 256, image::imageops::FilterType::Triangle);
+    let lum = |p: &image::Rgb<u8>| 0.2126 * p[0] as f32 + 0.7152 * p[1] as f32 + 0.0722 * p[2] as f32;
+    let (n, mut r, mut g, mut b, mut bright) = ((256 * 256) as f32, 0f32, 0f32, 0f32, 0f32);
+    for p in small.pixels() { r += p[0] as f32; g += p[1] as f32; b += p[2] as f32; if lum(p) > 235.0 { bright += 1.0; } }
+    let mut lap: Vec<f32> = Vec::with_capacity(254 * 254);
+    for yy in 1..255u32 { for xx in 1..255u32 {
+        let c = lum(small.get_pixel(xx, yy));
+        lap.push(4.0 * c - lum(small.get_pixel(xx - 1, yy)) - lum(small.get_pixel(xx + 1, yy)) - lum(small.get_pixel(xx, yy - 1)) - lum(small.get_pixel(xx, yy + 1)));
+    } }
+    let mean = lap.iter().sum::<f32>() / lap.len() as f32;
+    let texture = lap.iter().map(|v| (v - mean) * (v - mean)).sum::<f32>() / lap.len() as f32;
+    SkinMetrics { texture, highlight: bright / n, r: r / n, g: g / n, b: b / n, used_head }
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct SkinComparison { pub original: SkinMetrics, pub candidate: SkinMetrics }
+
+/// Measures the face area of an approved original and a candidate, in the same way. Both must be inside the app's pictures folder.
+#[tauri::command]
+pub fn skin_metrics(app: tauri::AppHandle, original: String, candidate: String) -> Result<SkinComparison, String> {
+    let measure = |path: &str| -> Result<SkinMetrics, String> {
+        let file = inside_assets(&app, path)?;
+        let img = image::open(&file).map_err(|e| format!("Could not open the image: {e}"))?.to_rgb8();
+        let head = estimate_head(&img);
+        Ok(skin_metrics_of(&img, head.as_ref()))
+    };
+    Ok(SkinComparison { original: measure(&original)?, candidate: measure(&candidate)? })
+}
+
 /// Writes a proportion guide (a small PNG the app drew itself) into the pictures folder under a plain name. It checks the name, that the data really is a PNG of a
 /// sensible size, and never overwrites a different file; writing the same guide twice reuses it.
 pub fn write_guide_png(dir: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf, String> {
@@ -1046,6 +1098,52 @@ The background is one flat, uniform neutral mid-grey field.";
     }
 
     /// A scratch folder with an `assets` folder inside it and a file outside, removed at the end.
+    fn noisy(w: u32, h: u32, amp: i32, seed: u32) -> image::RgbImage {
+        let mut state = seed;
+        image::RgbImage::from_fn(w, h, |_, _| { state = state.wrapping_mul(1664525).wrapping_add(1013904223); let n = ((state >> 24) as i32 % (2 * amp + 1)) - amp; let v = (150 + n).clamp(0, 255) as u8; image::Rgb([v, (v as i32 - 20).max(0) as u8, (v as i32 - 40).max(0) as u8]) })
+    }
+
+    #[test]
+    fn fine_detail_energy_is_higher_for_a_textured_picture_and_lower_once_it_is_smoothed() {
+        let rough = noisy(400, 400, 30, 1);
+        let smooth = image::imageops::blur(&rough, 4.0);
+        let flat = image::RgbImage::from_pixel(400, 400, image::Rgb([150, 130, 110]));
+        let (a, b, c) = (skin_metrics_of(&rough, None), skin_metrics_of(&smooth, None), skin_metrics_of(&flat, None));
+        assert!(a.texture > b.texture * 3.0, "{} vs {}", a.texture, b.texture);
+        assert!(c.texture < 0.001, "a flat picture has no fine detail: {}", c.texture);
+        assert!(!a.used_head);
+    }
+
+    #[test]
+    fn the_same_picture_is_measured_the_same_whatever_its_size() {
+        let small = noisy(300, 300, 25, 7);
+        let big = image::imageops::resize(&small, 900, 900, image::imageops::FilterType::Triangle);
+        let (a, b) = (skin_metrics_of(&small, None), skin_metrics_of(&big, None));
+        assert!((a.r - b.r).abs() < 2.0 && (a.b - b.b).abs() < 2.0, "average colour should match");
+        assert!(b.texture < a.texture * 1.5, "a bigger copy of the same picture must not look more detailed: {} vs {}", a.texture, b.texture);
+    }
+
+    #[test]
+    fn highlights_and_average_colour_are_measured_as_they_are() {
+        let mut img = image::RgbImage::from_pixel(400, 400, image::Rgb([120, 90, 70]));
+        for y in 100..260 { for x in 120..280 { img.put_pixel(x, y, image::Rgb([250, 250, 250])); } }
+        let m = skin_metrics_of(&img, None);
+        assert!(m.highlight > 0.3, "a large bright patch in the measured area: {}", m.highlight);
+        let plain = skin_metrics_of(&image::RgbImage::from_pixel(400, 400, image::Rgb([120, 90, 70])), None);
+        assert_eq!(plain.highlight, 0.0);
+        assert!((plain.r - 120.0).abs() < 1.0 && (plain.g - 90.0).abs() < 1.0 && (plain.b - 70.0).abs() < 1.0);
+    }
+
+    #[test]
+    fn a_found_head_is_used_and_a_tiny_or_missing_one_falls_back_to_a_fixed_middle_region() {
+        let img = noisy(400, 400, 20, 3);
+        assert!(skin_metrics_of(&img, Some(&HeadBox { x: 0.3, y: 0.1, w: 0.4, h: 0.5 })).used_head);
+        assert!(!skin_metrics_of(&img, Some(&HeadBox { x: 0.3, y: 0.1, w: 0.01, h: 0.01 })).used_head);
+        assert!(!skin_metrics_of(&img, None).used_head);
+        let edge = skin_metrics_of(&img, Some(&HeadBox { x: 0.9, y: 0.9, w: 0.3, h: 0.3 }));
+        assert!(edge.texture.is_finite());
+    }
+
     struct Scratch(std::path::PathBuf);
     impl Scratch {
         fn new(tag: &str) -> Self {

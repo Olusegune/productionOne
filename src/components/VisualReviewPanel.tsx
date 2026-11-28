@@ -173,7 +173,7 @@ export function VisualReviewPanel(p: Props) {
           )
         })}
       </ul>
-      <small className="helper">Categories: {categories.map((c) => `${c} ${categoryLabels[c]}`).join(' · ')}. This app can check B, E, F and I from records; the rest need a vision model or your eyes.</small>
+      <small className="helper">Categories: {categories.map((c) => `${c} ${categoryLabels[c]}`).join(' · ')}. This app can check B, E, F and I from records, and L from measurements when you press Check skin surface on a refinement or lighting candidate (advisory); the rest need a vision model or your eyes.</small>
     </section>
   )
 }

@@ -182,3 +182,16 @@ export function recordSkin(state: VariationState, spec: SkinSpec, characterName:
   }
   return createEntity(state, 'skin', { name: `${characterName} skin`, characterId: spec.characterId, spec, now })
 }
+
+/**
+ * Age-appropriate fine detail for a target age, as wording. It is about the surface of the skin at that age and nothing else: it never asks for dirt, damage, heavy
+ * weathering or extreme wrinkles, and it leaves the person's complexion, marks and protected features to the profile. Empty when the age is not a number.
+ */
+export function ageDetailLine(targetAge: string): string | undefined {
+  const m = /(\d{1,3})/.exec(targetAge ?? '')
+  if (!m) return undefined
+  const age = Number(m[1])
+  if (age < 0 || age > 120) return undefined
+  const detail = age < 13 ? 'very smooth, fine skin with soft texture' : age < 25 ? 'youthful skin with fine texture and few lines' : age < 45 ? 'natural fine texture, with expression lines only where the face makes them' : age < 65 ? 'visible fine lines around the eyes and mouth and slightly more varied tone, without deep wrinkles unless asked for' : 'fine wrinkles and softer elasticity, still natural and not heavily weathered'
+  return `Age-appropriate fine detail for about ${age}: ${detail}. Aging shows as fine surface detail only: it is not dirt, damage or heavy weathering, and the same marks and complexion are kept.`
+}

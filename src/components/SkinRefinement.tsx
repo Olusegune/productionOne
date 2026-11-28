@@ -11,6 +11,9 @@ import { approvedSkin, isPhotorealStyle } from "../domain/skin";
 import { canApproveRefinement, refinementBlocker, refusedLocally, refinementCost, refinementSummary, skinCapability, skinRequests, skinViews, sourceForView, startSkinRefinement } from "../domain/skinRefine";
 import { affectedBy, buildPreflight } from "../domain/preflight";
 import { PreflightCard } from "./PreflightCard";
+import { SkinSurfaceCheck } from "./SkinSurfaceCheck";
+import { skinCheckApplies } from "../domain/skinQa";
+import type { Reviews } from "../domain/visualReview";
 import { plainNote } from "../domain/plainNote";
 import { ZoomImage, ZoomToolbar, useZoomSync } from "./ZoomCompare";
 import "../wardrobe.css";
@@ -29,6 +32,9 @@ export interface SkinRefinementProps {
   notify: (message: string) => void;
   openProviders: () => void;
   onOpenSheets: (variant: string) => void;
+  /** Where findings go (the Review screen's store). Optional. */
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -139,6 +145,7 @@ export function SkinRefinement(props: SkinRefinementProps) {
             <div className="wd-design"><h4>Intended to change</h4><ul>{summary.intended.map((p) => <li key={p}>{p}</li>)}</ul></div>
           </div>
 
+          <SkinSurfaceCheck original={original} candidate={shown} applicability={skinCheckApplies({ style, state: variations, characterId: character.id })} reviews={props.reviews} setReviews={props.setReviews} notify={notify} />
           <fieldset className="wd-keep"><legend>Your two decisions (kept apart)</legend>
             <label><input type="checkbox" checked={identityOk} onChange={(e) => setIdentityOk(e.target.checked)} /> <b>Identity:</b> the face, age, expression and marks are the same as the original</label>
             <label><input type="checkbox" checked={surfaceOk} onChange={(e) => setSurfaceOk(e.target.checked)} /> <b>Surface:</b> the skin looks more natural than the original</label>

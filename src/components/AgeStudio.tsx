@@ -14,6 +14,7 @@ import type { StyleBible } from "../domain/visualDevelopment";
 import { editDraft, startDraft, standingOf, type Draft } from "../domain/candidateFlow";
 import { ageAdjustmentList, ageCapability, ageDirection, ageKeepChoices, ageModes, ageRequests, ageViews, checkAgeSpec, defaultAgeKeep } from "../domain/age";
 import { agePicture, agesOf, newAgeVariant, newRelative } from "../domain/ageFlow";
+import { skinPromptForAge } from "../domain/skinQa";
 import { findEntity, latestApproved, type AgeSpec, type VariationState } from "../domain/variations";
 import { mentionsSide, sideCheckWarning } from "../domain/sides";
 import { Picture } from "./wardrobeParts";
@@ -103,7 +104,7 @@ export function AgeStudio(props: AgeStudioProps) {
     updateVariations(() => made.variations);
     setSelected(made.ref.id);
     const saved = findEntity(made.variations, made.ref.id)!.revisions.find((r) => r.n === made.ref.revision)!.spec as AgeSpec;
-    const requests = ageRequests({ style, provider, model: modelId, character, lookName: made.variant, age: made.ref, spec: saved, characterPicture, styleFp: styleFingerprint(style) });
+    const requests = ageRequests({ style, provider, model: modelId, character, lookName: made.variant, age: made.ref, spec: saved, characterPicture, styleFp: styleFingerprint(style), skin: skinPromptForAge(variations, character.id, style, spec.targetAge) });
     const result = enqueue(queue, requests, Date.now(), true);
     setQueue(() => result.state);
     notify(`Making ${result.added} picture${result.added === 1 ? "" : "s"} of ${character.name} at ${spec.targetAge}…`);
