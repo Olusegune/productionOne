@@ -3,7 +3,7 @@ import { GROUPS, groupCounts, type BibleView } from "../domain/bibleGroups";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { EmptyState } from "./EmptyState";
-import { ImagePlus, Sparkles, Users, X } from "lucide-react";
+import { BookOpen, ImagePlus, Mountain, Shapes, Sparkles, UserRound, Users, X } from "lucide-react";
 import { assetIconFor } from "../domain/categoryIcons";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import { newAssetKinds, type NewAssetKind } from "../domain/readingActions";
@@ -81,8 +81,8 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
       {assets.length === 0 && <EmptyState icon={Users} title="No cast yet" tone="violet">Analyze a script in Script and the people, props and places it needs appear here. Or add a character, prop or set yourself with the button above.</EmptyState>}
       {view !== undefined && onView && (
         <div className="bg-switch" role="group" aria-label="Browse the bible by group">
-          {GROUPS.map((g) => <button key={g.id} type="button" className={view === g.id ? "on" : ""} aria-pressed={view === g.id} onClick={() => onView(g.id)}>{g.label}<small>{counts[g.id].total}</small></button>)}
-          <button type="button" className={view === "bible" ? "on" : ""} aria-pressed={view === "bible"} onClick={() => onView("bible")}>Overview</button>
+          {GROUPS.map((g) => <button key={g.id} type="button" data-g={g.id} className={view === g.id ? "on" : ""} aria-pressed={view === g.id} onClick={() => onView(g.id)}>{(() => { const Icon = g.id === "characters" ? UserRound : g.id === "assets" ? Shapes : Mountain; return <Icon size={14} aria-hidden="true" />; })()}{g.label}<small>{counts[g.id].total}</small></button>)}
+          <button type="button" data-g="bible" className={view === "bible" ? "on" : ""} aria-pressed={view === "bible"} onClick={() => onView("bible")}><BookOpen size={14} aria-hidden="true" />Overview</button>
         </div>
       )}
       {view === "bible" && <p className="helper po-none">The overview is open. Pick a group to browse its pieces.</p>}
@@ -90,7 +90,7 @@ export function BibleTree({ assets, story, queue, selected, onSelect, onAddAsset
         const items = assets.map((a, i) => ({ a, i })).filter(({ a }) => types.includes(a.type));
         return (
           <section key={label}>
-            <h4>{(() => { const Icon = assetIconFor(types[0]); return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
+            <h4 className={`kind-${types[0]}`}>{(() => { const Icon = assetIconFor(types[0]); return <Icon size={14} aria-hidden="true" />; })()}{label}<span>{items.length}</span></h4>
             {!items.length && <p className="helper po-none">None yet.{onAddAsset ? " Use Add to the bible, or analyze a script that has them." : ""}</p>}
             <ul>
               {items.map(({ a, i }) => {

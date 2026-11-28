@@ -28,7 +28,7 @@ import { VoiceAudition } from "../components/VoiceAudition";
 import { BatchAudio } from "../components/BatchAudio";
 import { type ProviderId } from "../domain/providerRegistry";
 import { Eyebrow } from "../components/Eyebrow";
-import { Library, Copy, Plus, ListOrdered, Pause, Play, Download } from "lucide-react";
+import { Activity, Bone, Dna, Hourglass, LayoutGrid, Layers, Link2, Mic, ScanFace, Shirt, Library, Copy, Plus, ListOrdered, Pause, Play, Download } from "lucide-react";
 import { RealImage } from "../components/RealImage";
 import { type PromptPackage, pauseQueue, resumeQueue, cancelJob, retryJob } from "../domain/productionStudio";
 import type { ImageModelRecord, SheetPlan } from "../domain/visualDevelopment";
@@ -120,6 +120,7 @@ export interface DesignViewProps {
 }
 
 type Section = "sheets" | "wardrobe" | "age" | "transform" | "looks" | "relationships" | "anatomy" | "identity" | "motion" | "voice";
+const tabIcons: Record<Section, typeof Activity> = { sheets: LayoutGrid, wardrobe: Shirt, age: Hourglass, transform: Dna, looks: Layers, relationships: Link2, anatomy: Bone, identity: ScanFace, motion: Activity, voice: Mic };
 const sections: Array<{ id: Section; label: string }> = [
   { id: "sheets", label: "Sheets" },
   { id: "wardrobe", label: "Wardrobe studio" },
@@ -183,7 +184,7 @@ export function DesignView(p: DesignViewProps) {
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
               <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
-                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{x.label}</button>)}
+                {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" data-tab={x.id} id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{(() => { const Icon = tabIcons[x.id]; return <Icon size={14} aria-hidden="true" />; })()}{x.label}</button>)}
               </div>
             </div>
             <div id="sec-identity" role="tabpanel" aria-labelledby="as-tab-identity" hidden={section !== "identity"}>

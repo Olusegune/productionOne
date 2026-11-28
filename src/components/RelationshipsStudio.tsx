@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, Link2, X } from "lucide-react";
+import { AlertTriangle, Check, CircleCheck, CircleDashed, CircleOff, Link2, TriangleAlert, X } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import type { SceneState } from "../domain/sceneState";
 import { reasonText } from "../domain/regeneration";
@@ -135,7 +135,7 @@ export function RelationshipsStudio({ asset, assets, variations, updateVariation
           {mine.map((v) => (
             <div className="wd-lookrow" key={v.ref.id}>
               <b>{describeRelationship(v.spec, nameOf)}</b>
-              <small>{status(v)}{v.spec.basis === "declared" ? " · stated by you" : " · measured"}{v.spec.sceneIds?.length ? ` · ${v.spec.sceneIds.length} scene${v.spec.sceneIds.length === 1 ? "" : "s"}` : " · everywhere"}</small>
+              <small><span className={`st ${v.status === "approved" ? (v.stale ? "warn" : "ok") : v.status === "candidate" ? "wait" : "off"}`}>{v.status === "approved" ? (v.stale ? <TriangleAlert size={13} aria-hidden="true" /> : <CircleCheck size={13} aria-hidden="true" />) : v.status === "candidate" ? <CircleDashed size={13} aria-hidden="true" /> : <CircleOff size={13} aria-hidden="true" />}{status(v)}</span>{v.spec.basis === "declared" ? " · stated by you" : " · measured"}{v.spec.sceneIds?.length ? ` · ${v.spec.sceneIds.length} scene${v.spec.sceneIds.length === 1 ? "" : "s"}` : " · everywhere"}</small>
               {fitNotes(v).map((t, i) => <small key={`f${i}`} className={t.startsWith("Check:") ? "wd-why" : undefined}>{t}</small>)}
               {v.stale && v.reasons.map((r, i) => <small key={i} className="wd-why">{reasonText(variations, r)}</small>)}
               <span className="wd-actions">

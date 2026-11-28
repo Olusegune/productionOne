@@ -28,9 +28,9 @@ describe('the Relationships tab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Record as a candidate' }))
     const list = screen.getByRole('navigation', { name: /Relationships of VIP chair/ })
     expect(within(list).getByText('VIP chair belongs to Venomspur alone')).toBeTruthy()
-    expect(within(list).getByText(/Candidate · stated by you · everywhere/)).toBeTruthy()
+    expect(list.textContent).toMatch(/Candidate · stated by you · everywhere/)
     fireEvent.click(within(list).getByRole('button', { name: /Approve/ }))
-    expect(within(list).getByText(/Approved · stated by you/)).toBeTruthy()
+    expect(list.textContent).toMatch(/Approved · stated by you/)
   })
 
   it('will not record a size without a number, or the same thing twice', () => {
