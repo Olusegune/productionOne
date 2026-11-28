@@ -3,8 +3,10 @@ import { AlertTriangle, Check, Link2, X } from "lucide-react";
 import type { ExtractedAsset } from "../domain/productionStudio";
 import type { SceneState } from "../domain/sceneState";
 import { reasonText } from "../domain/regeneration";
+import { approvedPropSize, GRIPS, propFit, propScaleLine, recordPropSize } from "../domain/propFit";
+import type { BodyMetres } from "../domain/fit";
 import { addRelationship, describeRelationship, proposeFromScene, relationshipConflicts, relationshipViews, VERBS } from "../domain/relationships";
-import { addRevision, approveRevision, findEntity, latestApproved, rejectRevision, type Ref, type RelationshipSpec, type Subject, type VariationState } from "../domain/variations";
+import { addRevision, approveRevision, findEntity, latestApproved, rejectRevision, type PropGrip, type Ref, type RelationshipSpec, type Subject, type VariationState } from "../domain/variations";
 import "../wardrobe.css";
 
 export interface RelationshipsStudioProps {
@@ -15,6 +17,8 @@ export interface RelationshipsStudioProps {
   sceneStates?: Record<string, SceneState>;
   scenes?: Array<{ id: string; heading?: string }>;
   notify: (message: string) => void;
+  /** A character's body in metres, from their proportions, so a prop can be checked against hand and arm. */
+  bodyOf?: (assetId: string) => BodyMetres | undefined;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -28,7 +32,7 @@ const WAYS: Array<{ id: string; label: string; build: (me: string, other: string
   { id: "attach", label: "is attached to", build: (me, o) => ({ relation: "attachment", a: { asset: me }, b: { asset: o }, basis: "declared" }) },
 ];
 
-export function RelationshipsStudio({ asset, assets, variations, updateVariations, sceneStates, scenes, notify }: RelationshipsStudioProps) {
+export function RelationshipsStudio({ asset, assets, variations, updateVariations, sceneStates, scenes, notify, bodyOf }: RelationshipsStudioProps) {
   const nameOf = (id: string) => assets.find((a) => a.id === id)?.name ?? id;
   const all = useMemo(() => relationshipViews(variations), [variations]);
   const mine = all.filter((v) => v.spec.a.asset === asset.id || v.spec.b.asset === asset.id);
@@ -92,6 +96,28 @@ export function RelationshipsStudio({ asset, assets, variations, updateVariation
     notify("A new version was made. Approve it to confirm the relationship still holds.");
   };
 
+  // A prop's declared size, and how it suits whoever holds it.
+  const current = asset.type === "prop" ? approvedPropSize(variations, asset.id) : undefined;
+  const [lengthText, setLengthText] = useState("");
+  const [gripText, setGripText] = useState("");
+  const [grip, setGrip] = useState<PropGrip>("one-hand");
+  const saveSize = () => {
+    const spec = { assetId: asset.id, lengthM: Number(lengthText), grip, ...(Number(gripText) > 0 ? { gripM: Number(gripText) } : {}) };
+    const made = recordPropSize(variations, spec, asset.name, nowIso());
+    if ("error" in made) { notify(made.error); return; }
+    updateVariations((v) => { const r = recordPropSize(v, spec, asset.name, nowIso()); return "error" in r ? v : approveRevision(r.state, r.ref); });
+    notify(`Size recorded and approved: ${asset.name} is ${spec.lengthM} m long.`);
+    setLengthText(""); setGripText("");
+  };
+  const fitNotes = (v: (typeof mine)[number]): string[] => {
+    if (v.spec.relation !== "interaction" || v.status === "rejected") return [];
+    const prop = assets.find((a) => a.id === v.spec.b.asset)?.type === "prop" ? approvedPropSize(variations, v.spec.b.asset) : undefined;
+    const body = bodyOf?.(v.spec.a.asset);
+    if (!prop || !body) return [];
+    const withGrip = { ...prop.spec, grip: v.spec.verb === "hold" ? (prop.spec.grip === "none" ? "one-hand" : prop.spec.grip) : prop.spec.grip } as typeof prop.spec;
+    return [...propFit(withGrip, body).map((x) => (x.ok ? x.message : `Check: ${x.message}`)), propScaleLine(prop.spec, body, nameOf(v.spec.b.asset), nameOf(v.spec.a.asset))];
+  };
+
   const status = (v: (typeof mine)[number]) => (v.status === "approved" ? (v.stale ? "Needs a look" : "Approved") : v.status === "candidate" ? "Candidate" : "Turned down");
 
   return (
@@ -110,6 +136,7 @@ export function RelationshipsStudio({ asset, assets, variations, updateVariation
             <div className="wd-lookrow" key={v.ref.id}>
               <b>{describeRelationship(v.spec, nameOf)}</b>
               <small>{status(v)}{v.spec.basis === "declared" ? " · stated by you" : " · measured"}{v.spec.sceneIds?.length ? ` · ${v.spec.sceneIds.length} scene${v.spec.sceneIds.length === 1 ? "" : "s"}` : " · everywhere"}</small>
+              {fitNotes(v).map((t, i) => <small key={`f${i}`} className={t.startsWith("Check:") ? "wd-why" : undefined}>{t}</small>)}
               {v.stale && v.reasons.map((r, i) => <small key={i} className="wd-why">{reasonText(variations, r)}</small>)}
               <span className="wd-actions">
                 {v.status === "candidate" && <><button onClick={() => decide(v.ref, "approve")}><Check size={13} aria-hidden="true" /> Approve</button><button onClick={() => decide(v.ref, "reject")}><X size={13} aria-hidden="true" /> Turn down</button></>}
@@ -139,6 +166,19 @@ export function RelationshipsStudio({ asset, assets, variations, updateVariation
             {preview && <p className="wd-why" aria-live="polite">{preview}</p>}
             <button className="primary" disabled={!draft || (way === "scale" && !(ratioNumber > 0))} onClick={add}>Record as a candidate</button>
           </div>
+
+          {asset.type === "prop" && (
+            <div className="wd-design">
+              <h3>Size of {asset.name}</h3>
+              <p className="helper">{current ? `Approved: ${current.spec.lengthM} m long${current.spec.gripM ? `, grip ${current.spec.gripM} m` : ""}, held ${current.spec.grip.replace("-", " ")}.` : "No size recorded. Say how big it is, so it is drawn at the right size next to a person's hand and body."} Sizes are what you state; the checks compare them with each character's proportions and are guidance, not measurement.</p>
+              <div className="wd-fields">
+                <label>Length (m)<input type="number" min={0.01} step={0.05} value={lengthText} onChange={(e) => setLengthText(e.target.value)} /></label>
+                <label>Grip width (m)<input type="number" min={0.005} step={0.01} value={gripText} onChange={(e) => setGripText(e.target.value)} placeholder="optional" /></label>
+                <label>Held<select value={grip} onChange={(e) => setGrip(e.target.value as PropGrip)}>{GRIPS.map((g) => <option key={g} value={g}>{g.replace("-", " ")}</option>)}</select></label>
+              </div>
+              <button className="primary" disabled={!(Number(lengthText) > 0)} onClick={saveSize}>Save this size</button>
+            </div>
+          )}
 
           {proposals.length > 0 && (
             <div className="wd-design">

@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -178,6 +178,20 @@ export interface RelationshipSpec {
   sceneIds?: string[]
 }
 
+/** How a prop is held or used by a person. */
+export type PropGrip = 'one-hand' | 'two-hand' | 'worn' | 'carried' | 'none'
+
+/** A prop's declared size, so how it sits in a hand or against a body is a stated fact and not a guess made by the picture model. */
+export interface PropSpec {
+  /** The prop asset this describes. */
+  assetId: string
+  /** Longest dimension, and the grip width (the smallest cross-section a hand closes around), in metres. Declared by a person. */
+  lengthM: number
+  gripM?: number
+  grip: PropGrip
+  note?: string
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
@@ -185,8 +199,9 @@ export type AgeVariant = Entity<'age', AgeSpec>
 export type Transformation = Entity<'transformation', TransformationSpec>
 export type ProductionLook = Entity<'look', LookSpec>
 export type Relationship = Entity<'relationship', RelationshipSpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec
+export type Prop = Entity<'prop', PropSpec>
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec
 
 export interface VariationState {
   schema: typeof VARIATIONS_SCHEMA
@@ -197,7 +212,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

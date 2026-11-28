@@ -11,6 +11,7 @@ import { WardrobeStudio } from "../components/WardrobeStudio";
 import { AgeStudio } from "../components/AgeStudio";
 import { TransformStudio } from "../components/TransformStudio";
 import { LooksStudio } from "../components/LooksStudio";
+import { bodyMetres } from "../domain/fit";
 import { RelationshipsStudio } from "../components/RelationshipsStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
@@ -345,6 +346,7 @@ export function DesignView(p: DesignViewProps) {
                 sceneStates={p.slice?.sceneStates}
                 scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))}
                 notify={setNotice}
+                bodyOf={(id) => (analysis.assets.find((a) => a.id === id)?.type === "character" ? bodyMetres(proportions[id] ?? profileFromWorld(world, id)) : undefined)}
               />
             )}
             </div>
