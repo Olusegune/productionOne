@@ -20,7 +20,8 @@ import { bibleOverview, groupOf, startingGroup, type BibleView } from "../domain
 import { SkinStudio } from "../components/SkinStudio";
 import { SkinRefinement } from "../components/SkinRefinement";
 import { SkinLightingTest } from "../components/SkinLightingTest";
-import { isPhotorealStyle, skinPromptFor } from "../domain/skin";
+import { isPhotorealStyle } from "../domain/skin";
+import { skinPromptForVariant } from "../domain/skinQa";
 import { ContinuityPanel } from "../components/ContinuityPanel";
 import { ProfilesStudio } from "../components/ProfilesStudio";
 import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
@@ -273,7 +274,7 @@ export function DesignView(p: DesignViewProps) {
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               proportions={proportions}
-              skinFor={(id) => skinPromptFor(p.variations, id, analysis.assets.find((a) => a.id === id)?.style ?? styleBible)}
+              skinFor={(id, variant) => skinPromptForVariant(p.variations, id, analysis.assets.find((a) => a.id === id)?.style ?? styleBible, variant)}
               anatomyFor={(id) => { const c = approvedCreature(p.variations, id); const m = approvedMachine(p.variations, id); const v = approvedVehicle(p.variations, id); const out = [c ? anatomyLine(c.spec) : "", m ? machineLine(m.spec) : "", v ? vehicleLine(v.spec) : ""].filter(Boolean).join(" "); return out || undefined; }}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
@@ -337,8 +338,8 @@ export function DesignView(p: DesignViewProps) {
               <details className="an-fold" open={isPhotorealStyle(analysis.assets[selectedAsset].style ?? styleBible) || undefined}>
                 <summary>Skin &amp; Surface{isPhotorealStyle(analysis.assets[selectedAsset].style ?? styleBible) ? "" : " (for photorealistic characters)"}</summary>
                 <SkinStudio key={`s-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} style={analysis.assets[selectedAsset].style ?? styleBible} notify={setNotice} />
-                <SkinRefinement key={`r-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} queue={queue} setQueue={setQueue} style={analysis.assets[selectedAsset].style ?? styleBible} desktop={isTauri} providersVersion={Number(providersOpen)} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openProviders={() => setProvidersOpen(true)} onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }} />
-                <SkinLightingTest key={`l-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} queue={queue} setQueue={setQueue} style={analysis.assets[selectedAsset].style ?? styleBible} desktop={isTauri} providersVersion={Number(providersOpen)} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openProviders={() => setProvidersOpen(true)} />
+                <SkinRefinement key={`r-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} queue={queue} setQueue={setQueue} style={analysis.assets[selectedAsset].style ?? styleBible} desktop={isTauri} providersVersion={Number(providersOpen)} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openProviders={() => setProvidersOpen(true)} onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}  reviews={p.reviews} setReviews={p.setReviews} />
+                <SkinLightingTest key={`l-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} queue={queue} setQueue={setQueue} style={analysis.assets[selectedAsset].style ?? styleBible} desktop={isTauri} providersVersion={Number(providersOpen)} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openProviders={() => setProvidersOpen(true)}  reviews={p.reviews} setReviews={p.setReviews} />
               </details>
             )}
             </div>

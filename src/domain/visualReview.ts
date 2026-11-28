@@ -11,10 +11,11 @@ import type { VariationState } from './variations'
  * lists and never mixed. An output that has not been checked is shown as "Not checked", never as clean. Whether a vision model is accurate is not something
  * this code can claim: that needs human-labelled evaluation.
  */
-export type Category = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K'
+export type Category = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L'
 export const categoryLabels: Record<Category, string> = {
   A: 'Identity', B: 'Proportions and silhouette', C: 'Costume continuity', D: 'Set landmarks', E: 'Placement and chair assignment', F: 'Scale and fit', G: 'Hands and anatomy', H: 'Intersections and ground contact', I: 'Art-style adherence', J: 'Lighting and colour continuity',
   K: 'Damage and wear placement',
+  L: 'Skin surface',
 }
 export const categories = Object.keys(categoryLabels) as Category[]
 /** Which categories a rule over the records can check. The rest need a vision model (or a person). */

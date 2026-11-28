@@ -14,6 +14,9 @@ import { colourReviewQuestions, expectedColourEffect, lightingBlocker, lightingR
 import { buildPreflight } from "../domain/preflight";
 import { plainNote } from "../domain/plainNote";
 import { PreflightCard } from "./PreflightCard";
+import { SkinSurfaceCheck } from "./SkinSurfaceCheck";
+import { skinCheckApplies } from "../domain/skinQa";
+import type { Reviews } from "../domain/visualReview";
 import { ZoomImage, ZoomToolbar, useZoomSync } from "./ZoomCompare";
 import "../wardrobe.css";
 
@@ -30,6 +33,8 @@ export interface SkinLightingTestProps {
   onUnapproved: (job: ImageJob) => void;
   notify: (message: string) => void;
   openProviders: () => void;
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -128,6 +133,7 @@ export function SkinLightingTest(props: SkinLightingTestProps) {
             <figure><ZoomImage z={zoom} index={1} path={shown?.outputPath} label={`${light.label} candidate`} empty={shown ? (shown.status === "failed" ? "This picture could not be made" : "Still being made") : "No candidate"} /><figcaption>{light.label}{shown?.approved ? " · kept as a reference" : ""}</figcaption></figure>
           </div>
           <p className="helper">{expectedColourEffect(light.record)}</p>
+          <SkinSurfaceCheck original={source?.path} candidate={shown} light={light.record} applicability={skinCheckApplies({ style, state: variations, characterId: character.id })} reviews={props.reviews} setReviews={props.setReviews} notify={notify} />
           <fieldset className="wd-keep"><legend>Your review of this light (kept apart)</legend>
             {questions.map((q, i) => <label key={i}><input type="checkbox" checked={!!checks[keyFor(i)]} onChange={(e) => setChecks((c) => ({ ...c, [keyFor(i)]: e.target.checked }))} /> {q}</label>)}
           </fieldset>

@@ -65,13 +65,15 @@ export interface AgePromptInput {
   notes?: string
   /** Overrides the anchors saved in the settings (a person's own words). */
   anchors?: string[]
+  /** The approved skin wording with age-appropriate fine detail, for a photorealistic character (see skinQa.ts). */
+  skin?: string
 }
 
 /**
  * The character's current age is left out of their identity facts on purpose (it would contradict the target), and so is their description
  * (it may state an age or describe the clothes). Reference image 1 is the approved character at their current age.
  */
-export function agePrompt({ style, character, spec, view, model, notes, anchors }: AgePromptInput): string {
+export function agePrompt({ style, character, spec, view, model, notes, anchors, skin }: AgePromptInput): string {
   const named = anchors ?? spec.anchors ?? []
   const direction = ageDirection(character.age, spec.targetAge)
   const toward = direction === 'older' ? 'older' : direction === 'younger' ? 'younger' : 'a different age'
@@ -88,6 +90,7 @@ export function agePrompt({ style, character, spec, view, model, notes, anchors 
       : `Show a ${toward === 'a different age' ? '' : `${toward}-looking `}redesign of this character at age ${spec.targetAge}. Keep their role, costume language and overall character, and take more freedom with the face than a same-person aged picture would.`,
     named.length ? `What must stay recognisable: ${named.join('; ')}.` : '',
     adjustments.length ? `Age cues to show:\n${adjustments.join('\n')}` : '',
+    skin ?? '',
     sideLineFor(view.key, ...named, ...adjustments),
     kept.length ? `Keep exactly the same: ${kept.join('; ')}. Change only what age changes.` : 'Change only what age changes.',
     style.spec2d
@@ -126,12 +129,13 @@ export interface AgeRequestInput {
   spec: AgeSpec
   /** Approved picture of the character at their current age: reference image 1. */
   characterPicture: string
+  skin?: string
 }
 
 export function ageRequests(input: AgeRequestInput): JobRequest[] {
   return ageViews.map((v) => ({
     assetId: input.character.id, variant: input.lookName, sheetType: 'Identity', viewKey: v.key, label: v.label,
-    prompt: agePrompt({ style: input.style, character: input.character, spec: input.spec, view: v, model: input.model, notes: input.notes }),
+    prompt: agePrompt({ style: input.style, character: input.character, spec: input.spec, view: v, model: input.model, notes: input.notes, ...(input.skin ? { skin: input.skin } : {}) }),
     aspect: v.aspect, fullBody: v.fullBody, provider: input.provider, model: input.model,
     references: [input.characterPicture], useAnchor: false, styleName: input.style.name, ...(input.styleFp ? { styleFp: input.styleFp } : {}),
     variation: { id: input.age.id, revision: input.age.revision, role: 'age-candidate', uses: [{ id: input.character.id, revision: 0, role: 'reference-1-character', path: input.characterPicture }] },

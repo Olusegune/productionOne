@@ -141,3 +141,8 @@
 .sk-mark { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 6px; }
 .sk-ctl { display: grid; gap: 2px; align-content: start; min-width: 0; }
 .sk-ctl small { opacity: .7; font-size: 12px; }
+
+/* Skin surface check results. */
+.sq-check { margin: 8px 0; }
+.sq-findings { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.sq-findings li { border: 1px solid var(--stroke); border-radius: 10px; padding: 10px 12px; display: grid; gap: 3px; }
