@@ -42,6 +42,8 @@
 :root[data-look="champagne"] .as-tabs button.on svg, :root[data-look="champagne"] .bg-switch button.on svg { color: var(--gold); }
 :root[data-look="champagne"] :where(button, summary, [role="tab"], a[href]):focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+:root[data-look="champagne"] { accent-color: var(--gold); }
+
 /* Status: text plus icon, and a colour only the true state earns. */
 :root[data-look="champagne"] .st.ok svg, :root[data-look="champagne"] .wd-badge.approved { color: var(--ok); }
 :root[data-look="champagne"] .st.wait svg, :root[data-look="champagne"] .st.warn svg { color: var(--attention); }
