@@ -105,3 +105,22 @@
 .bo-grid h3 { display: flex; align-items: center; gap: 8px; }
 .bo-grid h3 svg { flex: none; }
 .bo-grid .wd-design { background: var(--surface); border: 1px solid var(--stroke); border-radius: 12px; padding: 14px 16px; }
+
+/* ===== Layout fixes found in QA ===== */
+/* Script: the selected-asset card clipped its kind selector, name and merge button when the panel was narrow. It now stacks by its own width. */
+.cb { container-type: inline-size; }
+@container (max-width: 640px) {
+  .cb-detail { grid-template-columns: minmax(0, 1fr); }
+  .cb-hero { max-width: 240px; }
+  .cb-line { grid-template-columns: minmax(0, 1fr); }
+  .cb-line select, .cb-line input { width: 100%; }
+}
+/* Narrow windows. The bible list stays a vertical list (it was turning into a one-item sideways strip beside the studio), the icon rail's buttons are big enough to hit, and the tab bar is a rounded panel, not an oval. */
+@media (max-width: 900px) {
+  .po-shell .po-bible ul { display: grid; overflow-x: visible; gap: 2px; padding-bottom: 0; }
+  .po-shell .po-bible li { flex: none; }
+}
+@media (max-width: 1280px) {
+  .po-shell .po-tabs button { width: 100%; min-width: 44px; }
+}
+.as-tabs { border-radius: 22px; }
