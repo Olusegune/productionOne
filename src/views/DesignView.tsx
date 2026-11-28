@@ -14,6 +14,7 @@ import { LooksStudio } from "../components/LooksStudio";
 import { bodyMetres } from "../domain/fit";
 import { anatomyLine, approvedCreature } from "../domain/creatureLab";
 import { AnatomyStudio } from "../components/AnatomyStudio";
+import { ProfilesStudio } from "../components/ProfilesStudio";
 import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
 import { approvedMachine, machineLine } from "../domain/machineLab";
 import { RelationshipsStudio } from "../components/RelationshipsStudio";
@@ -361,6 +362,7 @@ export function DesignView(p: DesignViewProps) {
               <>
                 <AnatomyStudio key={analysis.assets[selectedAsset].id} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} />
                 <details className="wd-more"><summary>Machine parts (robot, android, mech, armour)</summary><MachineStudio key={`m-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
+                <details className="wd-more"><summary>Species and factions</summary><ProfilesStudio key={`p-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
                 <details className="wd-more"><summary>Powers</summary><AbilityStudio key={`a-${analysis.assets[selectedAsset].id}`} asset={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} notify={setNotice} /></details>
               </>
             )}

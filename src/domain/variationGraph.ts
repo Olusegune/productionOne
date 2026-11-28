@@ -22,6 +22,7 @@ export function depsOf(kind: EntityKind, spec: AnySpec): Array<{ ref: Ref; expec
       add(pins[0], PINNABLE, 'first side'); add(pins[1], PINNABLE, 'second side')
       break
     }
+    case 'profile': add(s.parent, ['profile'], 'species'); break
     default: break
   }
   return out
