@@ -23,9 +23,10 @@ describe('the Anatomy tab', () => {
   it('declares a serpentine four-armed being, shows the sentence that will be written into pictures, and saves it approved', () => {
     render(<Harness />)
     fireEvent.change(screen.getByLabelText('Body plan'), { target: { value: 'serpentine' } })
+    expect(screen.getByLabelText('Limb 1 name')).toHaveProperty('value', 'tail') // a serpentine body starts with a tail, not legs
+    fireEvent.change(screen.getByLabelText('Limb 1 name'), { target: { value: 'arm' } })
     fireEvent.change(screen.getByLabelText('Limb 1 count'), { target: { value: '4' } })
     fireEvent.change(screen.getByLabelText('Limb 1 digits'), { target: { value: '6' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Remove limb 2' }))
     fireEvent.change(screen.getByLabelText(/Intentional/), { target: { value: 'six fingers on each hand' } })
     expect(screen.getByText(/Body plan: serpentine\. 4 arms, each with exactly 6 digits\. Intentional, not a mistake: six fingers on each hand\./)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Save and approve' }))
