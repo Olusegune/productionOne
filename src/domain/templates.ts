@@ -1,4 +1,4 @@
-import type { AbilitySpec, BodyPlan, CreatureSpec, MachinePart, MachineSpec } from './variations'
+import type { AbilitySpec, BodyPlan, CreatureSpec, MachinePart, MachineSpec, VehicleSpec } from './variations'
 
 /**
  * Starting points for beings, machines and powers. A template only fills in a form; nothing is saved or generated until the person presses the button,
@@ -42,3 +42,15 @@ export const ABILITY_TEMPLATES: Array<Template<AbilityFill>> = [
 
 export const BODY_PLAN_OF = (id: string): BodyPlan | undefined => CREATURE_TEMPLATES.find((t) => t.id === id)?.fill.bodyPlan
 export const templateById = <S,>(list: Array<Template<S>>, id: string): Template<S> | undefined => list.find((t) => t.id === id)
+
+export type VehicleFill = Pick<VehicleSpec, 'kind' | 'seats' | 'entrances' | 'features' | 'intentional' | 'never'> & { lengthM?: number; widthM?: number; heightM?: number; interiorHeightM?: number; powerSource?: string }
+
+export const VEHICLE_TEMPLATES: Array<Template<VehicleFill>> = [
+  { id: CUSTOM, label: 'Custom', blurb: 'Start empty and say everything yourself.', fill: { kind: 'car', seats: 4, entrances: [], features: [], intentional: [], never: [] } },
+  { id: 'car', label: 'Car', blurb: 'Four seats, four doors, four wheels.', fill: { kind: 'car', seats: 4, lengthM: 4.5, widthM: 1.8, heightM: 1.45, interiorHeightM: 1.2, entrances: [part('door', 4, ['side'])], features: [part('wheel', 4, ['side']), part('headlight', 2, ['front']), part('taillight', 2, ['back'])], intentional: [], never: [] } },
+  { id: 'truck', label: 'Truck', blurb: 'A cab with two seats and a load area.', fill: { kind: 'truck', seats: 2, lengthM: 7, widthM: 2.5, heightM: 3.2, interiorHeightM: 1.4, entrances: [part('cab door', 2, ['side'])], features: [part('wheel', 6, ['side']), part('load bed', 1, ['side', 'top'])], intentional: [], never: [] } },
+  { id: 'motorbike', label: 'Motorbike', blurb: 'Two wheels, one or two riders.', fill: { kind: 'motorbike', seats: 2, lengthM: 2.1, widthM: 0.8, heightM: 1.1, entrances: [], features: [part('wheel', 2, ['side']), part('handlebar', 1, ['front', 'top']), part('headlight', 1, ['front'])], intentional: [], never: ['a roof'] } },
+  { id: 'aircraft', label: 'Aircraft', blurb: 'Wings, a tail, a cockpit canopy.', fill: { kind: 'aircraft', seats: 2, lengthM: 11, widthM: 10, heightM: 3.4, interiorHeightM: 1.1, entrances: [part('canopy', 1, ['side', 'top'])], features: [part('wing', 2, ['front', 'top']), part('tail fin', 1, ['back', 'side']), part('landing gear', 3, ['front', 'side'])], intentional: [], never: [] } },
+  { id: 'spacecraft', label: 'Spacecraft', blurb: 'A crewed ship with a hatch and engines.', fill: { kind: 'spacecraft', seats: 6, lengthM: 30, widthM: 12, heightM: 8, interiorHeightM: 2.4, entrances: [part('main hatch', 1, ['side', 'top'])], features: [part('engine', 3, ['back']), part('cockpit window', 1, ['front'])], powerSource: 'a reactor amidships', intentional: [], never: [] } },
+  { id: 'boat', label: 'Boat', blurb: 'A hull, a deck and a mast or motor.', fill: { kind: 'boat', seats: 6, lengthM: 8, widthM: 2.8, heightM: 3, entrances: [part('deck hatch', 1, ['top'])], features: [part('mast', 1, ['side', 'front']), part('rudder', 1, ['back'])], intentional: [], never: [] } },
+]

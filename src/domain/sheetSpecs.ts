@@ -206,7 +206,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     twoD ? adaptViewFor2D(view.instruction) : view.instruction,
     identityFacts(asset),
     asset.type === 'character' ? proportions ?? '' : '',
-    asset.type === 'character' && anatomy ? `Declared anatomy (exact, keep it the same in every picture): ${anatomy}` : '',
+    anatomy ? `${asset.type === 'character' ? 'Declared anatomy' : 'Declared design'} (exact, keep it the same in every picture): ${anatomy}` : '',
     asset.description?.trim() ? `Description (the person's own words): ${asset.description.trim().replace(/\s+/g, ' ')}` : '',
     place ? (asset.layout?.trim() ? `Fixed layout of this place, the same in every view: ${asset.layout.trim().replace(/\s+/g, ' ')}. Show the same place from a different position: do not move, add or remove these landmarks.` : 'Every view of this place shows the same architecture, layout, landmarks and prop positions as the others, seen from a different position or in different light.') : '',
     // A costume made from the script's own description of a character keeps those words in every view.

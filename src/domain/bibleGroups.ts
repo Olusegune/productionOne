@@ -2,6 +2,7 @@ import type { AssetType, ExtractedAsset } from './productionStudio'
 import { relationshipConflicts, relationshipViews } from './relationships'
 import { approvedProfiles } from './profiles'
 import { regenerationPlan } from './regeneration'
+import { vehicleOccupancyIssues } from './vehicleLab'
 import type { VariationState } from './variations'
 
 /**
@@ -55,7 +56,7 @@ export function bibleOverview(input: { assets: ExtractedAsset[]; variations: Var
       total: rel.length,
       approved: rel.filter((r) => r.status === 'approved').length,
       needLook: rel.filter((r) => r.stale).map((r) => r.entity.name),
-      conflicts: relationshipConflicts(input.variations, nameOf).map((c) => c.message),
+      conflicts: [...relationshipConflicts(input.variations, nameOf).map((c) => c.message), ...vehicleOccupancyIssues(input.variations, nameOf)],
     },
     attention: regenerationPlan(input.variations).steps.map((s) => ({ name: s.name, action: s.action })),
     frozen: { scenes: continuity.length, snapshots: continuity.reduce((n, l) => n + l.length, 0), branches: continuity.reduce((n, l) => n + new Set(l.map((s) => s.branch)).size, 0) },

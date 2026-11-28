@@ -26,7 +26,7 @@ describe('prop size in the Relationships tab', () => {
     render(<Harness who="PROP-STAFF" />)
     expect(screen.getByText(/No size recorded/)).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Save this size' }) as HTMLButtonElement).disabled).toBe(true)
-    fireEvent.change(screen.getByLabelText('Length (m)'), { target: { value: '1.2' } })
+    fireEvent.change(screen.getAllByLabelText('Length (m)')[0], { target: { value: '1.2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save this size' }))
     expect(screen.getByText(/Approved: 1.2 m long/)).toBeTruthy()
   })

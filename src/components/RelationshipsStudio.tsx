@@ -3,6 +3,7 @@ import { AlertTriangle, Check, CircleCheck, CircleDashed, CircleOff, Link2, Tria
 import type { ExtractedAsset } from "../domain/productionStudio";
 import type { SceneState } from "../domain/sceneState";
 import { reasonText } from "../domain/regeneration";
+import { VehicleStudio } from "./VehicleStudio";
 import { approvedPropSize, GRIPS, propFit, propScaleLine, recordPropSize } from "../domain/propFit";
 import type { BodyMetres } from "../domain/fit";
 import { addRelationship, describeRelationship, proposeFromScene, relationshipConflicts, relationshipViews, VERBS } from "../domain/relationships";
@@ -178,6 +179,10 @@ export function RelationshipsStudio({ asset, assets, variations, updateVariation
               </div>
               <button className="primary" disabled={!(Number(lengthText) > 0)} onClick={saveSize}>Save this size</button>
             </div>
+          )}
+
+          {asset.type === "prop" && (
+            <details className="an-fold"><summary>Vehicle details (if this is a vehicle)</summary><VehicleStudio key={`v-${asset.id}`} asset={asset} assets={assets} variations={variations} updateVariations={updateVariations} notify={notify} bodyOf={bodyOf} /></details>
           )}
 
           {proposals.length > 0 && (

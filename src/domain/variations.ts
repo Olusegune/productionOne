@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile' | 'vehicle'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -258,6 +258,25 @@ export interface ProfileSpec {
   exceptions: Record<string, Array<'bodyPlan' | 'eyes' | 'symmetry' | 'intentional' | 'never'>>
 }
 
+export type VehicleKind = 'car' | 'truck' | 'motorbike' | 'aircraft' | 'spacecraft' | 'boat' | 'train' | 'other'
+
+/** A vehicle: what it must have, declared by a person. Entrances and features carry the views each must be visible in. */
+export interface VehicleSpec {
+  assetId: string
+  kind: VehicleKind
+  seats: number
+  lengthM?: number
+  widthM?: number
+  heightM?: number
+  /** Height of the inside, for checking that a person can sit upright. */
+  interiorHeightM?: number
+  entrances: MachinePart[]
+  features: MachinePart[]
+  powerSource?: string
+  intentional: string[]
+  never: string[]
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
@@ -268,10 +287,11 @@ export type Relationship = Entity<'relationship', RelationshipSpec>
 export type Prop = Entity<'prop', PropSpec>
 export type Creature = Entity<'creature', CreatureSpec>
 export type Profile = Entity<'profile', ProfileSpec>
+export type Vehicle = Entity<'vehicle', VehicleSpec>
 export type Machine = Entity<'machine', MachineSpec>
 export type Ability = Entity<'ability', AbilitySpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile | Vehicle
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec | VehicleSpec
 
 /** A frozen record of a scene: the exact revisions it was made with. Append-only; never edited. */
 export interface SceneSnapshot {
@@ -297,7 +317,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF', vehicle: 'VHC' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

@@ -225,3 +225,9 @@ Defects found and fixed:
 7. Earlier in this work (found by live checks): Anatomy and Relationships tabs squeezed into the narrow column, foldable sections overlapping because of a clashing class name, a stretched "Start branch" button.
 
 Not covered, honestly: no screen-reader run (only static name checks and the keyboard test); no test below 900 px or on a high-DPI display; no real provider calls were made in this pass, so picture quality of anything generated from the new records is untested; Mac and signing unchanged; Rafter's scan did not run (allowance used up).
+
+## Follow-up: Wardrobe preflight and vehicles (after 0.67.0)
+
+Done: the preflight card (what will be made, kept, left alone, affected, started from, cost) is now also on the Wardrobe studio, for both garment previews and fitting an outfit. Vehicles are a revisioned record on prop assets (car, truck, motorbike, aircraft, spacecraft, boat, train, other): seats, length, width, height, inside height, entrances and features with the views each must be visible in, power, intentional and never lists; seven templates; the declared design is written into every picture prompt as "Declared design"; declared parts are compared with what was seen per view; a person who does not fit sitting upright is reported (guidance: seated height taken as 55% of standing); more people recorded as riding than seats is reported per scene and in the bible Overview; the size is stated against a person for prompts. The fuzz test covers vehicles. The form sits in the Relationships tab for props, in a closed section.
+
+Not done: the vehicle size sentence is not yet added to prompts automatically (only the declared design is); no environment record; nothing reads pictures to count wheels or doors; vehicles are checked live only in the test copy.

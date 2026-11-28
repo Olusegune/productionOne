@@ -68,8 +68,12 @@ export interface MachineFinding { view: PartView; part: string; kind: 'missing' 
  * "unexpected". Views nobody checked are not judged.
  */
 export function compareViews(spec: MachineSpec, seen: SeenInView[]): MachineFinding[] {
+  return comparePartViews([...spec.joints, ...spec.sensors, ...spec.panels], seen)
+}
+
+/** The same comparison for any list of declared parts (a vehicle's entrances and features use it too). */
+export function comparePartViews(all: MachinePart[], seen: SeenInView[]): MachineFinding[] {
   const out: MachineFinding[] = []
-  const all = [...spec.joints, ...spec.sensors, ...spec.panels]
   for (const s of seen) {
     const have = new Set(s.parts.map((p) => p.toLowerCase()))
     for (const p of all) if (p.views.includes(s.view) && !have.has(p.name.toLowerCase())) out.push({ view: s.view, part: p.name, kind: 'missing', message: `${p.name} should be visible from the ${s.view} but was not seen.` })
