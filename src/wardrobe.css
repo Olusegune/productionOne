@@ -166,3 +166,13 @@ figcaption { font-size: 12px; color: var(--text-3); }
 .pf-card > summary span { font-weight: 400; opacity: .85; }
 .pf-body { display: grid; gap: 8px; margin-top: 8px; font-size: 13px; }
 .pf-row ul { margin: 2px 0 0; padding-left: 18px; }
+
+/* Production bible: group switcher above the list, and the overview page. */
+.bg-switch { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.bg-switch button { flex: 1 1 auto; display: inline-flex; gap: 6px; align-items: center; justify-content: center; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--stroke, rgba(255,255,255,.14)); background: transparent; cursor: pointer; font-size: 13px; white-space: nowrap; }
+.bg-switch button.on { background: var(--surface-2, rgba(255,255,255,.1)); border-color: currentColor; font-weight: 600; }
+.bg-switch small { opacity: .7; }
+.po-shell .po-design.bible-mode { grid-template-columns: minmax(220px, 18vw) minmax(0, 1fr); }
+.bo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.bo-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.bo-list button { width: 100%; display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--stroke, rgba(255,255,255,.12)); background: transparent; cursor: pointer; text-align: left; }

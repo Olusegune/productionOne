@@ -14,6 +14,8 @@ import { LooksStudio } from "../components/LooksStudio";
 import { bodyMetres } from "../domain/fit";
 import { anatomyLine, approvedCreature } from "../domain/creatureLab";
 import { AnatomyStudio } from "../components/AnatomyStudio";
+import { ProductionBibleOverview } from "../components/ProductionBibleOverview";
+import { bibleOverview, groupOf, startingGroup, type BibleView } from "../domain/bibleGroups";
 import { ContinuityPanel } from "../components/ContinuityPanel";
 import { ProfilesStudio } from "../components/ProfilesStudio";
 import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
@@ -151,11 +153,26 @@ export function DesignView(p: DesignViewProps) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [focusVariant, setFocusVariant] = useState<string | undefined>(undefined);
   const wide = useWide();
+  const [view, setView] = useState<BibleView>(() => startingGroup(p.analysis.assets, p.selectedAsset));
+  // Choosing a group also opens its first piece when the current one belongs to another group, so the workspace never shows something from a group you left.
+  const changeView = (v: BibleView) => {
+    setView(v);
+    if (v === "bible") return;
+    const cur = p.analysis.assets[p.selectedAsset];
+    if (cur && groupOf(cur.type) === v) return;
+    const first = p.analysis.assets.findIndex((a) => groupOf(a.type) === v);
+    if (first >= 0) p.setSelectedAsset(first);
+  };
+  // Opening an asset from somewhere else (Review, a link) moves the list to the group that holds it.
+  useEffect(() => { const t = p.analysis.assets[p.selectedAsset]?.type; if (t && view !== "bible" && groupOf(t) !== view) setView(groupOf(t)); }, [p.selectedAsset]); // eslint-disable-line react-hooks/exhaustive-deps
   const inInspector = wide && section === "sheets";
   const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, world, setWorld, fitRules, setFitRules } = p;
   return (
-<div className="po-design">
-            <BibleTree outputs={assetOutputs} assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
+<div className={`po-design${view === "bible" ? " bible-mode" : ""}`}>
+            <BibleTree view={view} onView={changeView} outputs={assetOutputs} assets={analysis.assets} story={analysis.story} queue={queue} selected={selectedAsset} onSelect={setSelectedAsset} onAddAsset={onAddAsset} onAddMany={onAddMany} />
+            {view === "bible" ? (
+              <div className="po-canvas design-workspace"><ProductionBibleOverview overview={bibleOverview({ assets: analysis.assets, variations: p.variations, styleName: styleBible.name })} onGroup={changeView} /></div>
+            ) : (<>
             <div className="po-canvas design-workspace">
             <ArtDirectionBar
               style={styleBible}
@@ -648,6 +665,7 @@ export function DesignView(p: DesignViewProps) {
             </details>
             </div>
             <AssetInspector asset={analysis.assets[Math.min(selectedAsset, Math.max(0, analysis.assets.length - 1))]} story={analysis.story} slotRef={inInspector ? setSlot : undefined} />
+            </>)}
           </div>
   );
 }
