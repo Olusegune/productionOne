@@ -6,6 +6,7 @@ import { recordMachine, approvedMachine } from './machineLab'
 import { recordAbility, approvedAbilities } from './abilityLab'
 import { recordPropSize, approvedPropSize } from './propFit'
 import { recordVehicle, approvedVehicle, vehicleOccupancyIssues } from './vehicleLab'
+import { recordSkin, approvedSkin, skinPromptFor, newSkin, withPreset } from './skin'
 import { recordProfile, approvedProfiles, proposals, inheritedFor, profilesOf } from './profiles'
 import { freezeScene, branchScene, resolveSnapshot, driftSince, latestSnapshot } from './sceneContinuity'
 import { readVariations } from './variationMigration'
@@ -32,6 +33,7 @@ function rich(): VariationState {
     () => recordAbility(s, { assetId: 'C1', name: 'Surge', language: { colour: 'gold', shape: 'sparks' }, states: { peak: 'big' }, transparency: 'alpha-required' }, 'Mara', N),
     () => recordPropSize(s, { assetId: 'P1', lengthM: 0.5, gripM: 0.04, grip: 'one-hand' }, 'Staff', N),
     () => recordVehicle(s, { assetId: 'P2', kind: 'car', seats: 2, entrances: [{ name: 'door', count: 2, views: ['side'] }], features: [], intentional: [], never: [] }, 'Car', N),
+    () => recordSkin(s, { ...withPreset(newSkin('C1'), 'weathered'), complexion: 'warm', marks: [{ what: 'a scar', where: 'chin' }], regions: { forehead: { texture: 'subtle' } }, conditions: ['sweat'] }, 'Mara', N),
     () => recordProfile(s, { level: 'species', name: 'Venari', members: ['C1', 'C2'], bodyPlan: 'serpentine', eyes: 3, intentional: [], never: ['halo'], traits: { palette: 'ash' }, exceptions: { C2: ['eyes'] } }, N),
   ]) { const m = make(); if ('error' in m) throw new Error(m.error); s = approveRevision(m.state, m.ref) }
   const f = freezeScene(s, 'SC-1', [{ assetId: 'C1', look: look.ref }], { now: N }); if ('error' in f) throw new Error(f.error); s = f.state
@@ -67,7 +69,7 @@ function useEverything(state: VariationState) {
   relationshipViews(state); approvedRelationships(state, 'SC-1'); relationshipConflicts(state, (id) => id, 'SC-1'); relationshipProblems(state, new Set(['C1']))
   applyRelationships({ things: [{ id: 'P1', kind: 'furniture', name: 'Chair', x: 0, y: 0, facing: 0, interactions: [], scale: 1 }], relationships: [] }, state, 'SC-1')
   proposeFromScene({ things: [], relationships: [] }, state, 'SC-1')
-  for (const id of ['C1', 'C2', 'P1']) { approvedCreature(state, id); approvedMachine(state, id); approvedAbilities(state, id); approvedPropSize(state, id); approvedVehicle(state, id); inheritedFor(state, id); profilesOf(state, id) }
+  for (const id of ['C1', 'C2', 'P1']) { approvedCreature(state, id); approvedMachine(state, id); approvedAbilities(state, id); approvedPropSize(state, id); approvedVehicle(state, id); approvedSkin(state, id); skinPromptFor(state, id, { family: 'Realistic 3D' }); inheritedFor(state, id); profilesOf(state, id) }
   approvedProfiles(state); proposals(state); vehicleOccupancyIssues(state)
   for (const e of state.entities) for (const r of e.revisions) dependentsOf(state, { id: e.id, revision: r.n })
   const snap = latestSnapshot(state, 'SC-1'); if (snap) { resolveSnapshot(state, snap); driftSince(state, snap) }
