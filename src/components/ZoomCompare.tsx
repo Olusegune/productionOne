@@ -28,6 +28,16 @@ export const scrollForBox = (box: HeadBox, scrollW: number, scrollH: number, vie
 
 export type ZoomView = 'full' | 'crop' | 'head'
 
+/** Parts of the face to look at closely, as fractions of the head box. The head is found automatically, so these are an aid for looking, not a measurement. */
+export type FaceRegion = 'forehead' | 'eyes' | 'cheeks' | 'mouth'
+export const FACE_REGIONS: Record<FaceRegion, { label: string; x: number; y: number; w: number; h: number }> = {
+  forehead: { label: 'Forehead', x: 0.15, y: 0, w: 0.7, h: 0.28 },
+  eyes: { label: 'Eye area', x: 0.1, y: 0.28, w: 0.8, h: 0.22 },
+  cheeks: { label: 'Cheeks', x: 0, y: 0.4, w: 1, h: 0.32 },
+  mouth: { label: 'Mouth', x: 0.2, y: 0.62, w: 0.6, h: 0.3 },
+}
+export const regionBox = (head: { x: number; y: number; w: number; h: number }, region: FaceRegion) => { const f = FACE_REGIONS[region]; return { x: head.x + head.w * f.x, y: head.y + head.h * f.y, w: head.w * f.w, h: head.h * f.h } }
+
 async function findHead(path?: string): Promise<HeadBox | null> {
   if (!path || typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return null
   try {
@@ -46,12 +56,14 @@ export function useZoomSync(resetKey: string, paths: [string | undefined, string
   const [zoom, setZoom] = useState<[number, number]>([MIN_ZOOM, MIN_ZOOM])
   const [heads, setHeads] = useState<[HeadBox | null, HeadBox | null]>([null, null])
   const [headNote, setHeadNote] = useState('')
+  const [region, setRegionState] = useState<FaceRegion | null>(null)
+  const focus = (h: HeadBox | null): HeadBox | null => (h && region ? regionBox(h, region) : h)
   const panes = useRef<Array<HTMLDivElement | null>>([null, null])
   const lock = useRef(false)
   const [p0, p1] = paths
 
   const startZoom = (v: ZoomView) => (v === 'full' ? MIN_ZOOM : CROP_ZOOM)
-  const setView = (v: ZoomView) => { setViewState(v); setZoom([startZoom(v), startZoom(v)]); if (v !== 'head') { setHeads([null, null]); setHeadNote('') } }
+  const setView = (v: ZoomView) => { setRegionState(null); setViewState(v); setZoom([startZoom(v), startZoom(v)]); if (v !== 'head') { setHeads([null, null]); setHeadNote('') } }
   // A different picture starts from the chosen view again.
   const first = useRef(true)
   useLayoutEffect(() => { if (first.current) { first.current = false; return } setZoom([startZoom(view), startZoom(view)]); setHeads([null, null]) }, [resetKey]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -67,28 +79,29 @@ export function useZoomSync(resetKey: string, paths: [string | undefined, string
       const present = [p0, p1].filter(Boolean).length
       const found = [a, b].filter(Boolean).length
       setHeadNote(found === 0 ? 'The head could not be found on this picture (it needs a plain backdrop), so the top is shown.' : found < present ? 'The head was found on one picture only; the other shows its top.' : '')
-      setZoom([a ? zoomForHead(a) : CROP_ZOOM, b ? zoomForHead(b) : CROP_ZOOM])
+      setZoom([a ? zoomForHead(focus(a) as HeadBox) : CROP_ZOOM, b ? zoomForHead(focus(b) as HeadBox) : CROP_ZOOM])
     })
     return () => { live = false }
-  }, [view, resetKey, p0, p1])
+  }, [view, resetKey, p0, p1, region]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Opening a crop or a head, or a new picture, shows the right part.
   useLayoutEffect(() => {
     panes.current.forEach((el, i) => {
       if (!el) return
-      const box = view === 'head' ? heads[i] : null
+      const box = view === 'head' ? focus(heads[i]) : null
       if (box) { const at = scrollForBox(box, el.scrollWidth, el.scrollHeight, el.clientWidth, el.clientHeight); el.scrollLeft = at.left; el.scrollTop = at.top; return }
       el.scrollTop = 0
       el.scrollLeft = view === 'full' ? 0 : Math.max(0, (el.scrollWidth - el.clientWidth) / 2)
     })
-  }, [view, resetKey, zoom[0], zoom[1], heads]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view, resetKey, zoom[0], zoom[1], heads, region]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const zoomBoth = (delta: number) => setZoom(([a, b]) => [clampZoom(a + delta), clampZoom(b + delta)])
   const zoomOne = (index: 0 | 1, delta: number) => setZoom(([a, b]) => {
     if (sync) return [clampZoom(a + delta), clampZoom(a + delta)]
     return index === 0 ? [clampZoom(a + delta), b] : [a, clampZoom(b + delta)]
   })
-  const fit = () => { setViewState('full'); setHeads([null, null]); setHeadNote(''); setZoom([MIN_ZOOM, MIN_ZOOM]) }
+  const setRegion = (r: FaceRegion | null) => { setRegionState(r); setViewState(r ? 'head' : 'full'); if (!r) { setHeads([null, null]); setHeadNote(''); setZoom([MIN_ZOOM, MIN_ZOOM]) } }
+  const fit = () => { setRegionState(null); setViewState('full'); setHeads([null, null]); setHeadNote(''); setZoom([MIN_ZOOM, MIN_ZOOM]) }
   const onScroll = useCallback((index: 0 | 1) => {
     if (!sync || lock.current) return
     const a = panes.current[index], b = panes.current[index === 0 ? 1 : 0]
@@ -98,12 +111,12 @@ export function useZoomSync(resetKey: string, paths: [string | undefined, string
     b.scrollTop = scrollRatio(a.scrollTop, a.scrollHeight, a.clientHeight) * Math.max(0, b.scrollHeight - b.clientHeight)
     requestAnimationFrame(() => { lock.current = false })
   }, [sync])
-  return { sync, setSync, view, setView, zoom, zoomBoth, zoomOne, fit, onScroll, panes, headNote }
+  return { sync, setSync, view, setView, zoom, zoomBoth, zoomOne, fit, onScroll, panes, headNote, region, setRegion }
 }
 
 export type ZoomState = ReturnType<typeof useZoomSync>
 
-export function ZoomToolbar({ z }: { z: ZoomState }) {
+export function ZoomToolbar({ z, regions }: { z: ZoomState; regions?: boolean }) {
   const level = Math.round(z.zoom[0] * 100)
   return (
     <div className="rv-zoombar" role="toolbar" aria-label="Zoom">
@@ -112,6 +125,11 @@ export function ZoomToolbar({ z }: { z: ZoomState }) {
         <button type="button" className={z.view === 'crop' ? 'on' : ''} aria-pressed={z.view === 'crop'} onClick={() => z.setView('crop')} title="Zooms in on the top of the picture, where a figure's face is">Top crop</button>
         <button type="button" className={z.view === 'head' ? 'on' : ''} aria-pressed={z.view === 'head'} onClick={() => z.setView('head')} title="Finds the head from the figure's outline and zooms to it. An estimate: it needs a plain backdrop.">Head</button>
       </div>
+      {regions && (
+        <div className="rv-seg" role="group" aria-label="Look closely at">
+          {(Object.keys(FACE_REGIONS) as FaceRegion[]).map((r) => <button key={r} type="button" className={z.region === r ? 'on' : ''} aria-pressed={z.region === r} onClick={() => z.setRegion(z.region === r ? null : r)}>{FACE_REGIONS[r].label}</button>)}
+        </div>
+      )}
       <label className="rv-sync"><input type="checkbox" checked={z.sync} onChange={(e) => z.setSync(e.target.checked)} /> Sync zoom</label>
       <div className="rv-zoomctl">
         <button type="button" className="icon-button" onClick={() => z.zoomBoth(-ZOOM_STEP)} disabled={z.zoom[0] <= MIN_ZOOM && z.zoom[1] <= MIN_ZOOM} aria-label="Zoom out"><ZoomOut size={16} aria-hidden="true" /></button>

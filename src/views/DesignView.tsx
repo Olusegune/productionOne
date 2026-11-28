@@ -18,6 +18,7 @@ import { tabListKeys } from "../data/tabKeys";
 import { ProductionBibleOverview } from "../components/ProductionBibleOverview";
 import { bibleOverview, groupOf, startingGroup, type BibleView } from "../domain/bibleGroups";
 import { SkinStudio } from "../components/SkinStudio";
+import { SkinRefinement } from "../components/SkinRefinement";
 import { isPhotorealStyle, skinPromptFor } from "../domain/skin";
 import { ContinuityPanel } from "../components/ContinuityPanel";
 import { ProfilesStudio } from "../components/ProfilesStudio";
@@ -335,6 +336,7 @@ export function DesignView(p: DesignViewProps) {
               <details className="an-fold" open={isPhotorealStyle(analysis.assets[selectedAsset].style ?? styleBible) || undefined}>
                 <summary>Skin &amp; Surface{isPhotorealStyle(analysis.assets[selectedAsset].style ?? styleBible) ? "" : " (for photorealistic characters)"}</summary>
                 <SkinStudio key={`s-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} style={analysis.assets[selectedAsset].style ?? styleBible} notify={setNotice} />
+                <SkinRefinement key={`r-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} queue={queue} setQueue={setQueue} style={analysis.assets[selectedAsset].style ?? styleBible} desktop={isTauri} providersVersion={Number(providersOpen)} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openProviders={() => setProvidersOpen(true)} onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }} />
               </details>
             )}
             </div>

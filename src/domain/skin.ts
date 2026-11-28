@@ -95,13 +95,14 @@ export function readSkinSpec(raw: unknown): SkinSpec | undefined {
   const conditions = (Array.isArray(raw.conditions) ? raw.conditions : []).filter((c): c is string => typeof c === 'string' && !!c.trim()).map((c) => c.trim().slice(0, 80)).slice(0, 20)
   const base = presetById(preset).controls
   const identityJobId = text(raw.identityJobId, 80)
+  const variant = text(raw.variant, 80)
   const identityRevision = typeof raw.identityRevision === 'number' && Number.isInteger(raw.identityRevision) && raw.identityRevision >= 0 ? raw.identityRevision : undefined
   return {
     characterId: raw.characterId.trim().slice(0, 80), preset,
     textureDetail: pick(TEXTURE, raw.textureDetail, base.textureDetail), surfaceFinish: pick(FINISH, raw.surfaceFinish, base.surfaceFinish), tonalVariation: pick(TONAL, raw.tonalVariation, base.tonalVariation),
     fineFacialHair: pick(FINE_HAIR, raw.fineFacialHair, base.fineFacialHair), retouching: pick(RETOUCH, raw.retouching, base.retouching),
     marks, regions, makeup: text(raw.makeup, 200), complexion: text(raw.complexion, 200), undertone: text(raw.undertone, 200), protect, conditions,
-    ...(identityJobId ? { identityJobId } : {}), ...(identityRevision !== undefined ? { identityRevision } : {}),
+    ...(variant ? { variant } : {}), ...(identityJobId ? { identityJobId } : {}), ...(identityRevision !== undefined ? { identityRevision } : {}),
   }
 }
 

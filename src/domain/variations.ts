@@ -290,6 +290,8 @@ export interface SkinControls {
 export interface SkinSpec extends SkinControls {
   characterId: string
   preset: 'natural' | 'clean-portrait' | 'weathered' | 'custom'
+  /** The look name a refinement's pictures are filed under, so the approved original is never touched. Set when a refinement starts. */
+  variant?: string
   /** The approved identity picture this profile was made for (the generation job and its queue revision), when there was one. */
   identityJobId?: string
   identityRevision?: number
