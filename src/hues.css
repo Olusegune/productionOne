@@ -124,3 +124,9 @@
   .po-shell .po-tabs button { width: 100%; min-width: 44px; }
 }
 .as-tabs { border-radius: 22px; }
+/* The bible list never grows wider than its panel: long names are shortened with an ellipsis instead of pushing the buttons past the edge. */
+.po-bible ul { grid-template-columns: minmax(0, 1fr); }
+.po-bible li { min-width: 0; }
+.po-bible li > button { width: 100%; min-width: 0; }
+/* Keyboard focus is always visible on buttons, tabs and section toggles. */
+:where(button, summary, [role="tab"], a[href]):focus-visible { outline: 2px solid var(--blue, #79d8e8); outline-offset: 2px; }

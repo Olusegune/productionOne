@@ -14,6 +14,7 @@ import { LooksStudio } from "../components/LooksStudio";
 import { bodyMetres } from "../domain/fit";
 import { anatomyLine, approvedCreature } from "../domain/creatureLab";
 import { AnatomyStudio } from "../components/AnatomyStudio";
+import { tabListKeys } from "../data/tabKeys";
 import { ProductionBibleOverview } from "../components/ProductionBibleOverview";
 import { bibleOverview, groupOf, startingGroup, type BibleView } from "../domain/bibleGroups";
 import { ContinuityPanel } from "../components/ContinuityPanel";
@@ -167,6 +168,8 @@ export function DesignView(p: DesignViewProps) {
   // Opening an asset from somewhere else (Review, a link) moves the list to the group that holds it.
   useEffect(() => { const t = p.analysis.assets[p.selectedAsset]?.type; if (t && view !== "bible" && groupOf(t) !== view) setView(groupOf(t)); }, [p.selectedAsset]); // eslint-disable-line react-hooks/exhaustive-deps
   const inInspector = wide && section === "sheets";
+  const isCharacter = p.analysis.assets[p.selectedAsset]?.type === "character";
+  const visibleTabs = sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || isCharacter);
   const { activePromptPackage, analysis, approveAsset, assetOutputs, assetRefs, clips, copyPrompt, exportAllPrompts, exportPrompt, focusSheetType, generateImageDirect, generatingImage, importAsset, jobs, modelRecommendations, onAddAsset, onAddMany, onSheetApproved, onSheetUnapproved, openAiConfigured, plannedSheets, promptMode, providersOpen, queue, queueAsset, reviseSelectedAsset, runQueue, selectedAsset, setAnalysis, setAssetRefs, setClips, setCredentialProvider, setFocusSheetType, setJobs, setLocalOpen, setNotice, setPromptMode, setProvidersOpen, setQueue, setSelectedAsset, setSheetNotes, setSheetSettings, setStyleBible, sheetNotes, sheetSettings, studioControl, styleBible, proportions, setProportions, world, setWorld, fitRules, setFitRules } = p;
   return (
 <div className={`po-design${view === "bible" ? " bible-mode" : ""}`}>
@@ -183,7 +186,7 @@ export function DesignView(p: DesignViewProps) {
             <div className="as-head">
               <div className="as-title"><b>{analysis.assets[selectedAsset]?.name ?? "No asset selected"}</b>{analysis.assets[selectedAsset] && <small className="cat-tag"><CategoryIcon type={analysis.assets[selectedAsset].type} size={13} /> {analysis.assets[selectedAsset].type} · {analysis.assets[selectedAsset].status === "approved" ? "approved" : "planned"}</small>}</div>
               {p.slice && p.applySlice && <RemoveAsset slice={p.slice} assetId={analysis.assets[selectedAsset]?.id} apply={p.applySlice} />}
-              <div className="as-tabs" role="tablist" aria-label="Asset Studio sections">
+              <div className="as-tabs" role="tablist" aria-label="Asset Studio sections" onKeyDown={tabListKeys(visibleTabs.map((t) => t.id), section, (id) => setSection(id as Section), (id) => `as-tab-${id}`)}>
                 {sections.filter((x) => (x.id !== "wardrobe" && x.id !== "age" && x.id !== "transform" && x.id !== "looks" && x.id !== "anatomy") || analysis.assets[selectedAsset]?.type === "character").map((x) => <button key={x.id} role="tab" data-tab={x.id} id={`as-tab-${x.id}`} aria-selected={section === x.id} aria-controls={`sec-${x.id}`} tabIndex={section === x.id ? 0 : -1} className={section === x.id ? "on" : ""} onClick={() => setSection(x.id)}>{(() => { const Icon = tabIcons[x.id]; return <Icon size={14} aria-hidden="true" />; })()}{x.label}</button>)}
               </div>
             </div>
