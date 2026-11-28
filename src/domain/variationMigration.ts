@@ -6,6 +6,7 @@ import { readPropSpec } from './propFit'
 import { readCreatureSpec } from './creatureLab'
 import { readMachineSpec } from './machineLab'
 import { readProfileSpec } from './profiles'
+import { readContinuity } from './sceneContinuity'
 import { readAbilitySpec } from './abilityLab'
 import { emptyVariations, type AnyEntity, type MediaRef, type Revision, type VariationState, type GarmentSpec, type LookSpec } from './variations'
 
@@ -108,5 +109,6 @@ export function readVariations(raw: unknown): VariationState | undefined {
     if (revisions.length === 0) continue
     entities.push({ ...e, name: typeof e.name === 'string' ? e.name : e.id, revisions } as unknown as AnyEntity)
   }
-  return { schema: 1, entities, counters }
+  const continuity = readContinuity(raw.continuity)
+  return { schema: 1, entities, counters, ...(continuity ? { continuity } : {}) }
 }

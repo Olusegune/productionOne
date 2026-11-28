@@ -156,3 +156,37 @@ Not done: the per-view and alpha checks are not yet run automatically on generat
 Done: revisioned `profile` records (species or faction) stating body plan, eyes, symmetry, intentional and never lists, free traits and members; a faction can be tied to the exact version of a species, so it is flagged when that species changes. Inheritance runs species, then faction (a faction overrides single values; lists add up), with where each value came from. Differences between a profile and a member's own approved anatomy are PROPOSALS only: accepting makes a new candidate revision of the being's record for the person to approve, "Keep mine" records an exception on the profile, and the approved record is never edited. Joining and leaving a profile is a new version with history. A "Species and factions" section sits in the Anatomy tab. Scenarios 9 (world rules become proposals, no overwrite) and 10 (faction exceptions) are covered by deterministic tests.
 
 Not done: world-level rules still live in the older project-level defaults (proportion preset and scale), not in this profile chain; profiles carry free-text traits that are not yet written into prompts or checked; only anatomy fields are proposed (no palette or dress-code proposals); not checked in the live app after this change.
+
+## Milestone 7 status: scene-state continuity and release QA
+
+Done: append-only scene snapshots that pin the EXACT revision of each person's look and of the relationships in force (no "current" reference anywhere); branches copied from another branch's latest snapshot, each with its own numbered history; plain-words notes when something newer has been approved since a snapshot (informational, never changes the snapshot); stored inside the existing `variations` block so it travels in the project file and package manifest, and older or damaged files read without it; a Scene continuity panel under Looks & continuity.
+
+### The 13 scenarios: what is actually tested
+
+Legend: D deterministic unit/component test (passing); M mocked provider; R real provider; H human visual review. Only D has been run for these milestones. No M, R or H testing of the new records was done, and no pictures were generated, so nothing here shows that a picture model draws these specs well.
+
+| # | Scenario | Tested at | Result |
+|---|---|---|---|
+| 1 | Nonhumanoid creature fields | D | pass |
+| 2 | Six-finger rule (declared vs mistake) | D | pass; no picture is read, counts must be entered |
+| 3 | Hero and villain share a body | D | pass |
+| 4 | Power language across intensity | D (prompt wording and states) | pass; picture result untested (R, H needed) |
+| 5 | Clothing reacts to transformation only where requested | D (existing `costume` rule from 0.66.0) | pass; not re-tested here |
+| 6 | Robot joints, sensors, panels across views | D (comparison of entered parts) | pass; no automatic reading of pictures |
+| 7 | Prop fits hand and body scale | D | pass; thresholds are rough guidance |
+| 8 | Chair ownership and desk | D | pass |
+| 9 | World rules produce proposals, no overwrite | D | pass |
+| 10 | Faction exceptions | D | pass |
+| 11 | Historical scene states keep revisions | D | pass |
+| 12 | Portable project carries new records | D (save and reload round trip, manifest) | pass; no real package export run with the new records |
+| 13 | Existing projects migrate | D (records absent or damaged) | pass; not run against the 0.65 stress-test project file |
+
+### Known limitations and what remains
+
+- No new record is yet used by the automatic review: parts seen, limb counts and alpha are not read from pictures. They compare what a person enters. The measured local vision model could not locate hands reliably, so it is not used for counts.
+- Prop and scale facts are not yet added to generation prompts automatically (anatomy and machine parts are).
+- Species and factions propose anatomy fields only; free traits are stored but unused.
+- Templates (alien, monster, hero, villain, vehicle, environment) are not one-click presets; vehicles and environments have no specialist record.
+- The Characters / Assets / Worlds / Production Bible grouping was not built; new studios sit inside the Anatomy and Relationships tabs. The agent preflight component (intended changes, protected features, affected assets, cost before running) was not built.
+- Live checks in the running app: Relationships, Anatomy and the prop form were checked at Milestone 4; Machine, Powers, Species and factions and Scene continuity were not checked live after being built.
+- Branch state: this work sits on `docs/production-model-reconciliation`, which is cut from `feat/vision-qa` (PR #80). Nothing is merged or released.

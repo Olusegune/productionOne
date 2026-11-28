@@ -14,6 +14,7 @@ import { LooksStudio } from "../components/LooksStudio";
 import { bodyMetres } from "../domain/fit";
 import { anatomyLine, approvedCreature } from "../domain/creatureLab";
 import { AnatomyStudio } from "../components/AnatomyStudio";
+import { ContinuityPanel } from "../components/ContinuityPanel";
 import { ProfilesStudio } from "../components/ProfilesStudio";
 import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
 import { approvedMachine, machineLine } from "../domain/machineLab";
@@ -341,6 +342,9 @@ export function DesignView(p: DesignViewProps) {
                 onOpenSection={(s) => setSection(s)}
                 onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
               />
+            )}
+            {section === "looks" && (
+              <ContinuityPanel variations={p.variations} updateVariations={p.updateVariations} scenes={analysis.scenes.map((sc) => ({ id: sc.id, heading: sc.heading }))} characters={analysis.assets.filter((a) => a.type === "character")} notify={setNotice} />
             )}
             </div>
             <div id="sec-relationships" role="tabpanel" aria-labelledby="as-tab-relationships" hidden={section !== "relationships"}>

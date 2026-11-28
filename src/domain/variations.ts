@@ -273,11 +273,26 @@ export type Ability = Entity<'ability', AbilitySpec>
 export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile
 export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec
 
+/** A frozen record of a scene: the exact revisions it was made with. Append-only; never edited. */
+export interface SceneSnapshot {
+  /** 1, 2, 3 ... within its branch. */
+  n: number
+  branch: string
+  createdAt: string
+  /** Each person in the scene, with the exact revision of their look and of the relationships that applied. There is no "current" reference. */
+  cast: Array<{ assetId: string; look?: Ref; relationships: Ref[] }>
+  /** For the first snapshot of a branch: where it was copied from. */
+  fromBranch?: { branch: string; n: number }
+  note?: string
+}
+
 export interface VariationState {
   schema: typeof VARIATIONS_SCHEMA
   entities: AnyEntity[]
   /** Last number used per id prefix, so ids are never reused even after something is archived. */
   counters: Record<string, number>
+  /** Frozen scene snapshots by scene id. Absent in projects saved before continuity existed. */
+  continuity?: Record<string, SceneSnapshot[]>
 }
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })

@@ -35,7 +35,7 @@ export function variationManifest(state: VariationState, queue: QueueState) {
   return {
     format: VARIATIONS_MANIFEST_FORMAT,
     version: VARIATIONS_MANIFEST_VERSION,
-    note: 'Garments, fits, conditions, age variants, transformations, production looks and relationships between assets (ownership, interaction, scale), with revision ids, approvals, dependencies and generation records. Quality states are for the checks that were run on the records; whether a picture is right was decided by a person.',
+    note: 'Garments, fits, conditions, age variants, transformations, production looks, relationships between assets, prop sizes, anatomy, machine parts, powers, species and faction profiles, and frozen scene snapshots, with revision ids, approvals, dependencies and generation records. Quality states are for the checks that were run on the records; whether a picture is right was decided by a person.',
     entities: state.entities.map((e) => ({
       id: e.id, kind: e.kind, name: e.name, characterId: e.characterId ?? null, archived: !!e.archived,
       revisions: e.revisions.map((r) => ({
@@ -49,6 +49,7 @@ export function variationManifest(state: VariationState, queue: QueueState) {
         legacy: r.legacy ?? null, note: r.note ?? null,
       })),
     })),
+    continuity: Object.fromEntries(Object.entries(state.continuity ?? {}).map(([scene, snaps]) => [scene, snaps.map((x) => ({ branch: x.branch, n: x.n, createdAt: x.createdAt, fromBranch: x.fromBranch ?? null, note: x.note ?? null, cast: x.cast.map((c) => ({ assetId: c.assetId, look: c.look ? refText(c.look) : null, relationships: c.relationships.map(refText) })) }))])),
     outOfDate: regenerationPlan(state).steps.map((s) => ({ ref: refText(s.ref), name: s.name, action: s.action, because: s.because })),
     generation: linked.map((j: ImageJob) => ({
       jobId: j.id, revisionLink: refText({ id: j.variation!.id, revision: j.variation!.revision }), role: j.variation!.role,
