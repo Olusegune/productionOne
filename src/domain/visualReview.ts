@@ -9,9 +9,10 @@ import { unexplainedDrift, worldAtShot, worldIssues, type SceneState } from './s
  * lists and never mixed. An output that has not been checked is shown as "Not checked", never as clean. Whether a vision model is accurate is not something
  * this code can claim: that needs human-labelled evaluation.
  */
-export type Category = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J'
+export type Category = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K'
 export const categoryLabels: Record<Category, string> = {
   A: 'Identity', B: 'Proportions and silhouette', C: 'Costume continuity', D: 'Set landmarks', E: 'Placement and chair assignment', F: 'Scale and fit', G: 'Hands and anatomy', H: 'Intersections and ground contact', I: 'Art-style adherence', J: 'Lighting and colour continuity',
+  K: 'Damage and wear placement',
 }
 export const categories = Object.keys(categoryLabels) as Category[]
 /** Which categories a rule over the records can check. The rest need a vision model (or a person). */
@@ -145,17 +146,19 @@ export const VISION_INSTRUCTIONS = [
   'You are checking one production picture against stated rules. Report only what you can actually see.',
   'Intentional exaggeration is not a defect: if a rule says a feature is deliberately large, small or long, do not report it.',
   'Before reporting a proportion mismatch, consider occlusion, foreshortening and perspective. If you cannot tell, say so with low confidence, or answer "unable".',
-  'Answer with JSON only: {"unable": false, "findings": [{"category": "A"-"J", "severity": "info|low|medium|high", "confidence": 0-1, "region": {"x":0-1,"y":0-1,"w":0-1,"h":0-1} or null, "expected": "...", "observed": "...", "rule": "...", "action": "..."}]}.',
+  'Answer with JSON only: {"unable": false, "findings": [{"category": "A"-"K", "severity": "info|low|medium|high", "confidence": 0-1, "region": {"x":0-1,"y":0-1,"w":0-1,"h":0-1} or null, "expected": "...", "observed": "...", "rule": "...", "action": "..."}]}.',
   'If nothing is wrong in the categories you were asked about, return an empty findings list.',
 ].join(' ')
 
 export interface VisionRequest { job: ImageJob; categories: Category[]; rules: string[]; imagePaths: string[] }
 
 export function visionPrompt(req: VisionRequest): string {
-  return `${VISION_INSTRUCTIONS}\nCategories to check: ${req.categories.map((c) => `${c} ${categoryLabels[c]}`).join('; ')}.\nRules for this picture:\n${req.rules.map((r) => `- ${r}`).join('\n')}\nThe first image is the output to check; any others are approved references.`
+  return `${VISION_INSTRUCTIONS}\nCategories to check: ${req.categories.map((c) => `${c} ${categoryLabels[c]}`).join('; ')}.\nRules for this picture:\n${req.rules.map((r) => `- ${r}`).join('\n')}\nThe first image is the output to check; any others are approved references.\nOnly report what you can see, and only a real problem: never a finding that says nothing is wrong. Give a low confidence when you are unsure.`
 }
 
 const SEVERITIES: Severity[] = ['info', 'low', 'medium', 'high']
+
+const isNotAProblem = (severity: string, observed: string) => severity === 'info' && (/^\s*(?:there (?:is|are) )?(?:no|none|nothing|not any)\b/i.test(observed) || /\b(?:is|are|was|were|does|do) not\b|\bisn't\b|\baren't\b|\bno (?:visible )?(?:damage|tear|problem|issue|difference|change)\b/i.test(observed))
 
 /** Reads a vision model's answer strictly. Unknown categories are dropped, numbers are clamped, and anything that is not the expected JSON is "unable to assess" rather than guessed at. */
 export function parseVisionAnswer(text: string, job: ImageJob, allowed: Category[]): { findings: Finding[]; unable: boolean; error?: string } {
@@ -173,6 +176,8 @@ export function parseVisionAnswer(text: string, job: ImageJob, allowed: Category
     const r = raw as Record<string, unknown>
     const category = String(r.category).toUpperCase() as Category
     if (!categories.includes(category) || !allowed.includes(category)) continue
+    // A model sometimes lists what it saw as a "finding" ("no damage"). A note that nothing is wrong is not a problem and is never shown as one.
+    if (isNotAProblem(String(r.severity), String(r.observed ?? ''))) continue
     const conf = typeof r.confidence === 'number' && Number.isFinite(r.confidence) ? Math.min(1, Math.max(0, r.confidence)) : 0.3
     const reg = r.region as Record<string, unknown> | null | undefined
     const region = reg && ['x', 'y', 'w', 'h'].every((k) => typeof reg[k] === 'number') ? { x: Math.min(1, Math.max(0, reg.x as number)), y: Math.min(1, Math.max(0, reg.y as number)), w: Math.min(1, Math.max(0, reg.w as number)), h: Math.min(1, Math.max(0, reg.h as number)) } : undefined

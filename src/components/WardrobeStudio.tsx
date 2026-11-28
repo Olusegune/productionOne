@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { CandidateVision } from "./CandidateVision";
+import type { Reviews } from "../domain/visualReview";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Shirt, Sparkles, Check, X, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { useModelChoice } from "../data/modelChoice";
@@ -23,6 +25,10 @@ import { stagePicture } from "../domain/transformationFlow";
 import "../wardrobe.css";
 
 export interface WardrobeStudioProps {
+  /** Where the check against what a picture was made from keeps its results (the Review screen's store). */
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
+  onOpenReview?: () => void;
   character: ExtractedAsset;
   setAssets: (update: (assets: ExtractedAsset[]) => ExtractedAsset[]) => void;
   variations: VariationState;
@@ -223,6 +229,7 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
                   </figure>
                 ))}
               </div>
+              {props.reviews && props.setReviews && <CandidateVision jobs={garmentJobs} allJobs={queue.jobs} variations={variations} reviews={props.reviews} setReviews={props.setReviews} style={style} desktop={desktop} notify={notify} onOpenReview={props.onOpenReview} />}
               <ol className="wd-history" aria-label="Versions">
                 {garment.revisions.map((r) => <li key={r.n}>Version {r.n}: {r.status === "approved" ? "approved" : r.status === "rejected" ? "turned down" : "candidate"}{r.parent && r.parent.id === garment.id ? ` (from version ${r.parent.revision})` : ""}</li>)}
               </ol>
@@ -230,7 +237,7 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
           )}
 
           {garment && pic && (
-            <ConditionStudio garment={{ id: garment.id, name: garment.name }} variations={variations} updateVariations={updateVariations} queue={queue} setQueue={setQueue} style={style} provider={provider} providerKey={provider} modelId={modelId} ready={ready} onApproved={props.onApproved} onUnapproved={props.onUnapproved} notify={notify} />
+            <ConditionStudio desktop={desktop} reviews={props.reviews} setReviews={props.setReviews} onOpenReview={props.onOpenReview} garment={{ id: garment.id, name: garment.name }} variations={variations} updateVariations={updateVariations} queue={queue} setQueue={setQueue} style={style} provider={provider} providerKey={provider} modelId={modelId} ready={ready} onApproved={props.onApproved} onUnapproved={props.onUnapproved} notify={notify} />
           )}
 
           {garment && pic && (
@@ -256,6 +263,7 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
                   <figure><img src={convertFileSrc(chosenCondition && conditionPic ? conditionPic.path : pic.path)} alt={chosenCondition ? "Approved garment in its condition" : "Approved garment"} /><figcaption>{garment.name}{chosenCondition ? `, ${chosenCondition.name}` : ""}, approved</figcaption></figure>
                 </div>
               )}
+              {props.reviews && props.setReviews && fitJob && <CandidateVision jobs={[fitJob]} allJobs={queue.jobs} variations={variations} reviews={props.reviews} setReviews={props.setReviews} style={style} desktop={desktop} notify={notify} onOpenReview={props.onOpenReview} />}
               {fitStale?.stale && <p className="helper warn">This outfit was fitted to an earlier version of the garment. It keeps working as approved; make a new fit to update it.</p>}
               {outfit && fitNewest?.status === "approved" && (
                 <div className="wd-actions"><span className="helper">Outfit approved as “{outfit}”. It is now a look for {character.name}.</span><button onClick={() => props.onOpenSheets(outfit)}>Make wardrobe sheets for this look</button></div>

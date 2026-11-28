@@ -129,7 +129,30 @@ pub async fn local_detect(ollama_url: Option<String>, lmstudio_url: Option<Strin
     Ok(LocalStatus { ollama, lmstudio, comfyui, hardware: hw })
 }
 
+/// A picture for the local model: only from inside the Production One assets folder, like every other picture the app reads on a page's request.
+fn data_url_in(app: &tauri::AppHandle, path: &str) -> Result<(String, String), String> {
+    let inside = crate::providers::inside_assets(app, path)?;
+    data_url_for_model(&inside.to_string_lossy())
+}
+
+/// The longest edge of a picture shown to a local model. A local model has a small context (Ollama's default is 4096 tokens) and a full-size picture alone
+/// can use more than that, so the request is refused. At this size a picture takes about a third of it, and the model sees as much as it can use.
+const MODEL_MAX_EDGE: u32 = 1024;
+
+/// A picture for a local model, shrunk to `MODEL_MAX_EDGE` on its longest edge and saved as a JPEG when it is bigger than that. A smaller picture is sent as it is.
+fn data_url_for_model(path: &str) -> Result<(String, String), String> {
+    let (mime, data) = data_url(path)?;
+    let bytes = ENGINE.decode(&data).map_err(|e| e.to_string())?;
+    let img = image::load_from_memory(&bytes).map_err(|e| format!("Could not read the picture: {e}"))?;
+    if img.width().max(img.height()) <= MODEL_MAX_EDGE { return Ok((mime, data)); }
+    let small = img.resize(MODEL_MAX_EDGE, MODEL_MAX_EDGE, image::imageops::FilterType::Triangle).to_rgb8();
+    let mut out = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 88).encode_image(&small).map_err(|e| format!("Could not shrink the picture: {e}"))?;
+    Ok(("image/jpeg".to_string(), ENGINE.encode(out)))
+}
+
 fn data_url(path: &str) -> Result<(String, String), String> {
+    if fs::metadata(path).map(|m| m.len() > 64 * 1024 * 1024).unwrap_or(false) { return Err("That picture is too large to send (the limit is 64 MB).".into()); }
     let bytes = fs::read(path).map_err(|e| format!("Could not read image: {e}"))?;
     let mime = match image::guess_format(&bytes).map_err(|e| e.to_string())? { image::ImageFormat::Png => "image/png", image::ImageFormat::Jpeg => "image/jpeg", image::ImageFormat::WebP => "image/webp", _ => return Err("Images must be PNG, JPEG or WebP".into()) };
     Ok((mime.to_string(), ENGINE.encode(bytes)))
@@ -151,14 +174,14 @@ pub fn openai_chat_body(model: &str, system: &str, prompt: &str, images: &[(Stri
 
 /// Asks a local model (Ollama or LM Studio) a question and returns its answer. Images are attached for models that can see.
 #[tauri::command]
-pub async fn local_llm(kind: String, base: String, model: String, system: String, prompt: String, json_mode: bool, images: Vec<String>) -> Result<String, String> {
+pub async fn local_llm(app: tauri::AppHandle, kind: String, base: String, model: String, system: String, prompt: String, json_mode: bool, images: Vec<String>) -> Result<String, String> {
     let base = normalize_base(&base)?;
     if model.trim().is_empty() || model.len() > 200 { return Err("Choose a model first".into()); }
     if images.len() > 6 { return Err("At most 6 images can be sent with one question".into()); }
     let http = client(600)?;
     match kind.as_str() {
         "ollama" => {
-            let b64: Vec<String> = images.iter().map(|p| data_url(p).map(|(_, d)| d)).collect::<Result<_, _>>()?;
+            let b64: Vec<String> = images.iter().map(|p| data_url_in(&app, p).map(|(_, d)| d)).collect::<Result<_, _>>()?;
             let r = http.post(format!("{base}/api/chat")).json(&ollama_body(&model, &system, &prompt, json_mode, &b64)).send().await.map_err(|e| format!("Ollama could not be reached: {}", e.without_url()))?;
             let status = r.status();
             let v: Value = r.json().await.unwrap_or(Value::Null);
@@ -166,7 +189,7 @@ pub async fn local_llm(kind: String, base: String, model: String, system: String
             v["message"]["content"].as_str().map(str::to_string).ok_or_else(|| "Ollama returned no answer".to_string())
         }
         "lmstudio" => {
-            let imgs: Vec<(String, String)> = images.iter().map(|p| data_url(p)).collect::<Result<_, _>>()?;
+            let imgs: Vec<(String, String)> = images.iter().map(|p| data_url_in(&app, p)).collect::<Result<_, _>>()?;
             let r = http.post(format!("{base}/v1/chat/completions")).json(&openai_chat_body(&model, &system, &prompt, &imgs)).send().await.map_err(|e| format!("LM Studio could not be reached: {}", e.without_url()))?;
             let status = r.status();
             let v: Value = r.json().await.unwrap_or(Value::Null);
@@ -542,5 +565,44 @@ mod tests {
         let l = openai_chat_body("m", "sys", "hi", &[("image/png".to_string(), "QUJD".to_string())]);
         assert!(l["messages"][1]["content"][1]["image_url"]["url"].as_str().unwrap().starts_with("data:image/png;base64,"));
         assert_eq!(openai_chat_body("m", "s", "hi", &[])["messages"][1]["content"], "hi");
+    }
+
+    fn scratch_png(name: &str, w: u32, h: u32) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("po-shrink-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(name);
+        let mut img = image::RgbImage::new(w, h);
+        for (x, y, p) in img.enumerate_pixels_mut() { *p = image::Rgb([(x % 251) as u8, (y % 241) as u8, ((x + y) % 239) as u8]); }
+        img.save(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn a_big_picture_is_shrunk_to_fit_a_local_models_context() {
+        let path = scratch_png("big.png", 1792, 2400);
+        let (mime, data) = data_url_for_model(path.to_str().unwrap()).unwrap();
+        assert_eq!(mime, "image/jpeg");
+        let back = image::load_from_memory(&ENGINE.decode(data).unwrap()).unwrap();
+        assert!(back.width().max(back.height()) <= 1024, "{}x{}", back.width(), back.height());
+        // The shape is kept.
+        let ratio = back.width() as f32 / back.height() as f32;
+        assert!((ratio - 1792.0 / 2400.0).abs() < 0.01, "{ratio}");
+    }
+
+    #[test]
+    fn a_small_picture_is_sent_exactly_as_it_is() {
+        let path = scratch_png("small.png", 600, 800);
+        let original = data_url(path.to_str().unwrap()).unwrap();
+        assert_eq!(data_url_for_model(path.to_str().unwrap()).unwrap(), original);
+        assert_eq!(original.0, "image/png");
+    }
+
+    #[test]
+    fn a_file_that_is_not_a_picture_is_still_refused() {
+        let dir = std::env::temp_dir().join(format!("po-shrink-text-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("notes.png");
+        std::fs::write(&path, b"this is not a picture").unwrap();
+        assert!(data_url_for_model(path.to_str().unwrap()).is_err());
     }
 }

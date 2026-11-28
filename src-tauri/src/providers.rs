@@ -66,7 +66,22 @@ fn fal_size(aspect: &str) -> Result<&'static str, String> {
     })
 }
 
+/// The largest picture that is read into memory to be sent anywhere.
+const MAX_IMAGE_BYTES: u64 = 64 * 1024 * 1024;
+
+/// A reference picture that is about to be sent to a provider or a local model. It must be inside the Production One assets folder: a project file written
+/// by someone else cannot make the app read (and upload) a picture from anywhere else on this computer. A file that is not there at all keeps its own message.
+fn image_data_url_in(app: &tauri::AppHandle, path: &str) -> Result<(String, String), String> {
+    if Path::new(path).exists() {
+        let inside = inside_assets(app, path)?;
+        image_data_url(&inside.to_string_lossy())
+    } else {
+        image_data_url(path)
+    }
+}
+
 fn image_data_url(path: &str) -> Result<(String, String), String> {
+    if fs::metadata(path).map(|m| m.len() > MAX_IMAGE_BYTES).unwrap_or(false) { return Err("That picture is too large to send (the limit is 64 MB).".into()); }
     let bytes = fs::read(path).map_err(|error| {
         let name = Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| path.to_string());
         if error.kind() == std::io::ErrorKind::NotFound {
@@ -411,7 +426,7 @@ pub async fn generate_image(app: tauri::AppHandle, provider: String, model: Stri
     let stem = safe_package_name(&output_name);
     if stem.is_empty() { return Err("Output name is required".into()); }
     let api_key = if provider == "comfyui" { String::new() } else { key_for(&provider)? };
-    let refs = references.iter().map(|path| image_data_url(path)).collect::<Result<Vec<_>, _>>()?;
+    let refs = references.iter().map(|path| image_data_url_in(&app, path)).collect::<Result<Vec<_>, _>>()?;
     let http = client()?;
     let bytes = match provider.as_str() {
         "openai" => {
@@ -530,7 +545,7 @@ pub async fn generate_video(app: tauri::AppHandle, model: String, prompt: String
     let stem = safe_package_name(&output_name);
     if stem.is_empty() { return Err("Output name is required".into()); }
     let api_key = key_for("kie")?;
-    let (mime, data) = image_data_url(&reference)?;
+    let (mime, data) = image_data_url_in(&app, &reference)?;
     let name = Path::new(&reference).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "reference.png".into());
     let file = super::kie::run(&api_key, &model, &prompt, &aspect, &[(mime, data, name)], Some(duration), 900).await?;
     if file.extension != "mp4" && file.extension != "webm" { return Err("Kie.ai returned an image, not a video. Choose a video model.".into()); }
@@ -570,8 +585,13 @@ pub fn model_catalog(app: tauri::AppHandle) -> Value {
 
 pub(crate) fn inside_assets(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> {
     let assets = app.path().app_data_dir().map_err(|e| e.to_string())?.join("assets");
+    confine_to(&assets, path)
+}
+
+/// The real path of `path` if it is a file inside `root` (after following `..` and links), else an error. Never reads the file.
+pub(crate) fn confine_to(root: &Path, path: &str) -> Result<PathBuf, String> {
     let canonical = fs::canonicalize(path).map_err(|e| format!("Could not open the image: {e}"))?;
-    let root = fs::canonicalize(&assets).map_err(|e| e.to_string())?;
+    let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
     if canonical.starts_with(&root) { Ok(canonical) } else { Err(format!("Only images in the Production One assets folder can be previewed (this one is at {}, the folder is {})", canonical.display(), root.display())) }
 }
 
@@ -1023,5 +1043,69 @@ The background is one flat, uniform neutral mid-grey field.";
         for y in 0..300u32 { for x in 0..200u32 { let v = (150 + y / 4 + x / 8) as u8; img.put_pixel(x, y, image::Rgb([v, v, v])); } }
         for y in 40..260 { for x in 70..130 { img.put_pixel(x, y, image::Rgb([20, 20, 30])); } }
         assert!(qa_pixels(&img, true).notes.is_empty(), "{:?}", qa_pixels(&img, true).notes);
+    }
+
+    /// A scratch folder with an `assets` folder inside it and a file outside, removed at the end.
+    struct Scratch(std::path::PathBuf);
+    impl Scratch {
+        fn new(tag: &str) -> Self {
+            let root = std::env::temp_dir().join(format!("po-confine-{tag}-{}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&root);
+            std::fs::create_dir_all(root.join("assets").join("sub")).unwrap();
+            std::fs::write(root.join("assets").join("inside.png"), b"x").unwrap();
+            std::fs::write(root.join("assets").join("sub").join("deep.png"), b"x").unwrap();
+            std::fs::write(root.join("outside.png"), b"x").unwrap();
+            Scratch(root)
+        }
+    }
+    impl Drop for Scratch { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
+
+    #[test]
+    fn a_picture_inside_the_assets_folder_is_allowed_including_one_in_a_sub_folder() {
+        let s = Scratch::new("in");
+        let assets = s.0.join("assets");
+        assert!(super::confine_to(&assets, assets.join("inside.png").to_str().unwrap()).is_ok());
+        assert!(super::confine_to(&assets, assets.join("sub").join("deep.png").to_str().unwrap()).is_ok());
+    }
+
+    #[test]
+    fn a_picture_anywhere_else_is_refused_so_a_shared_project_cannot_make_the_app_read_it() {
+        let s = Scratch::new("out");
+        let assets = s.0.join("assets");
+        let err = super::confine_to(&assets, s.0.join("outside.png").to_str().unwrap()).unwrap_err();
+        assert!(err.contains("Only images in the Production One assets folder"), "{err}");
+    }
+
+    #[test]
+    fn climbing_out_with_dot_dot_is_refused() {
+        let s = Scratch::new("dots");
+        let assets = s.0.join("assets");
+        let sneaky = format!("{}/sub/../../outside.png", assets.display());
+        assert!(super::confine_to(&assets, &sneaky).is_err(), "a path that climbs out of the folder must not pass");
+        let sneaky2 = format!("{}/../outside.png", assets.display());
+        assert!(super::confine_to(&assets, &sneaky2).is_err());
+    }
+
+    #[test]
+    fn a_folder_whose_name_only_starts_like_the_assets_folder_is_refused() {
+        let s = Scratch::new("prefix");
+        let lookalike = s.0.join("assets-old");
+        std::fs::create_dir_all(&lookalike).unwrap();
+        std::fs::write(lookalike.join("a.png"), b"x").unwrap();
+        assert!(super::confine_to(&s.0.join("assets"), lookalike.join("a.png").to_str().unwrap()).is_err());
+    }
+
+    #[test]
+    fn a_file_that_is_not_there_is_an_error_not_a_pass() {
+        let s = Scratch::new("gone");
+        assert!(super::confine_to(&s.0.join("assets"), s.0.join("assets").join("nope.png").to_str().unwrap()).is_err());
+    }
+
+    #[test]
+    fn a_reference_that_is_not_a_picture_is_refused_even_inside_the_folder() {
+        let s = Scratch::new("kind");
+        let text = s.0.join("assets").join("notes.png");
+        std::fs::write(&text, b"this is not a picture").unwrap();
+        assert!(super::image_data_url(text.to_str().unwrap()).is_err());
     }
 }

@@ -94,7 +94,8 @@ describe('deterministic checks', () => {
   const profile = createProfile('MARCUS', 'large-headed')
   it('only the categories that can be checked from records are listed as checkable', () => {
     expect(deterministicCategories).toEqual(['B', 'E', 'F', 'I'])
-    expect(categories).toHaveLength(10)
+    expect(categories).toHaveLength(11) // A to J, and K: damage and wear placement
+    expect(categories).toContain('K')
     for (const c of categories) expect(categoryLabels[c].length).toBeGreaterThan(3)
   })
   it('flags output made with earlier proportions, with the control that changed', () => {

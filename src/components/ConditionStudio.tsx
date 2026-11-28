@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { CandidateVision } from "./CandidateVision";
+import type { Reviews } from "../domain/visualReview";
 import { Sparkles, Check, X, Plus, Trash2 } from "lucide-react";
 import { approve, costPreview, enqueue, reject, type ImageJob, type QueueState } from "../domain/generationQueue";
 import { modelTakesReferences, providerLabels } from "../domain/imageCatalog";
@@ -11,6 +13,10 @@ import { garmentAssetId, garmentPicture } from "../domain/wardrobeFlow";
 import { Picture } from "./wardrobeParts";
 
 export interface ConditionStudioProps {
+  /** Where the check against what a picture was made from keeps its results (the Review screen's store). */
+  reviews?: Reviews;
+  setReviews?: (update: (r: Reviews) => Reviews) => void;
+  onOpenReview?: () => void;
   garment: { id: string; name: string };
   variations: VariationState;
   updateVariations: (update: (v: VariationState) => VariationState) => void;
@@ -25,6 +31,7 @@ export interface ConditionStudioProps {
   onApproved: (job: ImageJob, primary: boolean) => void;
   onUnapproved: (job: ImageJob) => void;
   notify: (message: string) => void;
+  desktop: boolean;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -158,6 +165,7 @@ export function ConditionStudio(props: ConditionStudioProps) {
               </figure>
             ))}
           </div>
+          {props.reviews && props.setReviews && <CandidateVision jobs={previews} allJobs={queue.jobs} variations={variations} reviews={props.reviews} setReviews={props.setReviews} style={style} desktop={props.desktop} notify={notify} onOpenReview={props.onOpenReview} />}
           {report && (
             <details className="wd-checks" open={report.state === "needs-review"}>
               <summary>Record checks: {stateWords[report.state]}</summary>

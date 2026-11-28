@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { plainNote } from "../domain/plainNote";
 import { useEffect, useRef, useState } from "react";
 import {
   markFailed,
@@ -35,7 +36,7 @@ export async function validateJob(job: ImageJob, generated: Generated): Promise<
     const qa = await invoke<Qa>("qa_image", { path: generated.path, fullBody: job.fullBody });
     notes.push(...qa.notes);
   } catch (error) {
-    notes.push(`Automatic checks could not run: ${String(error)}`);
+    notes.push(plainNote(`Automatic checks could not run: ${String(error)}`));
   }
   return notes;
 }

@@ -57,6 +57,8 @@ export function queueCorrection(queue: QueueState, finding: Finding, job: ImageJ
     assetId: job.assetId, variant: job.variant, sheetType: job.sheetType, viewKey: job.viewKey, label: `${job.label} (correction)`,
     prompt: `${job.prompt}\n${plan.promptAddition}`, aspect: job.aspect, fullBody: job.fullBody, provider: job.provider, model: job.model, references: plan.references, useAnchor: job.useAnchor,
     styleName: job.styleName, styleFp: job.styleFp,
+    // A correction of a candidate for a garment, an outfit, an age or a stage is another picture for the same record (kept only while it is still a candidate).
+    ...(job.variation ? { variation: job.variation } : {}),
     provenance: { ...(job.provenance ?? { references: [] }), references: plan.references.map((path) => ({ path })), correctionOf: { findingId: finding.id, sourceJobId: job.id, sourceRevision: job.revision } },
     outputName: (revision: number) => `${job.assetId}_${job.sheetType}_${job.viewKey}_fix_v${String(revision).padStart(2, '0')}`.replace(/[^A-Za-z0-9_.-]+/g, '-'),
   }
