@@ -1,10 +1,11 @@
 /** The app's looks. A look changes the headings, the surfaces and the accent; it never changes what any control does. */
-export type Look = 'studio' | 'cinematic' | 'futurist'
+export type Look = 'studio' | 'champagne' | 'cinematic' | 'futurist'
 
 export interface LookInfo { id: Look; name: string; tagline: string; description: string; heading: string }
 
 export const looks: ReadonlyArray<LookInfo> = [
   { id: 'studio', name: 'Studio', tagline: 'Cool graphite, one blue accent', description: 'The default: quiet graphite surfaces, a single blue accent and one clean sans for everything.', heading: 'Geist' },
+  { id: 'champagne', name: 'Champagne', tagline: 'Graphite with one champagne accent', description: 'The ProducerOne redesign: graphite surfaces, a single champagne accent, 6 and 10 pixel corners, gold only for selection and primary actions, and green only for what is approved.', heading: 'Inter' },
   { id: 'cinematic', name: 'Cinematic', tagline: 'Warm surfaces, your colours', description: "Warmer surfaces, with the accent taken from your project's style palette.", heading: 'Geist' },
   { id: 'futurist', name: 'Futurist', tagline: 'Sharp, cool, glowing', description: 'Near-black blue surfaces, a cyan accent with a soft glow, tighter corners and a sharper body font.', heading: 'Space Grotesk' },
 ]

@@ -4,9 +4,9 @@ import { DEFAULT_LOOK, accentFromPalette, contrast, isLook, looks, savedLook, st
 beforeEach(() => { localStorage.clear() })
 
 describe('looks', () => {
-  it('has three looks with distinct names, and recognises only those', () => {
-    expect(looks.map((l) => l.id)).toEqual(['studio', 'cinematic', 'futurist'])
-    expect(new Set(looks.map((l) => l.name)).size).toBe(3)
+  it('has four looks with distinct names, and recognises only those', () => {
+    expect(looks.map((l) => l.id)).toEqual(['studio', 'champagne', 'cinematic', 'futurist'])
+    expect(new Set(looks.map((l) => l.name)).size).toBe(4)
     expect(isLook('futurist')).toBe(true)
     expect(isLook('neon')).toBe(false)
     expect(isLook(undefined)).toBe(false)
