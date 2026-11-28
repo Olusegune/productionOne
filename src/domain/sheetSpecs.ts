@@ -171,6 +171,8 @@ export interface PromptInput {
   guide?: boolean
   /** The anatomy a person declared for this being (see creatureLab.ts), written into every picture so a deliberate feature is drawn on purpose. */
   anatomy?: string
+  /** The approved skin wording, only supplied for a photorealistic character (see skin.ts). */
+  skin?: string
 }
 
 /** The identity facts a person confirmed for a character. Empty fields are omitted, never guessed. Every image and video prompt uses it so one identity runs through all outputs. */
@@ -192,7 +194,7 @@ export const closeUpReframeLine = 'FRAMING comes from this request, not from the
 /** A set sheet is the place for every later picture, so it is drawn empty: people in it make the model draw a scene, and a person in a set cannot be reused. */
 export const emptyPlaceLine = 'This is a reference of the place itself, empty of people, creatures and characters: show only the architecture, furniture and fixed props, so any character can be placed in it later.'
 
-export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions, guide, anatomy }: PromptInput): string {
+export function buildViewPrompt({ style, asset, variant, sheetType, view, notes, model, anchored, backdrop, backdropHex, photoRefs, reinterpret, proportions, guide, anatomy, skin }: PromptInput): string {
   const subject = asset.type === 'character' ? `the character ${asset.name}` : `the ${asset.type} "${asset.name}"`
   const twoD = !!style.spec2d
   const place = asset.type === 'set' || asset.type === 'environment'
@@ -206,6 +208,7 @@ export function buildViewPrompt({ style, asset, variant, sheetType, view, notes,
     twoD ? adaptViewFor2D(view.instruction) : view.instruction,
     identityFacts(asset),
     asset.type === 'character' ? proportions ?? '' : '',
+    asset.type === 'character' && skin ? skin : '',
     anatomy ? `${asset.type === 'character' ? 'Declared anatomy' : 'Declared design'} (exact, keep it the same in every picture): ${anatomy}` : '',
     asset.description?.trim() ? `Description (the person's own words): ${asset.description.trim().replace(/\s+/g, ' ')}` : '',
     place ? (asset.layout?.trim() ? `Fixed layout of this place, the same in every view: ${asset.layout.trim().replace(/\s+/g, ' ')}. Show the same place from a different position: do not move, add or remove these landmarks.` : 'Every view of this place shows the same architecture, layout, landmarks and prop positions as the others, seen from a different position or in different light.') : '',

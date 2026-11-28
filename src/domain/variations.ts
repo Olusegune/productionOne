@@ -11,7 +11,7 @@
 
 export const VARIATIONS_SCHEMA = 1
 
-export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile' | 'vehicle'
+export type EntityKind = 'garment' | 'fit' | 'condition' | 'age' | 'transformation' | 'look' | 'relationship' | 'prop' | 'creature' | 'machine' | 'ability' | 'profile' | 'vehicle' | 'skin'
 
 /** A pinned pointer to one revision of one entity. */
 export interface Ref { id: string; revision: number }
@@ -277,6 +277,39 @@ export interface VehicleSpec {
   never: string[]
 }
 
+/** The five essential skin choices. Each is a named level, never a number. */
+export interface SkinControls {
+  textureDetail: 'subtle' | 'natural' | 'pronounced'
+  surfaceFinish: 'matte' | 'natural' | 'dewy'
+  tonalVariation: 'even' | 'natural' | 'varied'
+  fineFacialHair: 'none' | 'light' | 'natural'
+  retouching: 'none' | 'light' | 'moderate'
+}
+
+/** A Skin Profile: the desired skin look of a photorealistic character, stated as choices an image model is asked to attempt. */
+export interface SkinSpec extends SkinControls {
+  characterId: string
+  preset: 'natural' | 'clean-portrait' | 'weathered' | 'custom'
+  /** The look name a refinement's pictures are filed under, so the approved original is never touched. Set when a refinement starts. */
+  variant?: string
+  /** The approved identity picture this profile was made for (the generation job and its queue revision), when there was one. */
+  identityJobId?: string
+  identityRevision?: number
+  /** Distinctive marks and where they are. Protected so a refinement cannot move or remove them. */
+  marks: Array<{ what: string; where: string }>
+  /** Optional targets for one region. Said as wording; masks are not used. */
+  regions: Partial<Record<'forehead' | 'cheeks' | 'nose' | 'eye area' | 'lips' | 'neck' | 'hands', { texture?: SkinControls['textureDetail']; finish?: SkinControls['surfaceFinish'] }>>
+  /** Makeup is its own field: it is neither skin nor complexion. */
+  makeup: string
+  /** The person's own words. Nothing else is derived from them. */
+  complexion: string
+  undertone: string
+  /** What a refinement must not change. */
+  protect: Array<'facial-structure' | 'complexion' | 'age' | 'expression' | 'hair' | 'marks' | 'body' | 'wardrobe' | 'pose' | 'background'>
+  /** Temporary conditions such as sweat, dirt, bruising, wetness. They never edit the approved profile. */
+  conditions: string[]
+}
+
 export type Garment = Entity<'garment', GarmentSpec>
 export type Fit = Entity<'fit', FitSpec>
 export type Condition = Entity<'condition', ConditionSpec>
@@ -287,11 +320,12 @@ export type Relationship = Entity<'relationship', RelationshipSpec>
 export type Prop = Entity<'prop', PropSpec>
 export type Creature = Entity<'creature', CreatureSpec>
 export type Profile = Entity<'profile', ProfileSpec>
+export type Skin = Entity<'skin', SkinSpec>
 export type Vehicle = Entity<'vehicle', VehicleSpec>
 export type Machine = Entity<'machine', MachineSpec>
 export type Ability = Entity<'ability', AbilitySpec>
-export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile | Vehicle
-export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec | VehicleSpec
+export type AnyEntity = Garment | Fit | Condition | AgeVariant | Transformation | ProductionLook | Relationship | Prop | Creature | Machine | Ability | Profile | Vehicle | Skin
+export type AnySpec = GarmentSpec | FitSpec | ConditionSpec | AgeSpec | TransformationSpec | LookSpec | RelationshipSpec | PropSpec | CreatureSpec | MachineSpec | AbilitySpec | ProfileSpec | VehicleSpec | SkinSpec
 
 /** A frozen record of a scene: the exact revisions it was made with. Append-only; never edited. */
 export interface SceneSnapshot {
@@ -317,7 +351,7 @@ export interface VariationState {
 
 export const emptyVariations = (): VariationState => ({ schema: VARIATIONS_SCHEMA, entities: [], counters: {} })
 
-const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF', vehicle: 'VHC' }
+const PREFIX: Record<EntityKind, string> = { garment: 'GAR', fit: 'FIT', condition: 'CND', age: 'AGE', transformation: 'TRN', look: 'LOOK', relationship: 'REL', prop: 'PRP', creature: 'CRT', machine: 'MCH', ability: 'ABL', profile: 'PRF', vehicle: 'VHC', skin: 'SKN' }
 
 const clone = <T>(value: T): T => structuredClone(value)
 

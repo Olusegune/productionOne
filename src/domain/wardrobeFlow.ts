@@ -123,9 +123,9 @@ export function lookNamesFor(state: VariationState, characterId: string | undefi
   if (!characterId) return []
   const names: string[] = []
   for (const e of state.entities) {
-    if (e.kind !== 'look' || e.characterId !== characterId) continue
+    if ((e.kind !== 'look' && e.kind !== 'skin') || e.characterId !== characterId) continue
     const rev = latestApproved(e)
-    const name = rev && (rev.spec as LookSpec).queueVariant
+    const name = rev && (e.kind === 'skin' ? (rev.spec as { variant?: string }).variant : (rev.spec as LookSpec).queueVariant)
     if (name && name !== 'Canonical' && !names.includes(name)) names.push(name)
   }
   return names

@@ -17,6 +17,9 @@ import { AnatomyStudio } from "../components/AnatomyStudio";
 import { tabListKeys } from "../data/tabKeys";
 import { ProductionBibleOverview } from "../components/ProductionBibleOverview";
 import { bibleOverview, groupOf, startingGroup, type BibleView } from "../domain/bibleGroups";
+import { SkinStudio } from "../components/SkinStudio";
+import { SkinRefinement } from "../components/SkinRefinement";
+import { isPhotorealStyle, skinPromptFor } from "../domain/skin";
 import { ContinuityPanel } from "../components/ContinuityPanel";
 import { ProfilesStudio } from "../components/ProfilesStudio";
 import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
@@ -269,6 +272,7 @@ export function DesignView(p: DesignViewProps) {
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               proportions={proportions}
+              skinFor={(id) => skinPromptFor(p.variations, id, analysis.assets.find((a) => a.id === id)?.style ?? styleBible)}
               anatomyFor={(id) => { const c = approvedCreature(p.variations, id); const m = approvedMachine(p.variations, id); const v = approvedVehicle(p.variations, id); const out = [c ? anatomyLine(c.spec) : "", m ? machineLine(m.spec) : "", v ? vehicleLine(v.spec) : ""].filter(Boolean).join(" "); return out || undefined; }}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
@@ -327,6 +331,13 @@ export function DesignView(p: DesignViewProps) {
                 openProviders={() => setProvidersOpen(true)}
                 onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }}
               />
+            )}
+            {section === "age" && analysis.assets[selectedAsset]?.type === "character" && (
+              <details className="an-fold" open={isPhotorealStyle(analysis.assets[selectedAsset].style ?? styleBible) || undefined}>
+                <summary>Skin &amp; Surface{isPhotorealStyle(analysis.assets[selectedAsset].style ?? styleBible) ? "" : " (for photorealistic characters)"}</summary>
+                <SkinStudio key={`s-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} style={analysis.assets[selectedAsset].style ?? styleBible} notify={setNotice} />
+                <SkinRefinement key={`r-${analysis.assets[selectedAsset].id}`} character={analysis.assets[selectedAsset]} variations={p.variations} updateVariations={p.updateVariations} queue={queue} setQueue={setQueue} style={analysis.assets[selectedAsset].style ?? styleBible} desktop={isTauri} providersVersion={Number(providersOpen)} onApproved={onSheetApproved} onUnapproved={onSheetUnapproved} notify={setNotice} openProviders={() => setProvidersOpen(true)} onOpenSheets={(variant) => { setFocusVariant(variant); setSection("sheets"); }} />
+              </details>
             )}
             </div>
             <div id="sec-transform" role="tabpanel" aria-labelledby="as-tab-transform" hidden={section !== "transform"}>

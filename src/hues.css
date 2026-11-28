@@ -132,3 +132,12 @@
 :where(button, summary, [role="tab"], a[href]):focus-visible { outline: 2px solid var(--blue, #79d8e8); outline-offset: 2px; }
 /* Studio headers grow with their text: the rule under them used to cut through a long intro that wrapped onto an extra line. */
 .wd-head { height: auto; min-height: 0; padding-bottom: 12px; }
+
+/* Skin & Surface: preset cards and mark rows. */
+.sk-presets { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.sk-presets button { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--stroke); background: var(--surface); cursor: pointer; height: auto; }
+.sk-presets button small { opacity: .75; font-size: 12px; white-space: normal; }
+.sk-presets button.on { border-color: var(--hue-design); box-shadow: inset 0 0 0 1px var(--hue-design); }
+.sk-mark { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; margin-bottom: 6px; }
+.sk-ctl { display: grid; gap: 2px; align-content: start; min-width: 0; }
+.sk-ctl small { opacity: .7; font-size: 12px; }
