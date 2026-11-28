@@ -79,3 +79,16 @@ The user approved one real refinement of LILA (two pictures) from the Summit Spr
 What it changed in the app: the screen now says in plain words why pictures could not be made and that a request refused on this computer was not charged; the spend line counts such refusals separately and leaves them out of the dollar estimate, so a refusal can no longer look like spend.
 
 Why the run was not repeated on a stand-in character: the request has the same shape as the age studio's, which has run against the provider before, so a second run would only test the provider's picture quality on a stylized test character, which says nothing about realistic skin. The meaningful run is on a realistic character in the installed app (its own folder holds the pictures) and judging the result needs a person.
+
+## 10. Milestone 3 status: lighting test (regional controls and marks were built in milestone 1)
+
+Done and tested (deterministic and component tests; live in the test app on a realistic project, viewing only):
+- **Four lights** from the existing `lighting.ts` records: neutral diffuse, soft side, directional and backlight (the backlight keeps the face readable, it is not a silhouette). Lighting records contain no grading or skin fields.
+- **Lighting stored apart from skin.** A `lighting-test` record holds the setups and is pinned to the exact approved skin revision it was made with. The skin profile gains no lighting fields. A newer approved skin revision marks the approved test out of date (the existing staleness machinery) without touching anything else.
+- **Same person and surface in every light.** The four prompts differ only in the lighting sentence; the skin wording, protected features, complexion, undertone and marks are word for word the same.
+- **No fake relighting, no colour filter.** The request says it is real light on the subject; no LUT or grade is ever used. A warm or golden undertone written by the person, or a warm light, is never fought by a "no yellow" instruction.
+- **Colour is judged by a person.** For each light the screen states what that light is expected to do to colour, and asks identity, complexion and surface as separate questions. Keeping a light as a reference needs identity and complexion confirmed for that light.
+- **Explicit generation.** One request per light, each with exactly one reference (the approved refined picture when there is one, else the approved original, never an unapproved picture); nothing is approved automatically; refused-locally requests are explained and not counted as spend.
+- **Compare** each light with the approved reference with synchronized zoom and the face-region close-ups.
+
+Not done: masks (no adapter supports them), any real-provider lighting run, and automatic colour measurement. No colour numbers are shown because none are measured: judging colour shift is deliberately left to a person against the reference and the light. Skin quality checks (category findings with evidence and the honest four states), age and transformation integration, portability checks and a human visual evaluation set across ages, complexions, makeup and facial hair remain for milestone 4.
