@@ -41,3 +41,18 @@ Kept apart by construction: age (age record), lighting (`LightingRecord`), gradi
 ## 5. Verification approach (stated up front)
 
 Deterministic and component tests for the record, presets, requests, no-paid-request-on-edit, migration and round trip. Mocked-provider contract tests for requests and retries. Real-provider runs, within the remaining budget (about $4.24 of $9.00 used), will be few and recorded with their actual outcomes. Human visual acceptance (does the skin look right, across ages, complexions, lighting, makeup, facial hair) cannot be done by code or by me: it needs your eyes, and no claim about picture quality is made without it.
+
+## 6. What the two prompting books added (guidance only, summarised in our own words)
+
+The user supplied two prompting guides: a photographer-style prompt book for one image model, and a reference on describing people with ChatGPT image generation (the second was too large for the file viewer; its text was extracted and searched for skin-related passages, and read only where it mentioned skin, texture or stereotyping). Neither is about skin surface in depth, and neither is copied here. What they support:
+
+- **One variable at a time, in a fixed order.** Both advise a repeatable sentence structure so that when a result improves or fails you know which variable did it. The skin line is already kept separate from lighting, age, makeup and conditions for the same reason, and the lighting-test sheet changes only the light.
+- **Name the lighting by its setup in plain terms** (diffuse or soft, side, directional or hard, backlight or rim), with a realistic capture description. The lighting-test sheet in milestone 3 will use those names with `lighting.ts`. Both books say some models relight a photo reliably; this app will not assume that. A lighting test is a new candidate that is compared with the approved reference, never a promise of the same face under new light.
+- **Describe the person explicitly instead of by nationality.** The second book notes that a bare nationality invites stereotyped features. This matches the rule already built in: complexion and undertone are only the person's own words, and nothing else is derived from them.
+- **Possible experiment, not adopted yet:** a realistic capture cue (a plain camera description, restrained grain) is said to reduce the "AI look". It can also shift colour, so it will be tried as a measured A/B with a real provider in milestone 2, within the budget, and kept only if the comparison supports it.
+
+## 7. Milestone 1 status
+
+Done and tested (deterministic and component tests; live check in the test copy): the `skin` record, presets as data, the five essential controls, marks with locations that must stay protected, protected-feature choices, regional controls on demand (as wording), separate makeup, complexion, undertone and temporary conditions, the wording compiler, `isPhotorealStyle`, the Skin & Surface section in the Age & appearance tab (open by default only for photorealistic styles), the skin line in prompts for approved profiles on photorealistic characters only, strict reading, older-project and damaged-file tests, and the fuzz test.
+
+Not done: any generation (no refinement request exists yet, so nothing can be spent); comparison; approval of refined pictures; downstream references; lighting tests; skin QA; age and transformation integration. The live test project's style is stylized, so the photorealistic path (section open, wording in prompts) is covered by tests, not yet seen in the running app on a photorealistic project.
