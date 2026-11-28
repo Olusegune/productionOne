@@ -190,3 +190,13 @@ Legend: D deterministic unit/component test (passing); M mocked provider; R real
 - The Characters / Assets / Worlds / Production Bible grouping was not built; new studios sit inside the Anatomy and Relationships tabs. The agent preflight component (intended changes, protected features, affected assets, cost before running) was not built.
 - Live checks in the running app: Relationships, Anatomy and the prop form were checked at Milestone 4; Machine, Powers, Species and factions and Scene continuity were not checked live after being built.
 - Branch state: this work sits on `docs/production-model-reconciliation`, which is cut from `feat/vision-qa` (PR #80). Nothing is merged or released.
+
+### Live check in the running app (test copy)
+
+Run after Milestone 7 with the rebuilt test app (no provider calls, no pictures generated):
+- Machine parts: an unreadable line ("@underneath") showed its message and disabled Save; a valid entry showed the prompt sentence and saved.
+- Powers: the sentence shows one colour and shape; saving listed the power with its described states.
+- Species and factions: created and joined; no proposal appeared because the being's own anatomy already matched.
+- Scene continuity: composed and approved a look assigned to a scene, froze the scene (main, version 1, pinned to the look version), started "night version" from it (shown as "from main 1").
+- Bugs the live check found and fixed: the Anatomy and Relationships tabs were squeezed into the narrow column with the inspector showing; the new foldable sections reused an existing class name (`wd-more`, a button style) and rendered as a flex row; "Start branch" was stretched. All three were fixed and re-measured (full-width panel, sections stacked, button 26 px high).
+- Not exercised live: accepting a proposal, a prop's size form after the layout fix, and the comparison of parts seen per view (no screen for entering what a picture shows).
