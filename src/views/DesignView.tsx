@@ -21,6 +21,7 @@ import { ContinuityPanel } from "../components/ContinuityPanel";
 import { ProfilesStudio } from "../components/ProfilesStudio";
 import { AbilityStudio, MachineStudio } from "../components/MachineAbilityStudio";
 import { approvedMachine, machineLine } from "../domain/machineLab";
+import { approvedVehicle, vehicleLine } from "../domain/vehicleLab";
 import { RelationshipsStudio } from "../components/RelationshipsStudio";
 import type { VariationState } from "../domain/variations";
 import { lookNamesFor } from "../domain/wardrobeFlow";
@@ -268,7 +269,7 @@ export function DesignView(p: DesignViewProps) {
               onAssetStyle={(id, style) => setAnalysis((cur) => ({ ...cur, assets: cur.assets.map((a) => { if (a.id !== id) return a; if (style) return { ...a, style }; const { style: _dropped, ...rest } = a; return rest; }) }))}
               notesByAsset={sheetNotes}
               proportions={proportions}
-              anatomyFor={(id) => { const c = approvedCreature(p.variations, id); const m = approvedMachine(p.variations, id); const out = [c ? anatomyLine(c.spec) : "", m ? machineLine(m.spec) : ""].filter(Boolean).join(" "); return out || undefined; }}
+              anatomyFor={(id) => { const c = approvedCreature(p.variations, id); const m = approvedMachine(p.variations, id); const v = approvedVehicle(p.variations, id); const out = [c ? anatomyLine(c.spec) : "", m ? machineLine(m.spec) : "", v ? vehicleLine(v.spec) : ""].filter(Boolean).join(" "); return out || undefined; }}
               setNotesByAsset={setSheetNotes}
               settings={sheetSettings}
               setSettings={setSheetSettings}

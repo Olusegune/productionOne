@@ -28,6 +28,15 @@ describe('the wardrobe screen', () => {
     expect(screen.getByText(/The face and body stay as approved/)).toBeTruthy()
   })
 
+  it('says before anything is made what the previews are, what is left alone and the cost', () => {
+    render(<WardrobeStudio {...props({ queue: { ...emptyQueue(), perImageUsd: 0.04 } })} />)
+    const card = screen.getByLabelText('Before you press the button')
+    expect(card.textContent).toMatch(/3 candidate pictures: the garment, clothing only with no person/)
+    expect(card.textContent).toMatch(/New pictures are candidates until you approve them/)
+    expect(card.textContent).toMatch(/your written description \(no reference picture\)/)
+    expect(card.textContent).toMatch(/\$0\.12/)
+  })
+
   it('asks for a name and a description before it makes anything', () => {
     const p = props()
     render(<WardrobeStudio {...p} />)

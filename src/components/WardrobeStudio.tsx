@@ -11,6 +11,8 @@ import { styleFingerprint } from "../domain/style2d";
 import type { StyleBible } from "../domain/visualDevelopment";
 import { editDraft, startDraft, standingOf, type Draft } from "../domain/candidateFlow";
 import { stalenessOf } from "../domain/variationGraph";
+import { PreflightCard } from "./PreflightCard";
+import { affectedBy, buildPreflight } from "../domain/preflight";
 import { approvedPicture, findEntity, latestApproved, type AgeSpec, type TransformationSpec, type ConditionSpec, type FitSpec, type GarmentSpec, type LookSpec, type Ref, type VariationState } from "../domain/variations";
 import { defaultKeep, fitCapability, fitRequests, garmentCategories, garmentFieldList, garmentRequests, keepChoices } from "../domain/wardrobe";
 import { garmentAssetId, garmentPicture, newGarment, reviseGarment, startFit } from "../domain/wardrobeFlow";
@@ -206,6 +208,13 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
             </div>
             <button className="wd-more" onClick={() => setMore((m) => !m)} aria-expanded={more}>{more ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />} More details</button>
             {more && <div className="wd-fields">{garmentFieldList.filter((f) => f.advanced).map((f) => <label key={f.key}>{f.label}<input value={spec.details?.[f.key] ?? ""} onChange={(e) => setField(f.key, e.target.value)} placeholder={f.hint} /></label>)}</div>}
+            <PreflightCard plan={buildPreflight({
+              count: 3, what: `${garment ? garment.name : name.trim() || "the garment"}, clothing only with no person`, costLabel: cost.label,
+              protectedItems: garment && newest?.status === "approved" && !unchanged ? [`Version ${newest.n} stays approved; this makes a new version`] : [],
+              approvedUntouched: variations.entities.reduce((n, e) => n + e.revisions.filter((r) => r.status === "approved").length, 0),
+              affects: affectedBy(variations, garment && latestApproved(garment) ? { id: garment.id, revision: latestApproved(garment)!.n } : undefined),
+              uses: [`${modelId} on ${providerLabels[provider]}`, "your written description (no reference picture)"],
+            })} />
             <div className="wd-actions">
               <button className="primary" onClick={makePreviews} disabled={!!garment && newest?.status === "approved" && unchanged}>
                 <Sparkles size={15} aria-hidden="true" /> {changedFromApproved ? "Save as a new version and preview" : garment && newest?.status === "candidate" ? "Make more previews" : "Make previews"} · {cost.label}
@@ -250,6 +259,13 @@ export function WardrobeStudio(props: WardrobeStudioProps) {
               <fieldset className="wd-keep"><legend>What must stay exactly the same</legend>
                 {keepChoices.map((k) => <label key={k.key}><input type="checkbox" checked={keep.includes(k.key)} onChange={(e) => setKeep((cur) => (e.target.checked ? [...cur, k.key] : cur.filter((x) => x !== k.key)))} /> {k.label}</label>)}
               </fieldset>
+              <PreflightCard plan={buildPreflight({
+                count: 1, what: `${garment ? garment.name : "the garment"} on ${character.name}${chosenCondition ? ` (${chosenCondition.name})` : ""}`, costLabel: fitCost.label,
+                protectedItems: keepChoices.filter((k) => keep.includes(k.key)).map((k) => k.label),
+                approvedUntouched: variations.entities.reduce((n, e) => n + e.revisions.filter((r) => r.status === "approved").length, 0),
+                affects: affectedBy(variations, fitEntity && latestApproved(fitEntity) ? { id: fitEntity.id, revision: latestApproved(fitEntity)!.n } : undefined),
+                uses: [characterPicture ? `${character.name}'s approved front view` : "", pic ? `the approved picture of ${garment?.name ?? "the garment"}` : "", chosenCondition ? `the approved ${chosenCondition.name} condition` : "", chosenBody ? `${chosenBody.name} as the body` : "", `${modelId} on ${providerLabels[provider]}`],
+              })} />
               <div className="wd-actions">
                 <button className="primary" onClick={makeFit} disabled={!characterPicture || !capability.ok}><Sparkles size={15} aria-hidden="true" /> {fitEntity ? "Try another fit" : "Fit it"} · {fitCost.label}</button>
                 <span className="helper">Image models cannot fit clothing exactly, so check every candidate against the original.</span>

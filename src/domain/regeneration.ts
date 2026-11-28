@@ -39,6 +39,7 @@ const actionFor = (state: VariationState, e: AnyEntity, spec: AnySpec): string =
     case 'age': return 'Make this age again, then approve it.'
     case 'garment': return 'Make this garment again, then approve it.'
     case 'look': return 'Update the look to the newer versions once its parts are remade.'
+    case 'vehicle': return 'Confirm the vehicle details again, then approve them.'
     case 'profile': return 'Look at this profile again: the species it is drawn from has changed. Approve a new version if it still holds.'
     case 'machine': return 'Confirm the machine parts again, then approve them.'
     case 'ability': return 'Confirm the power again, then approve it.'
