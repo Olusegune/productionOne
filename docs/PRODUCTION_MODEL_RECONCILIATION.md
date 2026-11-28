@@ -206,3 +206,22 @@ Run after Milestone 7 with the rebuilt test app (no provider calls, no pictures 
 Done: one-click starting points that only fill the form (nothing is saved or generated until Save): seven for beings (human, monster or beast, alien or other species, serpent, winged, insect-like, plus Custom), five for machines (service robot, android, mech, powered armour, Custom) and four for powers (fire, lightning, shadow, Custom). Every template passes the same checks as a hand-made record, every power template describes all six states, and hero/villain are deliberately not templates (a story role on any being). A preflight card above the generate button on the Age and Transformations studios says what will be made, what is kept recognisable, what is left alone, which approved things depend on it, what it starts from, what you get, and the cost; it is closed by default with the cost always visible. Checked live in the test copy (template fills, mech joints, lightning states, preflight text on both studios). 1485 web tests pass.
 
 Not done: the preflight card is not yet on the Wardrobe studio, the Assistant or batch generation; it does not enforce a budget stop (the existing cost ceiling still does that); vehicles and environments still have no specialist record or templates; the Characters / Assets / Worlds / Production Bible grouping is not built.
+
+## Grouping, colour cues and QA pass
+
+**Grouping (inside Design, nothing restructured).** The bible list has a switcher: Characters, Assets (costumes and props), Worlds (sets and environments) and an Overview page. Choosing a group opens its first piece when the current one belongs elsewhere; opening an asset from another screen moves the list to its group. The Overview reads the records (art style, counts approved, species and factions with members, relationships that need a look or disagree, frozen scenes and branches, and anything out of date) and changes nothing. The old six workspaces are untouched.
+
+**Colour and icons.** Each area has a hue applied to icons only (text stays neutral): Projects amber, Script sky, Design violet, Review mint, Storyboards coral, Deliver orange, Assistant cyan; bible kinds blue, lilac and green; every asset tab, status (approved, waiting, needs a look, turned down), preflight row and overview card has an icon. A test checks every hue against the page and panel colours in both themes (3:1 minimum for meaningful icons).
+
+**QA run (this pass).** Checks run: type-check, 1503 web tests, 128 Rust tests, production web build, the static accessibility gate, the project's acceptance script; a fuzz test that damages a rich saved project 1500 ways (never crashes any screen's reader, and reading is stable); a scale test (60 characters, about 840 records: every summary under 15 ms); a live audit of every workspace and every group and tab at 1440, 1100 and 900 px (console errors, controls cut off by their container, unnamed buttons, duplicate ids, images without alt, unlabeled inputs); a keyboard test; light and dark themes.
+
+Defects found and fixed:
+1. Script: the selected-asset card clipped its kind selector, name, scene heading and merge button (columns did not stack at that panel width).
+2. Asset tabs and Story tabs could not be used from the keyboard: only the open tab was focusable and arrow keys did nothing. Left, Right, Home and End now work.
+3. At 900 px the bible list became a one-item sideways strip; it is a vertical list again. The icon rail's buttons were 18 px wide (hard to hit); they now fill the rail.
+4. Long names in the list pushed buttons past the panel edge; they are now shortened with an ellipsis.
+5. Studio headers were shorter than their wrapped intro text, so the rule under them cut through a line.
+6. The tab bar was an oval when it wrapped to several rows.
+7. Earlier in this work (found by live checks): Anatomy and Relationships tabs squeezed into the narrow column, foldable sections overlapping because of a clashing class name, a stretched "Start branch" button.
+
+Not covered, honestly: no screen-reader run (only static name checks and the keyboard test); no test below 900 px or on a high-DPI display; no real provider calls were made in this pass, so picture quality of anything generated from the new records is untested; Mac and signing unchanged; Rafter's scan did not run (allowance used up).

@@ -130,3 +130,5 @@
 .po-bible li > button { width: 100%; min-width: 0; }
 /* Keyboard focus is always visible on buttons, tabs and section toggles. */
 :where(button, summary, [role="tab"], a[href]):focus-visible { outline: 2px solid var(--blue, #79d8e8); outline-offset: 2px; }
+/* Studio headers grow with their text: the rule under them used to cut through a long intro that wrapped onto an extra line. */
+.wd-head { height: auto; min-height: 0; padding-bottom: 12px; }
